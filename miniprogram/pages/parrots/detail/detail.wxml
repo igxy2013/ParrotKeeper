@@ -13,7 +13,7 @@
       <view class="photo-container">
         <image 
           class="parrot-photo" 
-          src="{{parrot.photo_url || '/images/default-parrot.svg'}}" 
+          src="{{parrot.avatar_url || parrot.photo_url || '/images/default-parrot.svg'}}" 
           mode="aspectFill"
           bindtap="previewPhoto"
         />

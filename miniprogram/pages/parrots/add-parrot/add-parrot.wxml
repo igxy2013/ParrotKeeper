@@ -5,6 +5,21 @@
     <view class="form-section">
       <view class="section-title">基本信息</view>
       
+      <!-- 头像选择 -->
+      <view class="form-item">
+        <text class="form-label">头像</text>
+        <view class="avatar-selection">
+          <view class="current-avatar" bindtap="showAvatarPicker">
+            <image 
+              class="avatar-preview" 
+              src="{{formData.avatar_url || '/images/default-parrot.svg'}}" 
+              mode="aspectFit"
+            />
+            <text class="avatar-change-text">点击更换</text>
+          </view>
+        </view>
+      </view>
+      
       <view class="form-item">
         <text class="form-label required">鹦鹉名称</text>
         <input 
@@ -271,6 +286,31 @@
         >
           <view class="status-indicator observation"></view>
           <text class="status-text">观察中</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 头像选择弹窗 -->
+<view class="modal-overlay" wx:if="{{showAvatarModal}}" bindtap="hideAvatarPicker">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择头像</text>
+      <view class="modal-close" bindtap="hideAvatarPicker">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="avatar-grid">
+        <view 
+          class="avatar-option {{formData.avatar_url === item.url ? 'selected' : ''}}" 
+          wx:for="{{avatarOptions}}" 
+          wx:key="id"
+          bindtap="selectAvatar"
+          data-url="{{item.url}}"
+          data-name="{{item.name}}"
+        >
+          <image class="avatar-image" src="{{item.url}}" mode="aspectFit"/>
+          <text class="avatar-name">{{item.name}}</text>
         </view>
       </view>
     </view>

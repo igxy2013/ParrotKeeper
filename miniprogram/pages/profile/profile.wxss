@@ -34,10 +34,72 @@
   flex-direction: column;
 }
 
+.nickname-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+
 .user-name {
   font-size: 36rpx;
   font-weight: bold;
-  margin-bottom: 10rpx;
+  flex: 1;
+}
+
+.edit-nickname-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 20rpx;
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+  margin-left: 20rpx;
+}
+
+.nickname-edit {
+  margin-bottom: 15rpx;
+}
+
+.nickname-edit-input {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border-radius: 10rpx;
+  padding: 15rpx;
+  font-size: 28rpx;
+  margin-bottom: 15rpx;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80rpx;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 15rpx;
+}
+
+.save-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: #4CAF50;
+  border: none;
+  border-radius: 20rpx;
+  padding: 10rpx 20rpx;
+  font-size: 24rpx;
+  flex: 1;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 20rpx;
+  padding: 10rpx 20rpx;
+  font-size: 24rpx;
+  flex: 1;
 }
 
 .user-id {

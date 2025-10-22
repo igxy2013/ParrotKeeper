@@ -79,6 +79,7 @@
               <text wx:if="{{item.type === 'feeding'}}">🍎</text>
               <text wx:elif="{{item.type === 'health'}}">🏥</text>
               <text wx:elif="{{item.type === 'cleaning'}}">🧽</text>
+              <text wx:elif="{{item.type === 'breeding'}}">💕</text>
             </view>
             <view class="record-content">
               <view class="record-title">{{item.title}}</view>
@@ -113,11 +114,11 @@
   <!-- 登录提示 -->
   <view class="login-prompt" wx:if="{{!isLogin}}">
     <view class="card">
-      <view class="card-content text-center">
+      <view class="card-content">
         <view class="login-icon">🦜</view>
-        <view class="login-text">欢迎使用鹦鹉养殖管家</view>
+        <view class="login-text">欢迎使用鹦鹉管家</view>
         <view class="login-subtitle">请先登录以使用完整功能</view>
-        <button class="btn btn-primary btn-large mt-30" bindtap="handleLogin">立即登录</button>
+        <button class="btn btn-primary btn-large mt-30" bindtap="handleLogin">微信快速登录</button>
       </view>
     </view>
   </view>

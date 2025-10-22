@@ -48,6 +48,7 @@ class Parrot(db.Model):
     weight = db.Column(db.Numeric(5, 2))
     health_status = db.Column(db.Enum('healthy', 'sick', 'recovering'), default='healthy')
     photo_url = db.Column(db.String(255))
+    avatar_url = db.Column(db.String(255))  # 头像URL
     parrot_number = db.Column(db.String(50))  # 编号
     ring_number = db.Column(db.String(50))    # 脚环号
     notes = db.Column(db.Text)

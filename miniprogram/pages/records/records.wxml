@@ -17,6 +17,9 @@
     <view class="tab-item {{activeTab === 'cleaning' ? 'active' : ''}}" bindtap="switchTab" data-tab="cleaning">
       <text class="tab-text">清洁记录</text>
     </view>
+    <view class="tab-item {{activeTab === 'breeding' ? 'active' : ''}}" bindtap="switchTab" data-tab="breeding">
+      <text class="tab-text">繁殖记录</text>
+    </view>
   </view>
 
   <!-- 筛选栏 -->
@@ -93,6 +96,9 @@
             <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
           </view>
           <view class="record-actions">
+            <view class="action-btn" bindtap="editRecord" data-type="health" data-id="{{item.id}}">
+              <text class="action-icon">✏️</text>
+            </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="health" data-id="{{item.id}}">
               <text class="action-icon">🗑️</text>
             </view>
@@ -142,6 +148,9 @@
             <text class="record-time">{{item.cleaning_date_formatted}}</text>
           </view>
           <view class="record-actions">
+            <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}">
+              <text class="action-icon">✏️</text>
+            </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}">
               <text class="action-icon">🗑️</text>
             </view>
@@ -166,6 +175,62 @@
       <view class="empty-text" wx:if="{{isLogin}}">暂无清洁记录</view>
       <view class="empty-text" wx:else>请先登录查看记录</view>
       <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addCleaningRecord">添加清洁记录</button>
+    </view>
+  </view>
+
+  <!-- 繁殖记录 -->
+  <view class="records-container" wx:if="{{activeTab === 'breeding'}}">
+    <view class="record-list" wx:if="{{breedingRecords.length > 0}}">
+      <view class="record-card" wx:for="{{breedingRecords}}" wx:key="id">
+        <view class="record-header">
+          <view class="record-info">
+            <text class="record-title">{{item.male_parrot_name}} × {{item.female_parrot_name}}</text>
+            <text class="record-time">{{item.mating_date_formatted}}</text>
+          </view>
+          <view class="record-actions">
+            <view class="action-btn" bindtap="editRecord" data-type="breeding" data-id="{{item.id}}">
+              <text class="action-icon">✏️</text>
+            </view>
+            <view class="action-btn" bindtap="deleteRecord" data-type="breeding" data-id="{{item.id}}">
+              <text class="action-icon">🗑️</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="record-content">
+          <view class="record-detail" wx:if="{{item.egg_laying_date}}">
+            <text class="detail-label">产蛋日期：</text>
+            <text class="detail-value">{{item.egg_laying_date}}</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.egg_count}}">
+            <text class="detail-label">蛋数：</text>
+            <text class="detail-value">{{item.egg_count}}个</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.hatching_date}}">
+            <text class="detail-label">孵化日期：</text>
+            <text class="detail-value">{{item.hatching_date}}</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.chick_count}}">
+            <text class="detail-label">幼鸟数：</text>
+            <text class="detail-value">{{item.chick_count}}只</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.success_rate}}">
+            <text class="detail-label">成功率：</text>
+            <text class="detail-value">{{item.success_rate}}%</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.notes}}">
+            <text class="detail-label">备注：</text>
+            <text class="detail-value">{{item.notes}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="empty-state" wx:if="{{breedingRecords.length === 0 && !loading}}">
+      <view class="empty-icon">🥚</view>
+      <view class="empty-text" wx:if="{{isLogin}}">暂无繁殖记录</view>
+      <view class="empty-text" wx:else>请先登录查看记录</view>
+      <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addBreedingRecord">添加繁殖记录</button>
     </view>
   </view>
 

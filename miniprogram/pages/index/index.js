@@ -140,6 +140,19 @@ Page({
           })
         }
         
+        // 处理繁殖记录
+        if (res.data.breeding && Array.isArray(res.data.breeding)) {
+          res.data.breeding.forEach(record => {
+            allRecords.push({
+              id: `breeding_${record.id}`,
+              title: '繁殖记录',
+              type: 'breeding',
+              parrot_name: `${record.male_parrot_name} × ${record.female_parrot_name}`,
+              time: app.formatDate(record.mating_date || record.created_at)
+            })
+          })
+        }
+        
         // 按时间排序，最新的在前
         allRecords.sort((a, b) => new Date(b.time) - new Date(a.time))
         
@@ -178,10 +191,112 @@ Page({
 
   // 处理登录
   handleLogin() {
-    // 跳转到个人资料页面进行登录
-    wx.navigateTo({
-      url: '/pages/profile/profile'
-    })
+    // 检查是否支持微信快速登录
+    if (wx.getUserProfile) {
+      // 支持新版本的微信快速登录
+      this.quickWechatLogin()
+    } else {
+      // 跳转到个人资料页面进行登录
+      wx.navigateTo({
+        url: '/pages/profile/profile'
+      })
+    }
+  },
+
+  // 微信快速登录
+  quickWechatLogin() {
+    wx.getUserProfile({
+      desc: '用于完善用户资料',
+      success: (profileRes) => {
+        // 获取用户信息成功，继续获取登录凭证
+        wx.login({
+          success: (loginRes) => {
+            if (loginRes.code) {
+              // 调用后端登录接口
+              wx.request({
+                url: 'https://bimai.xyz/api/auth/login',
+                method: 'POST',
+                data: {
+                  code: loginRes.code,
+                  userInfo: {
+                    nickName: profileRes.userInfo.nickName,
+                    avatarUrl: '/images/default-avatar.svg' // 使用默认头像
+                  }
+                },
+                header: {
+                  'content-type': 'application/json'
+                },
+                success: (res) => {
+                  console.log('快速登录接口响应', res);
+                  if (res.data.success) {
+                    const responseUserInfo = res.data.data.user;
+                    
+                    // 构建用户信息对象，使用默认头像
+                    const userInfo = {
+                      nickname: responseUserInfo.nickname,
+                      avatar_url: '/images/default-avatar.svg', // 强制使用默认头像
+                      openid: responseUserInfo.openid,
+                      created_at: responseUserInfo.created_at
+                    };
+                    
+                    // 存储用户信息和openid
+                    wx.setStorageSync('userInfo', userInfo);
+                    wx.setStorageSync('openid', responseUserInfo.openid);
+                    
+                    // 更新全局状态
+                    app.globalData.userInfo = userInfo;
+                    app.globalData.openid = responseUserInfo.openid;
+                    app.globalData.isLogin = true;
+                    
+                    // 更新页面状态
+                    this.checkLoginStatus();
+                    
+                    // 登录成功后加载数据
+                    this.loadData();
+                    
+                    wx.showToast({
+                      title: '登录成功',
+                      icon: 'success'
+                    });
+                  } else {
+                    wx.showToast({
+                      title: res.data.message || '登录失败',
+                      icon: 'none'
+                    });
+                  }
+                },
+                fail: (err) => {
+                  console.error('登录接口调用失败', err);
+                  wx.showToast({
+                    title: '网络错误，请检查网络连接',
+                    icon: 'none'
+                  });
+                }
+              });
+            } else {
+              wx.showToast({
+                title: '获取登录凭证失败',
+                icon: 'none'
+              });
+            }
+          },
+          fail: (err) => {
+            console.error('微信登录失败', err);
+            wx.showToast({
+              title: '微信登录失败',
+              icon: 'none'
+            });
+          }
+        });
+      },
+      fail: (err) => {
+        console.log('用户取消授权或授权失败', err);
+        // 用户取消授权，跳转到个人资料页面
+        wx.navigateTo({
+          url: '/pages/profile/profile'
+        });
+      }
+    });
   },
 
   // 导航到鹦鹉页面
@@ -194,17 +309,32 @@ Page({
 
   // 导航到记录页面
   navigateToRecords() {
+    console.log('navigateToRecords 被调用')
+    console.log('当前登录状态:', this.data.isLogin)
+    
     if (!this.data.isLogin) {
+      console.log('用户未登录，显示错误提示')
       app.showError('请先登录')
       return
     }
-    wx.switchTab({
-      url: '/pages/records/records'
+    
+    console.log('准备跳转到记录页面')
+    wx.navigateTo({
+      url: '/pages/records/records',
+      success: () => {
+        console.log('跳转成功')
+      },
+      fail: (err) => {
+        console.error('跳转失败:', err)
+        app.showError('跳转失败，请重试')
+      }
     })
   },
 
   // 查看全部记录
   viewAllRecords() {
+    console.log('viewAllRecords 被调用')
+    console.log('当前登录状态:', this.data.isLogin)
     this.navigateToRecords()
   },
 
@@ -216,7 +346,7 @@ Page({
     }
     
     wx.navigateTo({
-      url: '/pages/records/add-feeding/add-feeding'
+      url: '/pages/records/add-record/add-record?type=feeding'
     })
   },
 
@@ -228,7 +358,7 @@ Page({
     }
     
     wx.navigateTo({
-      url: '/pages/records/add-cleaning/add-cleaning'
+      url: '/pages/records/add-record/add-record?type=cleaning'
     })
   },
 
@@ -240,7 +370,7 @@ Page({
     }
     
     wx.navigateTo({
-      url: '/pages/records/add-health/add-health'
+      url: '/pages/records/add-record/add-record?type=health'
     })
   },
 

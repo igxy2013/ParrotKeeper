@@ -7,7 +7,9 @@ Page({
     userInfo: {},
     joinDate: '',
     tempAvatarUrl: '', // 临时头像URL
-    tempNickname: ''   // 临时昵称
+    tempNickname: '',   // 临时昵称
+    isEditingNickname: false, // 是否正在编辑昵称
+    editNickname: '' // 编辑中的昵称
   },
 
   onLoad(options) {
@@ -15,7 +17,7 @@ Page({
   },
 
   onShow() {
-    this.checkLoginStatus()
+    this.checkLoginStatus();
   },
 
   onPullDownRefresh() {
@@ -31,7 +33,7 @@ Page({
       this.setData({
         isLogin: true,
         userInfo: userInfo,
-        joinDate: this.formatJoinDate(userInfo.createTime)
+        joinDate: this.formatJoinDate(userInfo.created_at || userInfo.createTime)
       })
     } else {
       this.setData({
@@ -72,7 +74,7 @@ Page({
           
           // 调用后端登录接口
           wx.request({
-            url: 'http://127.0.0.1:5085/api/auth/login',
+            url: 'https://bimai.xyz/api/auth/login',
             method: 'POST',
             data: {
               code: loginRes.code,
@@ -86,24 +88,31 @@ Page({
               if (res.data.success) {
                 const responseUserInfo = res.data.data.user;
                 
+                // 直接使用后端返回的用户信息
+                const userInfo = {
+                  nickname: responseUserInfo.nickname,
+                  avatar_url: responseUserInfo.avatar_url,
+                  openid: responseUserInfo.openid,
+                  created_at: responseUserInfo.created_at
+                };
+                
                 // 存储用户信息和openid
-                wx.setStorageSync('userInfo', responseUserInfo);
+                wx.setStorageSync('userInfo', userInfo);
                 wx.setStorageSync('openid', responseUserInfo.openid);
                 
                 // 更新全局状态
-                app.globalData.userInfo = responseUserInfo;
+                app.globalData.userInfo = userInfo;
                 app.globalData.openid = responseUserInfo.openid;
                 app.globalData.isLogin = true;
                 
                 this.setData({
                   isLogin: true,
-                  userInfo: responseUserInfo,
+                  userInfo: userInfo,
                   joinDate: this.formatJoinDate(responseUserInfo.created_at || Date.now()),
                   tempAvatarUrl: '', // 清空临时数据
                   tempNickname: ''
                 });
                 
-                this.loadUserStats();
                 wx.showToast({
                   title: '登录成功',
                   icon: 'success'
@@ -146,20 +155,112 @@ Page({
     console.log('选择头像:', avatarUrl);
     
     if (avatarUrl) {
+      // 先设置临时头像
       this.setData({
         tempAvatarUrl: avatarUrl
       });
-      wx.showToast({
-        title: '头像已选择',
-        icon: 'success',
-        duration: 1000
-      });
+      
+      // 如果用户已登录，直接上传头像
+      if (this.data.isLogin) {
+        this.uploadAvatar(avatarUrl);
+      } else {
+        wx.showToast({
+          title: '头像已选择',
+          icon: 'success',
+          duration: 1000
+        });
+      }
     } else {
       wx.showToast({
         title: '头像选择失败',
         icon: 'none'
       });
     }
+  },
+
+  // 上传头像
+  async uploadAvatar(avatarUrl) {
+    wx.showLoading({
+      title: '上传头像中...'
+    });
+
+    try {
+      // 上传头像文件
+      const uploadRes = await new Promise((resolve, reject) => {
+        wx.uploadFile({
+          url: 'https://bimai.xyz/api/upload/image',
+          filePath: avatarUrl,
+          name: 'file',
+          header: {
+            'X-OpenID': this.data.userInfo.openid
+          },
+          success: resolve,
+          fail: reject
+        });
+      });
+
+      const result = JSON.parse(uploadRes.data);
+      if (result.success) {
+        // 更新用户头像
+        await this.updateUserAvatar(result.data.url);
+      } else {
+        throw new Error(result.message || '头像上传失败');
+      }
+    } catch (error) {
+      console.error('头像上传失败:', error);
+      wx.showToast({
+        title: error.message || '头像上传失败',
+        icon: 'none'
+      });
+    } finally {
+      wx.hideLoading();
+    }
+  },
+
+  // 更新用户头像
+  async updateUserAvatar(avatarUrl) {
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: 'https://bimai.xyz/api/auth/profile',
+        method: 'PUT',
+        data: {
+          avatar_url: avatarUrl
+        },
+        header: {
+          'content-type': 'application/json',
+          'X-OpenID': this.data.userInfo.openid
+        },
+        success: (res) => {
+          if (res.data.success) {
+            // 更新本地存储和页面数据
+            const updatedUserInfo = {
+              ...this.data.userInfo,
+              avatar_url: avatarUrl
+            };
+            
+            wx.setStorageSync('userInfo', updatedUserInfo);
+            app.globalData.userInfo = updatedUserInfo;
+            
+            this.setData({
+              userInfo: updatedUserInfo,
+              tempAvatarUrl: ''
+            });
+            
+            wx.showToast({
+              title: '头像更新成功',
+              icon: 'success'
+            });
+            resolve(res.data);
+          } else {
+            reject(new Error(res.data.message || '头像更新失败'));
+          }
+        },
+        fail: (err) => {
+          console.error('更新头像失败', err);
+          reject(new Error('网络错误，请重试'));
+        }
+      });
+    });
   },
 
   // 输入昵称
@@ -255,5 +356,89 @@ Page({
         }
       }
     })
+  },
+
+  // 切换昵称编辑状态
+  toggleNicknameEdit() {
+    const currentNickname = this.data.userInfo.nickname || '';
+    this.setData({
+      isEditingNickname: !this.data.isEditingNickname,
+      editNickname: currentNickname
+    });
+  },
+
+  // 昵称编辑输入
+  onEditNicknameInput(e) {
+    this.setData({
+      editNickname: e.detail.value
+    });
+  },
+
+  // 保存昵称
+  saveNickname() {
+    const newNickname = this.data.editNickname.trim();
+    if (!newNickname) {
+      wx.showToast({
+        title: '昵称不能为空',
+        icon: 'none'
+      });
+      return;
+    }
+
+    // 调用后端API更新昵称
+    wx.request({
+      url: 'https://bimai.xyz/api/auth/profile',
+      method: 'PUT',
+      data: {
+        nickname: newNickname
+      },
+      header: {
+        'content-type': 'application/json',
+        'X-OpenID': this.data.userInfo.openid
+      },
+      success: (res) => {
+        if (res.data.success) {
+          // 更新本地存储和页面数据
+          const updatedUserInfo = {
+            ...this.data.userInfo,
+            nickname: newNickname
+          };
+          
+          wx.setStorageSync('userInfo', updatedUserInfo);
+          app.globalData.userInfo = updatedUserInfo;
+          
+          this.setData({
+            userInfo: updatedUserInfo,
+            isEditingNickname: false,
+            editNickname: ''
+          });
+          
+          wx.showToast({
+            title: '昵称更新成功',
+            icon: 'success'
+          });
+        } else {
+          wx.showToast({
+            title: res.data.message || '更新失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('更新昵称失败', err);
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  // 取消昵称编辑
+  cancelNicknameEdit() {
+    this.setData({
+      isEditingNickname: false,
+      editNickname: ''
+    });
   }
 })

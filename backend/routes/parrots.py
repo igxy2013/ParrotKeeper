@@ -145,6 +145,7 @@ def create_parrot():
             weight=data.get('weight'),
             health_status=data.get('health_status', 'healthy'),
             photo_url=data.get('photo_url'),
+            avatar_url=data.get('avatar_url'),
             notes=data.get('notes'),
             parrot_number=data.get('parrot_number'),
             ring_number=data.get('ring_number')
@@ -207,6 +208,8 @@ def update_parrot(parrot_id):
             parrot.health_status = data['health_status']
         if 'photo_url' in data:
             parrot.photo_url = data['photo_url']
+        if 'avatar_url' in data:
+            parrot.avatar_url = data['avatar_url']
         if 'notes' in data:
             parrot.notes = data['notes']
         if 'parrot_number' in data:

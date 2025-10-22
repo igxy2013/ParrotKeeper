@@ -13,6 +13,7 @@ Page({
       weight: '',
       health_status: 'healthy',
       photo_url: '',
+      avatar_url: '/images/parrot-avatar-green.svg', // 默认头像
       notes: '',
       parrot_number: '',
       ring_number: ''
@@ -23,9 +24,20 @@ Page({
     selectedSpeciesName: '',
     healthStatusText: '健康',
     
+    // 头像选项
+    avatarOptions: [
+      { id: 1, name: '绿色', url: '/images/parrot-avatar-green.svg' },
+      { id: 2, name: '蓝色', url: '/images/parrot-avatar-blue.svg' },
+      { id: 3, name: '红色', url: '/images/parrot-avatar-red.svg' },
+      { id: 4, name: '黄色', url: '/images/parrot-avatar-yellow.svg' },
+      { id: 5, name: '紫色', url: '/images/parrot-avatar-purple.svg' },
+      { id: 6, name: '橙色', url: '/images/parrot-avatar-orange.svg' }
+    ],
+    
     // 弹窗状态
     showSpeciesModal: false,
     showHealthStatusModal: false,
+    showAvatarModal: false,
     
     // 表单状态
     canSubmit: false,
@@ -146,6 +158,7 @@ Page({
             weight: parrot.weight ? String(parrot.weight) : '',
             health_status: parrot.health_status || 'healthy',
             photo_url: parrot.photo_url || '',
+            avatar_url: parrot.avatar_url || '/images/parrot-avatar-green.svg', // 从数据库加载头像
             notes: parrot.notes || '',
             parrot_number: parrot.parrot_number || '',
             ring_number: parrot.ring_number || ''
@@ -259,6 +272,30 @@ Page({
       'formData.health_status': status,
       healthStatusText: statusMap[status],
       showHealthStatusModal: false
+    })
+    this.validateForm()
+  },
+
+  // 显示头像选择器
+  showAvatarPicker() {
+    this.setData({
+      showAvatarModal: true
+    })
+  },
+
+  // 隐藏头像选择器
+  hideAvatarPicker() {
+    this.setData({
+      showAvatarModal: false
+    })
+  },
+
+  // 选择头像
+  selectAvatar(e) {
+    const { url, name } = e.currentTarget.dataset
+    this.setData({
+      'formData.avatar_url': url,
+      showAvatarModal: false
     })
     this.validateForm()
   },
@@ -414,7 +451,7 @@ Page({
               const pages = getCurrentPages()
               const prevPage = pages[pages.length - 2]
               if (prevPage && prevPage.loadParrots) {
-                prevPage.loadParrots()
+                prevPage.loadParrots(true) // 传递refresh=true参数强制刷新
               }
             }
           })

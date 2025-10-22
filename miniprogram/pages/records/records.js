@@ -10,6 +10,7 @@ Page({
     feedingRecords: [],
     healthRecords: [],
     cleaningRecords: [],
+    breedingRecords: [],
     
     // 筛选数据
     parrotsList: [],
@@ -52,6 +53,7 @@ Page({
         feedingRecords: [],
         healthRecords: [],
         cleaningRecords: [],
+        breedingRecords: [],
         parrotsList: []
       })
     }
@@ -134,10 +136,15 @@ Page({
           url = '/api/records/cleaning'
           dataKey = 'cleaningRecords'
           break
+        case 'breeding':
+          url = '/api/records/breeding'
+          dataKey = 'breedingRecords'
+          break
       }
       
+      const currentPage = refresh ? 1 : this.data.page
       const params = {
-        page: refresh ? 1 : this.data.page,
+        page: currentPage,
         limit: 10,
         parrot_id: this.data.selectedParrotId,
         ...this.getDateRangeParams()
@@ -150,13 +157,23 @@ Page({
       })
       
       if (res.success) {
-        const newRecords = this.formatRecords(res.data.records || res.data)
+        const newRecords = this.formatRecords(res.data.items || res.data)
         
-        this.setData({
-          [dataKey]: refresh ? newRecords : [...this.data[dataKey], ...newRecords],
-          page: refresh ? 2 : this.data.page + 1,
-          hasMore: newRecords.length === 10
-        })
+        if (refresh) {
+          // 刷新时重置所有数据和分页状态
+          this.setData({
+            [dataKey]: newRecords,
+            page: 2,
+            hasMore: newRecords.length === 10
+          })
+        } else {
+          // 加载更多时追加数据
+          this.setData({
+            [dataKey]: [...this.data[dataKey], ...newRecords],
+            page: this.data.page + 1,
+            hasMore: newRecords.length === 10
+          })
+        }
       }
     } catch (error) {
       console.error('加载记录失败:', error)
@@ -187,8 +204,45 @@ Page({
       if (record.check_date) {
         formatted.check_date_formatted = app.formatDate(record.check_date)
       }
-      if (record.cleaning_date) {
-        formatted.cleaning_date_formatted = app.formatDate(record.cleaning_date)
+      if (record.record_date) {
+        formatted.check_date_formatted = app.formatDate(record.record_date)
+      }
+      if (record.cleaning_time) {
+        formatted.cleaning_date_formatted = app.formatDate(record.cleaning_time)
+      }
+      
+      // 格式化繁殖记录的日期和鹦鹉名称
+      if (record.mating_date) {
+        formatted.mating_date_formatted = app.formatDate(record.mating_date)
+      }
+      if (record.egg_laying_date) {
+        formatted.egg_laying_date_formatted = app.formatDate(record.egg_laying_date)
+      }
+      if (record.hatching_date) {
+        formatted.hatching_date_formatted = app.formatDate(record.hatching_date)
+      }
+      
+      // 格式化鹦鹉名称 - 喂食记录
+      if (record.parrot && record.parrot.name) {
+        formatted.parrot_name = record.parrot.name
+      }
+      
+      // 格式化饲料类型名称 - 喂食记录
+      if (record.feed_type && record.feed_type.name) {
+        formatted.feed_type_name = record.feed_type.name
+      }
+      
+      // 格式化鹦鹉名称 - 健康记录
+      if (record.parrot && record.parrot.name) {
+        formatted.parrot_name = record.parrot.name
+      }
+      
+      // 格式化鹦鹉名称 - 繁殖记录
+      if (record.male_parrot && record.male_parrot.name) {
+        formatted.male_parrot_name = record.male_parrot.name
+      }
+      if (record.female_parrot && record.female_parrot.name) {
+        formatted.female_parrot_name = record.female_parrot.name
       }
       
       return formatted
@@ -277,9 +331,10 @@ Page({
   // 添加记录
   addRecord() {
     const urlMap = {
-      'feeding': '/pages/records/add-feeding/add-feeding',
-      'health': '/pages/records/add-health/add-health',
-      'cleaning': '/pages/records/add-cleaning/add-cleaning'
+      'feeding': '/pages/records/add-record/add-record?type=feeding',
+      'health': '/pages/records/add-record/add-record?type=health',
+      'cleaning': '/pages/records/add-record/add-record?type=cleaning',
+      'breeding': '/pages/records/add-record/add-record?type=breeding'
     }
     
     wx.navigateTo({
@@ -290,21 +345,28 @@ Page({
   // 添加喂食记录
   addFeedingRecord() {
     wx.navigateTo({
-      url: '/pages/records/add-feeding/add-feeding'
+      url: '/pages/records/add-record/add-record?type=feeding'
     })
   },
 
   // 添加健康记录
   addHealthRecord() {
     wx.navigateTo({
-      url: '/pages/records/add-health/add-health'
+      url: '/pages/records/add-record/add-record?type=health'
     })
   },
 
   // 添加清洁记录
   addCleaningRecord() {
     wx.navigateTo({
-      url: '/pages/records/add-cleaning/add-cleaning'
+      url: '/pages/records/add-record/add-record?type=cleaning'
+    })
+  },
+
+  // 添加繁殖记录
+  addBreedingRecord() {
+    wx.navigateTo({
+      url: '/pages/records/add-record/add-record?type=breeding'
     })
   },
 
@@ -312,11 +374,16 @@ Page({
   editRecord(e) {
     const { type, id } = e.currentTarget.dataset
     
-    if (type === 'feeding') {
-      wx.navigateTo({
-        url: `/pages/records/edit-feeding/edit-feeding?id=${id}`
-      })
+    const urlMap = {
+      'feeding': `/pages/records/add-record/add-record?type=feeding&id=${id}`,
+      'health': `/pages/records/add-record/add-record?type=health&id=${id}`,
+      'cleaning': `/pages/records/add-record/add-record?type=cleaning&id=${id}`,
+      'breeding': `/pages/records/add-record/add-record?type=breeding&id=${id}`
     }
+    
+    wx.navigateTo({
+      url: urlMap[type]
+    })
   },
 
   // 删除记录
@@ -349,6 +416,9 @@ Page({
           break
         case 'cleaning':
           url = `/api/records/cleaning/${id}`
+          break
+        case 'breeding':
+          url = `/api/records/breeding/${id}`
           break
       }
       

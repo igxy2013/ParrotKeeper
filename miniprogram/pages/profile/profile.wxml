@@ -5,13 +5,29 @@
     <view class="user-avatar">
       <image 
         class="avatar-image" 
-        src="{{userInfo.avatarUrl || '/images/default-avatar.svg'}}" 
+        src="{{userInfo.avatar_url || '/images/default-parrot.svg'}}" 
         mode="aspectFill"
       />
     </view>
     <view class="user-info">
-      <text class="user-name">{{userInfo.nickName || '鹦鹉爱好者'}}</text>
-      <text class="user-id">ID: {{userInfo.openid ? userInfo.openid.substr(0, 8) + '...' : '未知'}}</text>
+      <view class="nickname-display">
+        <text class="user-name">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
+        <button class="edit-nickname-btn" bindtap="toggleNicknameEdit">编辑</button>
+      </view>
+      <view class="nickname-edit" wx:if="{{isEditingNickname}}">
+        <input 
+          class="nickname-edit-input" 
+          type="nickname" 
+          placeholder="请输入新昵称" 
+          value="{{editNickname}}"
+          bindinput="onEditNicknameInput"
+          maxlength="20"
+        />
+        <view class="edit-actions">
+          <button class="save-btn" bindtap="saveNickname">保存</button>
+          <button class="cancel-btn" bindtap="cancelNicknameEdit">取消</button>
+        </view>
+      </view>
       <text class="join-date">加入时间: {{joinDate}}</text>
     </view>
   </view>

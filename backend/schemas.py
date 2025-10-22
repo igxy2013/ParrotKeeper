@@ -6,7 +6,7 @@ class UserSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = User
         load_instance = True
-        exclude = ('created_at', 'updated_at')
+        exclude = ('updated_at',)
 
 class ParrotSpeciesSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -47,6 +47,14 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     
     parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
     feed_type = fields.Nested(FeedTypeSchema, dump_only=True)
+    parrot_name = fields.Method('get_parrot_name', dump_only=True)
+    feed_type_name = fields.Method('get_feed_type_name', dump_only=True)
+    
+    def get_parrot_name(self, obj):
+        return obj.parrot.name if obj.parrot else None
+    
+    def get_feed_type_name(self, obj):
+        return obj.feed_type.name if obj.feed_type else None
 
 class HealthRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -55,6 +63,10 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
         exclude = ('created_at',)
     
     parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
+    parrot_name = fields.Method('get_parrot_name', dump_only=True)
+    
+    def get_parrot_name(self, obj):
+        return obj.parrot.name if obj.parrot else None
 
 class CleaningRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -63,6 +75,10 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
         exclude = ('created_at',)
     
     parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
+    parrot_name = fields.Method('get_parrot_name', dump_only=True)
+    
+    def get_parrot_name(self, obj):
+        return obj.parrot.name if obj.parrot else None
 
 class BreedingRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -72,6 +88,14 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
     
     male_parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
     female_parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
+    male_parrot_name = fields.Method('get_male_parrot_name', dump_only=True)
+    female_parrot_name = fields.Method('get_female_parrot_name', dump_only=True)
+    
+    def get_male_parrot_name(self, obj):
+        return obj.male_parrot.name if obj.male_parrot else None
+    
+    def get_female_parrot_name(self, obj):
+        return obj.female_parrot.name if obj.female_parrot else None
 
 class ExpenseSchema(SQLAlchemyAutoSchema):
     class Meta:

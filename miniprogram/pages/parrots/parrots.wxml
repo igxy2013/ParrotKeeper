@@ -39,7 +39,7 @@
         <view class="parrot-avatar">
           <image 
             class="parrot-image" 
-            src="{{item.photo_url || '/images/default-parrot.svg'}}" 
+            src="{{item.avatar_url || item.photo_url || '/images/default-parrot.svg'}}" 
             mode="aspectFill"
             binderror="handleImageError"
             data-id="{{item.id}}"

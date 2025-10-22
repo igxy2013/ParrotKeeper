@@ -216,6 +216,7 @@
 .login-icon {
   font-size: 80rpx;
   margin-bottom: 20rpx;
+  text-align: center;
 }
 
 .login-text {
@@ -223,12 +224,14 @@
   color: #333333;
   font-weight: 500;
   margin-bottom: 10rpx;
+  text-align: center;
 }
 
 .login-subtitle {
   font-size: 26rpx;
   color: #666666;
   margin-bottom: 30rpx;
+  text-align: center;
 }
 
 /* 禁用状态样式 */

@@ -17,6 +17,9 @@ def create_app(config_name=None):
     config_name = config_name or os.environ.get('FLASK_ENV', 'default')
     app.config.from_object(config[config_name])
     
+    # 设置JSON编码，确保中文字符正确显示
+    app.config['JSON_AS_ASCII'] = False
+    
     # 初始化扩展
     db.init_app(app)
     CORS(app, supports_credentials=True)

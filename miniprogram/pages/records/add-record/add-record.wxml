@@ -23,12 +23,20 @@
           <text class="type-text">清洁记录</text>
         </view>
         <view 
-          class="type-item {{recordType === 'health_check' ? 'active' : ''}}"
+          class="type-item {{recordType === 'health' ? 'active' : ''}}"
           bindtap="selectType"
-          data-type="health_check"
+          data-type="health"
         >
           <view class="type-icon">🏥</view>
           <text class="type-text">健康检查</text>
+        </view>
+        <view 
+          class="type-item {{recordType === 'breeding' ? 'active' : ''}}"
+          bindtap="selectType"
+          data-type="breeding"
+        >
+          <view class="type-icon">🥚</view>
+          <text class="type-text">繁殖记录</text>
         </view>
       </view>
     </view>
@@ -83,13 +91,12 @@
       
       <view class="form-item">
         <text class="form-label">食物类型</text>
-        <input 
-          class="form-input" 
-          placeholder="如：种子、水果、蔬菜等" 
-          value="{{formData.food_type}}"
-          bindinput="onInputChange"
-          data-field="food_type"
-        />
+        <view class="form-picker" bindtap="showFeedTypePicker">
+          <text class="picker-text {{formData.food_type ? '' : 'placeholder'}}">
+            {{selectedFeedTypeName || '选择食物类型'}}
+          </text>
+          <text class="picker-arrow">▼</text>
+        </view>
       </view>
       
       <view class="form-item">
@@ -105,8 +112,35 @@
       </view>
     </view>
 
+    <!-- 清洁记录特有字段 -->
+    <view class="form-section" wx:if="{{recordType === 'cleaning'}}">
+      <view class="section-title">清洁详情</view>
+      
+      <view class="form-item">
+        <text class="form-label required">清洁类型</text>
+        <view class="form-picker" bindtap="showCleaningTypePicker">
+          <text class="picker-text {{formData.cleaning_type ? '' : 'placeholder'}}">
+            {{cleaningTypeText || '请选择清洁类型'}}
+          </text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">清洁描述</text>
+        <textarea 
+          class="form-textarea" 
+          placeholder="请输入清洁的详细描述" 
+          value="{{formData.description}}"
+          bindinput="onInputChange"
+          data-field="description"
+          maxlength="500"
+        />
+      </view>
+    </view>
+
     <!-- 健康检查特有字段 -->
-    <view class="form-section" wx:if="{{recordType === 'health_check'}}">
+    <view class="form-section" wx:if="{{recordType === 'health'}}">
       <view class="section-title">健康详情</view>
       
       <view class="form-item">
@@ -141,6 +175,115 @@
           </text>
           <text class="picker-arrow">▼</text>
         </view>
+      </view>
+    </view>
+
+    <!-- 繁殖记录特有字段 -->
+    <view class="form-section" wx:if="{{recordType === 'breeding'}}">
+      <view class="section-title">繁殖详情</view>
+      
+      <view class="form-item">
+        <text class="form-label required">雄性鹦鹉</text>
+        <view class="form-picker" bindtap="showMaleParrotPicker">
+          <text class="picker-text {{formData.male_parrot_id ? '' : 'placeholder'}}">
+            {{selectedMaleParrotName || '请选择雄性鹦鹉'}}
+          </text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label required">雌性鹦鹉</text>
+        <view class="form-picker" bindtap="showFemaleParrotPicker">
+          <text class="picker-text {{formData.female_parrot_id ? '' : 'placeholder'}}">
+            {{selectedFemaleParrotName || '请选择雌性鹦鹉'}}
+          </text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label required">交配日期</text>
+        <picker 
+          mode="date" 
+          value="{{formData.mating_date}}" 
+          bindchange="onMatingDateChange"
+          end="{{today}}"
+        >
+          <view class="picker-item">
+            <text class="picker-text {{formData.mating_date ? '' : 'placeholder'}}">
+              {{formData.mating_date || '选择交配日期'}}
+            </text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">产蛋日期</text>
+        <picker 
+          mode="date" 
+          value="{{formData.egg_laying_date}}" 
+          bindchange="onEggLayingDateChange"
+          end="{{today}}"
+        >
+          <view class="picker-item">
+            <text class="picker-text {{formData.egg_laying_date ? '' : 'placeholder'}}">
+              {{formData.egg_laying_date || '选择产蛋日期'}}
+            </text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">蛋数量</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入蛋的数量" 
+          value="{{formData.egg_count}}"
+          bindinput="onInputChange"
+          data-field="egg_count"
+          type="number"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">孵化日期</text>
+        <picker 
+          mode="date" 
+          value="{{formData.hatching_date}}" 
+          bindchange="onHatchingDateChange"
+          end="{{today}}"
+        >
+          <view class="picker-item">
+            <text class="picker-text {{formData.hatching_date ? '' : 'placeholder'}}">
+              {{formData.hatching_date || '选择孵化日期'}}
+            </text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">幼鸟数量</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入成功孵化的幼鸟数量" 
+          value="{{formData.chick_count}}"
+          bindinput="onInputChange"
+          data-field="chick_count"
+          type="number"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">成功率 (%)</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入繁殖成功率" 
+          value="{{formData.success_rate}}"
+          bindinput="onInputChange"
+          data-field="success_rate"
+          type="digit"
+        />
       </view>
     </view>
 
@@ -255,6 +398,72 @@
   </view>
 </view>
 
+<!-- 清洁类型选择器模态框 -->
+<view class="modal-overlay" wx:if="{{showCleaningTypeModal}}" bindtap="hideCleaningTypePicker">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择清洁类型</text>
+      <text class="modal-close" bindtap="hideCleaningTypePicker">×</text>
+    </view>
+    <view class="modal-body">
+      <view class="cleaning-type-list">
+        <view 
+          class="cleaning-type-item" 
+          bindtap="selectCleaningType"
+          data-type="cage"
+        >
+          <text class="cleaning-type-text">笼子清洁</text>
+        </view>
+        <view 
+          class="cleaning-type-item" 
+          bindtap="selectCleaningType"
+          data-type="toys"
+        >
+          <text class="cleaning-type-text">玩具清洁</text>
+        </view>
+        <view 
+          class="cleaning-type-item" 
+          bindtap="selectCleaningType"
+          data-type="perches"
+        >
+          <text class="cleaning-type-text">栖木清洁</text>
+        </view>
+        <view 
+          class="cleaning-type-item" 
+          bindtap="selectCleaningType"
+          data-type="food_water"
+        >
+          <text class="cleaning-type-text">食物和水清洁</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 饲料类型选择器模态框 -->
+<view class="modal-overlay" wx:if="{{showFeedTypeModal}}" bindtap="hideFeedTypePicker">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择食物类型</text>
+      <text class="modal-close" bindtap="hideFeedTypePicker">×</text>
+    </view>
+    <view class="modal-body">
+      <view 
+        class="feed-type-item" 
+        wx:for="{{feedTypeList}}" 
+        wx:key="id"
+        bindtap="selectFeedType"
+        data-id="{{item.id}}"
+        data-name="{{item.name}}"
+      >
+        <text class="feed-type-name">{{item.name}}</text>
+        <text class="feed-type-brand">{{item.brand}}</text>
+        <text class="feed-type-type">{{item.type}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
 <!-- 健康状态选择弹窗 -->
 <view class="modal-overlay" wx:if="{{showHealthStatusModal}}" bindtap="hideHealthStatusPicker">
   <view class="modal-content" catchtap="stopPropagation">
@@ -295,6 +504,62 @@
         >
           <view class="status-indicator observation"></view>
           <text class="status-text">观察中</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 雄性鹦鹉选择弹窗 -->
+<view class="modal" wx:if="{{showMaleParrotModal}}" bindtap="hideMaleParrotPicker">
+  <view class="modal-content" bindtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择雄性鹦鹉</text>
+      <text class="modal-close" bindtap="hideMaleParrotPicker">×</text>
+    </view>
+    <view class="modal-body">
+      <view class="parrot-list">
+        <view 
+          class="parrot-item" 
+          wx:for="{{parrotList}}" 
+          wx:key="id"
+          data-id="{{item.id}}"
+          data-name="{{item.name}}"
+          bindtap="selectMaleParrot"
+        >
+          <image class="parrot-avatar" src="{{item.avatar_url || item.photo_url || '/images/default-parrot.png'}}" />
+          <view class="parrot-info">
+            <text class="parrot-name">{{item.name}}</text>
+            <text class="parrot-species">{{item.species}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 雌性鹦鹉选择弹窗 -->
+<view class="modal" wx:if="{{showFemaleParrotModal}}" bindtap="hideFemaleParrotPicker">
+  <view class="modal-content" bindtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择雌性鹦鹉</text>
+      <text class="modal-close" bindtap="hideFemaleParrotPicker">×</text>
+    </view>
+    <view class="modal-body">
+      <view class="parrot-list">
+        <view 
+          class="parrot-item" 
+          wx:for="{{parrotList}}" 
+          wx:key="id"
+          data-id="{{item.id}}"
+          data-name="{{item.name}}"
+          bindtap="selectFemaleParrot"
+        >
+          <image class="parrot-avatar" src="{{item.avatar_url || item.photo_url || '/images/default-parrot.png'}}" />
+          <view class="parrot-info">
+            <text class="parrot-name">{{item.name}}</text>
+            <text class="parrot-species">{{item.species}}</text>
+          </view>
         </view>
       </view>
     </view>
