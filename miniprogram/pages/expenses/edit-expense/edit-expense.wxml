@@ -1,0 +1,79 @@
+<!--pages/expenses/edit-expense/edit-expense.wxml-->
+<view class="container">
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <form bindsubmit="onSubmit" wx:else>
+    <view class="form-section">
+      <view class="form-item">
+        <text class="label required">支出类别</text>
+        <picker bindchange="onCategoryChange" range="{{categories}}" range-key="label">
+          <view class="picker">
+            {{getCategoryLabel(formData.category)}}
+            <text class="arrow">></text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-item">
+        <text class="label required">支出金额</text>
+        <input 
+          class="input" 
+          type="digit" 
+          placeholder="请输入金额" 
+          value="{{formData.amount}}"
+          bindinput="onAmountInput"
+        />
+        <text class="unit">元</text>
+      </view>
+
+      <view class="form-item">
+        <text class="label">支出描述</text>
+        <textarea 
+          class="textarea" 
+          placeholder="请输入支出描述（可选）" 
+          value="{{formData.description}}"
+          bindinput="onDescriptionInput"
+          maxlength="200"
+        />
+      </view>
+
+      <view class="form-item">
+        <text class="label required">支出日期</text>
+        <picker mode="date" bindchange="onDateChange" value="{{formData.expense_date}}">
+          <view class="picker">
+            {{formData.expense_date || '请选择日期'}}
+            <text class="arrow">></text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-item">
+        <text class="label">关联鹦鹉</text>
+        <picker 
+          bindchange="onParrotChange" 
+          range="{{getParrotPickerRange()}}"
+          value="{{getSelectedParrotIndex()}}"
+        >
+          <view class="picker">
+            {{getParrotPickerRange()[getSelectedParrotIndex()]}}
+            <text class="arrow">></text>
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="form-actions">
+      <button class="delete-btn" type="button" bindtap="onDelete">删除</button>
+      <button 
+        class="submit-btn" 
+        form-type="submit" 
+        disabled="{{submitting}}"
+        loading="{{submitting}}"
+      >
+        {{submitting ? '更新中...' : '更新支出'}}
+      </button>
+    </view>
+  </form>
+</view>

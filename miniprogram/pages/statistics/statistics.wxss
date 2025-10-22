@@ -168,6 +168,15 @@
   color: #999;
 }
 
+.manage-btn {
+  background: #3498db;
+  color: white;
+  border-radius: 8rpx;
+  padding: 10rpx 20rpx;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
 .card-content {
   padding: 35rpx;
 }

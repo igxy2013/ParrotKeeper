@@ -7,7 +7,10 @@
     "pages/records/records",
     "pages/records/add-record/add-record",
     "pages/statistics/statistics",
-    "pages/profile/profile"
+    "pages/profile/profile",
+    "pages/expenses/expenses",
+    "pages/expenses/add-expense/add-expense",
+    "pages/expenses/edit-expense/edit-expense"
   ],
   "window": {
     "backgroundTextStyle": "light",

@@ -322,21 +322,23 @@ Page({
       
       const uploadRes = await new Promise((resolve, reject) => {
         wx.uploadFile({
-        url: app.globalData.baseUrl + '/api/upload/image',
-        filePath: filePath,
-        name: 'file',
-        header: {
-          'Authorization': `Bearer ${wx.getStorageSync('token')}`
-        },
-        success: resolve,
-        fail: reject
-      })
+          url: app.globalData.baseUrl + '/api/upload/image',
+          filePath: filePath,
+          name: 'file',
+          header: {
+            'X-OpenID': app.globalData.openid
+          },
+          success: resolve,
+          fail: reject
+        })
       })
       
       const result = JSON.parse(uploadRes.data)
       if (result.success) {
+        // 将相对路径转换为完整URL
+        const fullUrl = app.globalData.baseUrl + '/uploads/' + result.data.url
         this.setData({
-          'formData.photo_url': result.data.url
+          'formData.photo_url': fullUrl
         })
         app.showSuccess('上传成功')
       } else {

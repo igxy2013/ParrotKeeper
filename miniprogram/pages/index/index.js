@@ -384,5 +384,29 @@ Page({
     wx.navigateTo({
       url: '/pages/parrots/add-parrot/add-parrot'
     })
+  },
+
+  // 快速添加支出
+  quickExpense() {
+    if (!this.data.isLogin) {
+      app.showError('请先登录后使用此功能')
+      return
+    }
+    
+    wx.navigateTo({
+      url: '/pages/expenses/add-expense/add-expense'
+    })
+  },
+
+  // 管理支出
+  goToExpenseManagement() {
+    if (!this.data.isLogin) {
+      app.showError('请先登录后使用此功能')
+      return
+    }
+    
+    wx.navigateTo({
+      url: '/pages/expenses/expenses'
+    })
   }
 })

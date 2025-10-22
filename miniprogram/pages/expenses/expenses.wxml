@@ -1,0 +1,124 @@
+<!--pages/expenses/expenses.wxml-->
+<view class="page-container">
+  <!-- 汇总信息 -->
+  <view class="card">
+    <view class="card-header">
+      <text class="card-title">支出汇总</text>
+    </view>
+    <view class="card-content">
+      <view class="summary-grid">
+        <view class="summary-item">
+          <text class="summary-label">本月支出</text>
+          <text class="summary-value">¥{{summary.monthly_total.toFixed(2)}}</text>
+        </view>
+        <view class="summary-item">
+          <text class="summary-label">本年支出</text>
+          <text class="summary-value">¥{{summary.yearly_total.toFixed(2)}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作栏 -->
+  <view class="card">
+    <view class="card-content">
+      <view class="action-bar">
+        <button class="btn btn-primary btn-medium" bindtap="onAddExpense">
+          <text class="action-icon">➕</text>
+          添加支出
+        </button>
+        <button class="btn btn-secondary btn-medium" bindtap="onShowFilter">
+          <text class="action-icon">🔍</text>
+          筛选
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选面板 -->
+  <view class="card" wx:if="{{showFilter}}">
+    <view class="card-header">
+      <text class="card-title">筛选条件</text>
+    </view>
+    <view class="card-content">
+      <view class="form-group">
+        <text class="form-label">类别：</text>
+        <picker bindchange="onCategoryChange" value="{{selectedCategory}}" range-key="label" range="{{categories}}">
+          <view class="form-picker">
+            {{selectedCategory ? getCategoryLabel(selectedCategory) : '全部类别'}}
+            <text class="picker-arrow">></text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="form-group">
+        <text class="form-label">开始日期：</text>
+        <picker mode="date" bindchange="onStartDateChange" value="{{startDate}}">
+          <view class="form-picker">
+            {{startDate || '选择日期'}}
+            <text class="picker-arrow">></text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="form-group">
+        <text class="form-label">结束日期：</text>
+        <picker mode="date" bindchange="onEndDateChange" value="{{endDate}}">
+          <view class="form-picker">
+            {{endDate || '选择日期'}}
+            <text class="picker-arrow">></text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="filter-actions">
+        <button class="btn btn-secondary btn-small" bindtap="onResetFilter">重置</button>
+        <button class="btn btn-primary btn-small" bindtap="onApplyFilter">应用</button>
+      </view>
+    </view>
+  </view>
+  <!-- 支出列表 -->
+  <view class="card">
+    <view class="card-header">
+      <text class="card-title">支出记录</text>
+      <text class="total-text">共 {{expenses.length}} 条记录，总计 ¥{{totalAmount.toFixed(2)}}</text>
+    </view>
+    <view class="card-content">
+      <view class="list-container">
+        <view class="list-item" wx:for="{{expenses}}" wx:key="id">
+          <view class="list-item-content" bindtap="onEditExpense" data-id="{{item.id}}">
+            <view class="list-item-main">
+              <view class="list-item-title">{{getCategoryLabel(item.category)}}</view>
+              <view class="list-item-desc" wx:if="{{item.description}}">{{item.description}}</view>
+              <view class="list-item-meta">
+                <text class="meta-date">{{item.expense_date}}</text>
+                <text class="meta-parrot" wx:if="{{item.parrot_name}}">{{item.parrot_name}}</text>
+              </view>
+            </view>
+            <view class="list-item-value">¥{{item.amount.toFixed(2)}}</view>
+          </view>
+          <view class="list-item-actions">
+            <button class="btn btn-secondary btn-small" bindtap="onEditExpense" data-id="{{item.id}}">编辑</button>
+            <button class="btn btn-danger btn-small" bindtap="onDeleteExpense" data-id="{{item.id}}" data-index="{{index}}">删除</button>
+          </view>
+        </view>
+
+        <!-- 加载状态 -->
+        <view class="loading-state" wx:if="{{loading}}">
+          <text>加载中...</text>
+        </view>
+
+        <!-- 空状态 -->
+        <view class="empty-state" wx:if="{{!loading && expenses.length === 0}}">
+          <text class="empty-text">暂无支出记录</text>
+          <button class="btn btn-primary btn-medium" bindtap="onAddExpense">添加第一条支出</button>
+        </view>
+
+        <!-- 没有更多数据 -->
+        <view class="no-more-state" wx:if="{{!hasMore && expenses.length > 0}}">
+          <text>没有更多数据了</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

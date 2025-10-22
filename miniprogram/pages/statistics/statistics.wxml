@@ -115,7 +115,6 @@
     <view class="card">
       <view class="card-header">
         <text class="card-title">支出分析</text>
-        <text class="card-subtitle">本月各类支出占比</text>
       </view>
       <view class="card-content">
         <view class="expense-list" wx:if="{{expenseAnalysis.length > 0}}">

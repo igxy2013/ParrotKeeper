@@ -60,6 +60,14 @@
             <view class="action-icon">➕</view>
             <text class="action-text">添加鹦鹉</text>
           </view>
+          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickExpense">
+            <view class="action-icon">💰</view>
+            <text class="action-text">添加支出</text>
+          </view>
+          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="goToExpenseManagement">
+            <view class="action-icon">📊</view>
+            <text class="action-text">管理支出</text>
+          </view>
         </view>
       </view>
     </view>

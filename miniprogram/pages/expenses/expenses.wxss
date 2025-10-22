@@ -1,0 +1,149 @@
+/* pages/expenses/expenses.wxss */
+
+/* 汇总信息样式 */
+.summary-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.summary-item {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12rpx;
+  color: white;
+}
+
+.summary-label {
+  display: block;
+  font-size: 28rpx;
+  margin-bottom: 10rpx;
+  opacity: 0.9;
+}
+
+.summary-value {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+/* 操作栏样式 */
+.action-bar {
+  display: flex;
+  gap: 20rpx;
+}
+
+.action-bar .btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.action-icon {
+  font-size: 32rpx;
+}
+
+/* 筛选面板样式 */
+.filter-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 30rpx;
+}
+
+.filter-actions .btn {
+  flex: 1;
+}
+
+/* 支出列表样式 */
+.total-text {
+  font-size: 28rpx;
+  color: #666;
+  margin-left: 10rpx;
+}
+
+.list-container {
+  margin-top: 20rpx;
+}
+
+.list-item {
+  border-bottom: 1rpx solid #f0f0f0;
+  padding: 20rpx 0;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15rpx;
+}
+
+.list-item-main {
+  flex: 1;
+}
+
+.list-item-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.list-item-desc {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.list-item-meta {
+  display: flex;
+  gap: 20rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.meta-date, .meta-parrot {
+  position: relative;
+}
+
+.meta-parrot::before {
+  content: '•';
+  margin-right: 8rpx;
+}
+
+.list-item-value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #e74c3c;
+}
+
+.list-item-actions {
+  display: flex;
+  gap: 15rpx;
+  justify-content: flex-end;
+}
+
+/* 状态样式 */
+.loading-state, .empty-state, .no-more-state {
+  text-align: center;
+  padding: 60rpx 20rpx;
+  color: #999;
+}
+
+.empty-text {
+  display: block;
+  font-size: 32rpx;
+  margin-bottom: 30rpx;
+}
+
+.no-more-state {
+  padding: 30rpx 20rpx;
+  font-size: 28rpx;
+}

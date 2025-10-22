@@ -88,11 +88,14 @@ Page({
   // 加载喂食趋势
   async loadFeedingTrends() {
     try {
+      // 根据period转换为days参数
+      const days = this.data.feedingPeriod === 'week' ? 7 : 30
+      
       const res = await app.request({
         url: '/api/statistics/feeding-trends',
         method: 'GET',
         data: {
-          period: this.data.feedingPeriod
+          days: days
         }
       })
       
