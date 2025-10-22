@@ -81,9 +81,8 @@ if __name__ == '__main__':
     # 初始化数据库
     init_db(app)
     
-    # 运行应用
-    app.run(
-        host='0.0.0.0',
-        port=5085,
-        debug=True
-    )
+    # 使用waitress生产级WSGI服务器
+    from waitress import serve
+    print("启动生产服务器...")
+    print("服务器地址: http://0.0.0.0:5085")
+    serve(app, host='0.0.0.0', port=5085)
