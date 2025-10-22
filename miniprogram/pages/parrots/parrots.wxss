@@ -1,0 +1,370 @@
+/* 页面容器 */
+.container {
+  background: #f5f7fa;
+  min-height: 100vh;
+  padding-bottom: 120rpx;
+}
+
+/* 搜索区域 */
+.search-section {
+  background: white;
+  padding: 30rpx 20rpx 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 50rpx;
+  padding: 0 30rpx;
+  height: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  background: transparent;
+}
+
+.search-icon {
+  font-size: 32rpx;
+  color: #999;
+  margin-right: 20rpx;
+}
+
+/* 筛选栏 */
+.filter-bar {
+  display: flex;
+  gap: 20rpx;
+  overflow-x: auto;
+  padding: 10rpx 0;
+}
+
+.filter-item {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx;
+  background: #f0f0f0;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.filter-item.active {
+  background: #007AFF;
+  color: white;
+}
+
+/* 鹦鹉列表 */
+.parrot-list {
+  padding: 20rpx;
+}
+
+.parrot-card {
+  background: white;
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.parrot-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.12);
+}
+
+/* 主要内容区域 */
+.parrot-main {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+/* 鹦鹉头像 */
+.parrot-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.parrot-image {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid #f0f0f0;
+}
+
+.status-badge {
+  position: absolute;
+  bottom: -6rpx;
+  right: -6rpx;
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16rpx;
+  font-weight: bold;
+  color: white;
+  border: 2rpx solid white;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
+.status-healthy {
+  background: #4CAF50;
+}
+
+.status-sick {
+  background: #f44336;
+}
+
+.status-recovering {
+  background: #ff9800;
+}
+
+.status-observation {
+  background: #2196F3;
+}
+
+/* 鹦鹉信息 */
+.parrot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name-section {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 6rpx;
+}
+
+.parrot-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.parrot-gender {
+  font-size: 24rpx;
+  font-weight: 600;
+  padding: 2rpx 8rpx;
+  border-radius: 8rpx;
+  line-height: 1;
+}
+
+.parrot-gender.male {
+  color: #2196F3;
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.parrot-gender.female {
+  color: #E91E63;
+  background: rgba(233, 30, 99, 0.1);
+}
+
+.parrot-gender:not(.male):not(.female) {
+  color: #9E9E9E;
+  background: rgba(158, 158, 158, 0.1);
+}
+
+.parrot-species {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+  font-weight: 500;
+}
+
+/* 信息标签 */
+.info-tags {
+  display: flex;
+  gap: 8rpx;
+  flex-wrap: wrap;
+}
+
+.info-tag {
+  font-size: 22rpx;
+  color: #666;
+  background: #f5f5f5;
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
+  font-weight: 500;
+}
+
+.status-tag {
+  color: white;
+  font-weight: 600;
+}
+
+.status-tag.status-healthy {
+  background: #4CAF50;
+}
+
+.status-tag.status-sick {
+  background: #f44336;
+}
+
+.status-tag.status-recovering {
+  background: #ff9800;
+}
+
+.status-tag.status-observation {
+  background: #2196F3;
+}
+
+/* 操作按钮 */
+.parrot-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.9);
+}
+
+.action-btn.edit {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+/* 备注信息 */
+.parrot-notes {
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8rpx;
+  border-left: 3rpx solid #667eea;
+}
+
+.notes-text {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 100rpx 40rpx;
+  color: #999;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-bottom: 10rpx;
+  color: #666;
+}
+
+.empty-subtitle {
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 40rpx;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 40rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #f0f0f0;
+  border-top: 4rpx solid #007AFF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 浮动添加按钮 */
+.fab {
+  position: fixed;
+  bottom: 100rpx;
+  right: 30rpx;
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, #007AFF, #0056CC);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(0, 122, 255, 0.3);
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.fab:active {
+  transform: scale(0.9);
+}
+
+.fab-icon {
+  font-size: 48rpx;
+  color: white;
+  font-weight: 300;
+}
+
+/* 通用按钮样式 */
+.btn {
+  padding: 20rpx 40rpx;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #007AFF, #0056CC);
+  color: white;
+}
+
+.btn-large {
+  padding: 24rpx 48rpx;
+  font-size: 30rpx;
+}
+
+.mt-30 {
+  margin-top: 30rpx;
+}
+
+.btn:active {
+  transform: scale(0.95);
+}

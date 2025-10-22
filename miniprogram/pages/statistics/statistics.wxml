@@ -1,0 +1,215 @@
+<!--pages/statistics/statistics.wxml-->
+<view class="page-container">
+  <!-- 游客模式提示 -->
+  <view wx:if="{{!isLogin}}" class="guest-tip">
+    <text class="tip-text">🎯 您正在以游客身份浏览示例数据</text>
+    <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
+  </view>
+
+  <!-- 概览统计 -->
+  <view class="overview-section">
+    <view class="section-title">
+      <text class="title-text">数据概览</text>
+      <text class="title-subtitle">{{currentMonth}}月统计</text>
+    </view>
+    
+    <view class="overview-grid">
+      <view class="overview-card">
+        <view class="card-icon">🦜</view>
+        <view class="card-content">
+          <text class="card-number">{{overview.total_parrots || 0}}</text>
+          <text class="card-label">鹦鹉总数</text>
+        </view>
+      </view>
+      
+      <view class="overview-card">
+        <view class="card-icon">🍎</view>
+        <view class="card-content">
+          <text class="card-number">{{overview.monthly_feeding || 0}}</text>
+          <text class="card-label">本月喂食</text>
+        </view>
+      </view>
+      
+      <view class="overview-card">
+        <view class="card-icon">🏥</view>
+        <view class="card-content">
+          <text class="card-number">{{overview.monthly_health_checks || 0}}</text>
+          <text class="card-label">健康检查</text>
+        </view>
+      </view>
+      
+      <view class="overview-card">
+        <view class="card-icon">💰</view>
+        <view class="card-content">
+          <text class="card-number">¥{{overview.monthly_expense || 0}}</text>
+          <text class="card-label">本月支出</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 健康状态分布 -->
+  <view class="health-section">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">健康状态分布</text>
+      </view>
+      <view class="card-content">
+        <view class="health-stats">
+          <view class="health-item">
+            <view class="health-indicator healthy"></view>
+            <text class="health-label">健康</text>
+            <text class="health-count">{{overview.health_status.healthy || 0}}</text>
+          </view>
+          <view class="health-item">
+            <view class="health-indicator sick"></view>
+            <text class="health-label">生病</text>
+            <text class="health-count">{{overview.health_status.sick || 0}}</text>
+          </view>
+          <view class="health-item">
+            <view class="health-indicator recovering"></view>
+            <text class="health-label">康复中</text>
+            <text class="health-count">{{overview.health_status.recovering || 0}}</text>
+          </view>
+          <view class="health-item">
+            <view class="health-indicator observation"></view>
+            <text class="health-label">观察中</text>
+            <text class="health-count">{{overview.health_status.observation || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 喂食趋势 -->
+  <view class="feeding-trends-section">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">喂食趋势</text>
+        <view class="time-filter">
+          <text class="filter-btn {{feedingPeriod === 'week' ? 'active' : ''}}" bindtap="changeFeedingPeriod" data-period="week">7天</text>
+          <text class="filter-btn {{feedingPeriod === 'month' ? 'active' : ''}}" bindtap="changeFeedingPeriod" data-period="month">30天</text>
+        </view>
+      </view>
+      <view class="card-content">
+        <view class="chart-container">
+          <view class="chart-placeholder" wx:if="{{feedingTrends.length === 0}}">
+            <text class="placeholder-text">暂无数据</text>
+          </view>
+          <view class="trend-chart" wx:else>
+            <view class="chart-item" wx:for="{{feedingTrends}}" wx:key="date">
+              <view class="chart-bar">
+                <view class="bar-fill" style="height: {{item.percentage}}%"></view>
+              </view>
+              <text class="chart-label">{{item.date_short}}</text>
+              <text class="chart-value">{{item.count}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 支出分析 -->
+  <view class="expense-section">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">支出分析</text>
+        <text class="card-subtitle">本月各类支出占比</text>
+      </view>
+      <view class="card-content">
+        <view class="expense-list" wx:if="{{expenseAnalysis.length > 0}}">
+          <view class="expense-item" wx:for="{{expenseAnalysis}}" wx:key="category">
+            <view class="expense-info">
+              <text class="expense-category">{{item.category}}</text>
+              <text class="expense-amount">¥{{item.amount}}</text>
+            </view>
+            <view class="expense-bar">
+              <view class="expense-fill" style="width: {{item.percentage}}%"></view>
+            </view>
+            <text class="expense-percentage">{{item.percentage}}%</text>
+          </view>
+        </view>
+        <view class="empty-placeholder" wx:else>
+          <text class="placeholder-text">暂无支出记录</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 护理频率 -->
+  <view class="care-frequency-section">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">护理频率统计</text>
+        <text class="card-subtitle">最近30天</text>
+      </view>
+      <view class="card-content">
+        <view class="frequency-grid">
+          <view class="frequency-item">
+            <view class="frequency-icon">🍎</view>
+            <view class="frequency-info">
+              <text class="frequency-label">平均喂食</text>
+              <text class="frequency-value">{{careFrequency.avg_feeding_per_day || 0}}次/天</text>
+            </view>
+          </view>
+          
+          <view class="frequency-item">
+            <view class="frequency-icon">🧽</view>
+            <view class="frequency-info">
+              <text class="frequency-label">清洁频率</text>
+              <text class="frequency-value">{{careFrequency.avg_cleaning_per_week || 0}}次/周</text>
+            </view>
+          </view>
+          
+          <view class="frequency-item">
+            <view class="frequency-icon">🏥</view>
+            <view class="frequency-info">
+              <text class="frequency-label">健康检查</text>
+              <text class="frequency-value">{{careFrequency.avg_health_check_per_month || 0}}次/月</text>
+            </view>
+          </view>
+          
+          <view class="frequency-item">
+            <view class="frequency-icon">📊</view>
+            <view class="frequency-info">
+              <text class="frequency-label">记录完整度</text>
+              <text class="frequency-value">{{careFrequency.record_completeness || 0}}%</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 品种分布 -->
+  <view class="species-section">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">品种分布</text>
+      </view>
+      <view class="card-content">
+        <view class="species-list" wx:if="{{speciesDistribution.length > 0}}">
+          <view class="species-item" wx:for="{{speciesDistribution}}" wx:key="species">
+            <view class="species-info">
+              <text class="species-name">{{item.species}}</text>
+              <text class="species-count">{{item.count}}只</text>
+            </view>
+            <view class="species-bar">
+              <view class="species-fill" style="width: {{item.percentage}}%"></view>
+            </view>
+          </view>
+        </view>
+        <view class="empty-placeholder" wx:else>
+          <text class="placeholder-text">暂无数据</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+</view>

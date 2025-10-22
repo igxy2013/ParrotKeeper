@@ -1,0 +1,415 @@
+/* pages/parrots/detail/detail.wxss */
+.page-container {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #f3f3f3;
+  border-top: 4rpx solid #4CAF50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 头部照片区域 */
+.photo-section {
+  background: white;
+  padding: 40rpx;
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+}
+
+.photo-container {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.parrot-photo {
+  width: 100%;
+  height: 100%;
+}
+
+.photo-overlay {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+}
+
+.status-badge {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: white;
+  font-weight: 500;
+}
+
+.status-badge.status-healthy {
+  background: #4CAF50;
+}
+
+.status-badge.status-sick {
+  background: #f44336;
+}
+
+.status-badge.status-recovering {
+  background: #ff9800;
+}
+
+.status-badge.status-observation {
+  background: #2196f3;
+}
+
+.basic-info {
+  flex: 1;
+}
+
+.parrot-name {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.parrot-species {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 15rpx;
+}
+
+.parrot-gender {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.gender-icon {
+  font-size: 32rpx;
+  color: #4CAF50;
+}
+
+.gender-text {
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 信息区域 */
+.info-sections {
+  padding: 20rpx;
+}
+
+.info-section {
+  background: white;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  overflow: hidden;
+}
+
+.section-title {
+  padding: 30rpx 30rpx 20rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1rpx solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.view-all {
+  font-size: 26rpx;
+  color: #4CAF50;
+  font-weight: normal;
+}
+
+/* 信息列表 */
+.info-list {
+  padding: 20rpx 0;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f8f8f8;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #666;
+  width: 200rpx;
+  flex-shrink: 0;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #333;
+  flex: 1;
+  text-align: right;
+}
+
+.health-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10rpx;
+}
+
+.status-indicator {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+}
+
+.status-indicator.status-healthy {
+  background: #4CAF50;
+}
+
+.status-indicator.status-sick {
+  background: #f44336;
+}
+
+.status-indicator.status-recovering {
+  background: #ff9800;
+}
+
+.status-indicator.status-observation {
+  background: #2196f3;
+}
+
+.status-text {
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* 统计网格 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30rpx;
+  padding: 30rpx;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #4CAF50;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 备注内容 */
+.notes-content {
+  padding: 30rpx;
+}
+
+.notes-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 记录列表 */
+.records-list {
+  padding: 20rpx 0;
+}
+
+.record-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f8f8f8;
+}
+
+.record-item:last-child {
+  border-bottom: none;
+}
+
+.record-type {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.record-type.type-feeding {
+  background: #e8f5e8;
+}
+
+.record-type.type-cleaning {
+  background: #e3f2fd;
+}
+
+.record-type.type-health_check {
+  background: #fff3e0;
+}
+
+.type-icon {
+  font-size: 24rpx;
+}
+
+.record-content {
+  flex: 1;
+}
+
+.record-title {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.record-time {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.record-notes {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  padding: 20rpx;
+  padding-bottom: 40rpx;
+}
+
+.action-row {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.action-row:last-child {
+  margin-bottom: 0;
+}
+
+.action-btn {
+  flex: 1;
+  height: 100rpx;
+  border-radius: 16rpx;
+  border: none;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.action-btn:active::after {
+  opacity: 1;
+}
+
+.action-btn.feeding {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
+}
+
+.action-btn.cleaning {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  box-shadow: 0 4rpx 12rpx rgba(33, 150, 243, 0.3);
+}
+
+.action-btn.health {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
+}
+
+.action-btn.edit {
+  background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+  box-shadow: 0 4rpx 12rpx rgba(156, 39, 176, 0.3);
+}
+
+.action-btn.records {
+  background: linear-gradient(135deg, #607d8b, #455a64);
+  box-shadow: 0 4rpx 12rpx rgba(96, 125, 139, 0.3);
+}
+
+.action-btn.delete {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  box-shadow: 0 4rpx 12rpx rgba(244, 67, 54, 0.3);
+}
+
+.btn-icon {
+  font-size: 32rpx;
+}
+
+.btn-text {
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+/* 照片显示区域 */
+.photo-display {
+  text-align: center;
+  padding: 20rpx;
+}
+
+.detail-photo {
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid #e5e5e5;
+}

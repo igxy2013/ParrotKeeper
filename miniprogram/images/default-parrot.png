@@ -1,0 +1,30 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆形 -->
+  <circle cx="100" cy="100" r="100" fill="#e8f5e8"/>
+  
+  <!-- 鹦鹉身体 -->
+  <ellipse cx="100" cy="120" rx="45" ry="55" fill="#4CAF50"/>
+  
+  <!-- 鹦鹉头部 -->
+  <circle cx="100" cy="75" r="35" fill="#66BB6A"/>
+  
+  <!-- 鹦鹉喙 -->
+  <path d="M 85 75 Q 70 80 75 85 Q 80 82 85 80 Z" fill="#FF9800"/>
+  
+  <!-- 鹦鹉眼睛 -->
+  <circle cx="90" cy="70" r="8" fill="white"/>
+  <circle cx="110" cy="70" r="8" fill="white"/>
+  <circle cx="90" cy="70" r="4" fill="black"/>
+  <circle cx="110" cy="70" r="4" fill="black"/>
+  
+  <!-- 鹦鹉翅膀 -->
+  <ellipse cx="75" cy="110" rx="15" ry="30" fill="#388E3C" transform="rotate(-20 75 110)"/>
+  <ellipse cx="125" cy="110" rx="15" ry="30" fill="#388E3C" transform="rotate(20 125 110)"/>
+  
+  <!-- 鹦鹉尾巴 -->
+  <ellipse cx="100" cy="165" rx="20" ry="25" fill="#2E7D32"/>
+  
+  <!-- 鹦鹉脚 -->
+  <rect x="90" y="170" width="4" height="15" fill="#FF9800"/>
+  <rect x="106" y="170" width="4" height="15" fill="#FF9800"/>
+</svg>

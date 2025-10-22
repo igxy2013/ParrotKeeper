@@ -1,0 +1,246 @@
+/* pages/index/index.wxss */
+
+.page-container {
+  background: linear-gradient(180deg, #f8f9ff 0%, #f0f2ff 50%, #e8ecff 100%);
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+.header-section {
+  margin-bottom: 20rpx;
+}
+
+.welcome-card {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: #ffffff;
+  padding: 40rpx;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.welcome-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.greeting {
+  font-size: 28rpx;
+  opacity: 0.9;
+  margin-bottom: 8rpx;
+}
+
+.username {
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.weather-info {
+  text-align: right;
+}
+
+.temperature {
+  font-size: 32rpx;
+  font-weight: bold;
+  display: block;
+}
+
+.weather-desc {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.stats-section {
+  margin-bottom: 20rpx;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  margin: 0 20rpx;
+}
+
+.stat-item {
+  background-color: #ffffff;
+  padding: 30rpx;
+  border-radius: 16rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.stat-number {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #4CAF50;
+  margin-bottom: 8rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #666666;
+}
+
+.quick-actions {
+  margin-bottom: 20rpx;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 20rpx;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx;
+  border-radius: 12rpx;
+  background-color: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.action-item:active {
+  background-color: #e9ecef;
+  transform: scale(0.95);
+}
+
+.action-icon {
+  font-size: 40rpx;
+  margin-bottom: 10rpx;
+}
+
+.action-text {
+  font-size: 24rpx;
+  color: #333333;
+  text-align: center;
+}
+
+.recent-records {
+  margin-bottom: 20rpx;
+}
+
+.more-link {
+  font-size: 24rpx;
+  color: #4CAF50;
+}
+
+.record-list {
+  margin-top: 20rpx;
+}
+
+.record-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.record-item:last-child {
+  border-bottom: none;
+}
+
+.record-icon {
+  font-size: 32rpx;
+  margin-right: 20rpx;
+  width: 60rpx;
+  text-align: center;
+}
+
+.record-content {
+  flex: 1;
+}
+
+.record-title {
+  font-size: 28rpx;
+  color: #333333;
+  margin-bottom: 6rpx;
+}
+
+.record-subtitle {
+  font-size: 24rpx;
+  color: #666666;
+}
+
+.health-alerts {
+  margin-bottom: 20rpx;
+}
+
+.alert-list {
+  margin-top: 20rpx;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 20rpx;
+  background-color: #fff3cd;
+  border-radius: 8rpx;
+  margin-bottom: 15rpx;
+}
+
+.alert-item:last-child {
+  margin-bottom: 0;
+}
+
+.alert-icon {
+  font-size: 28rpx;
+  margin-right: 15rpx;
+  margin-top: 2rpx;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-title {
+  font-size: 28rpx;
+  color: #856404;
+  font-weight: 500;
+  margin-bottom: 6rpx;
+}
+
+.alert-subtitle {
+  font-size: 24rpx;
+  color: #856404;
+  opacity: 0.8;
+}
+
+.login-prompt {
+  margin: 40rpx 20rpx;
+}
+
+.login-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.login-text {
+  font-size: 32rpx;
+  color: #333333;
+  font-weight: 500;
+  margin-bottom: 10rpx;
+}
+
+.login-subtitle {
+  font-size: 26rpx;
+  color: #666666;
+  margin-bottom: 30rpx;
+}
+
+/* 禁用状态样式 */
+.action-item.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.action-item.disabled .action-icon {
+  filter: grayscale(100%);
+}
+
+.action-item.disabled .action-text {
+  color: #999999;
+}

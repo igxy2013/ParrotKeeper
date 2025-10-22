@@ -1,0 +1,302 @@
+<!--pages/records/add-record/add-record.wxml-->
+<view class="page-container">
+  <form bindsubmit="submitForm">
+    <!-- 记录类型 -->
+    <view class="form-section">
+      <view class="section-title">记录类型</view>
+      
+      <view class="type-selector">
+        <view 
+          class="type-item {{recordType === 'feeding' ? 'active' : ''}}"
+          bindtap="selectType"
+          data-type="feeding"
+        >
+          <view class="type-icon">🍽️</view>
+          <text class="type-text">喂食记录</text>
+        </view>
+        <view 
+          class="type-item {{recordType === 'cleaning' ? 'active' : ''}}"
+          bindtap="selectType"
+          data-type="cleaning"
+        >
+          <view class="type-icon">🧹</view>
+          <text class="type-text">清洁记录</text>
+        </view>
+        <view 
+          class="type-item {{recordType === 'health_check' ? 'active' : ''}}"
+          bindtap="selectType"
+          data-type="health_check"
+        >
+          <view class="type-icon">🏥</view>
+          <text class="type-text">健康检查</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="form-section">
+      <view class="section-title">基本信息</view>
+      
+      <view class="form-item">
+        <text class="form-label required">选择鹦鹉</text>
+        <view class="form-picker" bindtap="showParrotPicker">
+          <text class="picker-text {{formData.parrot_id ? '' : 'placeholder'}}">
+            {{selectedParrotName || '请选择鹦鹉'}}
+          </text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label required">记录时间</text>
+        <view class="datetime-picker">
+          <picker 
+            mode="date" 
+            value="{{formData.record_date}}" 
+            bindchange="onDateChange"
+            end="{{today}}"
+          >
+            <view class="picker-item">
+              <text class="picker-text {{formData.record_date ? '' : 'placeholder'}}">
+                {{formData.record_date || '选择日期'}}
+              </text>
+            </view>
+          </picker>
+          <picker 
+            mode="time" 
+            value="{{formData.record_time}}" 
+            bindchange="onTimeChange"
+          >
+            <view class="picker-item">
+              <text class="picker-text {{formData.record_time ? '' : 'placeholder'}}">
+                {{formData.record_time || '选择时间'}}
+              </text>
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
+
+    <!-- 喂食记录特有字段 -->
+    <view class="form-section" wx:if="{{recordType === 'feeding'}}">
+      <view class="section-title">喂食详情</view>
+      
+      <view class="form-item">
+        <text class="form-label">食物类型</text>
+        <input 
+          class="form-input" 
+          placeholder="如：种子、水果、蔬菜等" 
+          value="{{formData.food_type}}"
+          bindinput="onInputChange"
+          data-field="food_type"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">食物量 (g)</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入食物重量" 
+          value="{{formData.amount}}"
+          bindinput="onInputChange"
+          data-field="amount"
+          type="digit"
+        />
+      </view>
+    </view>
+
+    <!-- 健康检查特有字段 -->
+    <view class="form-section" wx:if="{{recordType === 'health_check'}}">
+      <view class="section-title">健康详情</view>
+      
+      <view class="form-item">
+        <text class="form-label">体重 (g)</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入当前体重" 
+          value="{{formData.weight}}"
+          bindinput="onInputChange"
+          data-field="weight"
+          type="digit"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">体温 (°C)</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入体温" 
+          value="{{formData.temperature}}"
+          bindinput="onInputChange"
+          data-field="temperature"
+          type="digit"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="form-label">健康状态</text>
+        <view class="form-picker" bindtap="showHealthStatusPicker">
+          <text class="picker-text {{formData.health_status ? '' : 'placeholder'}}">
+            {{healthStatusText || '请选择健康状态'}}
+          </text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 照片上传 -->
+    <view class="form-section">
+      <view class="section-title">记录照片 (可选)</view>
+      
+      <view class="photo-upload">
+        <view class="photo-list" wx:if="{{formData.photos.length > 0}}">
+          <view 
+            class="photo-item" 
+            wx:for="{{formData.photos}}" 
+            wx:key="*this"
+          >
+            <image 
+              class="photo-image" 
+              src="{{item}}" 
+              mode="aspectFill"
+              bindtap="previewPhoto"
+              data-url="{{item}}"
+            />
+            <view 
+              class="photo-delete" 
+              bindtap="deletePhoto"
+              data-index="{{index}}"
+            >×</view>
+          </view>
+          
+          <view 
+            class="add-photo-btn" 
+            wx:if="{{formData.photos.length < 3}}"
+            bindtap="choosePhoto"
+          >
+            <text class="add-icon">+</text>
+          </view>
+        </view>
+        
+        <view class="upload-area" wx:else bindtap="choosePhoto">
+          <view class="upload-icon">📷</view>
+          <text class="upload-text">添加照片</text>
+          <text class="upload-tip">最多可添加3张照片</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 备注信息 -->
+    <view class="form-section">
+      <view class="section-title">备注信息</view>
+      
+      <view class="form-item">
+        <text class="form-label">备注</text>
+        <textarea 
+          class="form-textarea" 
+          placeholder="请输入备注信息（可选）" 
+          value="{{formData.notes}}"
+          bindinput="onInputChange"
+          data-field="notes"
+          maxlength="500"
+          show-confirm-bar="{{false}}"
+        />
+        <view class="char-count">{{formData.notes.length}}/500</view>
+      </view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="form-actions">
+      <button class="btn btn-secondary" bindtap="goBack">取消</button>
+      <button 
+        class="btn btn-primary" 
+        formType="submit"
+        disabled="{{!canSubmit || submitting}}"
+        loading="{{submitting}}"
+      >
+        {{submitting ? '保存中...' : '保存记录'}}
+      </button>
+    </view>
+  </form>
+</view>
+
+<!-- 鹦鹉选择弹窗 -->
+<view class="modal-overlay" wx:if="{{showParrotModal}}" bindtap="hideParrotPicker">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择鹦鹉</text>
+      <view class="modal-close" bindtap="hideParrotPicker">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="parrot-list">
+        <view 
+          class="parrot-item" 
+          wx:for="{{parrotList}}" 
+          wx:key="id"
+          bindtap="selectParrot"
+          data-id="{{item.id}}"
+          data-name="{{item.name}}"
+        >
+          <image 
+            class="parrot-avatar" 
+            src="{{item.photo_url || '/images/default-parrot.png'}}" 
+            mode="aspectFill"
+          />
+          <view class="parrot-info">
+            <text class="parrot-name">{{item.name}}</text>
+            <text class="parrot-species">{{item.species_name}}</text>
+          </view>
+          <view class="status-badge status-{{item.health_status}}">
+            {{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 健康状态选择弹窗 -->
+<view class="modal-overlay" wx:if="{{showHealthStatusModal}}" bindtap="hideHealthStatusPicker">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择健康状态</text>
+      <view class="modal-close" bindtap="hideHealthStatusPicker">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="status-list">
+        <view 
+          class="status-item" 
+          bindtap="selectHealthStatus"
+          data-status="healthy"
+        >
+          <view class="status-indicator healthy"></view>
+          <text class="status-text">健康</text>
+        </view>
+        <view 
+          class="status-item" 
+          bindtap="selectHealthStatus"
+          data-status="sick"
+        >
+          <view class="status-indicator sick"></view>
+          <text class="status-text">生病</text>
+        </view>
+        <view 
+          class="status-item" 
+          bindtap="selectHealthStatus"
+          data-status="recovering"
+        >
+          <view class="status-indicator recovering"></view>
+          <text class="status-text">康复中</text>
+        </view>
+        <view 
+          class="status-item" 
+          bindtap="selectHealthStatus"
+          data-status="observation"
+        >
+          <view class="status-indicator observation"></view>
+          <text class="status-text">观察中</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

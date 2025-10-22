@@ -1,0 +1,224 @@
+<!--pages/records/records.wxml-->
+<view class="page-container">
+  <!-- 游客模式提示 -->
+  <view wx:if="{{!isLogin}}" class="guest-tip">
+    <text class="tip-text">📝 记录功能需要登录使用</text>
+    <text class="tip-subtitle">登录后可以记录和查看您的鹦鹉护理记录</text>
+  </view>
+
+  <!-- 标签页切换 -->
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'feeding' ? 'active' : ''}}" bindtap="switchTab" data-tab="feeding">
+      <text class="tab-text">喂食记录</text>
+    </view>
+    <view class="tab-item {{activeTab === 'health' ? 'active' : ''}}" bindtap="switchTab" data-tab="health">
+      <text class="tab-text">健康记录</text>
+    </view>
+    <view class="tab-item {{activeTab === 'cleaning' ? 'active' : ''}}" bindtap="switchTab" data-tab="cleaning">
+      <text class="tab-text">清洁记录</text>
+    </view>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view wx:if="{{isLogin}}" class="filter-section">
+    <view class="filter-bar">
+      <view class="filter-item" bindtap="showParrotFilter">
+        <text class="filter-text">{{selectedParrot ? selectedParrot : '全部鹦鹉'}}</text>
+        <text class="filter-arrow">▼</text>
+      </view>
+      <view class="filter-item" bindtap="showDateFilter">
+        <text class="filter-text">{{dateFilterText}}</text>
+        <text class="filter-arrow">▼</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 喂食记录 -->
+  <view class="records-container" wx:if="{{activeTab === 'feeding'}}">
+    <view class="record-list" wx:if="{{feedingRecords.length > 0}}">
+      <view class="record-card" wx:for="{{feedingRecords}}" wx:key="id">
+        <view class="record-header">
+          <view class="record-info">
+            <text class="record-title">{{item.parrot_name}}</text>
+            <text class="record-time">{{item.feeding_time_formatted}}</text>
+          </view>
+          <view class="record-actions">
+            <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}">
+              <text class="action-icon">✏️</text>
+            </view>
+            <view class="action-btn" bindtap="deleteRecord" data-type="feeding" data-id="{{item.id}}">
+              <text class="action-icon">🗑️</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="record-content">
+          <view class="record-detail">
+            <text class="detail-label">饲料类型：</text>
+            <text class="detail-value">{{item.feed_type_name}}</text>
+          </view>
+          <view class="record-detail">
+            <text class="detail-label">数量：</text>
+            <text class="detail-value">{{item.amount}}{{item.unit}}</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.notes}}">
+            <text class="detail-label">备注：</text>
+            <text class="detail-value">{{item.notes}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="empty-state" wx:if="{{feedingRecords.length === 0 && !loading}}">
+      <view class="empty-icon">🍎</view>
+      <view class="empty-text" wx:if="{{isLogin}}">暂无喂食记录</view>
+      <view class="empty-text" wx:else>请先登录查看记录</view>
+      <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addFeedingRecord">添加喂食记录</button>
+    </view>
+  </view>
+
+  <!-- 健康记录 -->
+  <view class="records-container" wx:if="{{activeTab === 'health'}}">
+    <view class="record-list" wx:if="{{healthRecords.length > 0}}">
+      <view class="record-card" wx:for="{{healthRecords}}" wx:key="id">
+        <view class="record-header">
+          <view class="record-info">
+            <text class="record-title">{{item.parrot_name}}</text>
+            <text class="record-time">{{item.check_date_formatted}}</text>
+          </view>
+          <view class="health-status status-{{item.health_status}}">
+            <text wx:if="{{item.health_status === 'healthy'}}">健康</text>
+            <text wx:elif="{{item.health_status === 'sick'}}">生病</text>
+            <text wx:elif="{{item.health_status === 'recovering'}}">康复中</text>
+            <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
+          </view>
+          <view class="record-actions">
+            <view class="action-btn" bindtap="deleteRecord" data-type="health" data-id="{{item.id}}">
+              <text class="action-icon">🗑️</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="record-content">
+          <view class="record-detail" wx:if="{{item.weight}}">
+            <text class="detail-label">体重：</text>
+            <text class="detail-value">{{item.weight}}g</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.temperature}}">
+            <text class="detail-label">体温：</text>
+            <text class="detail-value">{{item.temperature}}°C</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.symptoms}}">
+            <text class="detail-label">症状：</text>
+            <text class="detail-value">{{item.symptoms}}</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.treatment}}">
+            <text class="detail-label">治疗：</text>
+            <text class="detail-value">{{item.treatment}}</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.notes}}">
+            <text class="detail-label">备注：</text>
+            <text class="detail-value">{{item.notes}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="empty-state" wx:if="{{healthRecords.length === 0 && !loading}}">
+      <view class="empty-icon">🏥</view>
+      <view class="empty-text" wx:if="{{isLogin}}">暂无健康记录</view>
+      <view class="empty-text" wx:else>请先登录查看记录</view>
+      <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addHealthRecord">添加健康记录</button>
+    </view>
+  </view>
+
+  <!-- 清洁记录 -->
+  <view class="records-container" wx:if="{{activeTab === 'cleaning'}}">
+    <view class="record-list" wx:if="{{cleaningRecords.length > 0}}">
+      <view class="record-card" wx:for="{{cleaningRecords}}" wx:key="id">
+        <view class="record-header">
+          <view class="record-info">
+            <text class="record-title">{{item.parrot_name}}</text>
+            <text class="record-time">{{item.cleaning_date_formatted}}</text>
+          </view>
+          <view class="record-actions">
+            <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}">
+              <text class="action-icon">🗑️</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="record-content">
+          <view class="record-detail">
+            <text class="detail-label">清洁类型：</text>
+            <text class="detail-value">{{item.cleaning_type}}</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.notes}}">
+            <text class="detail-label">备注：</text>
+            <text class="detail-value">{{item.notes}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="empty-state" wx:if="{{cleaningRecords.length === 0 && !loading}}">
+      <view class="empty-icon">🧽</view>
+      <view class="empty-text" wx:if="{{isLogin}}">暂无清洁记录</view>
+      <view class="empty-text" wx:else>请先登录查看记录</view>
+      <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addCleaningRecord">添加清洁记录</button>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="fab" bindtap="addRecord">
+    <text class="fab-icon">+</text>
+  </view>
+</view>
+
+<!-- 鹦鹉筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showParrotModal}}" bindtap="hideParrotFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择鹦鹉</text>
+      <view class="modal-close" bindtap="hideParrotFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option" bindtap="selectParrot" data-parrot="">
+        <text class="option-text">全部鹦鹉</text>
+      </view>
+      <view class="filter-option" wx:for="{{parrotsList}}" wx:key="id" bindtap="selectParrot" data-parrot="{{item.name}}" data-id="{{item.id}}">
+        <text class="option-text">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 日期筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showDateModal}}" bindtap="hideDateFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择时间范围</text>
+      <view class="modal-close" bindtap="hideDateFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option" bindtap="selectDateRange" data-range="all">
+        <text class="option-text">全部时间</text>
+      </view>
+      <view class="filter-option" bindtap="selectDateRange" data-range="today">
+        <text class="option-text">今天</text>
+      </view>
+      <view class="filter-option" bindtap="selectDateRange" data-range="week">
+        <text class="option-text">最近一周</text>
+      </view>
+      <view class="filter-option" bindtap="selectDateRange" data-range="month">
+        <text class="option-text">最近一月</text>
+      </view>
+    </view>
+  </view>
+</view>

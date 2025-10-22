@@ -1,0 +1,181 @@
+<!--pages/parrots/parrots.wxml-->
+<view class="page-container">
+  <!-- 搜索和筛选 -->
+  <view class="search-section">
+    <view class="search-bar">
+      <input 
+        class="search-input" 
+        placeholder="搜索鹦鹉名称、编号或脚环号..." 
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearch"
+      />
+      <view class="search-btn" bindtap="onSearch">
+        <text class="icon">🔍</text>
+      </view>
+    </view>
+    
+    <view class="filter-bar">
+      <view class="filter-item" bindtap="showSpeciesFilter">
+        <text class="filter-text">{{selectedSpecies ? selectedSpecies : '品种'}}</text>
+        <text class="filter-arrow">▼</text>
+      </view>
+      <view class="filter-item" bindtap="showStatusFilter">
+        <text class="filter-text">{{selectedStatus ? selectedStatus : '状态'}}</text>
+        <text class="filter-arrow">▼</text>
+      </view>
+      <view class="filter-item" bindtap="showSortFilter">
+        <text class="filter-text">{{sortText}}</text>
+        <text class="filter-arrow">▼</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 鹦鹉列表 -->
+  <view class="parrot-list" wx:if="{{parrots.length > 0}}">
+    <view class="parrot-card" wx:for="{{parrots}}" wx:key="id" bindtap="viewParrotDetail" data-id="{{item.id}}">
+      <view class="parrot-main">
+        <!-- 鹦鹉头像和状态 -->
+        <view class="parrot-avatar">
+          <image 
+            class="parrot-image" 
+            src="{{item.photo_url || '/images/default-parrot.svg'}}" 
+            mode="aspectFill"
+            binderror="handleImageError"
+            data-id="{{item.id}}"
+          />
+          <view class="status-badge status-{{item.health_status}}">
+            <text wx:if="{{item.health_status === 'healthy'}}">✓</text>
+            <text wx:elif="{{item.health_status === 'sick'}}">!</text>
+            <text wx:elif="{{item.health_status === 'recovering'}}">↗</text>
+            <text wx:else="{{item.health_status === 'observation'}}">👁</text>
+          </view>
+        </view>
+        
+        <!-- 基本信息 -->
+        <view class="parrot-info">
+          <view class="name-section">
+            <text class="parrot-name">{{item.name}}</text>
+            <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
+          </view>
+          <text class="parrot-species">{{item.species_name}}</text>
+          <view class="info-tags">
+            <text class="info-tag">{{item.age_days}}天</text>
+            <text class="info-tag" wx:if="{{item.weight}}">{{item.weight}}g</text>
+            <text class="info-tag status-tag status-{{item.health_status}}">
+              <text wx:if="{{item.health_status === 'healthy'}}">健康</text>
+              <text wx:elif="{{item.health_status === 'sick'}}">生病</text>
+              <text wx:elif="{{item.health_status === 'recovering'}}">康复中</text>
+              <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
+            </text>
+          </view>
+        </view>
+        
+        <!-- 操作按钮 -->
+        <view class="parrot-actions">
+          <view class="action-btn edit" bindtap="editParrot" data-id="{{item.id}}">
+            <text class="action-icon">✏️</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 备注信息（如果有） -->
+      <view class="parrot-notes" wx:if="{{item.notes}}">
+        <text class="notes-text">{{item.notes}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{parrots.length === 0 && !loading}}">
+    <view class="empty-icon">🦜</view>
+    <view class="empty-text" wx:if="{{isLogin}}">还没有鹦鹉记录</view>
+    <view class="empty-text" wx:else>游客模式</view>
+    <view class="empty-subtitle" wx:if="{{isLogin}}">点击下方按钮添加您的第一只鹦鹉</view>
+    <view class="empty-subtitle" wx:else>登录后可以管理您的鹦鹉档案</view>
+    <button class="btn btn-primary btn-large mt-30" wx:if="{{isLogin}}" bindtap="addParrot">添加鹦鹉</button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="fab" wx:if="{{isLogin}}" bindtap="addParrot">
+    <text class="fab-icon">+</text>
+  </view>
+</view>
+
+<!-- 品种筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showSpeciesModal}}" bindtap="hideSpeciesFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择品种</text>
+      <view class="modal-close" bindtap="hideSpeciesFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option" bindtap="selectSpecies" data-species="">
+        <text class="option-text">全部品种</text>
+      </view>
+      <view class="filter-option" wx:for="{{speciesList}}" wx:key="id" bindtap="selectSpecies" data-species="{{item.name}}">
+        <text class="option-text">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 状态筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showStatusModal}}" bindtap="hideStatusFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择状态</text>
+      <view class="modal-close" bindtap="hideStatusFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option" bindtap="selectStatus" data-status="">
+        <text class="option-text">全部状态</text>
+      </view>
+      <view class="filter-option" bindtap="selectStatus" data-status="healthy">
+        <text class="option-text">健康</text>
+      </view>
+      <view class="filter-option" bindtap="selectStatus" data-status="sick">
+        <text class="option-text">生病</text>
+      </view>
+      <view class="filter-option" bindtap="selectStatus" data-status="recovering">
+        <text class="option-text">康复中</text>
+      </view>
+      <view class="filter-option" bindtap="selectStatus" data-status="observation">
+        <text class="option-text">观察中</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 排序筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showSortModal}}" bindtap="hideSortFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">排序方式</text>
+      <view class="modal-close" bindtap="hideSortFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option" bindtap="selectSort" data-sort="name_asc">
+        <text class="option-text">名称 A-Z</text>
+      </view>
+      <view class="filter-option" bindtap="selectSort" data-sort="name_desc">
+        <text class="option-text">名称 Z-A</text>
+      </view>
+      <view class="filter-option" bindtap="selectSort" data-sort="age_asc">
+        <text class="option-text">年龄从小到大</text>
+      </view>
+      <view class="filter-option" bindtap="selectSort" data-sort="age_desc">
+        <text class="option-text">年龄从大到小</text>
+      </view>
+      <view class="filter-option" bindtap="selectSort" data-sort="created_desc">
+        <text class="option-text">最新添加</text>
+      </view>
+    </view>
+  </view>
+</view>

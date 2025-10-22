@@ -1,0 +1,204 @@
+<!--pages/parrots/detail/detail.wxml-->
+<view class="page-container">
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 鹦鹉详情 -->
+  <view class="detail-content" wx:else>
+    <!-- 头部照片区域 -->
+    <view class="photo-section">
+      <view class="photo-container">
+        <image 
+          class="parrot-photo" 
+          src="{{parrot.photo_url || '/images/default-parrot.svg'}}" 
+          mode="aspectFill"
+          bindtap="previewPhoto"
+        />
+        <view class="photo-overlay">
+          <view class="status-badge status-{{parrot.health_status}}">
+            {{healthStatusText}}
+          </view>
+        </view>
+      </view>
+      
+      <view class="basic-info">
+        <view class="parrot-name">{{parrot.name}}</view>
+        <view class="parrot-species">{{parrot.species_name}}</view>
+        <view class="parrot-gender">
+          <text class="gender-icon">{{parrot.gender === 'male' ? '♂' : parrot.gender === 'female' ? '♀' : '？'}}</text>
+          <text class="gender-text">{{parrot.gender === 'male' ? '雄性' : parrot.gender === 'female' ? '雌性' : '未知'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 详细信息 -->
+    <view class="info-sections">
+      <!-- 基本信息 -->
+      <view class="info-section">
+        <view class="section-title">基本信息</view>
+        <view class="info-list">
+          <view class="info-item">
+            <text class="info-label">鹦鹉名称</text>
+            <text class="info-value">{{parrot.name}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">品种</text>
+            <text class="info-value">{{parrot.species ? parrot.species.name : '未设置'}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">性别</text>
+            <text class="info-value">{{parrot.gender === 'male' ? '雄性 ♂' : parrot.gender === 'female' ? '雌性 ♀' : '未知 ？'}}</text>
+          </view>
+          <view class="info-item" wx:if="{{parrot.birth_date}}">
+            <text class="info-label">出生日期</text>
+            <text class="info-value">{{parrot.birth_date}} ({{age}})</text>
+          </view>
+          <view class="info-item" wx:if="{{parrot.acquisition_date}}">
+            <text class="info-label">入住日期</text>
+            <text class="info-value">{{parrot.acquisition_date}} ({{daysWithUs}}天)</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 档案信息 -->
+      <view class="info-section">
+        <view class="section-title">档案信息</view>
+        <view class="info-list">
+          <view class="info-item" wx:if="{{parrot.parrot_number}}">
+            <text class="info-label">编号</text>
+            <text class="info-value">{{parrot.parrot_number}}</text>
+          </view>
+          <view class="info-item" wx:if="{{parrot.ring_number}}">
+            <text class="info-label">脚环号</text>
+            <text class="info-value">{{parrot.ring_number}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 健康信息 -->
+      <view class="info-section">
+        <view class="section-title">健康信息</view>
+        <view class="info-list">
+          <view class="info-item" wx:if="{{parrot.weight}}">
+            <text class="info-label">体重 (g)</text>
+            <text class="info-value">{{parrot.weight}}g</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">健康状态</text>
+            <view class="health-status">
+              <view class="status-indicator status-{{parrot.health_status}}"></view>
+              <text class="status-text">{{healthStatusText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 鹦鹉照片 -->
+      <view class="info-section" wx:if="{{parrot.photo_url}}">
+        <view class="section-title">鹦鹉照片</view>
+        <view class="photo-display">
+          <image 
+            class="detail-photo" 
+            src="{{parrot.photo_url}}" 
+            mode="aspectFill"
+            bindtap="previewPhoto"
+          />
+        </view>
+      </view>
+
+      <!-- 备注信息 -->
+      <view class="info-section" wx:if="{{parrot.notes}}">
+        <view class="section-title">备注信息</view>
+        <view class="info-list">
+          <view class="info-item">
+            <text class="info-label">备注</text>
+            <text class="info-value">{{parrot.notes}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 统计信息 -->
+      <view class="info-section" wx:if="{{statistics}}">
+        <view class="section-title">护理统计</view>
+        <view class="stats-grid">
+          <view class="stat-item">
+            <view class="stat-number">{{statistics.total_feeding || 0}}</view>
+            <view class="stat-label">总喂食次数</view>
+          </view>
+          <view class="stat-item">
+            <view class="stat-number">{{statistics.total_cleaning || 0}}</view>
+            <view class="stat-label">总清洁次数</view>
+          </view>
+          <view class="stat-item">
+            <view class="stat-number">{{statistics.total_health_check || 0}}</view>
+            <view class="stat-label">健康检查次数</view>
+          </view>
+          <view class="stat-item">
+            <view class="stat-number">{{statistics.days_since_last_feeding || 0}}</view>
+            <view class="stat-label">距上次喂食</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 最近记录 -->
+      <view class="info-section" wx:if="{{recentRecords.length > 0}}">
+        <view class="section-title">
+          <text>最近记录</text>
+          <text class="view-all" bindtap="viewAllRecords">查看全部</text>
+        </view>
+        <view class="records-list">
+          <view 
+            class="record-item" 
+            wx:for="{{recentRecords}}" 
+            wx:key="id"
+          >
+            <view class="record-type type-{{item.type}}">
+              <text class="type-icon">{{typeIcons[item.type]}}</text>
+            </view>
+            <view class="record-content">
+              <view class="record-title">{{typeNames[item.type]}}</view>
+              <view class="record-time">{{item.created_at}}</view>
+              <view class="record-notes" wx:if="{{item.notes}}">{{item.notes}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <view class="action-row">
+        <button class="action-btn feeding" bindtap="quickFeeding">
+          <text class="btn-icon">🍽️</text>
+          <text class="btn-text">快速喂食</text>
+        </button>
+        <button class="action-btn cleaning" bindtap="quickCleaning">
+          <text class="btn-icon">🧹</text>
+          <text class="btn-text">快速清洁</text>
+        </button>
+        <button class="action-btn health" bindtap="quickHealthCheck">
+          <text class="btn-icon">🏥</text>
+          <text class="btn-text">健康检查</text>
+        </button>
+      </view>
+      
+      <view class="action-row">
+        <button class="action-btn edit" bindtap="editParrot">
+          <text class="btn-icon">✏️</text>
+          <text class="btn-text">编辑信息</text>
+        </button>
+        <button class="action-btn records" bindtap="viewRecords">
+          <text class="btn-icon">📋</text>
+          <text class="btn-text">查看记录</text>
+        </button>
+        <button class="action-btn delete" bindtap="deleteParrot">
+          <text class="btn-icon">🗑️</text>
+          <text class="btn-text">删除</text>
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

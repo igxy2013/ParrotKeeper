@@ -1,0 +1,124 @@
+<!--pages/index/index.wxml-->
+<view class="page-container">
+  <!-- 头部欢迎区域 -->
+  <view class="header-section">
+    <view class="welcome-card">
+      <view class="welcome-text">
+        <text class="greeting">{{greeting}}</text>
+        <text class="username">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
+      </view>
+      <view class="weather-info" wx:if="{{weather}}">
+        <text class="temperature">{{weather.temperature}}°C</text>
+        <text class="weather-desc">{{weather.description}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速统计 -->
+  <view class="stats-section">
+    <view class="stats-grid">
+      <view class="stat-item" bindtap="navigateToParrots">
+        <view class="stat-number">{{overview.total_parrots || 0}}</view>
+        <view class="stat-label">我的鹦鹉</view>
+      </view>
+      <view class="stat-item" bindtap="navigateToRecords">
+        <view class="stat-number">{{overview.today_records.feeding || 0}}</view>
+        <view class="stat-label">今日喂食</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-number">{{overview.health_status.healthy || 0}}</view>
+        <view class="stat-label">健康鹦鹉</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-number">¥{{overview.monthly_expense || 0}}</view>
+        <view class="stat-label">本月支出</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速操作 -->
+  <view class="quick-actions">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">快速操作</text>
+      </view>
+      <view class="card-content">
+        <view class="action-grid">
+          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickFeeding">
+            <view class="action-icon">🍎</view>
+            <text class="action-text">快速喂食</text>
+          </view>
+          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
+            <view class="action-icon">🧽</view>
+            <text class="action-text">清洁记录</text>
+          </view>
+          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickHealth">
+            <view class="action-icon">🏥</view>
+            <text class="action-text">健康检查</text>
+          </view>
+          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="addParrot">
+            <view class="action-icon">➕</view>
+            <text class="action-text">添加鹦鹉</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 最近记录 -->
+  <view class="recent-records" wx:if="{{recentRecords.length > 0}}">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">最近记录</text>
+        <text class="more-link" bindtap="viewAllRecords">查看全部</text>
+      </view>
+      <view class="card-content">
+        <view class="record-list">
+          <view class="record-item" wx:for="{{recentRecords}}" wx:key="id">
+            <view class="record-icon">
+              <text wx:if="{{item.type === 'feeding'}}">🍎</text>
+              <text wx:elif="{{item.type === 'health'}}">🏥</text>
+              <text wx:elif="{{item.type === 'cleaning'}}">🧽</text>
+            </view>
+            <view class="record-content">
+              <view class="record-title">{{item.title}}</view>
+              <view class="record-subtitle">{{item.parrot_name}} · {{item.time}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 健康提醒 -->
+  <view class="health-alerts" wx:if="{{healthAlerts.length > 0}}">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">健康提醒</text>
+      </view>
+      <view class="card-content">
+        <view class="alert-list">
+          <view class="alert-item" wx:for="{{healthAlerts}}" wx:key="id">
+            <view class="alert-icon">⚠️</view>
+            <view class="alert-content">
+              <view class="alert-title">{{item.title}}</view>
+              <view class="alert-subtitle">{{item.description}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 登录提示 -->
+  <view class="login-prompt" wx:if="{{!isLogin}}">
+    <view class="card">
+      <view class="card-content text-center">
+        <view class="login-icon">🦜</view>
+        <view class="login-text">欢迎使用鹦鹉养殖管家</view>
+        <view class="login-subtitle">请先登录以使用完整功能</view>
+        <button class="btn btn-primary btn-large mt-30" bindtap="handleLogin">立即登录</button>
+      </view>
+    </view>
+  </view>
+</view>

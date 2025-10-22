@@ -1,0 +1,72 @@
+<!--pages/profile/profile.wxml-->
+<view class="page-container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card" wx:if="{{isLogin}}">
+    <view class="user-avatar">
+      <image 
+        class="avatar-image" 
+        src="{{userInfo.avatarUrl || '/images/default-avatar.svg'}}" 
+        mode="aspectFill"
+      />
+    </view>
+    <view class="user-info">
+      <text class="user-name">{{userInfo.nickName || '鹦鹉爱好者'}}</text>
+      <text class="user-id">ID: {{userInfo.openid ? userInfo.openid.substr(0, 8) + '...' : '未知'}}</text>
+      <text class="join-date">加入时间: {{joinDate}}</text>
+    </view>
+  </view>
+
+  <!-- 未登录状态 -->
+  <view class="login-prompt" wx:if="{{!isLogin}}">
+    <view class="prompt-icon">👤</view>
+    <text class="prompt-text">请先登录以查看个人信息</text>
+    
+    <!-- 头像选择 -->
+    <view class="avatar-section">
+      <text class="section-label">选择头像</text>
+      <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image class="preview-avatar" src="{{tempAvatarUrl || '/images/default-avatar.svg'}}" mode="aspectFill"/>
+        <text class="avatar-tip">点击选择头像</text>
+      </button>
+    </view>
+    
+    <!-- 昵称输入 -->
+    <view class="nickname-section">
+      <text class="section-label">输入昵称</text>
+      <input 
+        class="nickname-input" 
+        type="nickname" 
+        placeholder="请输入昵称" 
+        value="{{tempNickname}}"
+        bindinput="onNicknameInput"
+        maxlength="20"
+      />
+    </view>
+    
+    <button class="login-btn" bindtap="handleLogin">立即登录</button>
+  </view>
+
+
+
+  <!-- 设置选项 -->
+  <view class="settings-section" wx:if="{{isLogin}}">
+    <view class="section-title">其他</view>
+    <view class="settings-list">
+      <view class="setting-item" bindtap="showAbout">
+        <text class="setting-text">关于应用</text>
+        <text class="setting-arrow">></text>
+      </view>
+      <view class="setting-item" bindtap="showHelp">
+        <text class="setting-text">帮助与反馈</text>
+        <text class="setting-arrow">></text>
+      </view>
+      <view class="setting-item" bindtap="clearCache">
+        <text class="setting-text">清除缓存</text>
+        <text class="setting-arrow">></text>
+      </view>
+      <view class="setting-item logout" bindtap="handleLogout">
+        <text class="setting-text">退出登录</text>
+      </view>
+    </view>
+  </view>
+</view>
