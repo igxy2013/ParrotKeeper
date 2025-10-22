@@ -7,8 +7,7 @@ Page({
       category: '',
       amount: '',
       description: '',
-      expense_date: '',
-      parrot_id: ''
+      expense_date: ''
     },
     categories: [
       { value: 'food', label: '食物' },
@@ -17,7 +16,6 @@ Page({
       { value: 'cage', label: '笼具' },
       { value: 'other', label: '其他' }
     ],
-    parrots: [],
     loading: true,
     submitting: false
   },
@@ -27,7 +25,6 @@ Page({
       this.setData({
         expenseId: parseInt(options.id)
       })
-      this.loadParrots()
       this.loadExpenseDetail()
     } else {
       wx.showToast({
@@ -37,39 +34,6 @@ Page({
       setTimeout(() => {
         wx.navigateBack()
       }, 1500)
-    }
-  },
-
-  // 加载鹦鹉列表
-  async loadParrots() {
-    try {
-      const response = await new Promise((resolve, reject) => {
-        wx.request({
-          url: `${app.globalData.baseUrl}/api/parrots`,
-          method: 'GET',
-          header: {
-            'X-OpenID': app.globalData.openid
-          },
-          success: resolve,
-          fail: reject
-        })
-      })
-
-      console.log('鹦鹉列表API响应:', response)
-      
-      if (response && response.data && response.data.success) {
-        this.setData({
-          parrots: response.data.data || []
-        })
-      } else {
-        console.error('鹦鹉列表API返回错误:', response)
-      }
-    } catch (error) {
-      console.error('加载鹦鹉列表失败:', error)
-      wx.showToast({
-        title: '网络错误，请检查网络连接',
-        icon: 'none'
-      })
     }
   },
 
@@ -97,8 +61,7 @@ Page({
             category: expense.category,
             amount: expense.amount.toString(),
             description: expense.description || '',
-            expense_date: expense.expense_date,
-            parrot_id: expense.parrot_id || ''
+            expense_date: expense.expense_date
           },
           loading: false
         })
@@ -166,21 +129,6 @@ Page({
     })
   },
 
-  // 选择鹦鹉
-  onParrotChange(e) {
-    const index = e.detail.value
-    if (index == 0) {
-      // 选择了"不指定鹦鹉"
-      this.setData({
-        'formData.parrot_id': ''
-      })
-    } else {
-      this.setData({
-        'formData.parrot_id': this.data.parrots[index - 1].id
-      })
-    }
-  },
-
   // 表单验证
   validateForm() {
     const { category, amount, expense_date } = this.data.formData
@@ -229,11 +177,6 @@ Page({
       
       // 转换数据类型
       formData.amount = parseFloat(formData.amount)
-      if (formData.parrot_id) {
-        formData.parrot_id = parseInt(formData.parrot_id)
-      } else {
-        delete formData.parrot_id
-      }
 
       const response = await new Promise((resolve, reject) => {
         wx.request({
@@ -337,23 +280,5 @@ Page({
   getCategoryLabel(value) {
     const category = this.data.categories.find(item => item.value === value)
     return category ? category.label : '请选择类别'
-  },
-
-  // 获取鹦鹉选择器数组
-  getParrotPickerRange() {
-    const range = ['不指定鹦鹉']
-    this.data.parrots.forEach(parrot => {
-      range.push(parrot.name)
-    })
-    return range
-  },
-
-  // 获取当前选中的鹦鹉索引
-  getSelectedParrotIndex() {
-    if (!this.data.formData.parrot_id) {
-      return 0
-    }
-    const index = this.data.parrots.findIndex(parrot => parrot.id == this.data.formData.parrot_id)
-    return index >= 0 ? index + 1 : 0
   }
 })

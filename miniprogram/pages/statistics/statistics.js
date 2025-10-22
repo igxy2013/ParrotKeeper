@@ -30,7 +30,7 @@ Page({
 
   // 检查登录状态并加载数据
   checkLoginAndLoad() {
-    const isLogin = app.globalData.isLogin
+    const isLogin = app.checkLoginStatus()
     this.setData({ isLogin })
     
     if (isLogin) {
@@ -151,13 +151,28 @@ Page({
 
   // 处理支出分析数据
   processExpenseAnalysis(data) {
-    if (!data || !Array.isArray(data) || data.length === 0) return []
+    if (!data || !data.category_expenses || !Array.isArray(data.category_expenses) || data.category_expenses.length === 0) {
+      return []
+    }
     
-    const total = data.reduce((sum, item) => sum + (item.amount || 0), 0)
+    // 类别中英文映射
+    const categoryMap = {
+      'food': '食物',
+      'medical': '医疗',
+      'toys': '玩具',
+      'accessories': '用品',
+      'grooming': '美容',
+      'training': '训练',
+      'other': '其他'
+    }
     
-    return data.map(item => ({
-      ...item,
-      percentage: total > 0 ? Math.round(((item.amount || 0) / total) * 100) : 0
+    const categoryData = data.category_expenses
+    const total = categoryData.reduce((sum, item) => sum + (item.total_amount || 0), 0)
+    
+    return categoryData.map(item => ({
+      category: categoryMap[item.category] || item.category,
+      amount: item.total_amount,
+      percentage: total > 0 ? Math.round(((item.total_amount || 0) / total) * 100) : 0
     }))
   },
 

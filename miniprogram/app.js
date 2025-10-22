@@ -8,28 +8,31 @@ App({
   },
 
   onLaunch() {
-    // 展示本地存储能力
-    const logs = wx.getStorageSync('logs') || []
-    logs.unshift(Date.now())
-    wx.setStorageSync('logs', logs)
-
+    console.log('小程序启动')
+    
     // 检查登录状态
-    this.checkLoginStatus()
-  },
-
-  // 检查登录状态
-  checkLoginStatus() {
     const openid = wx.getStorageSync('openid')
     const userInfo = wx.getStorageSync('userInfo')
     
-    if (openid && userInfo) {
+    console.log('从存储中获取的openid:', openid)
+    console.log('从存储中获取的userInfo:', userInfo)
+    
+    if (openid) {
       this.globalData.openid = openid
-      this.globalData.userInfo = userInfo
-      this.globalData.isLogin = true
-      return true
+      console.log('设置全局openid:', this.globalData.openid)
     } else {
-      this.globalData.isLogin = false
-      return false
+      console.log('未找到openid，需要重新登录')
+    }
+    
+    if (userInfo) {
+      this.globalData.userInfo = userInfo
+      console.log('设置全局userInfo:', this.globalData.userInfo)
+    }
+
+    // 根据存储的openid与userInfo设置登录状态
+    this.globalData.isLogin = !!(this.globalData.openid && this.globalData.userInfo)
+    if (this.globalData.isLogin) {
+      console.log('检测到已登录状态')
     }
   },
 
@@ -87,6 +90,23 @@ App({
     
     wx.removeStorageSync('openid')
     wx.removeStorageSync('userInfo')
+  },
+
+  // 检查登录状态
+  checkLoginStatus() {
+    const openid = this.globalData.openid || wx.getStorageSync('openid')
+    const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo')
+    
+    if (openid && userInfo) {
+      // 更新全局数据
+      this.globalData.openid = openid
+      this.globalData.userInfo = userInfo
+      this.globalData.isLogin = true
+      return true
+    }
+    
+    this.globalData.isLogin = false
+    return false
   },
 
   // 统一请求方法

@@ -49,13 +49,27 @@ Page({
 
   // 检查登录状态
   checkLoginStatus() {
-    const isLogin = app.checkLoginStatus()
+    console.log('首页检查登录状态')
+    console.log('app.globalData.openid:', app.globalData.openid)
+    console.log('app.globalData.userInfo:', app.globalData.userInfo)
+    
+    const isLogin = !!(app.globalData.openid && app.globalData.userInfo)
     const userInfo = app.globalData.userInfo || {}
+    
+    console.log('登录状态:', isLogin)
     
     this.setData({
       isLogin,
       userInfo
     })
+    
+    // 如果未登录，跳转到登录页面
+    if (!isLogin) {
+      console.log('用户未登录，跳转到登录页面')
+      wx.navigateTo({
+        url: '/pages/login/login'
+      })
+    }
   },
 
   // 加载数据

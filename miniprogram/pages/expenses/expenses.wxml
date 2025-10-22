@@ -9,11 +9,11 @@
       <view class="summary-grid">
         <view class="summary-item">
           <text class="summary-label">本月支出</text>
-          <text class="summary-value">¥{{summary.monthly_total.toFixed(2)}}</text>
+          <text class="summary-value">¥{{summary.monthly_total_display || '0.00'}}</text>
         </view>
         <view class="summary-item">
           <text class="summary-label">本年支出</text>
-          <text class="summary-value">¥{{summary.yearly_total.toFixed(2)}}</text>
+          <text class="summary-value">¥{{summary.yearly_total_display || '0.00'}}</text>
         </view>
       </view>
     </view>
@@ -23,11 +23,11 @@
   <view class="card">
     <view class="card-content">
       <view class="action-bar">
-        <button class="btn btn-primary btn-medium" bindtap="onAddExpense">
+        <button class="btn btn-primary btn-small" bindtap="onAddExpense">
           <text class="action-icon">➕</text>
           添加支出
         </button>
-        <button class="btn btn-secondary btn-medium" bindtap="onShowFilter">
+        <button class="btn btn-secondary btn-small" bindtap="onShowFilter">
           <text class="action-icon">🔍</text>
           筛选
         </button>
@@ -81,44 +81,51 @@
   <view class="card">
     <view class="card-header">
       <text class="card-title">支出记录</text>
-      <text class="total-text">共 {{expenses.length}} 条记录，总计 ¥{{totalAmount.toFixed(2)}}</text>
+      <text class="total-text">共 {{expenses.length}} 条记录，总计 ¥{{totalAmount_display || '0.00'}}</text>
     </view>
-    <view class="card-content">
-      <view class="list-container">
-        <view class="list-item" wx:for="{{expenses}}" wx:key="id">
-          <view class="list-item-content" bindtap="onEditExpense" data-id="{{item.id}}">
-            <view class="list-item-main">
-              <view class="list-item-title">{{getCategoryLabel(item.category)}}</view>
-              <view class="list-item-desc" wx:if="{{item.description}}">{{item.description}}</view>
-              <view class="list-item-meta">
-                <text class="meta-date">{{item.expense_date}}</text>
-                <text class="meta-parrot" wx:if="{{item.parrot_name}}">{{item.parrot_name}}</text>
-              </view>
-            </view>
-            <view class="list-item-value">¥{{item.amount.toFixed(2)}}</view>
+  </view>
+  
+  <!-- 支出记录列表 -->
+  <view class="list-container">
+    <view class="list-item" wx:for="{{expenses}}" wx:key="id">
+      <view class="list-item-content" bindtap="onEditExpense" data-id="{{item.id}}">
+        <view class="list-item-main">
+          <view class="list-item-title">
+            <text class="category-icon">{{item.categoryName || '其他'}}</text>
           </view>
-          <view class="list-item-actions">
-            <button class="btn btn-secondary btn-small" bindtap="onEditExpense" data-id="{{item.id}}">编辑</button>
-            <button class="btn btn-danger btn-small" bindtap="onDeleteExpense" data-id="{{item.id}}" data-index="{{index}}">删除</button>
+          <view class="list-item-desc">{{item.description || '无描述'}}</view>
+          <view class="list-item-meta">
+            <text class="date-tag">{{item.expense_date}}</text>
+            <text class="parrot-tag" wx:if="{{item.parrot_name}}">{{item.parrot_name}}</text>
           </view>
         </view>
-
-        <!-- 加载状态 -->
-        <view class="loading-state" wx:if="{{loading}}">
-          <text>加载中...</text>
+        <view class="list-item-value">¥{{item.amount_display || '0.00'}}</view>
+      </view>
+      <view class="list-item-actions">
+        <view class="action-btn edit" bindtap="onEditExpense" data-id="{{item.id}}">
+          <text class="action-icon">✏️</text>
         </view>
-
-        <!-- 空状态 -->
-        <view class="empty-state" wx:if="{{!loading && expenses.length === 0}}">
-          <text class="empty-text">暂无支出记录</text>
-          <button class="btn btn-primary btn-medium" bindtap="onAddExpense">添加第一条支出</button>
-        </view>
-
-        <!-- 没有更多数据 -->
-        <view class="no-more-state" wx:if="{{!hasMore && expenses.length > 0}}">
-          <text>没有更多数据了</text>
+        <view class="action-btn delete" bindtap="onDeleteExpense" data-id="{{item.id}}">
+          <text class="action-icon">🗑️</text>
         </view>
       </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && expenses.length === 0}}">
+      <view class="empty-icon">💰</view>
+      <text class="empty-text">暂无支出记录</text>
+      <button class="btn btn-primary btn-small" bindtap="onAddExpense">添加第一条支出</button>
+    </view>
+
+    <!-- 没有更多数据 -->
+    <view class="no-more-state" wx:if="{{!hasMore && expenses.length > 0}}">
+      <text>没有更多数据了</text>
     </view>
   </view>
 </view>

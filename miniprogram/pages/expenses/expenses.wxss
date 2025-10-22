@@ -41,10 +41,18 @@
   align-items: center;
   justify-content: center;
   gap: 10rpx;
+  /* 确保使用全局按钮样式 */
+  border-radius: 50rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  border: none;
+  outline: none;
+  transition: all 0.3s ease;
+  padding: 20rpx 40rpx;
 }
 
 .action-icon {
-  font-size: 32rpx;
+  font-size: 28rpx;
 }
 
 /* 筛选面板样式 */
@@ -56,6 +64,14 @@
 
 .filter-actions .btn {
   flex: 1;
+  /* 确保使用全局按钮样式 */
+  border-radius: 50rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  border: none;
+  outline: none;
+  transition: all 0.3s ease;
+  padding: 10rpx 20rpx;
 }
 
 /* 支出列表样式 */
@@ -66,44 +82,76 @@
 }
 
 .list-container {
-  margin-top: 20rpx;
+  /* 移除上边距，保持与其他页面一致 */
+  padding: 0 20rpx;
 }
 
 .list-item {
-  border-bottom: 1rpx solid #f0f0f0;
-  padding: 20rpx 0;
+  background: #fff;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.list-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .list-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .list-item-content {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 15rpx;
+  margin-bottom: 20rpx;
+  position: relative;
 }
 
 .list-item-main {
   flex: 1;
+  padding-right: 20rpx;
 }
 
 .list-item-title {
-  font-size: 32rpx;
-  font-weight: bold;
+  font-size: 34rpx;
+  font-weight: 600;
   color: #333;
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
+  display: flex;
+  align-items: center;
+}
+
+.list-item-title::before {
+  content: '💰';
+  margin-right: 12rpx;
+  font-size: 28rpx;
 }
 
 .list-item-desc {
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 8rpx;
+  margin-bottom: 16rpx;
+  line-height: 1.4;
+  background: #f8f9fa;
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  border-left: 4rpx solid #e9ecef;
 }
 
 .list-item-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 20rpx;
   font-size: 24rpx;
   color: #999;
@@ -111,36 +159,101 @@
 
 .meta-date, .meta-parrot {
   position: relative;
+  display: flex;
+  align-items: center;
+  background: #f1f3f4;
+  padding: 8rpx 12rpx;
+  border-radius: 20rpx;
+}
+
+.meta-date::before {
+  content: '📅';
+  margin-right: 8rpx;
+  font-size: 20rpx;
 }
 
 .meta-parrot::before {
-  content: '•';
+  content: '🦜';
   margin-right: 8rpx;
+  font-size: 20rpx;
 }
 
 .list-item-value {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: bold;
   color: #e74c3c;
+  text-align: right;
+  min-width: 120rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
 }
 
+/* 操作按钮 */
 .list-item-actions {
   display: flex;
-  gap: 15rpx;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.9);
+}
+
+.action-btn.edit {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.action-btn.delete {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+}
+
+.action-icon {
+  color: white;
+  font-size: 24rpx;
 }
 
 /* 状态样式 */
 .loading-state, .empty-state, .no-more-state {
   text-align: center;
-  padding: 60rpx 20rpx;
+  padding: 100rpx 40rpx;
   color: #999;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
 }
 
 .empty-text {
   display: block;
-  font-size: 32rpx;
-  margin-bottom: 30rpx;
+  font-size: 28rpx;
+  margin-bottom: 40rpx;
+}
+
+.empty-state .btn {
+  /* 确保使用全局按钮样式 */
+  border-radius: 50rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  border: none;
+  outline: none;
+  transition: all 0.3s ease;
+  padding: 20rpx 40rpx;
 }
 
 .no-more-state {

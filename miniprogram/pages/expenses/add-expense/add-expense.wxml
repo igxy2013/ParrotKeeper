@@ -6,10 +6,10 @@
       
       <view class="form-item">
         <text class="form-label required">支出类别</text>
-        <picker bindchange="onCategoryChange" range="{{categories}}" range-key="label">
+        <picker bindchange="onCategoryChange" range="{{categories}}" range-key="label" value="{{selectedCategoryIndex}}">
           <view class="form-picker">
             <text class="picker-text {{formData.category ? '' : 'placeholder'}}">
-              {{getCategoryLabel(formData.category)}}
+              {{selectedCategoryLabel || '请选择类别'}}
             </text>
             <text class="picker-arrow">▼</text>
           </view>
@@ -56,21 +56,6 @@
         </picker>
       </view>
 
-      <view class="form-item">
-        <text class="form-label">关联鹦鹉</text>
-        <picker 
-          bindchange="onParrotChange" 
-          range="{{getParrotPickerRange()}}"
-          value="{{getSelectedParrotIndex()}}"
-        >
-          <view class="form-picker">
-            <text class="picker-text {{formData.parrot_id ? '' : 'placeholder'}}">
-              {{getParrotPickerRange()[getSelectedParrotIndex()]}}
-            </text>
-            <text class="picker-arrow">▼</text>
-          </view>
-        </picker>
-      </view>
     </view>
 
     <view class="form-actions">

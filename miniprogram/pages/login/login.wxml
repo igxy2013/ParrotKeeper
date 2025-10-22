@@ -1,0 +1,14 @@
+<view class="container">
+  <view class="login-box">
+    <view class="title">鹦鹉管家</view>
+    <view class="subtitle">请登录以继续使用</view>
+    
+    <button class="login-btn test-btn" bindtap="onTestLogin">
+      使用测试账号登录
+    </button>
+    
+    <button class="login-btn wechat-btn" bindtap="onWechatLogin" disabled="{{!canLogin}}">
+      微信登录
+    </button>
+  </view>
+</view>

@@ -1,73 +1,71 @@
 <!--pages/expenses/edit-expense/edit-expense.wxml-->
-<view class="container">
+<view class="page-container">
   <view class="loading" wx:if="{{loading}}">
     <text>加载中...</text>
   </view>
 
   <form bindsubmit="onSubmit" wx:else>
     <view class="form-section">
+      <view class="section-title">编辑支出记录</view>
+      
       <view class="form-item">
-        <text class="label required">支出类别</text>
+        <text class="form-label required">支出类别</text>
         <picker bindchange="onCategoryChange" range="{{categories}}" range-key="label">
-          <view class="picker">
-            {{getCategoryLabel(formData.category)}}
-            <text class="arrow">></text>
+          <view class="form-picker">
+            <text class="picker-text {{formData.category ? '' : 'placeholder'}}">
+              {{getCategoryLabel(formData.category) || '请选择类别'}}
+            </text>
+            <text class="picker-arrow">▼</text>
           </view>
         </picker>
       </view>
 
       <view class="form-item">
-        <text class="label required">支出金额</text>
+        <text class="form-label required">支出金额</text>
         <input 
-          class="input" 
+          class="form-input"
           type="digit" 
           placeholder="请输入金额" 
           value="{{formData.amount}}"
           bindinput="onAmountInput"
+          cursor-spacing="10"
+          confirm-type="done"
         />
-        <text class="unit">元</text>
       </view>
 
       <view class="form-item">
-        <text class="label">支出描述</text>
+        <text class="form-label">支出描述</text>
         <textarea 
-          class="textarea" 
+          class="form-textarea" 
           placeholder="请输入支出描述（可选）" 
           value="{{formData.description}}"
           bindinput="onDescriptionInput"
           maxlength="200"
+          cursor-spacing="0"
+          show-confirm-bar="{{false}}"
         />
+        <view class="char-count">{{formData.description.length}}/200</view>
       </view>
 
       <view class="form-item">
-        <text class="label required">支出日期</text>
+        <text class="form-label required">支出日期</text>
         <picker mode="date" bindchange="onDateChange" value="{{formData.expense_date}}">
-          <view class="picker">
-            {{formData.expense_date || '请选择日期'}}
-            <text class="arrow">></text>
+          <view class="form-picker">
+            <text class="picker-text {{formData.expense_date ? '' : 'placeholder'}}">
+              {{formData.expense_date || '请选择日期'}}
+            </text>
+            <text class="picker-arrow">▼</text>
           </view>
         </picker>
       </view>
 
-      <view class="form-item">
-        <text class="label">关联鹦鹉</text>
-        <picker 
-          bindchange="onParrotChange" 
-          range="{{getParrotPickerRange()}}"
-          value="{{getSelectedParrotIndex()}}"
-        >
-          <view class="picker">
-            {{getParrotPickerRange()[getSelectedParrotIndex()]}}
-            <text class="arrow">></text>
-          </view>
-        </picker>
-      </view>
+
     </view>
 
     <view class="form-actions">
-      <button class="delete-btn" type="button" bindtap="onDelete">删除</button>
+      <button class="btn btn-secondary" type="button" bindtap="onDelete">删除</button>
       <button 
-        class="submit-btn" 
+        class="btn btn-primary" 
         form-type="submit" 
         disabled="{{submitting}}"
         loading="{{submitting}}"
