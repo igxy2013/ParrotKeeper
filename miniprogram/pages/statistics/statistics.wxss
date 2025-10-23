@@ -95,19 +95,19 @@
 .overview-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20rpx;
+  gap: 15rpx;
   padding: 0 30rpx;
 }
 
 .overview-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10rpx);
-  border-radius: 20rpx;
-  padding: 35rpx;
+  border-radius: 16rpx;
+  padding: 24rpx;
   display: flex;
   align-items: center;
-  gap: 20rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+  gap: 16rpx;
+  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.12);
   border: 1rpx solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
 }
@@ -118,16 +118,16 @@
 }
 
 .card-icon {
-  font-size: 44rpx;
-  width: 88rpx;
-  height: 88rpx;
+  font-size: 36rpx;
+  width: 72rpx;
+  height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea, #764ba2);
   border-radius: 50%;
   color: white;
-  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.3);
+  box-shadow: 0 3rpx 8rpx rgba(102, 126, 234, 0.25);
 }
 
 .card-content {
@@ -137,14 +137,14 @@
 }
 
 .card-number {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: bold;
   color: #4CAF50;
-  margin-bottom: 6rpx;
+  margin-bottom: 4rpx;
 }
 
 .card-label {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #666666;
 }
 
@@ -213,6 +213,23 @@
   padding: 10rpx 20rpx;
   font-size: 24rpx;
   line-height: 1;
+}
+
+/* 查看全部按钮样式 */
+.view-all-btn {
+  padding: 8rpx 16rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+  color: #667eea;
+  border: 1rpx solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.view-all-btn:active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 2rpx 8rpx rgba(102, 126, 234, 0.2);
 }
 
 .card-content {
@@ -567,7 +584,26 @@
 @media (max-width: 750rpx) {
   .overview-grid {
     grid-template-columns: 1fr;
-    gap: 15rpx;
+    gap: 12rpx;
+  }
+  
+  .overview-card {
+    padding: 20rpx;
+    gap: 14rpx;
+  }
+  
+  .card-icon {
+    width: 64rpx;
+    height: 64rpx;
+    font-size: 32rpx;
+  }
+  
+  .card-number {
+    font-size: 26rpx;
+  }
+  
+  .card-label {
+    font-size: 20rpx;
   }
   
   .health-stats {

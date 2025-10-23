@@ -33,9 +33,11 @@ def get_overview():
         
         # 本月支出（包括用户个人支出和团队共享鹦鹉的支出）
         current_month = date.today().replace(day=1)
+        # 根据用户模式获取可访问的支出ID
+        expense_ids = get_accessible_expense_ids_by_mode(user)
         monthly_expense = db.session.query(func.sum(Expense.amount)).filter(
             and_(
-                Expense.parrot_id.in_(parrot_ids),
+                Expense.id.in_(expense_ids),
                 Expense.expense_date >= current_month
             )
         ).scalar() or 0

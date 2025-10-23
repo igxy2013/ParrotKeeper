@@ -8,6 +8,7 @@ Page({
     page: 1,
     limit: 20,
     totalAmount: 0,
+    totalCount: 0, // 添加总记录数字段
     hasOperationPermission: false, // 添加操作权限标识
     categories: [
       { value: 'food', label: '食物' },
@@ -49,7 +50,7 @@ Page({
       }
     }
     
-    console.log('当前openid:', app.globalData.openid)
+    // 加载数据
     this.loadExpenses()
     this.loadSummary()
   },
@@ -160,6 +161,7 @@ Page({
           expenses,
           totalAmount,
           totalAmount_display: totalAmount.toFixed(2),
+          totalCount: response.data.total, // 使用API返回的总记录数
           hasMore: response.data.has_next,
           page: this.data.page + 1
         })

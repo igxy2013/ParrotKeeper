@@ -81,7 +81,7 @@
   <view class="card">
     <view class="card-header">
       <text class="card-title">支出记录</text>
-      <text class="total-text">共 {{expenses.length}} 条记录，总计 ¥{{totalAmount_display || '0.00'}}</text>
+      <text class="total-text">共 {{totalCount}} 条记录，总计 ¥{{summary.yearly_total_display || '0.00'}}</text>
     </view>
   </view>
   

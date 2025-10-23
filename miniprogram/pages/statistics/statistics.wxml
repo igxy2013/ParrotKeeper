@@ -126,6 +126,9 @@
     <view class="card">
       <view class="card-header">
         <text class="card-title">支出分析</text>
+        <view class="view-all-btn" bindtap="navigateToExpenses">
+          <text>查看全部</text>
+        </view>
       </view>
       <view class="card-content">
         <view class="expense-list" wx:if="{{expenseAnalysis.length > 0}}">

@@ -274,10 +274,15 @@ Page({
   // 切换喂食趋势时间段
   changeFeedingPeriod(e) {
     const period = e.currentTarget.dataset.period
-    this.setData({
-      feedingPeriod: period
-    })
+    this.setData({ feedingPeriod: period })
     this.loadFeedingTrends()
+  },
+
+  // 跳转到支出管理页面
+  navigateToExpenses() {
+    wx.navigateTo({
+      url: '/pages/expenses/expenses'
+    })
   },
 
   // 游客模式加载示例数据
