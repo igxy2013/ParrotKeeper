@@ -46,27 +46,27 @@
         <view class="action-grid">
           <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickFeeding">
             <view class="action-icon">🍎</view>
-            <text class="action-text">快速喂食</text>
+            <text class="action-text">快速<br/>喂食</text>
           </view>
           <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
             <view class="action-icon">🧽</view>
-            <text class="action-text">清洁记录</text>
+            <text class="action-text">清洁<br/>记录</text>
           </view>
           <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickHealth">
             <view class="action-icon">🏥</view>
-            <text class="action-text">健康检查</text>
+            <text class="action-text">健康<br/>检查</text>
           </view>
           <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="addParrot">
             <view class="action-icon">➕</view>
-            <text class="action-text">添加鹦鹉</text>
+            <text class="action-text">添加<br/>鹦鹉</text>
           </view>
           <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickExpense">
             <view class="action-icon">💰</view>
-            <text class="action-text">添加支出</text>
+            <text class="action-text">添加<br/>支出</text>
           </view>
           <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="goToExpenseManagement">
             <view class="action-icon">📊</view>
-            <text class="action-text">管理支出</text>
+            <text class="action-text">管理<br/>支出</text>
           </view>
         </view>
       </view>

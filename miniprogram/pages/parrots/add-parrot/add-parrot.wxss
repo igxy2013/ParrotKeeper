@@ -80,7 +80,8 @@
   color: #333;
   flex: 1;
   line-height: 1;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
 }
 
 .picker-text.placeholder {
@@ -92,7 +93,8 @@
   color: #999;
   margin-left: 20rpx;
   line-height: 1;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
 }
 
 .form-textarea {

@@ -12,7 +12,9 @@
     <view class="user-info">
       <view class="nickname-display">
         <text class="user-name">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
-        <button class="edit-nickname-btn" bindtap="toggleNicknameEdit">编辑</button>
+        <view class="edit-nickname-btn" bindtap="toggleNicknameEdit">
+          <text class="edit-icon">✏️</text>
+        </view>
       </view>
       <view class="nickname-edit" wx:if="{{isEditingNickname}}">
         <input 
