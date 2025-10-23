@@ -8,15 +8,7 @@ Page({
       description: '',
       expense_date: ''
     },
-    categories: [
-      { value: 'food', label: '食物' },
-      { value: 'medical', label: '医疗' },
-      { value: 'toys', label: '玩具' },
-      { value: 'cage', label: '笼具' },
-      { value: 'baby_bird', label: '幼鸟' },
-      { value: 'breeding_bird', label: '种鸟' },
-      { value: 'other', label: '其他' }
-    ],
+    categories: [], // 改为空数组，从API加载
     submitting: false,
     selectedCategoryIndex: -1,
     selectedCategoryLabel: ''
@@ -29,13 +21,78 @@ Page({
                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
                    String(today.getDate()).padStart(2, '0')
     
-    // 设置默认类别为食物
     this.setData({
-      'formData.expense_date': dateStr,
-      'formData.category': 'food',
-      selectedCategoryIndex: 0,
-      selectedCategoryLabel: '食物'
+      'formData.expense_date': dateStr
     })
+    
+    // 加载支出类别
+    this.loadCategories()
+  },
+
+  // 加载支出类别
+  async loadCategories() {
+    try {
+      const response = await app.request({
+        url: '/api/expenses/categories',
+        method: 'GET'
+      })
+
+      console.log('支出类别API响应:', response)
+      
+      if (response && response.success) {
+        this.setData({
+          categories: response.data
+        })
+        
+        // 设置默认类别为食物（如果存在）
+        const foodCategory = response.data.find(cat => cat.value === 'food')
+        if (foodCategory) {
+          this.setData({
+            'formData.category': 'food',
+            selectedCategoryIndex: response.data.findIndex(cat => cat.value === 'food'),
+            selectedCategoryLabel: foodCategory.label
+          })
+        }
+        
+        console.log('设置的支出类别:', response.data)
+      } else {
+        console.error('支出类别API返回错误:', response)
+        // 如果API失败，使用默认类别
+        const defaultCategories = [
+          { value: 'food', label: '食物' },
+          { value: 'medical', label: '医疗' },
+          { value: 'toys', label: '玩具' },
+          { value: 'cage', label: '笼具' },
+          { value: 'baby_bird', label: '幼鸟' },
+          { value: 'breeding_bird', label: '种鸟' },
+          { value: 'other', label: '其他' }
+        ]
+        this.setData({
+          categories: defaultCategories,
+          'formData.category': 'food',
+          selectedCategoryIndex: 0,
+          selectedCategoryLabel: '食物'
+        })
+      }
+    } catch (error) {
+      console.error('加载支出类别失败:', error)
+      // 如果网络错误，使用默认类别
+      const defaultCategories = [
+        { value: 'food', label: '食物' },
+        { value: 'medical', label: '医疗' },
+        { value: 'toys', label: '玩具' },
+        { value: 'cage', label: '笼具' },
+        { value: 'baby_bird', label: '幼鸟' },
+        { value: 'breeding_bird', label: '种鸟' },
+        { value: 'other', label: '其他' }
+      ]
+      this.setData({
+        categories: defaultCategories,
+        'formData.category': 'food',
+        selectedCategoryIndex: 0,
+        selectedCategoryLabel: '食物'
+      })
+    }
   },
 
   // 选择类别

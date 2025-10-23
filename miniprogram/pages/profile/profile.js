@@ -19,7 +19,19 @@ Page({
     inviteCode: '', // 邀请码输入
     showCreateTeamModal: false, // 是否显示创建团队弹窗
     teamName: '', // 团队名称输入
-    teamDescription: '' // 团队描述输入
+    teamDescription: '', // 团队描述输入
+    // 头像选择相关
+    showAvatarModal: false, // 是否显示头像选择弹窗
+    avatarOptions: [ // 预设头像选项
+      '/images/default-parrot.svg',
+      '/images/parrot-avatar-blue.svg',
+      '/images/parrot-avatar-green.svg',
+      '/images/parrot-avatar-orange.svg',
+      '/images/parrot-avatar-purple.svg',
+      '/images/parrot-avatar-red.svg',
+      '/images/parrot-avatar-yellow.svg'
+    ],
+    selectedAvatar: '' // 当前选择的头像
   },
 
   onLoad(options) {
@@ -961,5 +973,97 @@ Page({
         });
       }
     });
+  },
+
+  // 头像选择相关方法
+  // 切换头像编辑状态
+  toggleAvatarEdit() {
+    if (!this.data.isEditingNickname) {
+      return; // 只有在编辑昵称状态下才能选择头像
+    }
+    this.setData({
+      showAvatarModal: true,
+      selectedAvatar: this.data.userInfo.avatar_url || '/images/default-parrot.svg'
+    });
+  },
+
+  // 隐藏头像选择弹窗
+  hideAvatarModal() {
+    this.setData({
+      showAvatarModal: false,
+      selectedAvatar: ''
+    });
+  },
+
+  // 选择头像
+  selectAvatar(e) {
+    const avatar = e.currentTarget.dataset.avatar;
+    this.setData({
+      selectedAvatar: avatar
+    });
+  },
+
+  // 确认头像更改
+  confirmAvatarChange() {
+    if (!this.data.selectedAvatar) {
+      wx.showToast({
+        title: '请选择头像',
+        icon: 'none'
+      });
+      return;
+    }
+
+    // 调用后端API更新头像
+    wx.request({
+      url: 'https://bimai.xyz/api/auth/profile',
+      method: 'PUT',
+      data: {
+        avatar_url: this.data.selectedAvatar
+      },
+      header: {
+        'content-type': 'application/json',
+        'X-OpenID': this.data.userInfo.openid
+      },
+      success: (res) => {
+        if (res.data.success) {
+          // 更新本地存储和页面数据
+          const updatedUserInfo = {
+            ...this.data.userInfo,
+            avatar_url: this.data.selectedAvatar
+          };
+          
+          wx.setStorageSync('userInfo', updatedUserInfo);
+          app.globalData.userInfo = updatedUserInfo;
+          
+          this.setData({
+            userInfo: updatedUserInfo,
+            showAvatarModal: false,
+            selectedAvatar: ''
+          });
+          
+          wx.showToast({
+            title: '头像更新成功',
+            icon: 'success'
+          });
+        } else {
+          wx.showToast({
+            title: res.data.message || '头像更新失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('更新头像失败', err);
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  // 防止弹窗关闭
+  preventClose() {
+    // 空方法，防止点击弹窗内容区域时关闭弹窗
   }
 })

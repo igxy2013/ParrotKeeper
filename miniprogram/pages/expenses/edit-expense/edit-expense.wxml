@@ -10,10 +10,10 @@
       
       <view class="form-item">
         <text class="form-label required">支出类别</text>
-        <picker bindchange="onCategoryChange" range="{{categories}}" range-key="label">
+        <picker bindchange="onCategoryChange" range="{{categories}}" range-key="label" value="{{selectedCategoryIndex}}">
           <view class="form-picker">
-            <text class="picker-text {{formData.category ? '' : 'placeholder'}}">
-              {{getCategoryLabel(formData.category) || '请选择类别'}}
+            <text class="picker-text {{selectedCategoryLabel ? '' : 'placeholder'}}">
+              {{selectedCategoryLabel || '请选择类别'}}
             </text>
             <text class="picker-arrow">▼</text>
           </view>

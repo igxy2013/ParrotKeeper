@@ -9,15 +9,9 @@ Page({
       description: '',
       expense_date: ''
     },
-    categories: [
-      { value: 'food', label: '食物' },
-      { value: 'medical', label: '医疗' },
-      { value: 'toys', label: '玩具' },
-      { value: 'cage', label: '笼具' },
-      { value: 'baby_bird', label: '幼鸟' },
-      { value: 'breeding_bird', label: '种鸟' },
-      { value: 'other', label: '其他' }
-    ],
+    categories: [], // 改为空数组，从API加载
+    selectedCategoryIndex: -1, // 初始不选中
+    selectedCategoryLabel: '', // 新增：选中类别的显示标签
     loading: true,
     submitting: false
   },
@@ -27,7 +21,10 @@ Page({
       this.setData({
         expenseId: parseInt(options.id)
       })
-      this.loadExpenseDetail()
+      // 先加载类别，再加载支出详情
+      this.loadCategories().then(() => {
+        this.loadExpenseDetail()
+      })
     } else {
       wx.showToast({
         title: '参数错误',
@@ -36,6 +33,61 @@ Page({
       setTimeout(() => {
         wx.navigateBack()
       }, 1500)
+    }
+  },
+
+  // 加载支出类别
+  async loadCategories() {
+    try {
+      console.log('开始加载支出类别...')
+      const response = await app.request({
+        url: '/api/expenses/categories',
+        method: 'GET'
+      })
+
+      console.log('支出类别API响应:', response)
+      
+      if (response && response.success) {
+        console.log('API返回的categories数据:', response.data)
+        this.setData({
+          categories: response.data
+        }, () => {
+          console.log('categories设置完成，当前值:', this.data.categories)
+        })
+        console.log('设置的支出类别:', response.data)
+      } else {
+        console.error('支出类别API返回错误:', response)
+        // 如果API失败，使用默认类别
+        const defaultCategories = [
+          { value: 'food', label: '食物' },
+          { value: 'medical', label: '医疗' },
+          { value: 'toys', label: '玩具' },
+          { value: 'cage', label: '笼具' },
+          { value: 'baby_bird', label: '幼鸟' },
+          { value: 'breeding_bird', label: '种鸟' },
+          { value: 'other', label: '其他' }
+        ]
+        this.setData({
+          categories: defaultCategories
+        })
+        console.log('使用默认类别:', defaultCategories)
+      }
+    } catch (error) {
+      console.error('加载支出类别失败:', error)
+      // 如果网络错误，使用默认类别
+      const defaultCategories = [
+        { value: 'food', label: '食物' },
+        { value: 'medical', label: '医疗' },
+        { value: 'toys', label: '玩具' },
+        { value: 'cage', label: '笼具' },
+        { value: 'baby_bird', label: '幼鸟' },
+        { value: 'breeding_bird', label: '种鸟' },
+        { value: 'other', label: '其他' }
+      ]
+      this.setData({
+        categories: defaultCategories
+      })
+      console.log('网络错误，使用默认类别:', defaultCategories)
     }
   },
 
@@ -58,6 +110,18 @@ Page({
       
       if (response && response.data && response.data.success) {
         const expense = response.data.data
+        
+        console.log('支出详情数据:', expense)
+        console.log('当前categories数组:', this.data.categories)
+        
+        // 找到当前类别在categories数组中的索引
+        const categoryIndex = this.data.categories.findIndex(cat => cat.value === expense.category)
+        const categoryLabel = categoryIndex >= 0 ? this.data.categories[categoryIndex].label : ''
+        
+        console.log('支出类别值:', expense.category)
+        console.log('找到的类别索引:', categoryIndex)
+        console.log('找到的类别标签:', categoryLabel)
+        
         this.setData({
           formData: {
             category: expense.category,
@@ -65,8 +129,20 @@ Page({
             description: expense.description || '',
             expense_date: expense.expense_date
           },
+          selectedCategoryIndex: categoryIndex >= 0 ? categoryIndex : -1, // 设置正确的类别索引
+          selectedCategoryLabel: categoryLabel,
           loading: false
+        }, () => {
+          // 数据设置完成后的回调，确保页面已更新
+          console.log('数据设置完成，当前formData.category:', this.data.formData.category)
+          console.log('数据设置完成，当前selectedCategoryIndex:', this.data.selectedCategoryIndex)
+          console.log('数据设置完成，当前selectedCategoryLabel:', this.data.selectedCategoryLabel)
+          console.log('数据设置完成，当前categories:', this.data.categories)
         })
+        
+        console.log('设置后的formData.category:', this.data.formData.category)
+        console.log('设置后的selectedCategoryIndex:', this.data.selectedCategoryIndex)
+        console.log('设置后的selectedCategoryLabel:', this.data.selectedCategoryLabel)
       } else {
         console.error('支出详情API返回错误:', response)
         wx.showToast({
@@ -92,8 +168,13 @@ Page({
   // 选择类别
   onCategoryChange(e) {
     const index = e.detail.value
+    const selected = this.data.categories[index]
     this.setData({
-      'formData.category': this.data.categories[index].value
+      'formData.category': selected.value,
+      selectedCategoryIndex: index, // 同时更新选中的索引
+      selectedCategoryLabel: selected.label
+    }, () => {
+      console.log('选择类别完成，当前selectedCategoryLabel:', this.data.selectedCategoryLabel)
     })
   },
 
@@ -286,7 +367,24 @@ Page({
 
   // 获取类别标签
   getCategoryLabel(value) {
+    console.log('getCategoryLabel被调用，参数value:', value)
+    console.log('当前categories数组:', this.data.categories)
+    
+    if (!value) {
+      console.log('value为空，返回默认文本')
+      return '请选择类别'
+    }
+    
+    if (!this.data.categories || this.data.categories.length === 0) {
+      console.log('categories数组为空，返回默认文本')
+      return '请选择类别'
+    }
+    
     const category = this.data.categories.find(item => item.value === value)
-    return category ? category.label : '请选择类别'
+    console.log('找到的category:', category)
+    
+    const result = category ? category.label : '请选择类别'
+    console.log('getCategoryLabel返回结果:', result)
+    return result
   }
 })

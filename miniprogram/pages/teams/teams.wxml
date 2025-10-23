@@ -156,12 +156,6 @@
         </view>
       </view>
 
-      <!-- 在线成员统计 -->
-      <view class="online-stats">
-        <view class="online-indicator"></view>
-        <text class="online-text">{{onlineMembersCount}}人在线</text>
-      </view>
-
       <!-- 成员列表 -->
       <view class="members-list">
         <view 
@@ -175,7 +169,6 @@
             <view class="member-avatar-section">
               <view class="member-avatar-container">
                 <image class="member-avatar" src="{{item.avatar}}" mode="aspectFill"></image>
-                <view class="online-status {{item.isOnline ? 'online' : 'offline'}}"></view>
               </view>
             </view>
             

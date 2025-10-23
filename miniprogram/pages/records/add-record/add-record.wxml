@@ -380,17 +380,27 @@
           data-id="{{item.id}}"
           data-name="{{item.name}}"
         >
-          <image 
-            class="parrot-avatar" 
-            src="{{item.photo_url || '/images/default-parrot.png'}}" 
-            mode="aspectFill"
-          />
+          <view class="parrot-avatar">
+            <image 
+              class="parrot-image" 
+              src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" 
+              mode="aspectFill"
+            />
+          </view>
           <view class="parrot-info">
-            <text class="parrot-name">{{item.name}}</text>
+            <view class="name-section">
+              <text class="parrot-name">{{item.name}}</text>
+              <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
+            </view>
             <text class="parrot-species">{{item.species_name}}</text>
           </view>
-          <view class="status-badge status-{{item.health_status}}">
-            {{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}
+          <view class="parrot-status-section">
+            <text class="status-text status-{{item.health_status}}">
+              {{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}
+            </text>
+            <view class="status-badge status-{{item.health_status}}">
+              {{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}
+            </view>
           </view>
         </view>
       </view>
@@ -511,8 +521,8 @@
 </view>
 
 <!-- 雄性鹦鹉选择弹窗 -->
-<view class="modal" wx:if="{{showMaleParrotModal}}" bindtap="hideMaleParrotPicker">
-  <view class="modal-content" bindtap="stopPropagation">
+<view class="modal-overlay" wx:if="{{showMaleParrotModal}}" bindtap="hideMaleParrotPicker">
+  <view class="modal-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">选择雄性鹦鹉</text>
       <text class="modal-close" bindtap="hideMaleParrotPicker">×</text>
@@ -521,16 +531,29 @@
       <view class="parrot-list">
         <view 
           class="parrot-item" 
-          wx:for="{{parrotList}}" 
+          wx:for="{{maleParrotList}}" 
           wx:key="id"
           data-id="{{item.id}}"
           data-name="{{item.name}}"
           bindtap="selectMaleParrot"
         >
-          <image class="parrot-avatar" src="{{item.avatar_url || item.photo_url || '/images/default-parrot.png'}}" />
+          <view class="parrot-avatar">
+            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" />
+          </view>
           <view class="parrot-info">
-            <text class="parrot-name">{{item.name}}</text>
-            <text class="parrot-species">{{item.species}}</text>
+            <view class="name-section">
+              <text class="parrot-name">{{item.name}}</text>
+              <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
+            </view>
+            <text class="parrot-species">{{item.species_name}}</text>
+          </view>
+          <view class="parrot-status-section">
+            <text class="status-text status-{{item.health_status}}">
+              {{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}
+            </text>
+            <view class="status-badge status-{{item.health_status}}">
+              {{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}
+            </view>
           </view>
         </view>
       </view>
@@ -539,8 +562,8 @@
 </view>
 
 <!-- 雌性鹦鹉选择弹窗 -->
-<view class="modal" wx:if="{{showFemaleParrotModal}}" bindtap="hideFemaleParrotPicker">
-  <view class="modal-content" bindtap="stopPropagation">
+<view class="modal-overlay" wx:if="{{showFemaleParrotModal}}" bindtap="hideFemaleParrotPicker">
+  <view class="modal-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">选择雌性鹦鹉</text>
       <text class="modal-close" bindtap="hideFemaleParrotPicker">×</text>
@@ -549,16 +572,29 @@
       <view class="parrot-list">
         <view 
           class="parrot-item" 
-          wx:for="{{parrotList}}" 
+          wx:for="{{femaleParrotList}}" 
           wx:key="id"
           data-id="{{item.id}}"
           data-name="{{item.name}}"
           bindtap="selectFemaleParrot"
         >
-          <image class="parrot-avatar" src="{{item.avatar_url || item.photo_url || '/images/default-parrot.png'}}" />
+          <view class="parrot-avatar">
+            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" />
+          </view>
           <view class="parrot-info">
-            <text class="parrot-name">{{item.name}}</text>
-            <text class="parrot-species">{{item.species}}</text>
+            <view class="name-section">
+              <text class="parrot-name">{{item.name}}</text>
+              <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
+            </view>
+            <text class="parrot-species">{{item.species_name}}</text>
+          </view>
+          <view class="parrot-status-section">
+            <text class="status-text status-{{item.health_status}}">
+              {{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}
+            </text>
+            <view class="status-badge status-{{item.health_status}}">
+              {{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}
+            </view>
           </view>
         </view>
       </view>

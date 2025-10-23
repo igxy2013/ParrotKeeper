@@ -40,6 +40,8 @@ Page({
     
     // 选择器数据
     parrotList: [],
+    maleParrotList: [],
+    femaleParrotList: [],
     selectedParrotName: '',
     selectedMaleParrotName: '',
     selectedFemaleParrotName: '',
@@ -121,8 +123,22 @@ Page({
         data: { limit: 100 }
       })
       if (res.success) {
+        const allParrots = res.data.parrots || []
+        
+        // 过滤雄性鹦鹉（包括性别未知的）
+        const maleParrots = allParrots.filter(parrot => 
+          parrot.gender === 'male' || parrot.gender === 'unknown' || !parrot.gender
+        )
+        
+        // 过滤雌性鹦鹉（包括性别未知的）
+        const femaleParrots = allParrots.filter(parrot => 
+          parrot.gender === 'female' || parrot.gender === 'unknown' || !parrot.gender
+        )
+        
         this.setData({
-          parrotList: res.data.parrots || []
+          parrotList: allParrots,
+          maleParrotList: maleParrots,
+          femaleParrotList: femaleParrots
         })
       }
     } catch (error) {

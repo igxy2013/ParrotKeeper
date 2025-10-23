@@ -346,51 +346,53 @@
 
 /* 鹦鹉列表 */
 .parrot-list {
-  padding: 20rpx 0;
+  padding: 15rpx 0;
 }
 
 .parrot-item {
   display: flex;
   align-items: center;
-  padding: 30rpx;
+  padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #f0f0f0;
+  transition: background-color 0.3s;
+  position: relative;
 }
 
 .parrot-item:last-child {
   border-bottom: none;
 }
 
+.parrot-item:active {
+  background-color: #f5f5f5;
+}
+
+/* 鹦鹉头像 */
 .parrot-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  margin-right: 20rpx;
+  position: relative;
   flex-shrink: 0;
+  margin-right: 16rpx;
 }
 
-.parrot-info {
-  flex: 1;
-}
-
-.parrot-name {
-  display: block;
-  font-size: 30rpx;
-  color: #333;
-  font-weight: 500;
-  margin-bottom: 8rpx;
-}
-
-.parrot-species {
-  font-size: 26rpx;
-  color: #666;
+.parrot-image {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 10rpx;
+  border: 2rpx solid #f0f0f0;
 }
 
 .status-badge {
-  padding: 8rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 24rpx;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16rpx;
+  font-weight: bold;
   color: white;
-  font-weight: 500;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .status-badge.status-healthy {
@@ -406,6 +408,83 @@
 }
 
 .status-badge.status-observation {
+  background: #2196f3;
+}
+
+/* 鹦鹉信息 */
+.parrot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name-section {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  margin-bottom: 4rpx;
+}
+
+.parrot-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.2;
+}
+
+.parrot-gender {
+  font-size: 20rpx;
+  font-weight: 600;
+  padding: 2rpx 5rpx;
+  border-radius: 6rpx;
+}
+
+.parrot-gender.male {
+  color: #2196F3;
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.parrot-gender.female {
+  color: #E91E63;
+  background: rgba(233, 30, 99, 0.1);
+}
+
+.parrot-species {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 6rpx;
+}
+
+.info-tags {
+  display: flex;
+  gap: 8rpx;
+}
+
+.info-tag {
+  font-size: 22rpx;
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.status-tag {
+  color: white;
+  font-weight: 500;
+}
+
+.status-tag.status-healthy {
+  background: #4CAF50;
+}
+
+.status-tag.status-sick {
+  background: #f44336;
+}
+
+.status-tag.status-recovering {
+  background: #ff9800;
+}
+
+.status-tag.status-observation {
   background: #2196f3;
 }
 
@@ -448,9 +527,60 @@
   background: #2196f3;
 }
 
+/* 鹦鹉状态区域 */
+.parrot-status-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+  min-width: 80rpx;
+  padding: 6rpx;
+  border-radius: 10rpx;
+  background: rgba(248, 249, 250, 0.8);
+  transition: all 0.3s ease;
+}
+
+.parrot-status-section:hover {
+  background: rgba(248, 249, 250, 1);
+  transform: translateY(-1rpx);
+}
+
 .status-text {
-  font-size: 30rpx;
-  color: #333;
+  font-size: 20rpx;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+  letter-spacing: 0.3rpx;
+  transition: all 0.3s ease;
+}
+
+.status-text.status-healthy {
+  color: #2E7D32;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 3rpx 6rpx;
+  border-radius: 6rpx;
+}
+
+.status-text.status-sick {
+  color: #C62828;
+  background: rgba(244, 67, 54, 0.1);
+  padding: 3rpx 6rpx;
+  border-radius: 6rpx;
+}
+
+.status-text.status-recovering {
+  color: #E65100;
+  background: rgba(255, 152, 0, 0.1);
+  padding: 3rpx 6rpx;
+  border-radius: 6rpx;
+}
+
+.status-text.status-observation {
+  color: #1565C0;
+  background: rgba(33, 150, 243, 0.1);
+  padding: 3rpx 6rpx;
+  border-radius: 6rpx;
 }
 
 /* 饲料类型选择器样式 */
@@ -490,4 +620,31 @@
   background: #f0f0f0;
   border-radius: 12rpx;
   align-self: flex-start;
+}
+
+/* 清洁类型选择器样式 */
+.cleaning-type-list {
+  padding: 20rpx 0;
+}
+
+.cleaning-type-item {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: background-color 0.3s;
+}
+
+.cleaning-type-item:last-child {
+  border-bottom: none;
+}
+
+.cleaning-type-item:active {
+  background-color: #f5f5f5;
+}
+
+.cleaning-type-text {
+  font-size: 30rpx;
+  color: #333;
+  font-weight: 500;
 }

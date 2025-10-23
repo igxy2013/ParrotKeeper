@@ -10,15 +10,7 @@ Page({
     totalAmount: 0,
     totalCount: 0, // 添加总记录数字段
     hasOperationPermission: false, // 添加操作权限标识
-    categories: [
-      { value: 'food', label: '食物' },
-      { value: 'medical', label: '医疗' },
-      { value: 'toys', label: '玩具' },
-      { value: 'cage', label: '笼具' },
-      { value: 'baby_bird', label: '幼鸟' },
-      { value: 'breeding_bird', label: '种鸟' },
-      { value: 'other', label: '其他' }
-    ],
+    categories: [], // 改为空数组，从API加载
     selectedCategory: '',
     showFilter: false,
     startDate: '',
@@ -51,6 +43,7 @@ Page({
     }
     
     // 加载数据
+    this.loadCategories() // 先加载类别
     this.loadExpenses()
     this.loadSummary()
   },
@@ -88,6 +81,53 @@ Page({
   onReachBottom() {
     if (this.data.hasMore && !this.data.loading) {
       this.loadExpenses()
+    }
+  },
+
+  // 加载支出类别
+  async loadCategories() {
+    try {
+      const response = await app.request({
+        url: '/api/expenses/categories',
+        method: 'GET'
+      })
+
+      console.log('支出类别API响应:', response)
+      
+      if (response && response.success) {
+        this.setData({
+          categories: response.data
+        })
+        console.log('设置的支出类别:', response.data)
+      } else {
+        console.error('支出类别API返回错误:', response)
+        // 如果API失败，使用默认类别
+        this.setData({
+          categories: [
+            { value: 'food', label: '食物' },
+            { value: 'medical', label: '医疗' },
+            { value: 'toys', label: '玩具' },
+            { value: 'cage', label: '笼具' },
+            { value: 'baby_bird', label: '幼鸟' },
+            { value: 'breeding_bird', label: '种鸟' },
+            { value: 'other', label: '其他' }
+          ]
+        })
+      }
+    } catch (error) {
+      console.error('加载支出类别失败:', error)
+      // 如果网络错误，使用默认类别
+      this.setData({
+        categories: [
+          { value: 'food', label: '食物' },
+          { value: 'medical', label: '医疗' },
+          { value: 'toys', label: '玩具' },
+          { value: 'cage', label: '笼具' },
+          { value: 'baby_bird', label: '幼鸟' },
+          { value: 'breeding_bird', label: '种鸟' },
+          { value: 'other', label: '其他' }
+        ]
+      })
     }
   },
 

@@ -25,7 +25,6 @@ Page({
     searchKeyword: '',
     selectedRole: 'all',
     recentActivities: [],
-    onlineMembersCount: 0,
     currentTeamId: null
   },
 
@@ -111,12 +110,10 @@ Page({
             name: this.decodeUnicode(m.nickname) || '无名',
             avatar: m.avatar_url || '/images/default-avatar.svg',
             role: (m.role === 'owner' || m.role === 'admin') ? '管理员' : '成员',
-            isOnline: false,
             joinTime: app.formatDate(m.joined_at),
             lastActive: '未知'
           }));
-          const onlineCount = members.filter(mm => mm.isOnline).length;
-          this.setData({ members, filteredMembers: members, onlineMembersCount: onlineCount });
+          this.setData({ members, filteredMembers: members });
         } else {
           throw new Error(memberRes.message || '获取成员失败');
         }
