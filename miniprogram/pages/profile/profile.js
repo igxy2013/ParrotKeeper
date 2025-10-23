@@ -12,7 +12,14 @@ Page({
     showModeDialog: false, // 是否显示模式切换弹窗
     selectedMode: 'personal', // 弹窗中选择的模式
     currentTeamName: '', // 当前团队名称
-    isTeamAdmin: false // 是否是团队管理员
+    isTeamAdmin: false, // 是否是团队管理员
+    showTeamInfoModal: false, // 是否显示团队信息弹窗
+    teamInfo: {}, // 团队详细信息
+    showJoinTeamModal: false, // 是否显示加入团队弹窗
+    inviteCode: '', // 邀请码输入
+    showCreateTeamModal: false, // 是否显示创建团队弹窗
+    teamName: '', // 团队名称输入
+    teamDescription: '' // 团队描述输入
   },
 
   onLoad(options) {
@@ -23,6 +30,17 @@ Page({
     this.checkLoginStatus();
     this.loadUserMode(); // 加载用户模式
     this.loadCurrentTeam(); // 加载当前团队信息
+    
+    // 检查是否需要刷新数据（加入团队或模式切换后）
+    if (app.globalData.needRefresh) {
+      console.log('Profile页面检测到needRefresh标志，刷新数据');
+      app.globalData.needRefresh = false; // 重置标志
+      // 重新加载用户模式和团队信息
+      this.loadUserMode();
+      this.loadCurrentTeam();
+      // 如果需要，也可以重新检查登录状态
+      this.checkLoginStatus();
+    }
   },
 
   onPullDownRefresh() {
@@ -465,16 +483,20 @@ Page({
   },
 
   // 跳转到加入团队页面
+  // 显示加入团队弹窗
   goToJoinTeam() {
-    wx.navigateTo({
-      url: '/pages/teams/join/join'
+    this.setData({
+      showJoinTeamModal: true,
+      inviteCode: ''
     });
   },
 
-  // 跳转到创建团队页面
+  // 显示创建团队弹窗
   goToCreateTeam() {
-    wx.navigateTo({
-      url: '/pages/teams/create/create'
+    this.setData({
+      showCreateTeamModal: true,
+      teamName: '',
+      teamDescription: ''
     });
   },
 
@@ -604,5 +626,340 @@ Page({
         })
       }
     })
+  },
+
+  // 显示团队信息弹窗
+  showTeamInfoModal() {
+    if (!this.data.isLogin) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (!this.data.currentTeamName) {
+      wx.showToast({
+        title: '您还未加入任何团队',
+        icon: 'none'
+      })
+      return
+    }
+
+    this.loadTeamDetailInfo()
+  },
+
+  // 加载团队详细信息
+  loadTeamDetailInfo() {
+    const that = this
+    wx.showLoading({
+      title: '加载中...'
+    })
+
+    wx.request({
+      url: `${app.globalData.baseUrl}/api/teams/current`,
+      method: 'GET',
+      header: {
+        'X-OpenID': wx.getStorageSync('openid'),
+        'Content-Type': 'application/json'
+      },
+      success: function(res) {
+        wx.hideLoading()
+        if (res.statusCode === 200 && res.data.success && res.data.data) {
+          const teamData = res.data.data
+          that.setData({
+            teamInfo: {
+              id: teamData.id, // 添加团队ID
+              name: teamData.name || '未知团队',
+              description: teamData.description || '暂无描述',
+              memberCount: teamData.member_count || 0,
+              createdAt: that.formatDate(teamData.created_at),
+              myRole: that.getRoleDisplayName(teamData.role || 'member')
+            },
+            showTeamInfoModal: true
+          })
+        } else {
+          wx.showToast({
+            title: res.data.message || '获取团队信息失败',
+            icon: 'none'
+          })
+        }
+      },
+      fail: function(error) {
+        wx.hideLoading()
+        console.error('获取团队详细信息失败:', error)
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        })
+      }
+    })
+  },
+
+  // 隐藏团队信息弹窗
+  hideTeamInfoModal() {
+    this.setData({
+      showTeamInfoModal: false
+    })
+  },
+
+  // 退出团队
+  leaveTeam() {
+    const that = this
+    wx.showModal({
+      title: '确认退出',
+      content: '确定要退出当前团队吗？退出后将无法查看团队数据。',
+      confirmText: '退出',
+      confirmColor: '#ff4757',
+      success: function(res) {
+        if (res.confirm) {
+          that.performLeaveTeam()
+        }
+      }
+    })
+  },
+
+  // 执行退出团队操作
+  performLeaveTeam() {
+    const that = this
+    const { teamInfo } = this.data
+    
+    if (!teamInfo.id) {
+      wx.showToast({
+        title: '团队信息错误',
+        icon: 'none'
+      })
+      return
+    }
+    
+    wx.showLoading({
+      title: '退出中...'
+    })
+
+    wx.request({
+      url: `${app.globalData.baseUrl}/api/teams/${teamInfo.id}/leave`,
+      method: 'POST',
+      header: {
+        'X-OpenID': wx.getStorageSync('openid'),
+        'Content-Type': 'application/json'
+      },
+      success: function(res) {
+        wx.hideLoading()
+        if (res.statusCode === 200) {
+          wx.showToast({
+            title: '已退出团队',
+            icon: 'success'
+          })
+          
+          // 隐藏弹窗并刷新团队信息
+          that.setData({
+            showTeamInfoModal: false,
+            currentTeamName: '',
+            isTeamAdmin: false,
+            teamInfo: {}
+          })
+          
+          // 刷新当前团队信息
+          that.loadCurrentTeam()
+        } else {
+          wx.showToast({
+            title: res.data.message || '退出失败',
+            icon: 'none'
+          })
+        }
+      },
+      fail: function(error) {
+        wx.hideLoading()
+        console.error('退出团队失败:', error)
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        })
+      }
+    })
+  },
+
+  // 格式化日期
+  formatDate(dateString) {
+    if (!dateString) return '未知'
+    const date = new Date(dateString)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  },
+
+  // 获取角色显示名称
+  getRoleDisplayName(role) {
+    const roleMap = {
+      'owner': '创建者',
+      'admin': '管理员', 
+      'member': '成员'
+    }
+    return roleMap[role] || '成员'
+  },
+
+  // 隐藏加入团队弹窗
+  hideJoinTeamModal() {
+    this.setData({
+      showJoinTeamModal: false,
+      inviteCode: ''
+    });
+  },
+
+  // 邀请码输入处理
+  onInviteCodeInput(e) {
+    this.setData({
+      inviteCode: e.detail.value.trim().toUpperCase()
+    });
+  },
+
+  // 确认加入团队
+  confirmJoinTeam() {
+    const { inviteCode } = this.data;
+    
+    if (!inviteCode) {
+      wx.showToast({
+        title: '请输入邀请码',
+        icon: 'none'
+      });
+      return;
+    }
+
+    if (inviteCode.length !== 8) {
+      wx.showToast({
+        title: '邀请码格式不正确',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const that = this;
+    wx.showLoading({
+      title: '加入中...'
+    });
+
+    wx.request({
+      url: `${app.globalData.baseUrl}/api/teams/join`,
+      method: 'POST',
+      header: {
+        'X-OpenID': app.globalData.openid,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        invite_code: inviteCode
+      },
+      success: function(res) {
+        wx.hideLoading();
+        if (res.data.success) {
+          wx.showToast({
+            title: '加入团队成功',
+            icon: 'success'
+          });
+          
+          // 隐藏弹窗
+          that.hideJoinTeamModal();
+          
+          // 重新加载当前团队信息
+          that.loadCurrentTeam();
+        } else {
+          wx.showToast({
+            title: res.data.message || '加入团队失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: function(error) {
+        wx.hideLoading();
+        console.error('加入团队失败:', error);
+        wx.showToast({
+          title: '网络错误，请重试',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  // 隐藏创建团队弹窗
+  hideCreateTeamModal() {
+    this.setData({
+      showCreateTeamModal: false,
+      teamName: '',
+      teamDescription: ''
+    });
+  },
+
+  // 团队名称输入
+  onTeamNameInput(e) {
+    this.setData({
+      teamName: e.detail.value
+    });
+  },
+
+  // 团队描述输入
+  onTeamDescriptionInput(e) {
+    this.setData({
+      teamDescription: e.detail.value
+    });
+  },
+
+  // 确认创建团队
+  confirmCreateTeam() {
+    const { teamName, teamDescription } = this.data;
+    
+    if (!teamName.trim()) {
+      wx.showToast({
+        title: '请输入团队名称',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const openid = wx.getStorageSync('openid');
+    if (!openid) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      });
+      return;
+    }
+
+    wx.request({
+      url: 'https://bimai.xyz/api/teams',
+      method: 'POST',
+      header: {
+        'X-OpenID': openid,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        name: teamName.trim(),
+        description: teamDescription.trim()
+      },
+      success: (res) => {
+        console.log('创建团队响应:', res);
+        if (res.statusCode === 200 && res.data.success) {
+          wx.showToast({
+            title: '创建成功',
+            icon: 'success'
+          });
+          this.setData({
+            showCreateTeamModal: false,
+            teamName: '',
+            teamDescription: ''
+          });
+          // 刷新团队列表
+          this.loadCurrentTeam();
+        } else {
+          wx.showToast({
+            title: res.data.message || '创建团队失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('创建团队失败:', err);
+        wx.showToast({
+          title: '创建团队失败',
+          icon: 'none'
+        });
+      }
+    });
   }
 })

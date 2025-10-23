@@ -35,6 +35,27 @@ Page({
 
   onShow: function () {
     this.loadTeamData();
+    
+    // 检查是否需要刷新数据（加入团队或模式切换后）
+    if (app.globalData.needRefresh) {
+      console.log('Teams页面检测到needRefresh标志，刷新数据');
+      app.globalData.needRefresh = false; // 重置标志
+      this.loadTeamData(); // 重新加载团队数据
+    }
+  },
+
+  // 解码Unicode字符串
+  decodeUnicode: function(str) {
+    if (!str) return str;
+    try {
+      // 如果字符串包含Unicode转义序列，进行解码
+      return str.replace(/\\u[\dA-F]{4}/gi, function (match) {
+        return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+      });
+    } catch (e) {
+      console.error('Unicode解码失败:', e);
+      return str;
+    }
   },
 
   // 加载团队数据（后端）
@@ -87,7 +108,7 @@ Page({
         if (memberRes.success) {
           const members = (memberRes.data || []).map(m => ({
             id: m.id,
-            name: m.nickname || '无名',
+            name: this.decodeUnicode(m.nickname) || '无名',
             avatar: m.avatar_url || '/images/default-avatar.svg',
             role: (m.role === 'owner' || m.role === 'admin') ? '管理员' : '成员',
             isOnline: false,

@@ -28,17 +28,23 @@ def login():
         
         # 查找或创建用户
         user = User.query.filter_by(openid=openid).first()
+        
+        # 处理昵称，避免空值或默认值
+        nickname = user_info.get('nickName', '').strip()
+        if not nickname or nickname == '微信用户':
+            nickname = f'用户{openid[-6:]}'  # 使用OpenID后6位作为默认昵称
+        
         if not user:
             user = User(
                 openid=openid,
-                nickname=user_info.get('nickName'),
+                nickname=nickname,
                 avatar_url=user_info.get('avatarUrl')
             )
             db.session.add(user)
         else:
-            # 更新用户信息
-            if user_info.get('nickName'):
-                user.nickname = user_info.get('nickName')
+            # 更新用户信息，但只在有有效昵称时更新
+            if nickname and nickname != '微信用户':
+                user.nickname = nickname
             if user_info.get('avatarUrl'):
                 user.avatar_url = user_info.get('avatarUrl')
         

@@ -631,3 +631,154 @@
     font-size: 32rpx;
   }
 }
+
+/* 团队信息弹窗样式 */
+.modal-container {
+  background: white;
+  border-radius: 20rpx;
+  width: 600rpx;
+  max-width: 90%;
+  overflow: hidden;
+  position: relative;
+}
+
+.team-info-modal {
+  width: 90%;
+  max-width: 600rpx;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-close {
+  position: absolute;
+  top: 20rpx;
+  right: 30rpx;
+  font-size: 40rpx;
+  color: #999;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.team-info-section {
+  padding: 20rpx 0;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #666;
+  font-weight: 500;
+  min-width: 120rpx;
+  margin-right: 20rpx;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #333;
+  flex: 1;
+  text-align: right;
+  word-break: break-all;
+}
+
+.btn-danger {
+  background: #ff4757;
+  color: white;
+}
+
+.btn-danger:active {
+  background: #ff3838;
+}
+
+/* 当前团队菜单可点击样式 */
+.team-action-item.info-only {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.team-action-item.info-only:active {
+  transform: scale(0.98);
+  background: #e8f4fd;
+}
+
+/* 加入团队弹窗样式 */
+.join-team-modal {
+  width: 90%;
+  max-width: 500rpx;
+}
+
+.join-form {
+  padding: 20rpx 0;
+}
+
+.form-item {
+  margin-bottom: 30rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 15rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 20rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+.form-tips {
+  margin-top: 15rpx;
+}
+
+.form-tips text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 创建团队弹窗样式 */
+.create-team-modal {
+  max-height: 80vh;
+}
+
+.create-form {
+  padding: 20rpx 0;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 120rpx;
+  padding: 20rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  background-color: #f8f9fa;
+  box-sizing: border-box;
+}
+
+.form-textarea:focus {
+  border-color: #007aff;
+  background-color: #fff;
+}
