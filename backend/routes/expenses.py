@@ -92,6 +92,7 @@ def create_expense():
     """创建支出记录"""
     try:
         user = request.current_user
+        print(f"[DEBUG] 创建支出记录 - 用户ID: {user.id}, 用户模式: {getattr(user, 'user_mode', 'personal')}")
         
         # 在团队模式下，只有管理员才能添加支出记录
         if hasattr(user, 'user_mode') and user.user_mode == 'team':
@@ -110,17 +111,30 @@ def create_expense():
                 return error_response('只有团队管理员才能添加支出记录', 403)
         
         data = request.get_json()
+        print(f"[DEBUG] 接收到的数据: {data}")
         
         # 验证必填字段
         if not data.get('category') or not data.get('amount'):
+            print(f"[DEBUG] 必填字段验证失败 - category: {data.get('category')}, amount: {data.get('amount')}")
             return error_response('类别和金额不能为空')
+        
+        # 验证类别是否在允许的范围内
+        allowed_categories = ['food', 'medical', 'toys', 'cage', 'baby_bird', 'breeding_bird', 'other']
+        if data.get('category') not in allowed_categories:
+            print(f"[DEBUG] 类别验证失败 - 收到的类别: {data.get('category')}, 允许的类别: {allowed_categories}")
+            return error_response(f'不支持的支出类别: {data.get("category")}')
+        
+        print(f"[DEBUG] 类别验证通过 - 类别: {data.get('category')}")
         
         # 验证金额
         try:
             amount = float(data['amount'])
             if amount <= 0:
+                print(f"[DEBUG] 金额验证失败 - 金额必须大于0: {amount}")
                 return error_response('金额必须大于0')
-        except (ValueError, TypeError):
+            print(f"[DEBUG] 金额验证通过 - 金额: {amount}")
+        except (ValueError, TypeError) as e:
+            print(f"[DEBUG] 金额格式验证失败 - 错误: {str(e)}, 原始值: {data['amount']}")
             return error_response('金额格式不正确')
         
         # 验证鹦鹉ID（如果提供）
@@ -128,15 +142,21 @@ def create_expense():
         if parrot_id:
             parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id, is_active=True).first()
             if not parrot:
+                print(f"[DEBUG] 鹦鹉验证失败 - 鹦鹉ID: {parrot_id}")
                 return error_response('鹦鹉不存在')
+            print(f"[DEBUG] 鹦鹉验证通过 - 鹦鹉ID: {parrot_id}")
         
         # 解析日期
         expense_date = date.today()
         if data.get('expense_date'):
             try:
                 expense_date = datetime.strptime(data['expense_date'], '%Y-%m-%d').date()
-            except ValueError:
+                print(f"[DEBUG] 日期解析成功 - 日期: {expense_date}")
+            except ValueError as e:
+                print(f"[DEBUG] 日期解析失败 - 错误: {str(e)}, 原始值: {data.get('expense_date')}")
                 return error_response('日期格式不正确')
+        
+        print(f"[DEBUG] 准备创建支出记录 - 用户ID: {user.id}, 类别: {data['category']}, 金额: {amount}")
         
         # 创建支出记录
         expense = Expense(
@@ -149,8 +169,12 @@ def create_expense():
             team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
         )
         
+        print(f"[DEBUG] 支出记录对象创建成功，准备保存到数据库")
+        
         db.session.add(expense)
         db.session.commit()
+        
+        print(f"[DEBUG] 支出记录保存成功 - ID: {expense.id}")
         
         return success_response({
             'id': expense.id,
@@ -163,6 +187,10 @@ def create_expense():
         }, '支出记录创建成功')
         
     except Exception as e:
+        print(f"[ERROR] 创建支出记录异常: {str(e)}")
+        print(f"[ERROR] 异常类型: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] 异常堆栈: {traceback.format_exc()}")
         db.session.rollback()
         return error_response(f'创建支出记录失败: {str(e)}')
 

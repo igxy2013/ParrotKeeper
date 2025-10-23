@@ -202,6 +202,9 @@ Page({
           icon: 'success'
         })
 
+        // 设置刷新标识，确保返回支出管理页面时会刷新数据
+        app.globalData.needRefresh = true
+
         setTimeout(() => {
           wx.navigateBack()
         }, 1500)
@@ -258,6 +261,9 @@ Page({
           title: '删除成功',
           icon: 'success'
         })
+
+        // 设置刷新标识，确保返回支出管理页面时会刷新数据
+        app.globalData.needRefresh = true
 
         setTimeout(() => {
           wx.navigateBack()

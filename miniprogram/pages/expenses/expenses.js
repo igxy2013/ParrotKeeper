@@ -141,6 +141,8 @@ Page({
             'grooming': '美容',
             'training': '训练',
             'cage': '笼具',
+            'baby_bird': '幼鸟',
+            'breeding_bird': '种鸟',
             'other': '其他'
           }
           
@@ -270,15 +272,28 @@ Page({
       if (response && response.success) {
         const expenses = [...this.data.expenses]
         const deletedExpense = expenses[expenseIndex]
+        
+        // 检查deletedExpense是否存在，防止访问undefined的属性
+        if (!deletedExpense) {
+          console.error('删除的支出记录不存在，索引:', expenseIndex)
+          wx.showToast({
+            title: '删除失败，记录不存在',
+            icon: 'none'
+          })
+          return
+        }
+        
         expenses.splice(expenseIndex, 1)
         
-        const totalAmount = this.data.totalAmount - deletedExpense.amount
- 
-         this.setData({
-           expenses,
-           totalAmount,
-           totalAmount_display: totalAmount.toFixed(2)
-         })
+        const totalAmount = this.data.totalAmount - (deletedExpense.amount || 0)
+        const totalCount = Math.max(0, this.data.totalCount - 1) // 减少总记录数
+
+        this.setData({
+          expenses,
+          totalAmount,
+          totalAmount_display: totalAmount.toFixed(2),
+          totalCount
+        })
 
         wx.showToast({
           title: '删除成功',

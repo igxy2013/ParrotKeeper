@@ -105,7 +105,7 @@
         <view class="action-btn edit" bindtap="onEditExpense" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
           <text class="action-icon">✏️</text>
         </view>
-        <view class="action-btn delete" bindtap="onDeleteExpense" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+        <view class="action-btn delete" bindtap="onDeleteExpense" data-id="{{item.id}}" data-index="{{index}}" wx:if="{{hasOperationPermission}}">
           <text class="action-icon">🗑️</text>
         </view>
       </view>
