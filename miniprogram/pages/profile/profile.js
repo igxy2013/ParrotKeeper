@@ -6,10 +6,13 @@ Page({
     isLogin: false,
     userInfo: {},
     joinDate: '',
-    tempAvatarUrl: '', // 临时头像URL
-    tempNickname: '',   // 临时昵称
     isEditingNickname: false, // 是否正在编辑昵称
-    editNickname: '' // 编辑中的昵称
+    editNickname: '', // 编辑中的昵称
+    userMode: 'personal', // 用户模式
+    showModeDialog: false, // 是否显示模式切换弹窗
+    selectedMode: 'personal', // 弹窗中选择的模式
+    currentTeamName: '', // 当前团队名称
+    isTeamAdmin: false // 是否是团队管理员
   },
 
   onLoad(options) {
@@ -18,6 +21,8 @@ Page({
 
   onShow() {
     this.checkLoginStatus();
+    this.loadUserMode(); // 加载用户模式
+    this.loadCurrentTeam(); // 加载当前团队信息
   },
 
   onPullDownRefresh() {
@@ -53,96 +58,107 @@ Page({
 
   // 处理登录
   handleLogin() {
-    // 检查是否输入了昵称
-    if (!this.data.tempNickname.trim()) {
-      wx.showToast({
-        title: '请输入昵称',
-        icon: 'none'
+    // 检查是否支持微信快速登录
+    if (wx.getUserProfile) {
+      // 支持新版本的微信快速登录
+      this.quickWechatLogin()
+    } else {
+      // 跳转到登录页面
+      wx.navigateTo({
+        url: '/pages/login/login'
       });
-      return;
     }
+  },
 
-    // 先获取微信登录code
-    wx.login({
-      success: (loginRes) => {
-        if (loginRes.code) {
-          // 准备用户信息
-          const userInfo = {
-            nickName: this.data.tempNickname.trim(),
-            avatarUrl: this.data.tempAvatarUrl || '/images/default-avatar.svg'
-          };
-          
-          // 调用后端登录接口
-          wx.request({
-            url: 'https://bimai.xyz/api/auth/login',
-            method: 'POST',
-            data: {
-              code: loginRes.code,
-              userInfo: userInfo
-            },
-            header: {
-              'content-type': 'application/json'
-            },
-            success: (res) => {
-              console.log('登录接口响应', res);
-              if (res.data.success) {
-                const responseUserInfo = res.data.data.user;
-                
-                // 直接使用后端返回的用户信息
-                const userInfo = {
-                  nickname: responseUserInfo.nickname,
-                  avatar_url: responseUserInfo.avatar_url,
-                  openid: responseUserInfo.openid,
-                  created_at: responseUserInfo.created_at
-                };
-                
-                // 存储用户信息和openid
-                wx.setStorageSync('userInfo', userInfo);
-                wx.setStorageSync('openid', responseUserInfo.openid);
-                
-                // 更新全局状态
-                app.globalData.userInfo = userInfo;
-                app.globalData.openid = responseUserInfo.openid;
-                app.globalData.isLogin = true;
-                
-                this.setData({
-                  isLogin: true,
-                  userInfo: userInfo,
-                  joinDate: this.formatJoinDate(responseUserInfo.created_at || Date.now()),
-                  tempAvatarUrl: '', // 清空临时数据
-                  tempNickname: ''
-                });
-                
-                wx.showToast({
-                  title: '登录成功',
-                  icon: 'success'
-                });
-              } else {
-                wx.showToast({
-                  title: res.data.message || '登录失败',
-                  icon: 'none'
-                });
-              }
-            },
-            fail: (err) => {
-              console.error('登录接口调用失败', err);
+  // 微信快速登录
+  quickWechatLogin() {
+    wx.getUserProfile({
+      desc: '用于完善用户资料',
+      success: (profileRes) => {
+        // 获取用户信息成功，继续获取登录凭证
+        wx.login({
+          success: (loginRes) => {
+            if (loginRes.code) {
+              // 调用后端登录接口
+              wx.request({
+                url: 'https://bimai.xyz/api/auth/login',
+                method: 'POST',
+                data: {
+                  code: loginRes.code,
+                  userInfo: profileRes.userInfo
+                },
+                header: {
+                  'content-type': 'application/json'
+                },
+                success: (res) => {
+                  console.log('快速登录接口响应', res);
+                  if (res.data.success) {
+                    const responseUserInfo = res.data.data.user;
+                    
+                    // 直接使用后端返回的用户信息
+                    const userInfo = {
+                      nickname: responseUserInfo.nickname,
+                      avatar_url: responseUserInfo.avatar_url,
+                      openid: responseUserInfo.openid,
+                      created_at: responseUserInfo.created_at
+                    };
+                    
+                    // 存储用户信息和openid
+                    wx.setStorageSync('userInfo', userInfo);
+                    wx.setStorageSync('openid', responseUserInfo.openid);
+                    
+                    // 更新全局状态
+                    app.globalData.userInfo = userInfo;
+                    app.globalData.openid = responseUserInfo.openid;
+                    app.globalData.isLogin = true;
+                    
+                    this.setData({
+                      isLogin: true,
+                      userInfo: userInfo,
+                      joinDate: this.formatJoinDate(responseUserInfo.created_at || Date.now())
+                    });
+                    
+                    // 登录成功后加载数据
+                    
+                    wx.showToast({
+                      title: '登录成功',
+                      icon: 'success'
+                    });
+                  } else {
+                    wx.showToast({
+                      title: res.data.message || '登录失败',
+                      icon: 'none'
+                    });
+                  }
+                },
+                fail: (err) => {
+                  console.error('登录接口调用失败', err);
+                  wx.showToast({
+                    title: '网络错误，请检查网络连接',
+                    icon: 'none'
+                  });
+                }
+              });
+            } else {
               wx.showToast({
-                title: '网络错误，请检查网络连接',
+                title: '获取登录凭证失败',
                 icon: 'none'
               });
             }
-          });
-        } else {
-          wx.showToast({
-            title: '获取登录凭证失败',
-            icon: 'none'
-          });
-        }
+          },
+          fail: (err) => {
+            console.error('微信登录失败', err);
+            wx.showToast({
+              title: '微信登录失败',
+              icon: 'none'
+            });
+          }
+        });
       },
       fail: (err) => {
-        console.error('微信登录失败', err);
+        console.error('获取用户信息失败', err);
         wx.showToast({
-          title: '微信登录失败',
+          title: '获取用户信息失败',
           icon: 'none'
         });
       }
@@ -150,26 +166,19 @@ Page({
   },
 
   // 选择头像
+  // 选择头像（已登录用户）
   onChooseAvatar(e) {
     const { avatarUrl } = e.detail;
     console.log('选择头像:', avatarUrl);
     
-    if (avatarUrl) {
-      // 先设置临时头像
-      this.setData({
-        tempAvatarUrl: avatarUrl
+    if (avatarUrl && this.data.isLogin) {
+      // 直接上传头像
+      this.uploadAvatar(avatarUrl);
+    } else if (!this.data.isLogin) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
       });
-      
-      // 如果用户已登录，直接上传头像
-      if (this.data.isLogin) {
-        this.uploadAvatar(avatarUrl);
-      } else {
-        wx.showToast({
-          title: '头像已选择',
-          icon: 'success',
-          duration: 1000
-        });
-      }
     } else {
       wx.showToast({
         title: '头像选择失败',
@@ -242,8 +251,7 @@ Page({
             app.globalData.userInfo = updatedUserInfo;
             
             this.setData({
-              userInfo: updatedUserInfo,
-              tempAvatarUrl: ''
+              userInfo: updatedUserInfo
             });
             
             wx.showToast({
@@ -260,13 +268,6 @@ Page({
           reject(new Error('网络错误，请重试'));
         }
       });
-    });
-  },
-
-  // 输入昵称
-  onNicknameInput(e) {
-    this.setData({
-      tempNickname: e.detail.value
     });
   },
 
@@ -440,5 +441,168 @@ Page({
       isEditingNickname: false,
       editNickname: ''
     });
+  },
+
+  // 跳转到团队管理页面
+  goToTeams() {
+    wx.navigateTo({
+      url: '/pages/teams/teams'
+    });
+  },
+
+  // 跳转到当前团队页面
+  goToCurrentTeam() {
+    if (!this.data.currentTeamName) {
+      wx.showToast({
+        title: '请先加入或创建团队',
+        icon: 'none'
+      });
+      return;
+    }
+    wx.navigateTo({
+      url: '/pages/teams/teams'
+    });
+  },
+
+  // 跳转到加入团队页面
+  goToJoinTeam() {
+    wx.navigateTo({
+      url: '/pages/teams/join/join'
+    });
+  },
+
+  // 跳转到创建团队页面
+  goToCreateTeam() {
+    wx.navigateTo({
+      url: '/pages/teams/create/create'
+    });
+  },
+
+  // 加载当前团队信息
+  loadCurrentTeam() {
+    if (!this.data.isLogin) return;
+    
+    const that = this;
+    wx.request({
+      url: `${app.globalData.baseUrl}/api/teams/current`,
+      method: 'GET',
+      header: {
+        'X-OpenID': app.globalData.openid
+      },
+      success: function(res) {
+        if (res.data.success && res.data.data) {
+          const teamData = res.data.data;
+          that.setData({
+            currentTeamName: teamData.name,
+            isTeamAdmin: teamData.role === 'owner' || teamData.role === 'admin'
+          });
+        } else {
+          that.setData({
+            currentTeamName: '',
+            isTeamAdmin: false
+          });
+        }
+      },
+      fail: function(error) {
+        console.error('获取当前团队信息失败:', error);
+        that.setData({
+          currentTeamName: '',
+          isTeamAdmin: false
+        });
+      }
+    });
+  },
+
+  // 加载用户模式
+  loadUserMode() {
+    const userMode = app.globalData.userMode || 'personal'
+    this.setData({
+      userMode: userMode,
+      selectedMode: userMode
+    })
+  },
+
+  // 防止模态窗口内容区域点击时关闭弹窗
+  preventClose() {
+    // 空函数，阻止事件冒泡
+  },
+
+  // 显示模式切换弹窗
+  showModeSwitch() {
+    this.setData({
+      showModeDialog: true,
+      selectedMode: this.data.userMode
+    })
+  },
+
+  // 隐藏模式切换弹窗
+  hideModeDialog() {
+    this.setData({
+      showModeDialog: false
+    })
+  },
+
+  // 选择模式
+  selectMode(e) {
+    const mode = e.currentTarget.dataset.mode
+    this.setData({
+      selectedMode: mode
+    })
+  },
+
+  // 确认模式切换
+  confirmModeSwitch() {
+    const newMode = this.data.selectedMode
+    const that = this
+    
+    // 先调用后端API更新用户模式
+    wx.request({
+      url: `${app.globalData.baseUrl}/api/auth/profile`,
+      method: 'PUT',
+      header: {
+        'X-OpenID': app.globalData.openid,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        user_mode: newMode
+      },
+      success: function(res) {
+        if (res.data.success) {
+          // 后端更新成功，更新前端状态
+          app.globalData.userMode = newMode
+          wx.setStorageSync('userMode', newMode)
+          
+          // 更新页面数据
+          that.setData({
+            userMode: newMode,
+            showModeDialog: false
+          })
+          
+          // 显示切换成功提示
+          wx.showToast({
+            title: `已切换到${newMode === 'personal' ? '个人' : '团队'}模式`,
+            icon: 'success'
+          })
+          
+          // 设置需要刷新标志，让其他页面知道模式已切换
+          app.globalData.needRefresh = true
+          app.globalData.modeChangeTime = Date.now()
+          
+          console.log('模式切换成功:', newMode)
+        } else {
+          wx.showToast({
+            title: res.data.message || '切换失败',
+            icon: 'none'
+          })
+        }
+      },
+      fail: function(error) {
+        console.error('切换模式失败:', error)
+        wx.showToast({
+          title: '网络错误，切换失败',
+          icon: 'none'
+        })
+      }
+    })
   }
 })

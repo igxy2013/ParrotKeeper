@@ -6,6 +6,9 @@ from schemas import (feeding_record_schema, feeding_records_schema,
                     breeding_record_schema, breeding_records_schema,
                     feed_types_schema)
 from utils import login_required, success_response, error_response, paginate_query
+from team_mode_utils import (get_accessible_parrot_ids_by_mode, filter_records_by_mode, 
+                            get_accessible_feeding_record_ids_by_mode, get_accessible_health_record_ids_by_mode,
+                            get_accessible_cleaning_record_ids_by_mode, get_accessible_breeding_record_ids_by_mode)
 from datetime import datetime, date
 
 records_bp = Blueprint('records', __name__, url_prefix='/api/records')
@@ -18,52 +21,47 @@ def get_record(record_id):
     try:
         user = request.current_user
         
-        # 尝试从各个记录表中查找
+        # 获取可访问的记录ID列表
+        accessible_feeding_ids = get_accessible_feeding_record_ids_by_mode(user)
+        accessible_health_ids = get_accessible_health_record_ids_by_mode(user)
+        accessible_cleaning_ids = get_accessible_cleaning_record_ids_by_mode(user)
+        accessible_breeding_ids = get_accessible_breeding_record_ids_by_mode(user)
+        
         # 查找喂食记录
-        feeding_record = db.session.query(FeedingRecord).join(Parrot).filter(
-            FeedingRecord.id == record_id,
-            Parrot.user_id == user.id
-        ).first()
-        if feeding_record:
-            result = feeding_record_schema.dump(feeding_record)
-            result['type'] = 'feeding'
-            result['record_time'] = feeding_record.feeding_time.isoformat() if feeding_record.feeding_time else None
-            return success_response(result)
+        if record_id in accessible_feeding_ids:
+            feeding_record = FeedingRecord.query.get(record_id)
+            if feeding_record:
+                result = feeding_record_schema.dump(feeding_record)
+                result['type'] = 'feeding'
+                result['record_time'] = feeding_record.feeding_time.isoformat() if feeding_record.feeding_time else None
+                return success_response(result)
         
         # 查找健康记录
-        health_record = db.session.query(HealthRecord).join(Parrot).filter(
-            HealthRecord.id == record_id,
-            Parrot.user_id == user.id
-        ).first()
-        if health_record:
-            result = health_record_schema.dump(health_record)
-            result['type'] = 'health'
-            result['record_time'] = health_record.record_date.isoformat() if health_record.record_date else None
-            return success_response(result)
+        if record_id in accessible_health_ids:
+            health_record = HealthRecord.query.get(record_id)
+            if health_record:
+                result = health_record_schema.dump(health_record)
+                result['type'] = 'health'
+                result['record_time'] = health_record.record_date.isoformat() if health_record.record_date else None
+                return success_response(result)
         
         # 查找清洁记录
-        cleaning_record = db.session.query(CleaningRecord).join(Parrot).filter(
-            CleaningRecord.id == record_id,
-            Parrot.user_id == user.id
-        ).first()
-        if cleaning_record:
-            result = cleaning_record_schema.dump(cleaning_record)
-            result['type'] = 'cleaning'
-            result['record_time'] = cleaning_record.cleaning_time.isoformat() if cleaning_record.cleaning_time else None
-            return success_response(result)
+        if record_id in accessible_cleaning_ids:
+            cleaning_record = CleaningRecord.query.get(record_id)
+            if cleaning_record:
+                result = cleaning_record_schema.dump(cleaning_record)
+                result['type'] = 'cleaning'
+                result['record_time'] = cleaning_record.cleaning_time.isoformat() if cleaning_record.cleaning_time else None
+                return success_response(result)
         
         # 查找繁殖记录
-        breeding_record = db.session.query(BreedingRecord).join(
-            Parrot, BreedingRecord.male_parrot_id == Parrot.id
-        ).filter(
-            BreedingRecord.id == record_id,
-            Parrot.user_id == user.id
-        ).first()
-        if breeding_record:
-            result = breeding_record_schema.dump(breeding_record)
-            result['type'] = 'breeding'
-            result['record_time'] = breeding_record.mating_date.isoformat() if breeding_record.mating_date else None
-            return success_response(result)
+        if record_id in accessible_breeding_ids:
+            breeding_record = BreedingRecord.query.get(record_id)
+            if breeding_record:
+                result = breeding_record_schema.dump(breeding_record)
+                result['type'] = 'breeding'
+                result['record_time'] = breeding_record.mating_date.isoformat() if breeding_record.mating_date else None
+                return success_response(result)
         
         return error_response('记录不存在', 404)
         
@@ -138,21 +136,24 @@ def get_recent_records():
         user = request.current_user
         limit = request.args.get('limit', 5, type=int)
         
+        # 根据用户模式获取可访问的鹦鹉ID
+        parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         # 获取最近的喂食记录
         recent_feeding = db.session.query(FeedingRecord).join(Parrot).filter(
-            Parrot.user_id == user.id,
+            Parrot.id.in_(parrot_ids),
             Parrot.is_active == True
         ).order_by(FeedingRecord.feeding_time.desc()).limit(limit).all()
         
         # 获取最近的健康记录
         recent_health = db.session.query(HealthRecord).join(Parrot).filter(
-            Parrot.user_id == user.id,
+            Parrot.id.in_(parrot_ids),
             Parrot.is_active == True
         ).order_by(HealthRecord.record_date.desc()).limit(limit).all()
         
         # 获取最近的清洁记录
         recent_cleaning = db.session.query(CleaningRecord).join(Parrot).filter(
-            Parrot.user_id == user.id,
+            Parrot.id.in_(parrot_ids),
             Parrot.is_active == True
         ).order_by(CleaningRecord.cleaning_time.desc()).limit(limit).all()
         
@@ -160,7 +161,7 @@ def get_recent_records():
         recent_breeding = db.session.query(BreedingRecord).join(
             Parrot, BreedingRecord.male_parrot_id == Parrot.id
         ).filter(
-            Parrot.user_id == user.id
+            Parrot.id.in_(parrot_ids)
         ).order_by(BreedingRecord.created_at.desc()).limit(limit).all()
         
         result = {
@@ -195,9 +196,12 @@ def get_feeding_records():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
-        # 基础查询：只查询用户的鹦鹉的记录
+        # 获取可访问的鹦鹉ID列表（根据用户模式）
+        parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
+        # 基础查询：只查询可访问鹦鹉的记录
         query = db.session.query(FeedingRecord).join(Parrot).filter(
-            Parrot.user_id == user.id,
+            FeedingRecord.parrot_id.in_(parrot_ids),
             Parrot.is_active == True
         )
         
@@ -236,11 +240,13 @@ def get_feeding_records():
 def update_feeding_record_internal(record_id, data):
     """内部喂食记录更新方法"""
     user = request.current_user
-    record = db.session.query(FeedingRecord).join(Parrot).filter(
-        FeedingRecord.id == record_id,
-        Parrot.user_id == user.id
-    ).first()
     
+    # 检查记录是否可访问
+    accessible_ids = get_accessible_feeding_record_ids_by_mode(user)
+    if record_id not in accessible_ids:
+        return error_response('记录不存在', 404)
+    
+    record = FeedingRecord.query.get(record_id)
     if not record:
         return error_response('记录不存在', 404)
     
@@ -264,11 +270,13 @@ def update_feeding_record_internal(record_id, data):
 def update_health_record_internal(record_id, data):
     """内部健康记录更新方法"""
     user = request.current_user
-    record = db.session.query(HealthRecord).join(Parrot).filter(
-        HealthRecord.id == record_id,
-        Parrot.user_id == user.id
-    ).first()
     
+    # 检查记录是否可访问
+    accessible_ids = get_accessible_health_record_ids_by_mode(user)
+    if record_id not in accessible_ids:
+        return error_response('记录不存在', 404)
+    
+    record = HealthRecord.query.get(record_id)
     if not record:
         return error_response('记录不存在', 404)
     
@@ -312,11 +320,13 @@ def update_health_record_internal(record_id, data):
 def update_cleaning_record_internal(record_id, data):
     """内部清洁记录更新方法"""
     user = request.current_user
-    record = db.session.query(CleaningRecord).join(Parrot).filter(
-        CleaningRecord.id == record_id,
-        Parrot.user_id == user.id
-    ).first()
     
+    # 检查记录是否可访问
+    accessible_ids = get_accessible_cleaning_record_ids_by_mode(user)
+    if record_id not in accessible_ids:
+        return error_response('记录不存在', 404)
+    
+    record = CleaningRecord.query.get(record_id)
     if not record:
         return error_response('记录不存在', 404)
     
@@ -340,13 +350,13 @@ def update_cleaning_record_internal(record_id, data):
 def update_breeding_record_internal(record_id, data):
     """内部繁殖记录更新方法"""
     user = request.current_user
-    record = db.session.query(BreedingRecord).join(
-        Parrot, BreedingRecord.male_parrot_id == Parrot.id
-    ).filter(
-        BreedingRecord.id == record_id,
-        Parrot.user_id == user.id
-    ).first()
     
+    # 检查记录是否可访问
+    accessible_ids = get_accessible_breeding_record_ids_by_mode(user)
+    if record_id not in accessible_ids:
+        return error_response('记录不存在', 404)
+    
+    record = BreedingRecord.query.get(record_id)
     if not record:
         return error_response('记录不存在', 404)
     
@@ -411,7 +421,9 @@ def add_feeding_record_internal(data):
         feed_type_id=data.get('feed_type_id'),
         amount=data.get('amount'),
         feeding_time=feeding_time,
-        notes=data.get('notes')
+        notes=data.get('notes'),
+        created_by_user_id=user.id,  # 记录创建者
+        team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
     )
     
     db.session.add(record)
@@ -473,11 +485,13 @@ def delete_feeding_record(record_id):
     """删除喂食记录"""
     try:
         user = request.current_user
-        record = db.session.query(FeedingRecord).join(Parrot).filter(
-            FeedingRecord.id == record_id,
-            Parrot.user_id == user.id
-        ).first()
         
+        # 检查记录是否可访问
+        accessible_ids = get_accessible_feeding_record_ids_by_mode(user)
+        if record_id not in accessible_ids:
+            return error_response('记录不存在', 404)
+        
+        record = FeedingRecord.query.get(record_id)
         if not record:
             return error_response('记录不存在', 404)
         
@@ -500,8 +514,11 @@ def get_health_records():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
+        # 获取可访问的鹦鹉ID列表（根据用户模式）
+        parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         query = db.session.query(HealthRecord).join(Parrot).filter(
-            Parrot.user_id == user.id,
+            HealthRecord.parrot_id.in_(parrot_ids),
             Parrot.is_active == True
         )
         
@@ -581,7 +598,9 @@ def add_health_record_internal(data):
         vet_name=data.get('vet_name'),
         cost=data.get('cost'),
         record_date=record_date,
-        next_checkup_date=next_checkup_date
+        next_checkup_date=next_checkup_date,
+        created_by_user_id=user.id,  # 记录创建者
+        team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
     )
     
     db.session.add(record)
@@ -606,11 +625,13 @@ def delete_health_record(record_id):
     """删除健康记录"""
     try:
         user = request.current_user
-        record = db.session.query(HealthRecord).join(Parrot).filter(
-            HealthRecord.id == record_id,
-            Parrot.user_id == user.id
-        ).first()
         
+        # 检查记录是否可访问
+        accessible_ids = get_accessible_health_record_ids_by_mode(user)
+        if record_id not in accessible_ids:
+            return error_response('记录不存在', 404)
+        
+        record = HealthRecord.query.get(record_id)
         if not record:
             return error_response('记录不存在', 404)
         
@@ -633,8 +654,11 @@ def get_cleaning_records():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
+        # 获取可访问的鹦鹉ID列表（根据用户模式）
+        parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         query = db.session.query(CleaningRecord).join(Parrot).filter(
-            Parrot.user_id == user.id,
+            CleaningRecord.parrot_id.in_(parrot_ids),
             Parrot.is_active == True
         )
         
@@ -699,7 +723,9 @@ def add_cleaning_record_internal(data):
         cleaning_type=data.get('cleaning_type'),
         description=data.get('description'),
         cleaning_time=cleaning_time,
-        notes=data.get('notes')
+        notes=data.get('notes'),
+        created_by_user_id=user.id,  # 记录创建者
+        team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
     )
     
     db.session.add(record)
@@ -724,11 +750,13 @@ def delete_cleaning_record(record_id):
     """删除清洁记录"""
     try:
         user = request.current_user
-        record = db.session.query(CleaningRecord).join(Parrot).filter(
-            CleaningRecord.id == record_id,
-            Parrot.user_id == user.id
-        ).first()
         
+        # 检查记录是否可访问
+        accessible_ids = get_accessible_cleaning_record_ids_by_mode(user)
+        if record_id not in accessible_ids:
+            return error_response('记录不存在', 404)
+        
+        record = CleaningRecord.query.get(record_id)
         if not record:
             return error_response('记录不存在', 404)
         
@@ -751,6 +779,9 @@ def get_breeding_records():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('limit', 20, type=int)
         
+        # 获取可访问的鹦鹉ID列表（根据用户模式）
+        parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         # 筛选参数
         male_parrot_id = request.args.get('male_parrot_id', type=int)
         female_parrot_id = request.args.get('female_parrot_id', type=int)
@@ -762,9 +793,9 @@ def get_breeding_records():
         query = db.session.query(BreedingRecord).options(
             joinedload(BreedingRecord.male_parrot),
             joinedload(BreedingRecord.female_parrot)
-        ).join(
-            Parrot, BreedingRecord.male_parrot_id == Parrot.id
-        ).filter(Parrot.user_id == user.id)
+        ).filter(
+            BreedingRecord.male_parrot_id.in_(parrot_ids)
+        )
         
         # 应用筛选条件
         if male_parrot_id:
@@ -827,7 +858,9 @@ def add_breeding_record_internal(data):
             hatching_date=datetime.strptime(data.get('hatching_date'), '%Y-%m-%d').date() if data.get('hatching_date') else None,
             chick_count=data.get('chick_count', 0),
             success_rate=data.get('success_rate'),
-            notes=data.get('notes', '')
+            notes=data.get('notes', ''),
+            created_by_user_id=user.id,  # 记录创建者
+            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
         )
         
         db.session.add(breeding_record)
@@ -857,17 +890,13 @@ def delete_breeding_record(record_id):
     """删除繁殖记录"""
     try:
         user = request.current_user
-        # 使用子查询来检查用户权限，避免多重外键关联问题
-        user_parrot_ids = db.session.query(Parrot.id).filter(Parrot.user_id == user.id).subquery()
         
-        record = db.session.query(BreedingRecord).filter(
-            BreedingRecord.id == record_id,
-            db.or_(
-                BreedingRecord.male_parrot_id.in_(user_parrot_ids),
-                BreedingRecord.female_parrot_id.in_(user_parrot_ids)
-            )
-        ).first()
+        # 检查记录是否可访问
+        accessible_ids = get_accessible_breeding_record_ids_by_mode(user)
+        if record_id not in accessible_ids:
+            return error_response('记录不存在', 404)
         
+        record = BreedingRecord.query.get(record_id)
         if not record:
             return error_response('记录不存在', 404)
         

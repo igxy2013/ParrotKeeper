@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from models import db, Parrot, ParrotSpecies, User
 from schemas import parrot_schema, parrots_schema, parrot_species_list_schema
 from utils import login_required, success_response, error_response, paginate_query, save_uploaded_file
+from team_utils import parrot_access_required
+from team_mode_utils import get_accessible_parrot_ids_by_mode
 from datetime import datetime, date
 
 parrots_bp = Blueprint('parrots', __name__, url_prefix='/api/parrots')
@@ -18,15 +20,30 @@ def get_species():
 @parrots_bp.route('', methods=['GET'])
 @login_required
 def get_parrots():
-    """获取用户的鹦鹉列表"""
+    """获取用户可访问的鹦鹉列表（基于团队模式过滤）"""
     try:
         user = request.current_user
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
-        print(f"[DEBUG] 用户 {user.id} 请求鹦鹉列表，页码: {page}, 每页: {per_page}")
+        print(f"[DEBUG] 用户 {user.id} 请求鹦鹉列表，页码: {page}, 每页: {per_page}, 模式: {getattr(user, 'user_mode', 'personal')}")
         
-        query = Parrot.query.filter_by(user_id=user.id, is_active=True)
+        # 使用团队模式过滤逻辑获取可访问的鹦鹉ID
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
+        if not accessible_parrot_ids:
+            # 如果没有可访问的鹦鹉，返回空结果
+            return success_response({
+                'parrots': [],
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': 0,
+                    'pages': 0
+                }
+            })
+        
+        query = Parrot.query.filter(Parrot.id.in_(accessible_parrot_ids))
         
         # 搜索过滤
         search = request.args.get('search')
@@ -88,15 +105,11 @@ def get_parrots():
 
 @parrots_bp.route('/<int:parrot_id>', methods=['GET'])
 @login_required
+@parrot_access_required('view')
 def get_parrot(parrot_id):
     """获取单个鹦鹉详情"""
     try:
-        user = request.current_user
-        parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id).first()
-        
-        if not parrot:
-            return error_response('鹦鹉不存在', 404)
-        
+        parrot = request.current_parrot
         return success_response(parrot_schema.dump(parrot))
         
     except Exception as e:
@@ -148,7 +161,8 @@ def create_parrot():
             avatar_url=data.get('avatar_url'),
             notes=data.get('notes'),
             parrot_number=data.get('parrot_number'),
-            ring_number=data.get('ring_number')
+            ring_number=data.get('ring_number'),
+            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
         )
         
         db.session.add(parrot)
@@ -166,7 +180,13 @@ def update_parrot(parrot_id):
     """更新鹦鹉信息"""
     try:
         user = request.current_user
-        parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id).first()
+        
+        # 使用团队模式过滤逻辑检查访问权限
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        if parrot_id not in accessible_parrot_ids:
+            return error_response('鹦鹉不存在或无权限访问', 404)
+        
+        parrot = Parrot.query.filter_by(id=parrot_id).first()
         
         if not parrot:
             return error_response('鹦鹉不存在', 404)
@@ -235,7 +255,13 @@ def delete_parrot(parrot_id):
         from models import Expense, BreedingRecord
         
         user = request.current_user
-        parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id).first()
+        
+        # 使用团队模式过滤逻辑检查访问权限
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        if parrot_id not in accessible_parrot_ids:
+            return error_response('鹦鹉不存在或无权限访问', 404)
+        
+        parrot = Parrot.query.filter_by(id=parrot_id).first()
         
         if not parrot:
             return error_response('鹦鹉不存在', 404)
@@ -262,18 +288,15 @@ def delete_parrot(parrot_id):
 
 @parrots_bp.route('/<int:parrot_id>/statistics', methods=['GET'])
 @login_required
+@parrot_access_required('view')
 def get_parrot_statistics(parrot_id):
-    """获取单个鹦鹉的统计信息"""
+    """获取鹦鹉统计数据"""
     try:
         from models import FeedingRecord, HealthRecord, CleaningRecord
         from sqlalchemy import func
         from datetime import datetime, timedelta
         
-        user = request.current_user
-        parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id).first()
-        
-        if not parrot:
-            return error_response('鹦鹉不存在', 404)
+        parrot = request.current_parrot
         
         # 计算统计数据
         now = datetime.now()
@@ -357,17 +380,14 @@ def get_parrot_statistics(parrot_id):
 
 @parrots_bp.route('/<int:parrot_id>/records', methods=['GET'])
 @login_required
+@parrot_access_required('view')
 def get_parrot_records(parrot_id):
     """获取单个鹦鹉的记录列表"""
     try:
         from models import FeedingRecord, HealthRecord, CleaningRecord
         from schemas import feeding_records_schema, health_records_schema, cleaning_records_schema
         
-        user = request.current_user
-        parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id).first()
-        
-        if not parrot:
-            return error_response('鹦鹉不存在', 404)
+        parrot = request.current_parrot
         
         limit = request.args.get('limit', 10, type=int)
         
@@ -425,7 +445,13 @@ def upload_photo(parrot_id):
     """上传鹦鹉照片"""
     try:
         user = request.current_user
-        parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id).first()
+        
+        # 使用团队模式过滤逻辑检查访问权限
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        if parrot_id not in accessible_parrot_ids:
+            return error_response('鹦鹉不存在或无权限访问', 404)
+        
+        parrot = Parrot.query.filter_by(id=parrot_id).first()
         
         if not parrot:
             return error_response('鹦鹉不存在', 404)

@@ -12,13 +12,15 @@ Page({
     sortBy: 'created_desc',
     sortText: '最新添加',
     isLogin: false, // 添加登录状态
+    userMode: null, // 当前用户模式
+    lastUserMode: null, // 记录上次的用户模式，用于检测模式变化
     
-    // 弹窗状态
+    // 筛选和排序相关
     showSpeciesModal: false,
     showStatusModal: false,
     showSortModal: false,
     
-    // 分页
+    // 分页相关
     page: 1,
     hasMore: true
   },
@@ -54,13 +56,34 @@ Page({
     
     if (loginStatus) {
       console.log('用户已登录，开始加载鹦鹉数据');
-      // 从其他页面返回时刷新数据
-      this.refreshData() // 改为使用refreshData确保完全刷新
+      // 加载当前用户模式
+      this.loadUserMode();
+      
+      // 检查用户模式是否发生变化
+      const currentMode = app.globalData.userMode || 'personal';
+      if (this.data.lastUserMode && this.data.lastUserMode !== currentMode) {
+        console.log('检测到用户模式变化:', this.data.lastUserMode, '->', currentMode);
+        this.setData({ lastUserMode: currentMode });
+        this.refreshData();
+        return;
+      }
+      this.setData({ lastUserMode: currentMode });
+      
+      // 检查是否需要刷新数据（模式切换后）
+      if (app.globalData.needRefresh) {
+        console.log('检测到needRefresh标志，刷新数据');
+        app.globalData.needRefresh = false; // 重置标志
+        this.refreshData(); // 完全刷新数据
+      } else {
+        // 从其他页面返回时刷新数据
+        this.refreshData() // 改为使用refreshData确保完全刷新
+      }
     } else {
       console.log('游客模式，显示空状态');
       // 游客模式：清空数据显示空状态
       this.setData({
         parrots: [],
+        userMode: null,
         loading: false
       })
     }
@@ -111,6 +134,7 @@ Page({
   // 加载鹦鹉列表
   async loadParrots(refresh = false) {
     console.log('开始加载鹦鹉列表, refresh:', refresh);
+    console.log('当前用户模式:', app.globalData.userMode);
     
     if (this.data.loading) {
       console.log('正在加载中，跳过本次请求');
@@ -143,6 +167,7 @@ Page({
       if (res.success) {
         const parrots = res.data.parrots || []
         console.log('获取到的鹦鹉数据:', parrots);
+        console.log('数据数量:', parrots.length);
         
         const newParrots = parrots.map(parrot => ({
           ...parrot,
@@ -296,16 +321,102 @@ Page({
 
   // 处理图片加载错误
   handleImageError(e) {
-    const id = e.currentTarget.dataset.id
+    const id = e.currentTarget.dataset.id;
     const parrots = this.data.parrots.map(parrot => {
       if (parrot.id === id) {
-        return {
-          ...parrot,
-          photo_url: '/images/default-parrot.png' // 备用PNG格式
+        return { ...parrot, photo_url: '/images/default-parrot.svg' };
+      }
+      return parrot;
+    });
+    this.setData({ parrots });
+  },
+
+  // 加载当前团队信息
+  loadUserMode() {
+    // 从全局数据获取用户模式
+    const userMode = app.globalData.userMode || 'personal';
+    this.setData({
+      userMode: userMode
+    });
+  },
+
+  // 切换模式
+  switchMode() {
+    const currentMode = this.data.userMode;
+    const newMode = currentMode === 'personal' ? 'team' : 'personal';
+    
+    wx.showModal({
+      title: '切换模式',
+      content: `确定要切换到${newMode === 'personal' ? '个人' : '团队'}模式吗？`,
+      confirmText: '确定',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          this.confirmModeSwitch(newMode);
         }
       }
-      return parrot
-    })
-    this.setData({ parrots })
+    });
+  },
+
+  // 确认模式切换
+  confirmModeSwitch(newMode) {
+    const that = this;
+    
+    // 显示加载提示
+    wx.showLoading({
+      title: '切换中...',
+      mask: true
+    });
+    
+    // 调用后端API更新用户模式
+    wx.request({
+      url: `${app.globalData.baseUrl}/api/auth/profile`,
+      method: 'PUT',
+      header: {
+        'X-OpenID': app.globalData.openid,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        user_mode: newMode
+      },
+      success: function(res) {
+        wx.hideLoading();
+        
+        if (res.data.success) {
+          // 后端更新成功，更新前端状态
+          app.globalData.userMode = newMode;
+          wx.setStorageSync('userMode', newMode);
+          
+          // 更新页面数据
+          that.setData({
+            userMode: newMode
+          });
+          
+          // 显示切换成功提示
+          wx.showToast({
+            title: `已切换到${newMode === 'personal' ? '个人' : '团队'}模式`,
+            icon: 'success'
+          });
+          
+          // 刷新数据
+          that.refreshData();
+          
+          console.log('模式切换成功:', newMode);
+        } else {
+          wx.showToast({
+            title: res.data.message || '切换失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: function(error) {
+        wx.hideLoading();
+        console.error('切换模式失败:', error);
+        wx.showToast({
+          title: '网络错误，切换失败',
+          icon: 'none'
+        });
+      }
+    });
   }
 })

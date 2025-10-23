@@ -5,6 +5,7 @@ Page({
   data: {
     activeTab: 'feeding',
     isLogin: false,
+    isTeamMode: false, // 添加团队模式标识
     
     // 记录数据
     feedingRecords: [],
@@ -37,12 +38,26 @@ Page({
 
   onShow() {
     this.checkLoginAndLoad()
+    
+    // 检查是否需要刷新数据（模式切换后）
+    if (app.globalData.needRefresh) {
+      console.log('记录页面检测到needRefresh标志，刷新数据');
+      app.globalData.needRefresh = false; // 重置标志
+      this.loadParrotsList();
+      this.loadRecords();
+    }
   },
 
   // 检查登录状态并加载数据
   checkLoginAndLoad() {
     const isLogin = app.globalData.isLogin
-    this.setData({ isLogin })
+    const userMode = app.globalData.userMode || 'personal'
+    const isTeamMode = userMode === 'team'
+    
+    this.setData({ 
+      isLogin,
+      isTeamMode
+    })
     
     if (isLogin) {
       this.loadParrotsList()

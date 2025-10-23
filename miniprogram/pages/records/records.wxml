@@ -44,6 +44,8 @@
           <view class="record-info">
             <text class="record-title">{{item.parrot_name}}</text>
             <text class="record-time">{{item.feeding_time_formatted}}</text>
+            <!-- 团队模式下显示创建者 -->
+            <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}">
@@ -88,6 +90,8 @@
           <view class="record-info">
             <text class="record-title">{{item.parrot_name}}</text>
             <text class="record-time">{{item.check_date_formatted}}</text>
+            <!-- 团队模式下显示创建者 -->
+            <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="health-status status-{{item.health_status}}">
             <text wx:if="{{item.health_status === 'healthy'}}">健康</text>
@@ -146,6 +150,8 @@
           <view class="record-info">
             <text class="record-title">{{item.parrot_name}}</text>
             <text class="record-time">{{item.cleaning_date_formatted}}</text>
+            <!-- 团队模式下显示创建者 -->
+            <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}">
@@ -186,6 +192,8 @@
           <view class="record-info">
             <text class="record-title">{{item.male_parrot_name}} × {{item.female_parrot_name}}</text>
             <text class="record-time">{{item.mating_date_formatted}}</text>
+            <!-- 团队模式下显示创建者 -->
+            <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="breeding" data-id="{{item.id}}">

@@ -40,4 +40,20 @@ with app.app_context():
     except Exception as e:
         print(f'修改 openid 字段失败: {e}')
     
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(text('ALTER TABLE users ADD COLUMN user_mode ENUM("personal", "team") DEFAULT "personal"'))
+            conn.commit()
+        print('✓ 添加 user_mode 字段')
+    except Exception as e:
+        print(f'user_mode 字段可能已存在: {e}')
+    
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(text('ALTER TABLE users ADD COLUMN current_team_id INT NULL'))
+            conn.commit()
+        print('✓ 添加 current_team_id 字段')
+    except Exception as e:
+        print(f'current_team_id 字段可能已存在: {e}')
+    
     print('数据库迁移完成！')

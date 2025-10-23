@@ -117,6 +117,7 @@ def account_login():
         data = request.get_json()
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
+        mode = data.get('mode', 'personal')  # 获取用户选择的模式，默认为个人模式
         
         if not username:
             return error_response('请输入用户名')
@@ -133,11 +134,16 @@ def account_login():
         if not check_password_hash(user.password_hash, password):
             return error_response('用户名或密码错误')
         
+        # 更新用户模式
+        user.user_mode = mode
+        db.session.commit()
+        
         return success_response({
             'user': user_schema.dump(user)
         }, '登录成功')
         
     except Exception as e:
+        db.session.rollback()
         return error_response(f'登录失败: {str(e)}')
 
 @auth_bp.route('/register', methods=['POST'])
@@ -195,7 +201,20 @@ def get_profile():
         if not openid:
             return error_response('未登录', 401)
         
+        # 查找用户，支持微信登录和账号登录
+        user = None
+        
+        # 首先尝试通过openid查找（微信登录用户）
         user = User.query.filter_by(openid=openid).first()
+        
+        # 如果没找到，检查是否是账号登录用户的伪openid格式
+        if not user and openid.startswith('account_'):
+            try:
+                user_id = int(openid.replace('account_', ''))
+                user = User.query.filter_by(id=user_id, login_type='account').first()
+            except ValueError:
+                pass
+        
         if not user:
             return error_response('用户不存在', 404)
         
@@ -212,7 +231,20 @@ def update_profile():
         if not openid:
             return error_response('未登录', 401)
         
+        # 查找用户，支持微信登录和账号登录
+        user = None
+        
+        # 首先尝试通过openid查找（微信登录用户）
         user = User.query.filter_by(openid=openid).first()
+        
+        # 如果没找到，检查是否是账号登录用户的伪openid格式
+        if not user and openid.startswith('account_'):
+            try:
+                user_id = int(openid.replace('account_', ''))
+                user = User.query.filter_by(id=user_id, login_type='account').first()
+            except ValueError:
+                pass
+        
         if not user:
             return error_response('用户不存在', 404)
         
@@ -225,6 +257,12 @@ def update_profile():
             user.phone = data['phone']
         if 'avatar_url' in data:
             user.avatar_url = data['avatar_url']
+        if 'user_mode' in data:
+            # 验证用户模式值
+            if data['user_mode'] in ['personal', 'team']:
+                user.user_mode = data['user_mode']
+            else:
+                return error_response('无效的用户模式')
         
         db.session.commit()
         

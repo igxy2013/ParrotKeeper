@@ -15,6 +15,8 @@ class User(db.Model):
     avatar_url = db.Column(db.String(255))
     phone = db.Column(db.String(20))
     login_type = db.Column(db.Enum('wechat', 'account'), default='wechat')  # 登录类型
+    user_mode = db.Column(db.Enum('personal', 'team'), default='personal')  # 用户模式：个人模式或团队模式
+    current_team_id = db.Column(db.Integer, nullable=True)  # 当前选中的团队，暂时移除外键约束
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -56,6 +58,7 @@ class Parrot(db.Model):
     ring_number = db.Column(db.String(50))    # 脚环号
     notes = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -89,7 +92,12 @@ class FeedingRecord(db.Model):
     amount = db.Column(db.Numeric(6, 2))
     feeding_time = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 关系
+    created_by = db.relationship('User', backref='created_feeding_records', lazy=True)
 
 class HealthRecord(db.Model):
     __tablename__ = 'health_records'
@@ -107,7 +115,12 @@ class HealthRecord(db.Model):
     cost = db.Column(db.Numeric(8, 2))
     record_date = db.Column(db.DateTime, default=datetime.utcnow)
     next_checkup_date = db.Column(db.Date)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 关系
+    created_by = db.relationship('User', backref='created_health_records', lazy=True)
 
 class CleaningRecord(db.Model):
     __tablename__ = 'cleaning_records'
@@ -118,7 +131,12 @@ class CleaningRecord(db.Model):
     description = db.Column(db.Text)
     cleaning_time = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 关系
+    created_by = db.relationship('User', backref='created_cleaning_records', lazy=True)
 
 class BreedingRecord(db.Model):
     __tablename__ = 'breeding_records'
@@ -133,12 +151,15 @@ class BreedingRecord(db.Model):
     chick_count = db.Column(db.Integer, default=0)
     success_rate = db.Column(db.Numeric(5, 2))
     notes = db.Column(db.Text)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # 关系
     male_parrot = db.relationship('Parrot', foreign_keys=[male_parrot_id], backref='male_breeding_records')
     female_parrot = db.relationship('Parrot', foreign_keys=[female_parrot_id], backref='female_breeding_records')
+    created_by = db.relationship('User', backref='created_breeding_records', lazy=True)
 
 class Expense(db.Model):
     __tablename__ = 'expenses'
@@ -150,6 +171,7 @@ class Expense(db.Model):
     amount = db.Column(db.Numeric(8, 2), nullable=False)
     description = db.Column(db.String(255))
     expense_date = db.Column(db.Date, default=date.today)
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Reminder(db.Model):
@@ -164,5 +186,6 @@ class Reminder(db.Model):
     reminder_time = db.Column(db.Time)
     frequency = db.Column(db.Enum('daily', 'weekly', 'monthly', 'once'), default='daily')
     is_active = db.Column(db.Boolean, default=True)
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

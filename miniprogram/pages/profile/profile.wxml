@@ -36,54 +36,133 @@
 
   <!-- 未登录状态 -->
   <view class="login-prompt" wx:if="{{!isLogin}}">
-    <view class="prompt-icon">👤</view>
-    <text class="prompt-text">请先登录以查看个人信息</text>
-    
-    <!-- 头像选择 -->
-    <view class="avatar-section">
-      <text class="section-label">选择头像</text>
-      <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-        <image class="preview-avatar" src="{{tempAvatarUrl || '/images/default-avatar.svg'}}" mode="aspectFill"/>
-        <text class="avatar-tip">点击选择头像</text>
-      </button>
+    <view class="login-card">
+      <view class="login-icon">🦜</view>
+      <text class="login-text">欢迎使用鹦鹉管家</text>
+      <text class="login-subtitle">请先登录以查看个人信息</text>
+      <button class="login-btn" bindtap="handleLogin">微信快速登录</button>
     </view>
-    
-    <!-- 昵称输入 -->
-    <view class="nickname-section">
-      <text class="section-label">输入昵称</text>
-      <input 
-        class="nickname-input" 
-        type="nickname" 
-        placeholder="请输入昵称" 
-        value="{{tempNickname}}"
-        bindinput="onNicknameInput"
-        maxlength="20"
-      />
-    </view>
-    
-    <button class="login-btn" bindtap="handleLogin">立即登录</button>
   </view>
 
 
 
-  <!-- 设置选项 -->
-  <view class="settings-section" wx:if="{{isLogin}}">
-    <view class="section-title">其他</view>
-    <view class="settings-list">
-      <view class="setting-item" bindtap="showAbout">
-        <text class="setting-text">关于应用</text>
-        <text class="setting-arrow">></text>
+  <!-- 功能卡片区域 -->
+  <view class="function-cards" wx:if="{{isLogin}}">
+    <!-- 模式设置卡片 -->
+    <view class="function-card mode-card">
+      <view class="card-header">
+        <view class="card-icon">⚙️</view>
+        <text class="card-title">模式设置</text>
       </view>
-      <view class="setting-item" bindtap="showHelp">
-        <text class="setting-text">帮助与反馈</text>
-        <text class="setting-arrow">></text>
+      <view class="card-content">
+        <view class="mode-display">
+          <text class="current-mode">{{userMode === 'personal' ? '个人模式' : '团队模式'}}</text>
+          <text class="mode-desc">{{userMode === 'personal' ? '管理个人鹦鹉数据' : '查看团队鹦鹉数据'}}</text>
+        </view>
+        <view class="card-action" bindtap="showModeSwitch">
+          <text class="action-text">切换</text>
+          <text class="action-arrow">></text>
+        </view>
       </view>
-      <view class="setting-item" bindtap="clearCache">
-        <text class="setting-text">清除缓存</text>
-        <text class="setting-arrow">></text>
+    </view>
+
+    <!-- 团队协作卡片 -->
+    <view class="function-card team-card">
+      <view class="card-header">
+        <view class="card-icon">👥</view>
+        <text class="card-title">团队协作</text>
       </view>
-      <view class="setting-item logout" bindtap="handleLogout">
-        <text class="setting-text">退出登录</text>
+      <view class="card-content">
+        <view class="team-actions">
+          <view class="team-action-item info-only">
+            <view class="action-info">
+              <text class="action-title">当前团队</text>
+              <text class="action-desc">{{currentTeamName || '未选择团队'}}</text>
+            </view>
+          </view>
+          <view class="team-action-item" bindtap="goToJoinTeam">
+            <view class="action-info">
+              <text class="action-title">加入团队</text>
+              <text class="action-desc">通过邀请码加入团队</text>
+            </view>
+            <text class="action-arrow">></text>
+          </view>
+          <view class="team-action-item" bindtap="goToCreateTeam">
+            <view class="action-info">
+              <text class="action-title">创建团队</text>
+              <text class="action-desc">创建新的团队并邀请成员</text>
+            </view>
+            <text class="action-arrow">></text>
+          </view>
+          <view class="team-action-item" wx:if="{{isTeamAdmin}}" bindtap="goToTeams">
+            <view class="action-info">
+              <text class="action-title">团队管理</text>
+              <text class="action-desc">管理团队成员和设置</text>
+            </view>
+            <text class="action-arrow">></text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 应用设置卡片 -->
+    <view class="function-card settings-card">
+      <view class="card-header">
+        <view class="card-icon">🔧</view>
+        <text class="card-title">应用设置</text>
+      </view>
+      <view class="card-content">
+        <view class="settings-grid">
+          <view class="setting-grid-item" bindtap="showAbout">
+            <view class="grid-item-icon">ℹ️</view>
+            <text class="grid-item-text">关于应用</text>
+          </view>
+          <view class="setting-grid-item" bindtap="showHelp">
+            <view class="grid-item-icon">❓</view>
+            <text class="grid-item-text">帮助反馈</text>
+          </view>
+          <view class="setting-grid-item" bindtap="clearCache">
+            <view class="grid-item-icon">🗑️</view>
+            <text class="grid-item-text">清除缓存</text>
+          </view>
+          <view class="setting-grid-item logout-item" bindtap="handleLogout">
+            <view class="grid-item-icon">🚪</view>
+            <text class="grid-item-text">退出登录</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 模式切换弹窗 -->
+  <view class="modal-overlay" wx:if="{{showModeDialog}}" bindtap="hideModeDialog">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <text class="modal-title">选择使用模式</text>
+      </view>
+      <view class="modal-body">
+        <view class="mode-options">
+          <view class="mode-option {{selectedMode === 'personal' ? 'active' : ''}}" 
+                data-mode="personal" bindtap="selectMode">
+            <view class="mode-icon">👤</view>
+            <view class="mode-info">
+              <text class="mode-name">个人模式</text>
+              <text class="mode-desc">管理个人的鹦鹉数据</text>
+            </view>
+          </view>
+          <view class="mode-option {{selectedMode === 'team' ? 'active' : ''}}" 
+                data-mode="team" bindtap="selectMode">
+            <view class="mode-icon">👥</view>
+            <view class="mode-info">
+              <text class="mode-name">团队模式</text>
+              <text class="mode-desc">查看团队管理员的鹦鹉数据</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn btn-secondary" bindtap="hideModeDialog">取消</button>
+        <button class="btn btn-primary" bindtap="confirmModeSwitch">确认</button>
       </view>
     </view>
   </view>

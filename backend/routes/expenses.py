@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from models import db, Expense, Parrot
 from utils import login_required, success_response, error_response, paginate_query
+from team_utils import get_accessible_parrots
+from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode, filter_expenses_by_mode
 from datetime import datetime, date
 from sqlalchemy import func, desc
 
@@ -9,7 +11,7 @@ expenses_bp = Blueprint('expenses', __name__, url_prefix='/api/expenses')
 @expenses_bp.route('', methods=['GET'])
 @login_required
 def get_expenses():
-    """获取支出列表"""
+    """获取支出列表（包括个人和团队共享鹦鹉的支出）"""
     try:
         user = request.current_user
         page = request.args.get('page', 1, type=int)
@@ -19,14 +21,22 @@ def get_expenses():
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
         
-        # 构建查询
-        query = Expense.query.filter_by(user_id=user.id)
+        # 根据用户模式获取可访问的支出ID
+        expense_ids = get_accessible_expense_ids_by_mode(user)
+        
+        # 构建查询 - 查询可访问的支出
+        query = Expense.query.filter(Expense.id.in_(expense_ids))
         
         if category:
             query = query.filter(Expense.category == category)
         
         if parrot_id:
-            query = query.filter(Expense.parrot_id == parrot_id)
+            # 确保请求的parrot_id在用户可访问的范围内
+            parrot_ids = get_accessible_parrot_ids_by_mode(user)
+            if parrot_id in parrot_ids:
+                query = query.filter(Expense.parrot_id == parrot_id)
+            else:
+                return error_response('无权访问该鹦鹉的支出记录', 403)
         
         if start_date:
             query = query.filter(Expense.expense_date >= datetime.strptime(start_date, '%Y-%m-%d').date())
@@ -102,7 +112,8 @@ def create_expense():
             category=data['category'],
             amount=amount,
             description=data.get('description', ''),
-            expense_date=expense_date
+            expense_date=expense_date,
+            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
         )
         
         db.session.add(expense)
@@ -128,8 +139,15 @@ def get_expense(expense_id):
     """获取单个支出记录"""
     try:
         user = request.current_user
-        expense = Expense.query.filter_by(id=expense_id, user_id=user.id).first()
         
+        # 根据用户模式获取可访问的支出ID
+        expense_ids = get_accessible_expense_ids_by_mode(user)
+        
+        # 检查支出是否可访问
+        if expense_id not in expense_ids:
+            return error_response('支出记录不存在', 404)
+        
+        expense = Expense.query.get(expense_id)
         if not expense:
             return error_response('支出记录不存在', 404)
         
@@ -153,8 +171,15 @@ def update_expense(expense_id):
     """更新支出记录"""
     try:
         user = request.current_user
-        expense = Expense.query.filter_by(id=expense_id, user_id=user.id).first()
         
+        # 根据用户模式获取可访问的支出ID
+        expense_ids = get_accessible_expense_ids_by_mode(user)
+        
+        # 检查支出是否可访问
+        if expense_id not in expense_ids:
+            return error_response('支出记录不存在', 404)
+        
+        expense = Expense.query.get(expense_id)
         if not expense:
             return error_response('支出记录不存在', 404)
         
@@ -174,8 +199,9 @@ def update_expense(expense_id):
         if 'parrot_id' in data:
             parrot_id = data['parrot_id']
             if parrot_id:
-                parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id, is_active=True).first()
-                if not parrot:
+                # 检查鹦鹉是否可访问
+                parrot_ids = get_accessible_parrot_ids_by_mode(user)
+                if parrot_id not in parrot_ids:
                     return error_response('鹦鹉不存在')
             expense.parrot_id = parrot_id
         
@@ -214,8 +240,15 @@ def delete_expense(expense_id):
     """删除支出记录"""
     try:
         user = request.current_user
-        expense = Expense.query.filter_by(id=expense_id, user_id=user.id).first()
         
+        # 根据用户模式获取可访问的支出ID
+        expense_ids = get_accessible_expense_ids_by_mode(user)
+        
+        # 检查支出是否可访问
+        if expense_id not in expense_ids:
+            return error_response('支出记录不存在', 404)
+        
+        expense = Expense.query.get(expense_id)
         if not expense:
             return error_response('支出记录不存在', 404)
         
@@ -248,17 +281,20 @@ def get_expense_summary():
     try:
         user = request.current_user
         
+        # 根据用户模式获取可访问的支出ID
+        expense_ids = get_accessible_expense_ids_by_mode(user)
+        
         # 本月支出
         current_month = date.today().replace(day=1)
         monthly_total = db.session.query(func.sum(Expense.amount)).filter(
-            Expense.user_id == user.id,
+            Expense.id.in_(expense_ids),
             Expense.expense_date >= current_month
         ).scalar() or 0
         
         # 本年支出
         current_year = date.today().replace(month=1, day=1)
         yearly_total = db.session.query(func.sum(Expense.amount)).filter(
-            Expense.user_id == user.id,
+            Expense.id.in_(expense_ids),
             Expense.expense_date >= current_year
         ).scalar() or 0
         
@@ -268,7 +304,7 @@ def get_expense_summary():
             func.sum(Expense.amount).label('total'),
             func.count(Expense.id).label('count')
         ).filter(
-            Expense.user_id == user.id,
+            Expense.id.in_(expense_ids),
             Expense.expense_date >= current_month
         ).group_by(Expense.category).all()
         

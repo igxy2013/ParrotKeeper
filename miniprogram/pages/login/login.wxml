@@ -3,6 +3,23 @@
     <view class="title">鹦鹉管家AI</view>
     <view class="subtitle">请登录以继续使用</view>
     
+    <!-- 模式选择 -->
+    <view class="mode-selection">
+      <view class="mode-title">选择使用模式</view>
+      <view class="mode-options">
+        <view class="mode-option {{selectedMode === 'personal' ? 'active' : ''}}" bindtap="selectMode" data-mode="personal">
+          <view class="mode-icon">👤</view>
+          <view class="mode-name">个人模式</view>
+          <view class="mode-desc">管理个人鹦鹉数据</view>
+        </view>
+        <view class="mode-option {{selectedMode === 'team' ? 'active' : ''}}" bindtap="selectMode" data-mode="team">
+          <view class="mode-icon">👥</view>
+          <view class="mode-name">团队模式</view>
+          <view class="mode-desc">查看团队管理员数据</view>
+        </view>
+      </view>
+    </view>
+    
     <!-- 账号登录表单 -->
     <view class="form-section">
       <view class="input-group">

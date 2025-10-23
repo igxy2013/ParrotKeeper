@@ -4,7 +4,8 @@ Page({
   data: {
     canLogin: true,
     username: '',
-    password: ''
+    password: '',
+    selectedMode: 'personal' // 默认选择个人模式
   },
 
   onLoad() {
@@ -14,6 +15,14 @@ Page({
       console.log('用户已登录，openid:', app.globalData.openid)
       wx.navigateBack()
     }
+  },
+
+  // 选择模式
+  selectMode(e) {
+    const mode = e.currentTarget.dataset.mode
+    this.setData({
+      selectedMode: mode
+    })
   },
 
   // 用户名输入
@@ -34,7 +43,7 @@ Page({
   async onAccountLogin() {
     if (!this.data.canLogin) return
     
-    const { username, password } = this.data
+    const { username, password, selectedMode } = this.data
     
     // 验证输入
     if (!username.trim()) {
@@ -61,7 +70,8 @@ Page({
         method: 'POST',
         data: {
           username: username.trim(),
-          password: password.trim()
+          password: password.trim(),
+          mode: selectedMode // 传递选择的模式
         }
       })
       
@@ -73,12 +83,14 @@ Page({
         app.globalData.openid = openid
         app.globalData.userInfo = user
         app.globalData.isLogin = true
+        app.globalData.userMode = selectedMode // 保存用户选择的模式
         
         // 保存到本地存储
         wx.setStorageSync('openid', openid)
         wx.setStorageSync('userInfo', user)
+        wx.setStorageSync('userMode', selectedMode) // 保存模式到本地存储
         
-        console.log('账号登录成功，用户:', user)
+        console.log('账号登录成功，用户:', user, '模式:', selectedMode)
         
         wx.showToast({
           title: '登录成功',

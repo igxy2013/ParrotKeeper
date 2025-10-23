@@ -5,6 +5,7 @@ Page({
   data: {
     currentMonth: new Date().getMonth() + 1,
     isLogin: false,
+    userMode: null, // 当前用户模式
     
     // 统计数据
     overview: {},
@@ -26,6 +27,14 @@ Page({
 
   onShow() {
     this.checkLoginAndLoad()
+    
+    // 检查是否需要刷新数据（模式切换后）
+    if (app.globalData.needRefresh) {
+      console.log('统计页面检测到needRefresh标志，刷新数据');
+      app.globalData.needRefresh = false; // 重置标志
+      this.loadUserMode();
+      this.loadAllStatistics();
+    }
   },
 
   // 检查登录状态并加载数据
@@ -34,9 +43,12 @@ Page({
     this.setData({ isLogin })
     
     if (isLogin) {
+      // 加载当前用户模式
+      this.loadUserMode()
       this.loadAllStatistics()
     } else {
       // 游客模式显示示例数据
+      this.setData({ userMode: null })
       this.loadGuestData()
     }
   },
@@ -301,5 +313,94 @@ Page({
       ],
       loading: false
     })
+  },
+
+  // 加载当前团队信息
+  loadUserMode() {
+    // 从全局数据获取用户模式
+    const userMode = app.globalData.userMode || 'personal';
+    this.setData({
+      userMode: userMode
+    });
+  },
+
+  // 切换模式
+  switchMode() {
+    const currentMode = this.data.userMode;
+    const newMode = currentMode === 'personal' ? 'team' : 'personal';
+    
+    wx.showModal({
+      title: '切换模式',
+      content: `确定要切换到${newMode === 'personal' ? '个人' : '团队'}模式吗？`,
+      confirmText: '确定',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          this.confirmModeSwitch(newMode);
+        }
+      }
+    });
+  },
+
+  // 确认模式切换
+  confirmModeSwitch(newMode) {
+    const that = this;
+    
+    // 显示加载提示
+    wx.showLoading({
+      title: '切换中...',
+      mask: true
+    });
+    
+    // 调用后端API更新用户模式
+    wx.request({
+      url: `${app.globalData.baseUrl}/api/auth/profile`,
+      method: 'PUT',
+      header: {
+        'X-OpenID': app.globalData.openid,
+        'Content-Type': 'application/json'
+      },
+      data: {
+        user_mode: newMode
+      },
+      success: function(res) {
+        wx.hideLoading();
+        
+        if (res.data.success) {
+          // 后端更新成功，更新前端状态
+          app.globalData.userMode = newMode;
+          wx.setStorageSync('userMode', newMode);
+          
+          // 更新页面数据
+          that.setData({
+            userMode: newMode
+          });
+          
+          // 显示切换成功提示
+          wx.showToast({
+            title: `已切换到${newMode === 'personal' ? '个人' : '团队'}模式`,
+            icon: 'success'
+          });
+          
+          // 刷新数据
+          that.loadAllStatistics();
+          
+          console.log('模式切换成功:', newMode);
+        } else {
+          wx.showToast({
+            title: res.data.message || '切换失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: function(error) {
+        wx.hideLoading();
+        console.error('切换模式失败:', error);
+        wx.showToast({
+          title: '网络错误，切换失败',
+          icon: 'none'
+        });
+      }
+    });
   }
 })

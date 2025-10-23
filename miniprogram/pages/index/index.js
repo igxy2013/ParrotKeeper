@@ -21,6 +21,11 @@ Page({
     this.checkLoginStatus()
     // 无论是否登录都可以浏览首页，但只有登录用户才加载个人数据
     if (this.data.isLogin) {
+      // 检查是否需要刷新数据（模式切换后）
+      if (app.globalData.needRefresh) {
+        console.log('检测到needRefresh标志，刷新首页数据');
+        app.globalData.needRefresh = false; // 重置标志
+      }
       this.loadData()
     }
   },

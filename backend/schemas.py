@@ -47,14 +47,19 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     
     parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
     feed_type = fields.Nested(FeedTypeSchema, dump_only=True)
+    created_by_user = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     feed_type_name = fields.Method('get_feed_type_name', dump_only=True)
+    created_by_username = fields.Method('get_created_by_username', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
     
     def get_feed_type_name(self, obj):
         return obj.feed_type.name if obj.feed_type else None
+    
+    def get_created_by_username(self, obj):
+        return obj.created_by_user.username if obj.created_by_user else None
 
 class HealthRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -63,10 +68,15 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
         exclude = ('created_at',)
     
     parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
+    created_by_user = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
+    created_by_username = fields.Method('get_created_by_username', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
+    
+    def get_created_by_username(self, obj):
+        return obj.created_by_user.username if obj.created_by_user else None
 
 class CleaningRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -75,10 +85,15 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
         exclude = ('created_at',)
     
     parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
+    created_by_user = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
+    created_by_username = fields.Method('get_created_by_username', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
+    
+    def get_created_by_username(self, obj):
+        return obj.created_by_user.username if obj.created_by_user else None
 
 class BreedingRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -88,14 +103,19 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
     
     male_parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
     female_parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
+    created_by_user = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     male_parrot_name = fields.Method('get_male_parrot_name', dump_only=True)
     female_parrot_name = fields.Method('get_female_parrot_name', dump_only=True)
+    created_by_username = fields.Method('get_created_by_username', dump_only=True)
     
     def get_male_parrot_name(self, obj):
         return obj.male_parrot.name if obj.male_parrot else None
     
     def get_female_parrot_name(self, obj):
         return obj.female_parrot.name if obj.female_parrot else None
+    
+    def get_created_by_username(self, obj):
+        return obj.created_by_user.username if obj.created_by_user else None
 
 class ExpenseSchema(SQLAlchemyAutoSchema):
     class Meta:

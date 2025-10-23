@@ -1,0 +1,167 @@
+/* pages/teams/create/create.wxss */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx 30rpx;
+}
+
+/* 页面头部 */
+.page-header {
+  text-align: center;
+  margin-bottom: 60rpx;
+}
+
+.page-title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 20rpx;
+}
+
+.page-subtitle {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+}
+
+/* 表单卡片 */
+.form-card {
+  background: white;
+  border-radius: 20rpx;
+  margin-bottom: 40rpx;
+  overflow: hidden;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+}
+
+.form-header {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  padding: 30rpx;
+  text-align: center;
+}
+
+.form-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: white;
+}
+
+.form-content {
+  padding: 40rpx 30rpx;
+}
+
+/* 输入组 */
+.input-group {
+  margin-bottom: 40rpx;
+  position: relative;
+}
+
+.input-label {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15rpx;
+}
+
+.input-field, .textarea-field {
+  width: 100%;
+  padding: 25rpx 20rpx;
+  border: 2rpx solid #e1e8ed;
+  border-radius: 15rpx;
+  font-size: 28rpx;
+  color: #333;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.input-field:focus, .textarea-field:focus {
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 6rpx rgba(102, 126, 234, 0.1);
+}
+
+.textarea-field {
+  min-height: 120rpx;
+  resize: none;
+}
+
+.input-hint {
+  position: absolute;
+  right: 0;
+  bottom: -30rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 创建按钮 */
+.create-btn {
+  width: 100%;
+  padding: 30rpx;
+  border-radius: 15rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  border: none;
+  margin-top: 20rpx;
+  transition: all 0.3s ease;
+}
+
+.create-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 8rpx 25rpx rgba(102, 126, 234, 0.3);
+}
+
+.create-btn.active:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 15rpx rgba(102, 126, 234, 0.3);
+}
+
+.create-btn.disabled {
+  background: #e1e8ed;
+  color: #999;
+}
+
+/* 信息卡片 */
+.info-card {
+  background: white;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+}
+
+.info-header {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  padding: 25rpx 30rpx;
+  display: flex;
+  align-items: center;
+}
+
+.info-icon {
+  font-size: 32rpx;
+  margin-right: 15rpx;
+}
+
+.info-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #8b4513;
+}
+
+.info-content {
+  padding: 30rpx;
+}
+
+.info-text {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 15rpx;
+}
+
+.info-text:last-child {
+  margin-bottom: 0;
+}

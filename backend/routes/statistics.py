@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense
 from utils import login_required, success_response, error_response
+from team_utils import get_accessible_parrots
+from team_mode_utils import get_accessible_parrot_ids_by_mode
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_
 
@@ -13,36 +15,45 @@ def get_overview():
     try:
         user = request.current_user
         
+        # 根据用户模式获取可访问的鹦鹉ID
+        parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         # 鹦鹉总数
-        total_parrots = Parrot.query.filter_by(user_id=user.id, is_active=True).count()
+        total_parrots = len([pid for pid in parrot_ids if Parrot.query.get(pid) and Parrot.query.get(pid).is_active])
         
         # 健康状态统计
         health_stats = db.session.query(
             Parrot.health_status,
             func.count(Parrot.id).label('count')
-        ).filter_by(user_id=user.id, is_active=True).group_by(Parrot.health_status).all()
+        ).filter(Parrot.id.in_(parrot_ids), Parrot.is_active == True).group_by(Parrot.health_status).all()
         
         health_status = {status: 0 for status in ['healthy', 'sick', 'recovering']}
         for status, count in health_stats:
             health_status[status] = count
         
-        # 本月支出
+        # 本月支出（包括用户个人支出和团队共享鹦鹉的支出）
         current_month = date.today().replace(day=1)
         monthly_expense = db.session.query(func.sum(Expense.amount)).filter(
-            Expense.user_id == user.id,
-            Expense.expense_date >= current_month
+            and_(
+                Expense.parrot_id.in_(parrot_ids),
+                Expense.expense_date >= current_month
+            )
         ).scalar() or 0
         
         # 今日记录数
         today = date.today()
-        today_feeding = db.session.query(func.count(FeedingRecord.id)).join(Parrot).filter(
-            Parrot.user_id == user.id,
-            func.date(FeedingRecord.feeding_time) == today
+        today_feeding = db.session.query(func.count(FeedingRecord.id)).filter(
+            and_(
+                FeedingRecord.parrot_id.in_(parrot_ids),
+                func.date(FeedingRecord.feeding_time) == today
+            )
         ).scalar() or 0
         
-        today_cleaning = db.session.query(func.count(CleaningRecord.id)).join(Parrot).filter(
-            Parrot.user_id == user.id,
-            func.date(CleaningRecord.cleaning_time) == today
+        today_cleaning = db.session.query(func.count(CleaningRecord.id)).filter(
+            and_(
+                CleaningRecord.parrot_id.in_(parrot_ids),
+                func.date(CleaningRecord.cleaning_time) == today
+            )
         ).scalar() or 0
         
         return success_response({
@@ -64,25 +75,31 @@ def get_feeding_trends():
     """获取喂食趋势"""
     try:
         user = request.current_user
-        days = request.args.get('days', 7, type=int)
+        days = request.args.get('days', 30, type=int)
         parrot_id = request.args.get('parrot_id', type=int)
         
         # 计算日期范围
         end_date = date.today()
         start_date = end_date - timedelta(days=days-1)
         
+        # 获取可访问的鹦鹉ID
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         # 基础查询
         query = db.session.query(
             func.date(FeedingRecord.feeding_time).label('date'),
             func.count(FeedingRecord.id).label('count'),
             func.sum(FeedingRecord.amount).label('total_amount')
-        ).join(Parrot).filter(
-            Parrot.user_id == user.id,
+        ).filter(
+            FeedingRecord.parrot_id.in_(accessible_parrot_ids),
             func.date(FeedingRecord.feeding_time) >= start_date,
             func.date(FeedingRecord.feeding_time) <= end_date
         )
         
         if parrot_id:
+            # 确保指定的鹦鹉ID在可访问范围内
+            if parrot_id not in accessible_parrot_ids:
+                return error_response('无权访问该鹦鹉数据', 403)
             query = query.filter(FeedingRecord.parrot_id == parrot_id)
         
         results = query.group_by(func.date(FeedingRecord.feeding_time)).all()
@@ -126,18 +143,24 @@ def get_health_trends():
         end_date = date.today()
         start_date = end_date - timedelta(days=days-1)
         
+        # 获取可访问的鹦鹉ID
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         # 体重趋势
         weight_query = db.session.query(
             func.date(HealthRecord.record_date).label('date'),
             func.avg(HealthRecord.weight).label('avg_weight')
-        ).join(Parrot).filter(
-            Parrot.user_id == user.id,
+        ).filter(
+            HealthRecord.parrot_id.in_(accessible_parrot_ids),
             HealthRecord.weight.isnot(None),
             func.date(HealthRecord.record_date) >= start_date,
             func.date(HealthRecord.record_date) <= end_date
         )
         
         if parrot_id:
+            # 确保指定的鹦鹉ID在可访问范围内
+            if parrot_id not in accessible_parrot_ids:
+                return error_response('无权访问该鹦鹉数据', 403)
             weight_query = weight_query.filter(HealthRecord.parrot_id == parrot_id)
         
         weight_results = weight_query.group_by(func.date(HealthRecord.record_date)).all()
@@ -146,8 +169,8 @@ def get_health_trends():
         record_type_stats = db.session.query(
             HealthRecord.record_type,
             func.count(HealthRecord.id).label('count')
-        ).join(Parrot).filter(
-            Parrot.user_id == user.id,
+        ).filter(
+            HealthRecord.parrot_id.in_(accessible_parrot_ids),
             func.date(HealthRecord.record_date) >= start_date,
             func.date(HealthRecord.record_date) <= end_date
         )
@@ -185,6 +208,9 @@ def get_expense_analysis():
         user = request.current_user
         months = request.args.get('months', 6, type=int)
         
+        # 根据用户模式获取可访问的鹦鹉ID
+        parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         # 计算月份范围
         end_date = date.today()
         start_date = end_date.replace(day=1) - timedelta(days=months*30)
@@ -195,8 +221,10 @@ def get_expense_analysis():
             func.month(Expense.expense_date).label('month'),
             func.sum(Expense.amount).label('total_amount')
         ).filter(
-            Expense.user_id == user.id,
-            Expense.expense_date >= start_date
+            and_(
+                Expense.parrot_id.in_(parrot_ids),
+                Expense.expense_date >= start_date
+            )
         ).group_by(
             func.year(Expense.expense_date),
             func.month(Expense.expense_date)
@@ -207,8 +235,10 @@ def get_expense_analysis():
             Expense.category,
             func.sum(Expense.amount).label('total_amount')
         ).filter(
-            Expense.user_id == user.id,
-            Expense.expense_date >= start_date
+            and_(
+                Expense.parrot_id.in_(parrot_ids),
+                Expense.expense_date >= start_date
+            )
         ).group_by(Expense.category).all()
         
         # 按鹦鹉统计支出
@@ -216,9 +246,11 @@ def get_expense_analysis():
             Parrot.name,
             func.sum(Expense.amount).label('total_amount')
         ).join(Expense).filter(
-            Expense.user_id == user.id,
-            Expense.expense_date >= start_date,
-            Expense.parrot_id.isnot(None)
+            and_(
+                Expense.parrot_id.in_(parrot_ids),
+                Expense.expense_date >= start_date,
+                Expense.parrot_id.isnot(None)
+            )
         ).group_by(Parrot.name).all()
         
         return success_response({
@@ -260,12 +292,15 @@ def get_care_frequency():
         end_date = date.today()
         start_date = end_date - timedelta(days=days-1)
         
+        # 获取可访问的鹦鹉ID
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        
         # 喂食频率
         feeding_frequency = db.session.query(
             Parrot.name,
             func.count(FeedingRecord.id).label('feeding_count')
         ).join(FeedingRecord).filter(
-            Parrot.user_id == user.id,
+            Parrot.id.in_(accessible_parrot_ids),
             func.date(FeedingRecord.feeding_time) >= start_date,
             func.date(FeedingRecord.feeding_time) <= end_date
         ).group_by(Parrot.name).all()
@@ -275,7 +310,7 @@ def get_care_frequency():
             Parrot.name,
             func.count(CleaningRecord.id).label('cleaning_count')
         ).join(CleaningRecord).filter(
-            Parrot.user_id == user.id,
+            Parrot.id.in_(accessible_parrot_ids),
             func.date(CleaningRecord.cleaning_time) >= start_date,
             func.date(CleaningRecord.cleaning_time) <= end_date
         ).group_by(Parrot.name).all()
@@ -285,7 +320,7 @@ def get_care_frequency():
             Parrot.name,
             func.count(HealthRecord.id).label('health_count')
         ).join(HealthRecord).filter(
-            Parrot.user_id == user.id,
+            Parrot.id.in_(accessible_parrot_ids),
             func.date(HealthRecord.record_date) >= start_date,
             func.date(HealthRecord.record_date) <= end_date
         ).group_by(Parrot.name).all()

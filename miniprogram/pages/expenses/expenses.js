@@ -47,6 +47,21 @@ Page({
     this.loadSummary()
   },
 
+  onShow() {
+    // 检查是否需要刷新数据（模式切换后）
+    if (app.globalData.needRefresh) {
+      console.log('支出页面检测到needRefresh标志，刷新数据');
+      app.globalData.needRefresh = false; // 重置标志
+      this.setData({
+        expenses: [],
+        page: 1,
+        hasMore: true
+      });
+      this.loadExpenses();
+      this.loadSummary();
+    }
+  },
+
   onPullDownRefresh() {
     this.setData({
       expenses: [],

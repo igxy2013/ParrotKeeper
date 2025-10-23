@@ -1,0 +1,67 @@
+<!--pages/teams/create/create.wxml-->
+<view class="container">
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <text class="page-title">创建团队</text>
+    <text class="page-subtitle">创建一个新的团队并邀请成员加入</text>
+  </view>
+
+  <!-- 团队信息表单 -->
+  <view class="form-card">
+    <view class="form-header">
+      <text class="form-title">团队信息</text>
+    </view>
+    
+    <view class="form-content">
+      <!-- 团队名称 -->
+      <view class="input-group">
+        <text class="input-label">团队名称 *</text>
+        <input 
+          class="input-field" 
+          placeholder="请输入团队名称" 
+          value="{{teamName}}" 
+          bindinput="onTeamNameInput"
+          maxlength="20"
+        />
+        <text class="input-hint">{{teamName.length}}/20</text>
+      </view>
+
+      <!-- 团队描述 -->
+      <view class="input-group">
+        <text class="input-label">团队描述</text>
+        <textarea 
+          class="textarea-field" 
+          placeholder="请输入团队描述（可选）" 
+          value="{{teamDescription}}" 
+          bindinput="onTeamDescriptionInput"
+          maxlength="100"
+          auto-height
+        />
+        <text class="input-hint">{{teamDescription.length}}/100</text>
+      </view>
+
+      <!-- 创建按钮 -->
+      <button 
+        class="create-btn {{teamName.length > 0 ? 'active' : 'disabled'}}" 
+        bindtap="createTeam"
+        disabled="{{teamName.length === 0 || isCreating}}"
+      >
+        {{isCreating ? '创建中...' : '创建团队'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 提示信息卡片 -->
+  <view class="info-card">
+    <view class="info-header">
+      <text class="info-icon">💡</text>
+      <text class="info-title">创建提示</text>
+    </view>
+    <view class="info-content">
+      <text class="info-text">• 团队创建后，您将自动成为团队管理员</text>
+      <text class="info-text">• 您可以在团队设置中获取邀请码</text>
+      <text class="info-text">• 通过邀请码可以邀请其他成员加入团队</text>
+      <text class="info-text">• 团队名称和描述创建后可以修改</text>
+    </view>
+  </view>
+</view>

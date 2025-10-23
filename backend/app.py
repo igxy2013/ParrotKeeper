@@ -8,6 +8,7 @@ from routes.records import records_bp
 from routes.statistics import statistics_bp
 from routes.upload import upload_bp
 from routes.expenses import expenses_bp
+from routes.teams import teams_bp
 import os
 
 def create_app(config_name=None):
@@ -32,6 +33,7 @@ def create_app(config_name=None):
     app.register_blueprint(statistics_bp)
     app.register_blueprint(upload_bp)
     app.register_blueprint(expenses_bp)
+    app.register_blueprint(teams_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']

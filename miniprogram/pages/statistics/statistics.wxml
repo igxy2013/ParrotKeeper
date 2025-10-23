@@ -1,5 +1,16 @@
 <!--pages/statistics/statistics.wxml-->
 <view class="page-container">
+  <!-- 模式切换栏 -->
+  <view class="team-switch-bar" wx:if="{{userMode && isLogin}}">
+    <view class="team-info">
+      <text class="team-label">当前模式：</text>
+      <text class="team-name">{{userMode === 'personal' ? '个人模式' : '团队模式'}}</text>
+    </view>
+    <view class="switch-btn" bindtap="switchMode">
+      <text>切换</text>
+    </view>
+  </view>
+
   <!-- 游客模式提示 -->
   <view wx:if="{{!isLogin}}" class="guest-tip">
     <text class="tip-text">🎯 您正在以游客身份浏览示例数据</text>

@@ -4,7 +4,8 @@ App({
     userInfo: null,
     openid: null,
     baseUrl: 'https://bimai.xyz', // 后端API地址
-    isLogin: false
+    isLogin: false,
+    userMode: 'personal' // 添加用户模式，默认为个人模式
   },
 
   onLaunch() {
@@ -13,9 +14,11 @@ App({
     // 检查登录状态
     const openid = wx.getStorageSync('openid')
     const userInfo = wx.getStorageSync('userInfo')
+    const userMode = wx.getStorageSync('userMode') || 'personal' // 获取用户模式
     
     console.log('从存储中获取的openid:', openid)
     console.log('从存储中获取的userInfo:', userInfo)
+    console.log('从存储中获取的userMode:', userMode)
     
     if (openid) {
       this.globalData.openid = openid
@@ -28,6 +31,10 @@ App({
       this.globalData.userInfo = userInfo
       console.log('设置全局userInfo:', this.globalData.userInfo)
     }
+
+    // 设置用户模式
+    this.globalData.userMode = userMode
+    console.log('设置全局userMode:', this.globalData.userMode)
 
     // 根据存储的openid与userInfo设置登录状态
     this.globalData.isLogin = !!(this.globalData.openid && this.globalData.userInfo)
@@ -87,9 +94,11 @@ App({
     this.globalData.openid = null
     this.globalData.userInfo = null
     this.globalData.isLogin = false
+    this.globalData.userMode = 'personal' // 重置用户模式为默认值
     
     wx.removeStorageSync('openid')
     wx.removeStorageSync('userInfo')
+    wx.removeStorageSync('userMode') // 清除用户模式存储
   },
 
   // 检查登录状态
