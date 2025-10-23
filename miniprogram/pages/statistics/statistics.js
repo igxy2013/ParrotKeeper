@@ -145,16 +145,22 @@ Page({
   // 加载支出分析
   async loadExpenseAnalysis() {
     try {
+      console.log('开始加载支出分析数据')
       const res = await app.request({
         url: '/api/statistics/expense-analysis',
         method: 'GET'
       })
       
+      console.log('支出分析API响应:', res)
+      
       if (res.success) {
         const analysis = this.processExpenseAnalysis(res.data)
+        console.log('处理后的支出分析数据:', analysis)
         this.setData({
           expenseAnalysis: analysis
         })
+      } else {
+        console.error('支出分析API返回失败:', res)
       }
     } catch (error) {
       console.error('加载支出分析失败:', error)

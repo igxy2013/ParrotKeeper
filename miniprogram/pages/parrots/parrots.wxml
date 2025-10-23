@@ -114,7 +114,7 @@
   </view>
 
   <!-- 添加按钮 -->
-  <view class="fab" wx:if="{{isLogin}}" bindtap="addParrot">
+  <view class="fab" wx:if="{{isLogin && hasOperationPermission}}" bindtap="addParrot">
     <text class="fab-icon">+</text>
   </view>
 </view>

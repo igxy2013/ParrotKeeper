@@ -21,8 +21,22 @@ def get_expenses():
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
         
+        print(f"[DEBUG] 用户 {user.id} 请求支出列表，模式: {getattr(user, 'user_mode', 'personal')}")
+        print(f"[DEBUG] 当前团队ID: {getattr(user, 'current_team_id', None)}")
+        
         # 根据用户模式获取可访问的支出ID
         expense_ids = get_accessible_expense_ids_by_mode(user)
+        print(f"[DEBUG] 可访问的支出ID: {expense_ids}")
+        
+        if not expense_ids:
+            # 如果没有可访问的支出，返回空结果
+            return success_response({
+                'items': [],
+                'total': 0,
+                'page': page,
+                'limit': limit,
+                'has_next': False
+            })
         
         # 构建查询 - 查询可访问的支出
         query = Expense.query.filter(Expense.id.in_(expense_ids))
@@ -46,6 +60,8 @@ def get_expenses():
         
         # 按日期倒序排列
         query = query.order_by(desc(Expense.expense_date), desc(Expense.created_at))
+        
+        print(f"[DEBUG] 查询SQL: {query}")
         
         # 分页
         result = paginate_query(query, page, limit)
@@ -76,6 +92,23 @@ def create_expense():
     """创建支出记录"""
     try:
         user = request.current_user
+        
+        # 在团队模式下，只有管理员才能添加支出记录
+        if hasattr(user, 'user_mode') and user.user_mode == 'team':
+            if not user.current_team_id:
+                return error_response('请先选择团队', 400)
+            
+            # 检查用户是否是团队管理员
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id, 
+                user_id=user.id, 
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能添加支出记录', 403)
+        
         data = request.get_json()
         
         # 验证必填字段
@@ -170,7 +203,20 @@ def get_expense(expense_id):
 def update_expense(expense_id):
     """更新支出记录"""
     try:
+        from team_models import TeamMember
+        
         user = request.current_user
+        
+        # 在团队模式下，检查用户是否为管理员
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id,
+                user_id=user.id,
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能修改支出记录', 403)
         
         # 根据用户模式获取可访问的支出ID
         expense_ids = get_accessible_expense_ids_by_mode(user)
@@ -239,7 +285,20 @@ def update_expense(expense_id):
 def delete_expense(expense_id):
     """删除支出记录"""
     try:
+        from team_models import TeamMember
+        
         user = request.current_user
+        
+        # 在团队模式下，检查用户是否为管理员
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id,
+                user_id=user.id,
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能删除支出记录', 403)
         
         # 根据用户模式获取可访问的支出ID
         expense_ids = get_accessible_expense_ids_by_mode(user)

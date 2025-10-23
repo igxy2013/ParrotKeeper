@@ -85,6 +85,10 @@ def login_required(f):
         if not user:
             return jsonify({'error': '用户不存在'}), 401
         
+        # 从请求头获取用户模式信息
+        user_mode = request.headers.get('X-User-Mode', 'personal')
+        user.user_mode = user_mode
+        
         # 将用户信息添加到请求上下文
         request.current_user = user
         return f(*args, **kwargs)

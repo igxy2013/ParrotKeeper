@@ -6,6 +6,7 @@ Page({
     activeTab: 'feeding',
     isLogin: false,
     isTeamMode: false, // 添加团队模式标识
+    hasOperationPermission: false, // 添加操作权限标识
     
     // 记录数据
     feedingRecords: [],
@@ -53,10 +54,12 @@ Page({
     const isLogin = app.globalData.isLogin
     const userMode = app.globalData.userMode || 'personal'
     const isTeamMode = userMode === 'team'
+    const hasOperationPermission = app.hasOperationPermission()
     
     this.setData({ 
       isLogin,
-      isTeamMode
+      isTeamMode,
+      hasOperationPermission
     })
     
     if (isLogin) {

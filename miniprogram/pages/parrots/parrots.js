@@ -14,6 +14,7 @@ Page({
     isLogin: false, // 添加登录状态
     userMode: null, // 当前用户模式
     lastUserMode: null, // 记录上次的用户模式，用于检测模式变化
+    hasOperationPermission: false, // 是否有操作权限
     
     // 筛选和排序相关
     showSpeciesModal: false,
@@ -28,7 +29,11 @@ Page({
   onLoad() {
     // 检查登录状态
     const isLogin = app.checkLoginStatus()
-    this.setData({ isLogin })
+    const hasOperationPermission = app.hasOperationPermission()
+    this.setData({ 
+      isLogin,
+      hasOperationPermission
+    })
     
     // 无论是否登录都加载品种列表（游客模式）
     this.loadSpeciesList()
@@ -49,10 +54,15 @@ Page({
     
     // 检查登录状态
     const loginStatus = app.checkLoginStatus();
+    const hasOperationPermission = app.hasOperationPermission();
     console.log('登录状态检查结果:', loginStatus);
+    console.log('操作权限检查结果:', hasOperationPermission);
     console.log('全局数据:', app.globalData);
     
-    this.setData({ isLogin: loginStatus })
+    this.setData({ 
+      isLogin: loginStatus,
+      hasOperationPermission: hasOperationPermission
+    })
     
     if (loginStatus) {
       console.log('用户已登录，开始加载鹦鹉数据');

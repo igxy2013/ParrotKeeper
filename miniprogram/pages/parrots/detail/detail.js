@@ -8,6 +8,7 @@ Page({
     statistics: null,
     recentRecords: [],
     loading: true,
+    hasOperationPermission: false,
     
     // 健康状态映射
     healthStatusText: '',
@@ -31,6 +32,10 @@ Page({
   },
 
   onLoad(options) {
+    // 检查操作权限
+    const hasOperationPermission = app.hasOperationPermission()
+    this.setData({ hasOperationPermission })
+    
     if (options.id) {
       this.setData({
         parrotId: options.id
@@ -43,6 +48,10 @@ Page({
   },
 
   onShow() {
+    // 检查操作权限
+    const hasOperationPermission = app.hasOperationPermission()
+    this.setData({ hasOperationPermission })
+    
     // 从其他页面返回时刷新数据
     if (this.data.parrotId) {
       this.loadParrotDetail()

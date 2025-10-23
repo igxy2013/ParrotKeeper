@@ -8,6 +8,7 @@ Page({
     page: 1,
     limit: 20,
     totalAmount: 0,
+    hasOperationPermission: false, // 添加操作权限标识
     categories: [
       { value: 'food', label: '食物' },
       { value: 'medical', label: '医疗' },
@@ -27,6 +28,10 @@ Page({
   },
 
   onLoad() {
+    // 检查操作权限
+    const hasOperationPermission = app.hasOperationPermission()
+    this.setData({ hasOperationPermission })
+    
     // 检查登录状态
     if (!app.globalData.openid) {
       const openid = wx.getStorageSync('openid')
@@ -48,6 +53,10 @@ Page({
   },
 
   onShow() {
+    // 检查操作权限
+    const hasOperationPermission = app.hasOperationPermission()
+    this.setData({ hasOperationPermission })
+    
     // 检查是否需要刷新数据（模式切换后）
     if (app.globalData.needRefresh) {
       console.log('支出页面检测到needRefresh标志，刷新数据');
@@ -87,6 +96,7 @@ Page({
 
     console.log('开始加载支出记录，当前页码:', this.data.page)
     console.log('使用的openid:', app.globalData.openid)
+    console.log('当前用户模式:', app.globalData.userMode)
 
     try {
       const params = {
@@ -106,23 +116,16 @@ Page({
         params.end_date = this.data.endDate
       }
 
-      const response = await new Promise((resolve, reject) => {
-        wx.request({
-          url: `${app.globalData.baseUrl}/api/expenses`,
-          method: 'GET',
-          data: params,
-          header: {
-            'X-OpenID': app.globalData.openid
-          },
-          success: resolve,
-          fail: reject
-        })
+      const response = await app.request({
+        url: '/api/expenses',
+        method: 'GET',
+        data: params
       })
 
       console.log('支出列表API响应:', response)
       
-      if (response && response.data && response.data.success) {
-        const newExpenses = response.data.data.items
+      if (response && response.success) {
+        const newExpenses = response.data.items
         console.log('获取到的支出记录:', newExpenses)
         
         // 处理类别翻译
@@ -155,7 +158,7 @@ Page({
           expenses,
           totalAmount,
           totalAmount_display: totalAmount.toFixed(2),
-          hasMore: response.data.data.has_next,
+          hasMore: response.data.has_next,
           page: this.data.page + 1
         })
         
@@ -164,7 +167,7 @@ Page({
       } else {
         console.error('支出列表API返回错误:', response)
         wx.showToast({
-          title: response?.data?.message || '加载失败',
+          title: response?.message || '加载失败',
           icon: 'none'
         })
       }
@@ -182,22 +185,15 @@ Page({
   // 加载汇总数据
   async loadSummary() {
     try {
-      const response = await new Promise((resolve, reject) => {
-        wx.request({
-          url: `${app.globalData.baseUrl}/api/expenses/summary`,
-          method: 'GET',
-          header: {
-            'X-OpenID': app.globalData.openid
-          },
-          success: resolve,
-          fail: reject
-        })
+      const response = await app.request({
+        url: '/api/expenses/summary',
+        method: 'GET'
       })
 
       console.log('汇总数据API响应:', response)
       
-      if (response && response.data && response.data.success) {
-        const summaryData = response.data.data
+      if (response && response.success) {
+        const summaryData = response.data
         console.log('汇总数据:', summaryData)
         
         // 确保汇总数据中的金额是数字类型
@@ -260,21 +256,14 @@ Page({
   // 执行删除
   async deleteExpense(expenseId, expenseIndex) {
     try {
-      const response = await new Promise((resolve, reject) => {
-        wx.request({
-          url: `${app.globalData.baseUrl}/api/expenses/${expenseId}`,
-          method: 'DELETE',
-          header: {
-            'X-OpenID': app.globalData.openid
-          },
-          success: resolve,
-          fail: reject
-        })
+      const response = await app.request({
+        url: `/api/expenses/${expenseId}`,
+        method: 'DELETE'
       })
 
       console.log('删除支出API响应:', response)
       
-      if (response && response.data && response.data.success) {
+      if (response && response.success) {
         const expenses = [...this.data.expenses]
         const deletedExpense = expenses[expenseIndex]
         expenses.splice(expenseIndex, 1)
@@ -297,7 +286,7 @@ Page({
       } else {
         console.error('删除支出API返回错误:', response)
         wx.showToast({
-          title: response?.data?.message || '删除失败',
+          title: response?.message || '删除失败',
           icon: 'none'
         })
       }

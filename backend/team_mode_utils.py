@@ -84,15 +84,18 @@ def get_accessible_expense_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL）
+        # 个人模式：只显示个人数据（team_id IS NULL AND user_id = 当前用户ID）
         expense_ids = db.session.query(Expense.id).filter(
-            Expense.team_id.is_(None)
+            and_(
+                Expense.team_id.is_(None),
+                Expense.user_id == user.id
+            )
         ).all()
     
     if expense_ids:
         return [eid[0] for eid in expense_ids]
     else:
-        return [eid[0] for eid in expense_ids]
+        return []
 
 def get_accessible_feeding_record_ids_by_mode(user):
     """根据用户模式获取可访问的喂食记录ID列表"""
@@ -106,9 +109,12 @@ def get_accessible_feeding_record_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL）
+        # 个人模式：只显示个人数据（team_id IS NULL AND created_by_user_id = 当前用户ID）
         record_ids = db.session.query(FeedingRecord.id).filter(
-            FeedingRecord.team_id.is_(None)
+            and_(
+                FeedingRecord.team_id.is_(None),
+                FeedingRecord.created_by_user_id == user.id
+            )
         ).all()
     
     if record_ids:
@@ -128,9 +134,12 @@ def get_accessible_health_record_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL）
+        # 个人模式：只显示个人数据（team_id IS NULL AND created_by_user_id = 当前用户ID）
         record_ids = db.session.query(HealthRecord.id).filter(
-            HealthRecord.team_id.is_(None)
+            and_(
+                HealthRecord.team_id.is_(None),
+                HealthRecord.created_by_user_id == user.id
+            )
         ).all()
     
     if record_ids:
@@ -150,9 +159,12 @@ def get_accessible_cleaning_record_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL）
+        # 个人模式：只显示个人数据（team_id IS NULL AND created_by_user_id = 当前用户ID）
         record_ids = db.session.query(CleaningRecord.id).filter(
-            CleaningRecord.team_id.is_(None)
+            and_(
+                CleaningRecord.team_id.is_(None),
+                CleaningRecord.created_by_user_id == user.id
+            )
         ).all()
     
     if record_ids:
@@ -172,9 +184,12 @@ def get_accessible_breeding_record_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL）
+        # 个人模式：只显示个人数据（team_id IS NULL AND created_by_user_id = 当前用户ID）
         record_ids = db.session.query(BreedingRecord.id).filter(
-            BreedingRecord.team_id.is_(None)
+            and_(
+                BreedingRecord.team_id.is_(None),
+                BreedingRecord.created_by_user_id == user.id
+            )
         ).all()
     
     if record_ids:

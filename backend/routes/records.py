@@ -399,6 +399,22 @@ def add_feeding_record_internal(data):
     """内部喂食记录添加方法"""
     user = request.current_user
     
+    # 在团队模式下，只有管理员才能添加喂食记录
+    if hasattr(user, 'user_mode') and user.user_mode == 'team':
+        if not user.current_team_id:
+            return error_response('请先选择团队', 400)
+        
+        # 检查用户是否是团队管理员
+        from team_models import TeamMember
+        member = TeamMember.query.filter_by(
+            team_id=user.current_team_id, 
+            user_id=user.id, 
+            is_active=True
+        ).first()
+        
+        if not member or member.role not in ['owner', 'admin']:
+            return error_response('只有团队管理员才能添加喂食记录', 403)
+    
     parrot_id = data.get('parrot_id')
     if not parrot_id:
         return error_response('请选择鹦鹉')
@@ -447,7 +463,21 @@ def create_feeding_record():
 def update_feeding_record(record_id):
     """更新喂食记录"""
     try:
+        from team_models import TeamMember
+        
         user = request.current_user
+        
+        # 在团队模式下，检查用户是否为管理员
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id,
+                user_id=user.id,
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能修改喂食记录', 403)
+        
         record = db.session.query(FeedingRecord).join(Parrot).filter(
             FeedingRecord.id == record_id,
             Parrot.user_id == user.id
@@ -484,7 +514,20 @@ def update_feeding_record(record_id):
 def delete_feeding_record(record_id):
     """删除喂食记录"""
     try:
+        from team_models import TeamMember
+        
         user = request.current_user
+        
+        # 在团队模式下，检查用户是否为管理员
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id,
+                user_id=user.id,
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能删除喂食记录', 403)
         
         # 检查记录是否可访问
         accessible_ids = get_accessible_feeding_record_ids_by_mode(user)
@@ -561,6 +604,22 @@ def get_health_records():
 def add_health_record_internal(data):
     """内部健康记录添加方法"""
     user = request.current_user
+    
+    # 在团队模式下，只有管理员才能添加健康记录
+    if hasattr(user, 'user_mode') and user.user_mode == 'team':
+        if not user.current_team_id:
+            return error_response('请先选择团队', 400)
+        
+        # 检查用户是否是团队管理员
+        from team_models import TeamMember
+        member = TeamMember.query.filter_by(
+            team_id=user.current_team_id, 
+            user_id=user.id, 
+            is_active=True
+        ).first()
+        
+        if not member or member.role not in ['owner', 'admin']:
+            return error_response('只有团队管理员才能添加健康记录', 403)
     
     parrot_id = data.get('parrot_id')
     if not parrot_id:
@@ -702,6 +761,22 @@ def add_cleaning_record_internal(data):
     """内部清洁记录添加方法"""
     user = request.current_user
     
+    # 在团队模式下，只有管理员才能添加清洁记录
+    if hasattr(user, 'user_mode') and user.user_mode == 'team':
+        if not user.current_team_id:
+            return error_response('请先选择团队', 400)
+        
+        # 检查用户是否是团队管理员
+        from team_models import TeamMember
+        member = TeamMember.query.filter_by(
+            team_id=user.current_team_id, 
+            user_id=user.id, 
+            is_active=True
+        ).first()
+        
+        if not member or member.role not in ['owner', 'admin']:
+            return error_response('只有团队管理员才能添加清洁记录', 403)
+    
     parrot_id = data.get('parrot_id')
     if not parrot_id:
         return error_response('请选择鹦鹉')
@@ -827,6 +902,24 @@ def get_breeding_records():
 def add_breeding_record_internal(data):
     """内部繁殖记录添加方法"""
     try:
+        user = request.current_user
+        
+        # 在团队模式下，只有管理员才能添加繁殖记录
+        if hasattr(user, 'user_mode') and user.user_mode == 'team':
+            if not user.current_team_id:
+                return error_response('请先选择团队', 400)
+            
+            # 检查用户是否是团队管理员
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id, 
+                user_id=user.id, 
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能添加繁殖记录', 403)
+        
         # 验证必需字段
         male_parrot_id = data.get('male_parrot_id')
         female_parrot_id = data.get('female_parrot_id')
@@ -839,7 +932,6 @@ def add_breeding_record_internal(data):
             return error_response('雄性和雌性鹦鹉不能是同一只')
         
         # 验证鹦鹉是否存在且属于当前用户
-        user = request.current_user
         male_parrot = Parrot.query.filter_by(id=male_parrot_id, user_id=user.id).first()
         female_parrot = Parrot.query.filter_by(id=female_parrot_id, user_id=user.id).first()
         

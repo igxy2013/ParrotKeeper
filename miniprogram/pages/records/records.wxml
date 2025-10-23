@@ -48,10 +48,10 @@
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}">
+            <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">✏️</text>
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="feeding" data-id="{{item.id}}">
+            <view class="action-btn" bindtap="deleteRecord" data-type="feeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">🗑️</text>
             </view>
           </view>
@@ -78,7 +78,7 @@
       <view class="empty-icon">🍎</view>
       <view class="empty-text" wx:if="{{isLogin}}">暂无喂食记录</view>
       <view class="empty-text" wx:else>请先登录查看记录</view>
-      <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addFeedingRecord">添加喂食记录</button>
+      <button wx:if="{{isLogin && hasOperationPermission}}" class="btn btn-primary btn-large mt-30" bindtap="addFeedingRecord">添加喂食记录</button>
     </view>
   </view>
 
@@ -100,10 +100,10 @@
             <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="health" data-id="{{item.id}}">
+            <view class="action-btn" bindtap="editRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">✏️</text>
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="health" data-id="{{item.id}}">
+            <view class="action-btn" bindtap="deleteRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">🗑️</text>
             </view>
           </view>
@@ -138,7 +138,7 @@
       <view class="empty-icon">🏥</view>
       <view class="empty-text" wx:if="{{isLogin}}">暂无健康记录</view>
       <view class="empty-text" wx:else>请先登录查看记录</view>
-      <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addHealthRecord">添加健康记录</button>
+      <button wx:if="{{isLogin && hasOperationPermission}}" class="btn btn-primary btn-large mt-30" bindtap="addHealthRecord">添加健康记录</button>
     </view>
   </view>
 
@@ -154,10 +154,10 @@
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}">
+            <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">✏️</text>
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}">
+            <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">🗑️</text>
             </view>
           </view>
@@ -180,7 +180,7 @@
       <view class="empty-icon">🧽</view>
       <view class="empty-text" wx:if="{{isLogin}}">暂无清洁记录</view>
       <view class="empty-text" wx:else>请先登录查看记录</view>
-      <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addCleaningRecord">添加清洁记录</button>
+      <button wx:if="{{isLogin && hasOperationPermission}}" class="btn btn-primary btn-large mt-30" bindtap="addCleaningRecord">添加清洁记录</button>
     </view>
   </view>
 
@@ -196,10 +196,10 @@
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="breeding" data-id="{{item.id}}">
+            <view class="action-btn" bindtap="editRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">✏️</text>
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="breeding" data-id="{{item.id}}">
+            <view class="action-btn" bindtap="deleteRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">🗑️</text>
             </view>
           </view>
@@ -238,7 +238,7 @@
       <view class="empty-icon">🥚</view>
       <view class="empty-text" wx:if="{{isLogin}}">暂无繁殖记录</view>
       <view class="empty-text" wx:else>请先登录查看记录</view>
-      <button wx:if="{{isLogin}}" class="btn btn-primary btn-large mt-30" bindtap="addBreedingRecord">添加繁殖记录</button>
+      <button wx:if="{{isLogin && hasOperationPermission}}" class="btn btn-primary btn-large mt-30" bindtap="addBreedingRecord">添加繁殖记录</button>
     </view>
   </view>
 
@@ -249,7 +249,7 @@
   </view>
 
   <!-- 添加按钮 -->
-  <view class="fab" bindtap="addRecord">
+  <view class="fab" bindtap="addRecord" wx:if="{{isLogin && hasOperationPermission}}">
     <text class="fab-icon">+</text>
   </view>
 </view>

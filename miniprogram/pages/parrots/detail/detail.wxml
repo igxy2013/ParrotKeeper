@@ -171,22 +171,22 @@
     <!-- 操作按钮 -->
     <view class="action-buttons">
       <view class="action-row">
-        <button class="action-btn feeding" bindtap="quickFeeding">
+        <button class="action-btn feeding" bindtap="quickFeeding" wx:if="{{hasOperationPermission}}">
           <text class="btn-icon">🍽️</text>
           <text class="btn-text">快速喂食</text>
         </button>
-        <button class="action-btn cleaning" bindtap="quickCleaning">
+        <button class="action-btn cleaning" bindtap="quickCleaning" wx:if="{{hasOperationPermission}}">
           <text class="btn-icon">🧹</text>
           <text class="btn-text">快速清洁</text>
         </button>
-        <button class="action-btn health" bindtap="quickHealthCheck">
+        <button class="action-btn health" bindtap="quickHealthCheck" wx:if="{{hasOperationPermission}}">
           <text class="btn-icon">🏥</text>
           <text class="btn-text">健康检查</text>
         </button>
       </view>
       
       <view class="action-row">
-        <button class="action-btn edit" bindtap="editParrot">
+        <button class="action-btn edit" bindtap="editParrot" wx:if="{{hasOperationPermission}}">
           <text class="btn-icon">✏️</text>
           <text class="btn-text">编辑信息</text>
         </button>
@@ -194,7 +194,7 @@
           <text class="btn-icon">📋</text>
           <text class="btn-text">查看记录</text>
         </button>
-        <button class="action-btn delete" bindtap="deleteParrot">
+        <button class="action-btn delete" bindtap="deleteParrot" wx:if="{{hasOperationPermission}}">
           <text class="btn-icon">🗑️</text>
           <text class="btn-text">删除</text>
         </button>

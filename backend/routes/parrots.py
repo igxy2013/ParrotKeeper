@@ -121,6 +121,23 @@ def create_parrot():
     """添加新鹦鹉"""
     try:
         user = request.current_user
+        
+        # 在团队模式下，只有管理员才能添加鹦鹉
+        if hasattr(user, 'user_mode') and user.user_mode == 'team':
+            if not user.current_team_id:
+                return error_response('请先选择团队', 400)
+            
+            # 检查用户是否是团队管理员
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id, 
+                user_id=user.id, 
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能添加鹦鹉', 403)
+        
         data = request.get_json()
         
         # 验证必填字段
@@ -179,7 +196,20 @@ def create_parrot():
 def update_parrot(parrot_id):
     """更新鹦鹉信息"""
     try:
+        from team_models import TeamMember
+        
         user = request.current_user
+        
+        # 在团队模式下，检查用户是否为管理员
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id,
+                user_id=user.id,
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能修改鹦鹉信息', 403)
         
         # 使用团队模式过滤逻辑检查访问权限
         accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
@@ -253,8 +283,20 @@ def delete_parrot(parrot_id):
     """删除鹦鹉（硬删除）"""
     try:
         from models import Expense, BreedingRecord
+        from team_models import TeamMember
         
         user = request.current_user
+        
+        # 在团队模式下，检查用户是否为管理员
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id,
+                user_id=user.id,
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能删除鹦鹉', 403)
         
         # 使用团队模式过滤逻辑检查访问权限
         accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)

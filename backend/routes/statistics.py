@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense
 from utils import login_required, success_response, error_response
 from team_utils import get_accessible_parrots
-from team_mode_utils import get_accessible_parrot_ids_by_mode
+from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_
 
@@ -208,12 +208,29 @@ def get_expense_analysis():
         user = request.current_user
         months = request.args.get('months', 6, type=int)
         
-        # 根据用户模式获取可访问的鹦鹉ID
+        # 根据用户模式获取可访问的支出ID
+        expense_ids = get_accessible_expense_ids_by_mode(user)
+        print(f"[DEBUG] 用户 {user.id} 请求支出分析，模式: {getattr(user, 'user_mode', 'unknown')}")
+        print(f"[DEBUG] 当前团队ID: {getattr(user, 'current_team_id', 'unknown')}")
+        print(f"[DEBUG] 可访问的支出ID: {expense_ids}")
+        
+        # 如果没有可访问的支出，直接返回空数据
+        if not expense_ids:
+            print("[DEBUG] 没有可访问的支出记录，返回空数据")
+            return success_response({
+                'monthly_expenses': [],
+                'category_expenses': [],
+                'parrot_expenses': []
+            })
+        
+        # 根据用户模式获取可访问的鹦鹉ID（用于鹦鹉支出统计）
         parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        print(f"[DEBUG] 可访问的鹦鹉ID: {parrot_ids}")
         
         # 计算月份范围
         end_date = date.today()
         start_date = end_date.replace(day=1) - timedelta(days=months*30)
+        print(f"[DEBUG] 查询时间范围: {start_date} 到 {end_date}")
         
         # 按月统计支出
         monthly_expenses = db.session.query(
@@ -222,7 +239,7 @@ def get_expense_analysis():
             func.sum(Expense.amount).label('total_amount')
         ).filter(
             and_(
-                Expense.parrot_id.in_(parrot_ids),
+                Expense.id.in_(expense_ids),
                 Expense.expense_date >= start_date
             )
         ).group_by(
@@ -236,10 +253,12 @@ def get_expense_analysis():
             func.sum(Expense.amount).label('total_amount')
         ).filter(
             and_(
-                Expense.parrot_id.in_(parrot_ids),
+                Expense.id.in_(expense_ids),
                 Expense.expense_date >= start_date
             )
         ).group_by(Expense.category).all()
+        
+        print(f"[DEBUG] 类别支出查询结果: {[(r.category, float(r.total_amount or 0)) for r in category_expenses]}")
         
         # 按鹦鹉统计支出
         parrot_expenses = db.session.query(
@@ -247,11 +266,13 @@ def get_expense_analysis():
             func.sum(Expense.amount).label('total_amount')
         ).join(Expense).filter(
             and_(
-                Expense.parrot_id.in_(parrot_ids),
+                Expense.id.in_(expense_ids),
                 Expense.expense_date >= start_date,
                 Expense.parrot_id.isnot(None)
             )
         ).group_by(Parrot.name).all()
+        
+        print(f"[DEBUG] 鹦鹉支出查询结果: {[(r.name, float(r.total_amount or 0)) for r in parrot_expenses]}")
         
         return success_response({
             'monthly_expenses': [

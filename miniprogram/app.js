@@ -128,6 +128,11 @@ App({
         header['X-OpenID'] = this.globalData.openid
       }
       
+      // 添加用户模式信息
+      if (this.globalData.userMode) {
+        header['X-User-Mode'] = this.globalData.userMode
+      }
+      
       wx.request({
         url: this.globalData.baseUrl + url,
         method,
@@ -252,5 +257,27 @@ App({
       const months = Math.floor((diffDays % 365) / 30)
       return months > 0 ? `${years}年${months}个月` : `${years}年`
     }
+  },
+
+  // 检查用户是否为团队管理员
+  isTeamAdmin() {
+    // 在个人模式下，用户拥有所有权限
+    if (this.globalData.userMode === 'personal') {
+      return true
+    }
+    
+    // 在团队模式下，检查用户角色
+    const userInfo = this.globalData.userInfo
+    if (!userInfo || !userInfo.teamRole) {
+      return false
+    }
+    
+    // 只有owner和admin才是管理员
+    return userInfo.teamRole === 'owner' || userInfo.teamRole === 'admin'
+  },
+
+  // 检查用户是否有操作权限（增删改）
+  hasOperationPermission() {
+    return this.isTeamAdmin()
   }
 })
