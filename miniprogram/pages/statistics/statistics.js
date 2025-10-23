@@ -175,14 +175,17 @@ Page({
     
     // 类别中英文映射
     const categoryMap = {
-      'food': '食物',
-      'medical': '医疗',
-      'toys': '玩具',
-      'accessories': '用品',
-      'grooming': '美容',
-      'training': '训练',
-      'other': '其他'
-    }
+        'food': '食物',
+        'medical': '医疗',
+        'toys': '玩具',
+        'cage': '笼具',
+        'baby_bird': '幼鸟',
+        'breeding_bird': '种鸟',
+        'accessories': '配件',
+        'grooming': '美容',
+        'training': '训练',
+        'other': '其他'
+      }
     
     const categoryData = data.category_expenses
     const total = categoryData.reduce((sum, item) => sum + (item.total_amount || 0), 0)

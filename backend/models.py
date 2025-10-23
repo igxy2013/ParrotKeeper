@@ -167,7 +167,7 @@ class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
-    category = db.Column(db.Enum('food', 'medical', 'toys', 'cage', 'other'))
+    category = db.Column(db.Enum('food', 'medical', 'toys', 'cage', 'baby_bird', 'breeding_bird', 'other'))
     amount = db.Column(db.Numeric(8, 2), nullable=False)
     description = db.Column(db.String(255))
     expense_date = db.Column(db.Date, default=date.today)

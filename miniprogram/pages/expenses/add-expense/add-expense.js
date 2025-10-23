@@ -13,6 +13,8 @@ Page({
       { value: 'medical', label: '医疗' },
       { value: 'toys', label: '玩具' },
       { value: 'cage', label: '笼具' },
+      { value: 'baby_bird', label: '幼鸟' },
+      { value: 'breeding_bird', label: '种鸟' },
       { value: 'other', label: '其他' }
     ],
     submitting: false,
