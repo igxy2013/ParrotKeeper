@@ -30,11 +30,15 @@ def login():
         user = User.query.filter_by(openid=openid).first()
         
         # 处理昵称，避免空值或默认值
-        nickname = user_info.get('nickName', '').strip()
-        if not nickname or nickname == '微信用户':
-            nickname = f'用户{openid[-6:]}'  # 使用OpenID后6位作为默认昵称
+        wechat_nickname = user_info.get('nickName', '').strip()
         
         if not user:
+            # 新用户：设置默认昵称
+            if not wechat_nickname or wechat_nickname == '微信用户':
+                nickname = f'用户{openid[-6:]}'  # 使用OpenID后6位作为默认昵称
+            else:
+                nickname = wechat_nickname
+            
             user = User(
                 openid=openid,
                 nickname=nickname,
@@ -42,9 +46,17 @@ def login():
             )
             db.session.add(user)
         else:
-            # 更新用户信息，但只在有有效昵称时更新
-            if nickname and nickname != '微信用户':
-                user.nickname = nickname
+            # 已存在用户：只在特定条件下更新昵称
+            current_nickname = user.nickname or ''
+            
+            # 只有当前昵称是默认格式且微信返回有效昵称时才更新
+            if (wechat_nickname and 
+                wechat_nickname != '微信用户' and 
+                current_nickname.startswith('用户') and 
+                len(current_nickname) == 9):  # "用户" + 6位字符
+                user.nickname = wechat_nickname
+            
+            # 更新头像（如果有）
             if user_info.get('avatarUrl'):
                 user.avatar_url = user_info.get('avatarUrl')
         
