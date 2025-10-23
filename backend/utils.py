@@ -69,7 +69,19 @@ def login_required(f):
         
         # 验证用户是否存在
         from models import User
+        user = None
+        
+        # 首先尝试通过openid查找（微信登录用户）
         user = User.query.filter_by(openid=openid).first()
+        
+        # 如果没找到，检查是否是账号登录用户的伪openid格式
+        if not user and openid.startswith('account_'):
+            try:
+                user_id = int(openid.replace('account_', ''))
+                user = User.query.filter_by(id=user_id, login_type='account').first()
+            except ValueError:
+                pass
+        
         if not user:
             return jsonify({'error': '用户不存在'}), 401
         

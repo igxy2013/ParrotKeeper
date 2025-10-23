@@ -8,10 +8,13 @@ class User(db.Model):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
-    openid = db.Column(db.String(100), unique=True, nullable=False)
+    openid = db.Column(db.String(100), unique=True, nullable=True)  # 微信openid，可为空
+    username = db.Column(db.String(50), unique=True, nullable=True)  # 用户名，可为空
+    password_hash = db.Column(db.String(255), nullable=True)  # 密码哈希，可为空
     nickname = db.Column(db.String(100))
     avatar_url = db.Column(db.String(255))
     phone = db.Column(db.String(20))
+    login_type = db.Column(db.Enum('wechat', 'account'), default='wechat')  # 登录类型
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

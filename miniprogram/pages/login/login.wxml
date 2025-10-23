@@ -1,14 +1,49 @@
 <view class="container">
   <view class="login-box">
-    <view class="title">鹦鹉管家</view>
+    <view class="title">鹦鹉管家AI</view>
     <view class="subtitle">请登录以继续使用</view>
     
-    <button class="login-btn test-btn" bindtap="onTestLogin">
-      使用测试账号登录
-    </button>
+    <!-- 账号登录表单 -->
+    <view class="form-section">
+      <view class="input-group">
+        <input 
+          class="login-input" 
+          type="text" 
+          placeholder="请输入用户名" 
+          value="{{username}}" 
+          bindinput="onUsernameInput"
+          maxlength="20"
+        />
+      </view>
+      
+      <view class="input-group">
+        <input 
+          class="login-input" 
+          type="password" 
+          placeholder="请输入密码" 
+          value="{{password}}" 
+          bindinput="onPasswordInput"
+          maxlength="20"
+        />
+      </view>
+      
+      <button class="login-btn account-btn" bindtap="onAccountLogin" disabled="{{!canLogin}}">
+        账号登录
+      </button>
+      
+      <view class="register-link" bindtap="onRegister">
+        还没有账号？立即注册
+      </view>
+    </view>
+    
+    <view class="divider">
+      <view class="divider-line"></view>
+      <view class="divider-text">或</view>
+      <view class="divider-line"></view>
+    </view>
     
     <button class="login-btn wechat-btn" bindtap="onWechatLogin" disabled="{{!canLogin}}">
-      微信登录
+      微信快速登录
     </button>
   </view>
 </view>
