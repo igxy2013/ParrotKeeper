@@ -437,77 +437,93 @@
 }
 
 /* 应用设置卡片样式 */
-.settings-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15rpx;
-}
-
-.setting-grid-item {
+.settings-actions {
   display: flex;
   flex-direction: column;
+  gap: 0;
+}
+
+.setting-action-item {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 25rpx 15rpx;
+  padding: 24rpx 20rpx;
   background: #f8f9ff;
-  border-radius: 15rpx;
+  border-radius: 0;
   transition: all 0.3s ease;
-  min-height: 120rpx;
+  border-bottom: 1rpx solid #e8ecff;
 }
 
-.setting-grid-item:active {
+.setting-action-item:first-child {
+  border-top-left-radius: 15rpx;
+  border-top-right-radius: 15rpx;
+}
+
+.setting-action-item:last-child {
+  border-bottom-left-radius: 15rpx;
+  border-bottom-right-radius: 15rpx;
+  border-bottom: none;
+}
+
+.setting-action-item:active {
   background: #e8ecff;
-  transform: scale(0.95);
+  transform: scale(0.98);
 }
 
-.setting-grid-item.logout-item {
+.setting-action-item.logout-item {
   background: #fff5f5;
   color: #ff4757;
 }
 
-.setting-grid-item.logout-item:active {
+.setting-action-item.logout-item:active {
   background: #ffe8e8;
 }
 
-.grid-item-icon {
-  font-size: 36rpx;
-  margin-bottom: 10rpx;
+.setting-icon-wrapper {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-right: 20rpx;
+  background: rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
 }
 
-.grid-item-text {
-  font-size: 24rpx;
+.setting-icon {
+  font-size: 32rpx;
+}
+
+.setting-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-name {
+  font-size: 28rpx;
+  font-weight: 600;
   color: #333;
-  text-align: center;
-  font-weight: 500;
+  margin-bottom: 4rpx;
 }
 
-.logout-item .grid-item-text {
+.setting-desc {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.setting-arrow {
+  font-size: 24rpx;
+  color: #ccc;
+  margin-left: 10rpx;
+}
+
+.logout-item .setting-name {
   color: #ff4757;
 }
 
-/* 响应式调整 */
-@media (max-width: 750rpx) {
-  .settings-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 12rpx;
-  }
-  
-  .setting-grid-item {
-    padding: 20rpx 10rpx;
-    min-height: 100rpx;
-  }
-  
-  .grid-item-icon {
-    font-size: 32rpx;
-    margin-bottom: 8rpx;
-  }
-  
-  .grid-item-text {
-    font-size: 22rpx;
-  }
+.logout-item .setting-desc {
+  color: #ff8a8a;
 }
 
 /* 模式切换弹窗样式 */

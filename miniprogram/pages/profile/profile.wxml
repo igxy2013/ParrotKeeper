@@ -123,22 +123,36 @@
         <text class="card-title">应用设置</text>
       </view>
       <view class="card-content">
-        <view class="settings-grid">
-          <view class="setting-grid-item" bindtap="showAbout">
-            <view class="grid-item-icon">ℹ️</view>
-            <text class="grid-item-text">关于应用</text>
+        <view class="settings-actions">
+          <view class="setting-action-item" bindtap="showAbout">
+            <view class="setting-icon-wrapper">
+              <view class="setting-icon">ℹ️</view>
+            </view>
+            <view class="setting-content">
+              <view class="setting-name">关于应用</view>
+              <view class="setting-desc">查看应用版本和信息</view>
+            </view>
+            <view class="setting-arrow">></view>
           </view>
-          <view class="setting-grid-item" bindtap="showHelp">
-            <view class="grid-item-icon">❓</view>
-            <text class="grid-item-text">帮助反馈</text>
+          <view class="setting-action-item" bindtap="showHelp">
+            <view class="setting-icon-wrapper">
+              <view class="setting-icon">❓</view>
+            </view>
+            <view class="setting-content">
+              <view class="setting-name">帮助反馈</view>
+              <view class="setting-desc">获取帮助或提交反馈</view>
+            </view>
+            <view class="setting-arrow">></view>
           </view>
-          <view class="setting-grid-item" bindtap="clearCache">
-            <view class="grid-item-icon">🗑️</view>
-            <text class="grid-item-text">清除缓存</text>
-          </view>
-          <view class="setting-grid-item logout-item" bindtap="handleLogout">
-            <view class="grid-item-icon">🚪</view>
-            <text class="grid-item-text">退出登录</text>
+          <view class="setting-action-item logout-item" bindtap="handleLogout">
+            <view class="setting-icon-wrapper">
+              <view class="setting-icon">🚪</view>
+            </view>
+            <view class="setting-content">
+              <view class="setting-name">退出登录</view>
+              <view class="setting-desc">安全退出当前账户</view>
+            </view>
+            <view class="setting-arrow">></view>
           </view>
         </view>
       </view>

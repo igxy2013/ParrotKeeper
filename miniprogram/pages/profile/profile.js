@@ -346,19 +346,40 @@ Page({
   },
 
   // 显示关于
-  showAbout() {
-    wx.showModal({
-      title: '关于应用',
-      content: '鹦鹉管家 v1.0\n专业的鹦鹉饲养管理工具\n帮助您更好地照顾您的鹦鹉朋友',
-      showCancel: false
-    })
+  async showAbout() {
+    try {
+      // 从后端API获取版本信息
+      const res = await wx.request({
+        url: 'https://bimai.xyz/api/health',
+        method: 'GET'
+      })
+      
+      let version = 'v1.0' // 默认版本号
+      if (res.data && res.data.success && res.data.version) {
+        version = `v${res.data.version}`
+      }
+      
+      wx.showModal({
+        title: '关于应用',
+        content: `鹦鹉管家 ${version}\n专业的鹦鹉饲养管理工具\n帮助您更好地照顾您的鹦鹉朋友`,
+        showCancel: false
+      })
+    } catch (error) {
+      console.error('获取版本信息失败:', error)
+      // 如果获取失败，使用默认版本号
+      wx.showModal({
+        title: '关于应用',
+        content: '鹦鹉管家 v1.0\n专业的鹦鹉饲养管理工具\n帮助您更好地照顾您的鹦鹉朋友',
+        showCancel: false
+      })
+    }
   },
 
   // 显示帮助
   showHelp() {
     wx.showModal({
       title: '帮助与反馈',
-      content: '如有问题或建议，请联系开发者\n邮箱：support@parrotkeeper.com',
+      content: '如有问题或建议，请联系开发者\n微信：15982036295',
       showCancel: false
     })
   },
