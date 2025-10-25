@@ -50,7 +50,7 @@ CREATE TABLE feed_types (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL COMMENT '饲料名称',
     brand VARCHAR(100) COMMENT '品牌',
-    type ENUM('seed', 'pellet', 'fruit', 'vegetable', 'supplement') COMMENT '饲料类型',
+    type ENUM('seed', 'pellet', 'fruit', 'vegetable', 'supplement', 'milk_powder') COMMENT '饲料类型',
     nutrition_info TEXT COMMENT '营养信息',
     price DECIMAL(8,2) COMMENT '价格',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

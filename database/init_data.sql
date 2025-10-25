@@ -16,12 +16,13 @@ INSERT INTO parrot_species (name, description, avg_lifespan, avg_size, care_leve
 ('非洲灰鹦鹉', '中型鹦鹉，智商极高，语言能力强', 60, '33cm', 'hard');
 
 -- 插入饲料类型数据
-INSERT INTO feed_types (name, description, nutrition_info) VALUES
-('混合种子', '多种种子混合，营养均衡', '蛋白质15%，脂肪12%，纤维8%'),
-('滋养丸', '营养全面的颗粒饲料', '蛋白质18%，脂肪8%，维生素丰富'),
-('水果', '新鲜水果，提供维生素', '维生素C丰富，天然糖分'),
-('蔬菜', '新鲜蔬菜，提供纤维和维生素', '纤维丰富，维生素A、K'),
-('坚果', '高能量食物，适量喂食', '脂肪含量高，蛋白质丰富');
+INSERT INTO feed_types (name, brand, type, nutrition_info) VALUES
+('混合种子', '通用品牌', 'seed', '蛋白质15%，脂肪12%，纤维8%'),
+('滋养丸', '通用品牌', 'pellet', '蛋白质18%，脂肪8%，维生素丰富'),
+('苹果', '新鲜', 'fruit', '维生素C丰富，天然糖分'),
+('胡萝卜', '新鲜', 'vegetable', '纤维丰富，维生素A、K'),
+('维生素补充剂', '专业品牌', 'supplement', '多种维生素和矿物质'),
+('幼鸟奶粉', '专业品牌', 'milk_powder', '专为幼鸟设计，营养全面，易消化');
 
 -- 插入测试鹦鹉数据
 INSERT INTO parrots (user_id, name, species_id, gender, birth_date, acquisition_date, color, weight, health_status, notes) VALUES

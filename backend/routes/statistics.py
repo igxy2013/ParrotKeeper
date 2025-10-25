@@ -58,10 +58,27 @@ def get_overview():
             )
         ).scalar() or 0
         
+        # 本月记录数
+        monthly_feeding = db.session.query(func.count(FeedingRecord.id)).filter(
+            and_(
+                FeedingRecord.parrot_id.in_(parrot_ids),
+                func.date(FeedingRecord.feeding_time) >= current_month
+            )
+        ).scalar() or 0
+        
+        monthly_health_checks = db.session.query(func.count(HealthRecord.id)).filter(
+            and_(
+                HealthRecord.parrot_id.in_(parrot_ids),
+                func.date(HealthRecord.record_date) >= current_month
+            )
+        ).scalar() or 0
+        
         return success_response({
             'total_parrots': total_parrots,
             'health_status': health_status,
             'monthly_expense': float(monthly_expense),
+            'monthly_feeding': monthly_feeding,
+            'monthly_health_checks': monthly_health_checks,
             'today_records': {
                 'feeding': today_feeding,
                 'cleaning': today_cleaning

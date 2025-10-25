@@ -155,8 +155,23 @@ Page({
         method: 'GET'
       })
       if (res.success) {
+        // 添加中文类型映射
+        const typeMap = {
+          'seed': '种子',
+          'pellet': '颗粒',
+          'fruit': '水果',
+          'vegetable': '蔬菜',
+          'supplement': '营养补充',
+          'milk_powder': '奶粉'
+        }
+        
+        const feedTypeList = res.data.map(item => ({
+          ...item,
+          typeText: typeMap[item.type] || item.type
+        }))
+        
         this.setData({
-          feedTypeList: res.data
+          feedTypeList: feedTypeList
         })
       }
     } catch (error) {
@@ -596,14 +611,16 @@ Page({
       if (res.success) {
         app.showSuccess(this.data.recordId ? '编辑成功' : '添加成功')
         
+        // 先获取上一页面引用，再返回
+        const pages = getCurrentPages()
+        const prevPage = pages[pages.length - 2] // 获取上一页面（当前页面是最后一个）
+        
         // 返回上一页并刷新
         setTimeout(() => {
           wx.navigateBack({
             success: () => {
               // 通知上一页刷新数据
               setTimeout(() => {
-                const pages = getCurrentPages()
-                const prevPage = pages[pages.length - 1] // 修正索引，返回后当前页面就是上一页
                 if (prevPage) {
                   if (prevPage.loadRecords) {
                     prevPage.loadRecords(true) // 传递refresh=true参数强制刷新
@@ -613,7 +630,7 @@ Page({
                     prevPage.loadParrotDetail()
                   }
                 }
-              }, 100) // 添加小延迟确保页面已经完全返回
+              }, 200) // 增加延迟确保页面完全返回
             }
           })
         }, 1500)

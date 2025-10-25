@@ -468,7 +468,7 @@
       >
         <text class="feed-type-name">{{item.name}}</text>
         <text class="feed-type-brand">{{item.brand}}</text>
-        <text class="feed-type-type">{{item.type}}</text>
+        <text class="feed-type-type">{{item.typeText}}</text>
       </view>
     </view>
   </view>
