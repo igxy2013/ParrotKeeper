@@ -6,7 +6,7 @@ Page({
     loading: false,
     hasMore: true,
     page: 1,
-    limit: 20,
+    per_page: 20,
     totalAmount: 0,
     totalCount: 0, // 添加总记录数字段
     hasOperationPermission: false, // 添加操作权限标识
@@ -144,7 +144,7 @@ Page({
     try {
       const params = {
         page: this.data.page,
-        limit: this.data.limit
+        per_page: this.data.per_page
       }
 
       if (this.data.selectedCategory) {

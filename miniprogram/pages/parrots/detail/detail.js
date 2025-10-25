@@ -100,22 +100,37 @@ Page({
           careLevelText: parrot.species ? careLevelMap[parrot.species.care_level] || '未知' : '未知'
         })
         
-        // 设置页面标题
-        wx.setNavigationBarTitle({
-          title: parrot.name
-        })
+        wx.setNavigationBarTitle({ title: parrot.name })
       }
       
-      if (statsRes.success) {
-        this.setData({
-          statistics: statsRes.data
-        })
-      }
-      
+      // 先处理最近记录，便于计算“距上次喂食”
       if (recordsRes.success) {
-        this.setData({
-          recentRecords: recordsRes.data.records || []
-        })
+        const recordsRaw = recordsRes.data.records || []
+        const recentRecords = recordsRaw.map(r => ({
+          ...r,
+          created_at: r.time ? new Date(r.time).toLocaleString() : ''
+        }))
+        this.setData({ recentRecords })
+      }
+      
+      // 将后端统计数据映射到前端所需字段
+      if (statsRes.success) {
+        const monthStats = (statsRes.data && statsRes.data.month) ? statsRes.data.month : {}
+        let daysSinceLastFeeding = 0
+        const recent = this.data.recentRecords || []
+        const lastFeeding = recent.find(r => r.type === 'feeding' && r.time)
+        if (lastFeeding && lastFeeding.time) {
+          const last = new Date(lastFeeding.time)
+          const now = new Date()
+          daysSinceLastFeeding = Math.max(0, Math.floor((now - last) / (1000 * 60 * 60 * 24)))
+        }
+        const mappedStatistics = {
+          total_feeding: monthStats.feeding || 0,
+          total_cleaning: monthStats.cleaning || 0,
+          total_health_check: monthStats.health || 0,
+          days_since_last_feeding: daysSinceLastFeeding
+        }
+        this.setData({ statistics: mappedStatistics })
       }
       
     } catch (error) {

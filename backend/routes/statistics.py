@@ -44,12 +44,20 @@ def get_overview():
         
         # 今日记录数
         today = date.today()
-        today_feeding = db.session.query(func.count(FeedingRecord.id)).filter(
+        today_feeding = db.session.query(
+            FeedingRecord.feeding_time,
+            FeedingRecord.notes,
+            FeedingRecord.amount
+        ).filter(
             and_(
                 FeedingRecord.parrot_id.in_(parrot_ids),
                 func.date(FeedingRecord.feeding_time) == today
             )
-        ).scalar() or 0
+        ).group_by(
+            FeedingRecord.feeding_time,
+            FeedingRecord.notes,
+            FeedingRecord.amount
+        ).count() or 0
         
         today_cleaning = db.session.query(func.count(CleaningRecord.id)).filter(
             and_(

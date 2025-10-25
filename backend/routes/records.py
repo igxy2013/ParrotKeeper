@@ -415,14 +415,33 @@ def add_feeding_record_internal(data):
         if not member or member.role not in ['owner', 'admin']:
             return error_response('只有团队管理员才能添加喂食记录', 403)
     
-    parrot_id = data.get('parrot_id')
-    if not parrot_id:
-        return error_response('请选择鹦鹉')
+    # 支持多选鹦鹉
+    parrot_ids = data.get('parrot_ids', [])
+    if not parrot_ids:
+        # 兼容旧版本单选
+        parrot_id = data.get('parrot_id')
+        if parrot_id:
+            parrot_ids = [parrot_id]
+        else:
+            return error_response('请选择鹦鹉')
     
-    # 验证鹦鹉是否属于当前用户
-    parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id, is_active=True).first()
-    if not parrot:
-        return error_response('鹦鹉不存在')
+    # 支持多选食物类型
+    food_type_ids = data.get('food_types', [])
+    if not food_type_ids:
+        # 兼容旧版本单选
+        feed_type_id = data.get('feed_type_id')
+        if feed_type_id:
+            food_type_ids = [feed_type_id]
+    
+    # 验证所有鹦鹉是否属于当前用户
+    parrots = Parrot.query.filter(
+        Parrot.id.in_(parrot_ids), 
+        Parrot.user_id == user.id, 
+        Parrot.is_active == True
+    ).all()
+    
+    if len(parrots) != len(parrot_ids):
+        return error_response('部分鹦鹉不存在或无权限访问')
     
     # 处理喂食时间
     feeding_time = datetime.utcnow()
@@ -432,20 +451,65 @@ def add_feeding_record_internal(data):
         except ValueError:
             return error_response('喂食时间格式错误')
     
-    record = FeedingRecord(
-        parrot_id=parrot_id,
-        feed_type_id=data.get('feed_type_id'),
-        amount=data.get('amount'),
-        feeding_time=feeding_time,
-        notes=data.get('notes'),
-        created_by_user_id=user.id,  # 记录创建者
-        team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
-    )
+    created_records = []
     
-    db.session.add(record)
+    # 支持每个食物类型独立分量：data.food_amounts = { feed_type_id: amount }
+    food_amounts = data.get('food_amounts') or {}
+    
+    # 为每个鹦鹉和每个食物类型组合创建记录
+    for parrot_id in parrot_ids:
+        if food_type_ids:
+            # 如果选择了食物类型，为每个食物类型创建记录
+            for food_type_id in food_type_ids:
+                # 分量优先从 food_amounts 里取；没有则回退到全局 amount
+                amount_value = None
+                if isinstance(food_amounts, dict):
+                    amount_value = food_amounts.get(str(food_type_id))
+                    if amount_value is None:
+                        amount_value = food_amounts.get(food_type_id)
+                if amount_value is None:
+                    amount_value = data.get('amount')
+                if amount_value is None:
+                    return error_response('请为每个食物类型填写分量', 400)
+                
+                record = FeedingRecord(
+                    parrot_id=parrot_id,
+                    feed_type_id=food_type_id,
+                    amount=amount_value,
+                    feeding_time=feeding_time,
+                    notes=data.get('notes'),
+                    created_by_user_id=user.id,
+                    team_id=user.current_team_id if user.user_mode == 'team' else None
+                )
+                db.session.add(record)
+                created_records.append(record)
+        else:
+            # 如果没有选择食物类型，只创建一条记录
+            # 分量取全局 amount；若传了 food_amounts 且仅一个值，也兼容取该值
+            amount_value = data.get('amount')
+            if amount_value is None and isinstance(food_amounts, dict) and len(food_amounts) == 1:
+                amount_value = next(iter(food_amounts.values()))
+            if amount_value is None:
+                return error_response('请填写分量', 400)
+            
+            record = FeedingRecord(
+                parrot_id=parrot_id,
+                feed_type_id=None,
+                amount=amount_value,
+                feeding_time=feeding_time,
+                notes=data.get('notes'),
+                created_by_user_id=user.id,
+                team_id=user.current_team_id if user.user_mode == 'team' else None
+            )
+            db.session.add(record)
+            created_records.append(record)
+    
     db.session.commit()
     
-    return success_response(feeding_record_schema.dump(record), '添加成功')
+    return success_response({
+        'records': feeding_records_schema.dump(created_records),
+        'count': len(created_records)
+    }, f'成功添加{len(created_records)}条喂食记录')
 
 @records_bp.route('/feeding', methods=['POST'])
 @login_required
@@ -777,13 +841,26 @@ def add_cleaning_record_internal(data):
         if not member or member.role not in ['owner', 'admin']:
             return error_response('只有团队管理员才能添加清洁记录', 403)
     
-    parrot_id = data.get('parrot_id')
-    if not parrot_id:
+    # 支持多选鹦鹉，同时保持向后兼容
+    parrot_ids = data.get('parrot_ids', [])
+    if not parrot_ids:
+        # 向后兼容单选
+        parrot_id = data.get('parrot_id')
+        if parrot_id:
+            parrot_ids = [parrot_id]
+    
+    if not parrot_ids:
         return error_response('请选择鹦鹉')
     
-    parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id, is_active=True).first()
-    if not parrot:
-        return error_response('鹦鹉不存在')
+    # 验证所有选中的鹦鹉
+    parrots = Parrot.query.filter(
+        Parrot.id.in_(parrot_ids),
+        Parrot.user_id == user.id,
+        Parrot.is_active == True
+    ).all()
+    
+    if len(parrots) != len(parrot_ids):
+        return error_response('部分鹦鹉不存在或无权限访问')
     
     # 处理清洁时间
     cleaning_time = datetime.utcnow()
@@ -793,20 +870,28 @@ def add_cleaning_record_internal(data):
         except ValueError:
             return error_response('清洁时间格式错误')
     
-    record = CleaningRecord(
-        parrot_id=parrot_id,
-        cleaning_type=data.get('cleaning_type'),
-        description=data.get('description'),
-        cleaning_time=cleaning_time,
-        notes=data.get('notes'),
-        created_by_user_id=user.id,  # 记录创建者
-        team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
-    )
+    # 为每个选中的鹦鹉创建清洁记录
+    created_records = []
+    for parrot_id in parrot_ids:
+        record = CleaningRecord(
+            parrot_id=parrot_id,
+            cleaning_type=data.get('cleaning_type'),
+            description=data.get('description'),
+            cleaning_time=cleaning_time,
+            notes=data.get('notes'),
+            created_by_user_id=user.id,  # 记录创建者
+            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
+        )
+        db.session.add(record)
+        created_records.append(record)
     
-    db.session.add(record)
     db.session.commit()
     
-    return success_response(cleaning_record_schema.dump(record), '添加成功')
+    # 返回创建的记录
+    if len(created_records) == 1:
+        return success_response(cleaning_record_schema.dump(created_records[0]), '添加成功')
+    else:
+        return success_response(cleaning_records_schema.dump(created_records), f'成功添加{len(created_records)}条清洁记录')
 
 @records_bp.route('/cleaning', methods=['POST'])
 @login_required
@@ -852,7 +937,7 @@ def get_breeding_records():
     try:
         user = request.current_user
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('limit', 20, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
         
         # 获取可访问的鹦鹉ID列表（根据用户模式）
         parrot_ids = get_accessible_parrot_ids_by_mode(user)
@@ -878,9 +963,17 @@ def get_breeding_records():
         if female_parrot_id:
             query = query.filter(BreedingRecord.female_parrot_id == female_parrot_id)
         if start_date:
-            query = query.filter(BreedingRecord.mating_date >= start_date)
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                query = query.filter(db.func.date(BreedingRecord.mating_date) >= start_date)
+            except ValueError:
+                return error_response('开始日期格式错误')
         if end_date:
-            query = query.filter(BreedingRecord.mating_date <= end_date)
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                query = query.filter(db.func.date(BreedingRecord.mating_date) <= end_date)
+            except ValueError:
+                return error_response('结束日期格式错误')
         
         # 排序和分页
         query = query.order_by(BreedingRecord.mating_date.desc())
@@ -1000,3 +1093,165 @@ def delete_breeding_record(record_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'删除繁殖记录失败: {str(e)}')
+
+# 批量更新喂食记录
+@records_bp.route('/feeding/batch', methods=['PUT'])
+@login_required
+def update_feeding_records_batch_route():
+    try:
+        data = request.get_json()
+        return update_feeding_records_batch(data)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'批量更新喂食记录失败: {str(e)}')
+
+def update_feeding_records_batch(data):
+    """批量更新喂食记录"""
+    user = request.current_user
+    records = data.get('records')
+    if not isinstance(records, list) or len(records) == 0:
+        return error_response('records 列表不能为空', 400)
+    # 提取并校验ID
+    record_ids = []
+    for item in records:
+        rid = item.get('id') or item.get('record_id')
+        if rid is None:
+            return error_response('每项必须包含记录ID', 400)
+        record_ids.append(rid)
+    accessible_ids = set(get_accessible_feeding_record_ids_by_mode(user))
+    if not set(record_ids).issubset(accessible_ids):
+        return error_response('部分记录不存在或无权限访问', 403)
+    # 批量更新
+    updated_records = []
+    for item in records:
+        rid = item.get('id') or item.get('record_id')
+        record = FeedingRecord.query.get(rid)
+        if not record:
+            return error_response(f'记录不存在: {rid}', 404)
+        if 'feed_type_id' in item:
+            record.feed_type_id = item['feed_type_id']
+        if 'amount' in item:
+            record.amount = item['amount']
+        if 'feeding_time' in item:
+            if item['feeding_time']:
+                try:
+                    record.feeding_time = datetime.strptime(item['feeding_time'], '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    return error_response(f'喂食时间格式错误: {item["feeding_time"]}', 400)
+        if 'notes' in item:
+            record.notes = item['notes']
+        updated_records.append(record)
+    db.session.commit()
+    return success_response({
+        'records': feeding_records_schema.dump(updated_records),
+        'count': len(updated_records)
+    }, f'成功更新{len(updated_records)}条喂食记录')
+
+@records_bp.route('/feeding/upsert-by-time', methods=['PUT'])
+@login_required
+def upsert_feeding_records_by_time_route():
+    try:
+        data = request.get_json()
+        return upsert_feeding_records_by_time(data)
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'按时间批量更新喂食记录失败: {str(e)}')
+
+def upsert_feeding_records_by_time(data):
+    """按时间对选中鹦鹉的喂食记录进行批量更新/新增（多食物类型+多分量）"""
+    user = request.current_user
+
+    # 团队模式权限校验（与单条更新保持一致）
+    if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+        from team_models import TeamMember
+        member = TeamMember.query.filter_by(
+            team_id=user.current_team_id,
+            user_id=user.id,
+            is_active=True
+        ).first()
+        if not member or member.role not in ['owner', 'admin']:
+            return error_response('只有团队管理员才能批量编辑喂食记录', 403)
+
+    parrot_ids = data.get('parrot_ids') or []
+    if not parrot_ids:
+        pid = data.get('parrot_id')
+        if pid:
+            parrot_ids = [pid]
+    if not parrot_ids:
+        return error_response('请选择鹦鹉', 400)
+
+    # 校验可访问鹦鹉
+    accessible_parrots = set(get_accessible_parrot_ids_by_mode(user))
+    if not set(parrot_ids).issubset(accessible_parrots):
+        return error_response('部分鹦鹉不存在或无权限访问', 403)
+
+    # 解析喂食时间
+    feeding_time_str = data.get('feeding_time')
+    if not feeding_time_str:
+        return error_response('喂食时间不能为空', 400)
+    try:
+        feeding_time = datetime.strptime(feeding_time_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return error_response('喂食时间格式错误', 400)
+
+    # 目标食物类型集合
+    food_types = data.get('food_types') or []
+    food_amounts = data.get('food_amounts') or {}
+    if not food_types and isinstance(food_amounts, dict) and len(food_amounts) > 0:
+        # 用 food_amounts 的键作为类型集合（兼容字符串/数字键）
+        food_types = [int(k) for k in food_amounts.keys() if str(k).isdigit()]
+    # 兼容旧的单个 feed_type_id
+    if not food_types and data.get('feed_type_id'):
+        food_types = [data.get('feed_type_id')]
+    if not food_types:
+        return error_response('请至少选择一种食物类型', 400)
+
+    created_records = []
+    updated_records = []
+
+    for parrot_id in parrot_ids:
+        # 查找该时间点已有的喂食记录映射（按食物类型）
+        existing = db.session.query(FeedingRecord).filter(
+            FeedingRecord.parrot_id == parrot_id,
+            FeedingRecord.feeding_time == feeding_time
+        ).all()
+        existing_map = {r.feed_type_id: r for r in existing if r.feed_type_id is not None}
+
+        for food_type_id in food_types:
+            # 计算分量：优先每类型，其次全局 amount
+            amount_value = None
+            if isinstance(food_amounts, dict):
+                amount_value = food_amounts.get(str(food_type_id))
+                if amount_value is None:
+                    amount_value = food_amounts.get(food_type_id)
+            if amount_value is None:
+                amount_value = data.get('amount')
+            if amount_value is None:
+                return error_response('请为每个食物类型填写分量', 400)
+
+            if food_type_id in existing_map:
+                record = existing_map[food_type_id]
+                record.amount = amount_value
+                record.notes = data.get('notes')
+                updated_records.append(record)
+            else:
+                record = FeedingRecord(
+                    parrot_id=parrot_id,
+                    feed_type_id=food_type_id,
+                    amount=amount_value,
+                    feeding_time=feeding_time,
+                    notes=data.get('notes'),
+                    created_by_user_id=user.id,
+                    team_id=user.current_team_id if user.user_mode == 'team' else None
+                )
+                db.session.add(record)
+                created_records.append(record)
+
+    db.session.commit()
+
+    return success_response({
+        'created': feeding_records_schema.dump(created_records),
+        'updated': feeding_records_schema.dump(updated_records),
+        'created_count': len(created_records),
+        'updated_count': len(updated_records)
+    }, f'批量编辑完成：新增{len(created_records)}条，更新{len(updated_records)}条')

@@ -120,53 +120,35 @@ Page({
       if (res.success) {
         const allRecords = []
         
-        // 处理喂食记录
-        if (res.data.feeding && Array.isArray(res.data.feeding)) {
-          res.data.feeding.forEach(record => {
-            allRecords.push({
-              id: `feeding_${record.id}`,
-              title: `喂食 ${record.feed_type_name || ''}`,
-              type: 'feeding',
-              parrot_name: record.parrot_name,
-              time: app.formatDate(record.feeding_time)
-            })
-          })
-        }
+        // 喂食记录聚合
+        const feedingAgg = this.aggregateRecentFeeding(res.data.feeding || [])
+        feedingAgg.forEach(item => allRecords.push(item))
         
-        // 处理健康记录
+        // 处理健康记录（保持非聚合）
         if (res.data.health && Array.isArray(res.data.health)) {
           res.data.health.forEach(record => {
             allRecords.push({
               id: `health_${record.id}`,
               title: record.record_type || '健康检查',
               type: 'health',
-              parrot_name: record.parrot_name,
+              parrot_name: record.parrot_name || (record.parrot && record.parrot.name) || '',
               time: app.formatDate(record.record_date)
             })
           })
         }
         
-        // 处理清洁记录
-        if (res.data.cleaning && Array.isArray(res.data.cleaning)) {
-          res.data.cleaning.forEach(record => {
-            allRecords.push({
-              id: `cleaning_${record.id}`,
-              title: `${record.cleaning_type || ''}清洁`,
-              type: 'cleaning',
-              parrot_name: record.parrot_name,
-              time: app.formatDate(record.cleaning_time)
-            })
-          })
-        }
+        // 清洁记录聚合
+        const cleaningAgg = this.aggregateRecentCleaning(res.data.cleaning || [])
+        cleaningAgg.forEach(item => allRecords.push(item))
         
-        // 处理繁殖记录
+        // 处理繁殖记录（保持非聚合）
         if (res.data.breeding && Array.isArray(res.data.breeding)) {
           res.data.breeding.forEach(record => {
             allRecords.push({
               id: `breeding_${record.id}`,
               title: '繁殖记录',
               type: 'breeding',
-              parrot_name: `${record.male_parrot_name} × ${record.female_parrot_name}`,
+              parrot_name: `${record.male_parrot_name || (record.male_parrot && record.male_parrot.name) || ''} × ${record.female_parrot_name || (record.female_parrot && record.female_parrot.name) || ''}`,
               time: app.formatDate(record.mating_date || record.created_at)
             })
           })
@@ -185,6 +167,78 @@ Page({
     } catch (error) {
       console.error('加载最近记录失败:', error)
     }
+  },
+
+  // 聚合首页喂食记录
+  aggregateRecentFeeding(records) {
+    const grouped = {}
+    records.forEach(record => {
+      const time = record.feeding_time
+      const key = `${time}_${record.notes || ''}_${record.amount || ''}`
+      if (!grouped[key]) {
+        grouped[key] = {
+          id: `feeding_group_${record.id || key}`,
+          type: 'feeding',
+          time: app.formatDate(time),
+          parrot_names: [],
+          feed_type_names: []
+        }
+      }
+      const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
+      const feedTypeName = record.feed_type_name || (record.feed_type && record.feed_type.name) || ''
+      if (parrotName && !grouped[key].parrot_names.includes(parrotName)) {
+        grouped[key].parrot_names.push(parrotName)
+      }
+      if (feedTypeName && !grouped[key].feed_type_names.includes(feedTypeName)) {
+        grouped[key].feed_type_names.push(feedTypeName)
+      }
+    })
+    const result = Object.values(grouped).map(item => ({
+      id: item.id,
+      title: `喂食 ${item.feed_type_names.join('、')}`,
+      type: 'feeding',
+      parrot_name: item.parrot_names.join('、'),
+      time: item.time
+    }))
+    // 按时间倒序
+    result.sort((a, b) => new Date(b.time) - new Date(a.time))
+    return result
+  },
+
+  // 聚合首页清洁记录
+  aggregateRecentCleaning(records) {
+    const grouped = {}
+    records.forEach(record => {
+      const time = record.cleaning_time
+      const key = `${time}_${record.cleaning_type || ''}_${record.notes || ''}`
+      if (!grouped[key]) {
+        grouped[key] = {
+          id: `cleaning_group_${record.id || key}`,
+          type: 'cleaning',
+          time: app.formatDate(time),
+          parrot_names: [],
+          cleaning_type: record.cleaning_type || ''
+        }
+      }
+      const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
+      if (parrotName && !grouped[key].parrot_names.includes(parrotName)) {
+        grouped[key].parrot_names.push(parrotName)
+      }
+      // 如果同一组记录的清洁类型不同，合并为“综合清洁”
+      if (grouped[key].cleaning_type && record.cleaning_type && grouped[key].cleaning_type !== record.cleaning_type) {
+        grouped[key].cleaning_type = '综合'
+      }
+    })
+    const result = Object.values(grouped).map(item => ({
+      id: item.id,
+      title: `${item.cleaning_type || ''}清洁`,
+      type: 'cleaning',
+      parrot_name: item.parrot_names.join('、'),
+      time: item.time
+    }))
+    // 按时间倒序
+    result.sort((a, b) => new Date(b.time) - new Date(a.time))
+    return result
   },
 
   // 加载健康提醒
@@ -390,6 +444,18 @@ Page({
     
     wx.navigateTo({
       url: '/pages/records/add-record/add-record?type=health'
+    })
+  },
+
+  // 快速繁殖记录
+  quickBreeding() {
+    if (!this.data.isLogin) {
+      app.showError('请先登录后使用此功能')
+      return
+    }
+
+    wx.navigateTo({
+      url: '/pages/records/add-record/add-record?type=breeding'
     })
   },
 

@@ -15,7 +15,7 @@ def get_expenses():
     try:
         user = request.current_user
         page = request.args.get('page', 1, type=int)
-        limit = request.args.get('limit', 20, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
         category = request.args.get('category', '')
         parrot_id = request.args.get('parrot_id', type=int)
         start_date = request.args.get('start_date', '')
@@ -34,7 +34,7 @@ def get_expenses():
                 'items': [],
                 'total': 0,
                 'page': page,
-                'limit': limit,
+                'per_page': per_page,
                 'has_next': False
             })
         
@@ -64,7 +64,7 @@ def get_expenses():
         print(f"[DEBUG] 查询SQL: {query}")
         
         # 分页
-        result = paginate_query(query, page, limit)
+        result = paginate_query(query, page, per_page)
         
         # 格式化数据
         expenses = []

@@ -636,3 +636,13 @@
 .filter-option:active {
   background-color: #f8f9fa;
 }
+
+.filter-option.selected {
+  background-color: #eef7ee;
+}
+
+.option-check {
+  float: right;
+  color: #4CAF50;
+  font-size: 28rpx;
+}

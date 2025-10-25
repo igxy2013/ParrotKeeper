@@ -48,8 +48,8 @@
       <view class="form-item">
         <text class="form-label required">选择鹦鹉</text>
         <view class="form-picker" bindtap="showParrotPicker">
-          <text class="picker-text {{formData.parrot_id ? '' : 'placeholder'}}">
-            {{selectedParrotName || '请选择鹦鹉'}}
+          <text class="picker-text {{formData.parrot_ids.length > 0 ? '' : 'placeholder'}}">
+            {{selectedParrotNames || '请选择鹦鹉（可多选）'}}
           </text>
           <text class="picker-arrow">▼</text>
         </view>
@@ -92,14 +92,15 @@
       <view class="form-item">
         <text class="form-label">食物类型</text>
         <view class="form-picker" bindtap="showFeedTypePicker">
-          <text class="picker-text {{formData.food_type ? '' : 'placeholder'}}">
-            {{selectedFeedTypeName || '选择食物类型'}}
+          <text class="picker-text {{formData.food_types.length > 0 ? '' : 'placeholder'}}">
+            {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
           </text>
           <text class="picker-arrow">▼</text>
         </view>
       </view>
       
-      <view class="form-item">
+      <!-- 当选择 0 或 1 个食物类型时，使用单个食物量输入 -->
+      <view class="form-item" wx:if="{{formData.food_types.length <= 1}}">
         <text class="form-label">食物量 (g)</text>
         <input 
           class="form-input" 
@@ -109,6 +110,24 @@
           data-field="amount"
           type="digit"
         />
+      </view>
+
+      <!-- 当选择多个食物类型时，分别展示每个类型的食物量输入 -->
+      <view class="form-item" wx:if="{{formData.food_types.length > 1}}">
+        <text class="form-label">各食物类型的食物量 (g)</text>
+        <block wx:for="{{selectedFeedTypes}}" wx:key="id">
+          <view class="form-item">
+            <text class="form-label">{{item.name}}</text>
+            <input 
+              class="form-input" 
+              placeholder="请输入{{item.name}}的重量" 
+              value="{{formData.food_amounts && formData.food_amounts[item.id] || ''}}"
+              data-id="{{item.id}}"
+              bindinput="onFoodAmountInput"
+              type="digit"
+            />
+          </view>
+        </block>
       </view>
     </view>
 
@@ -373,7 +392,7 @@
     <view class="modal-body">
       <view class="parrot-list">
         <view 
-          class="parrot-item" 
+          class="parrot-item {{item.selected ? 'selected' : ''}}" 
           wx:for="{{parrotList}}" 
           wx:key="id"
           bindtap="selectParrot"
@@ -394,14 +413,13 @@
             </view>
             <text class="parrot-species">{{item.species_name}}</text>
           </view>
-          <view class="parrot-status-section">
-            <text class="status-text status-{{item.health_status}}">
-              {{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}
-            </text>
-            <view class="status-badge status-{{item.health_status}}">
-              {{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}
+          <view class="status-pills">
+            <view class="status-pill pill-{{item.health_status}}">
+              <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
+              <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
             </view>
           </view>
+          <view class="selection-indicator" wx:if="{{item.selected}}">✓</view>
         </view>
       </view>
     </view>
@@ -450,7 +468,7 @@
   </view>
 </view>
 
-<!-- 饲料类型选择器模态框 -->
+<!-- 食物类型选择器模态框 -->
 <view class="modal-overlay" wx:if="{{showFeedTypeModal}}" bindtap="hideFeedTypePicker">
   <view class="modal-content" catchtap="stopPropagation">
     <view class="modal-header">
@@ -459,7 +477,7 @@
     </view>
     <view class="modal-body">
       <view 
-        class="feed-type-item" 
+        class="feed-type-item {{item.selected ? 'selected' : ''}}" 
         wx:for="{{feedTypeList}}" 
         wx:key="id"
         bindtap="selectFeedType"
@@ -469,6 +487,7 @@
         <text class="feed-type-name">{{item.name}}</text>
         <text class="feed-type-brand">{{item.brand}}</text>
         <text class="feed-type-type">{{item.typeText}}</text>
+        <view class="selection-indicator" wx:if="{{item.selected}}">✓</view>
       </view>
     </view>
   </view>
@@ -547,12 +566,10 @@
             </view>
             <text class="parrot-species">{{item.species_name}}</text>
           </view>
-          <view class="parrot-status-section">
-            <text class="status-text status-{{item.health_status}}">
-              {{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}
-            </text>
-            <view class="status-badge status-{{item.health_status}}">
-              {{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}
+          <view class="status-pills">
+            <view class="status-pill pill-{{item.health_status}}">
+              <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
+              <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
             </view>
           </view>
         </view>
@@ -588,12 +605,10 @@
             </view>
             <text class="parrot-species">{{item.species_name}}</text>
           </view>
-          <view class="parrot-status-section">
-            <text class="status-text status-{{item.health_status}}">
-              {{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}
-            </text>
-            <view class="status-badge status-{{item.health_status}}">
-              {{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}
+          <view class="status-pills">
+            <view class="status-pill pill-{{item.health_status}}">
+              <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
+              <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
             </view>
           </view>
         </view>

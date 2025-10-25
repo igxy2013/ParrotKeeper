@@ -33,20 +33,9 @@ Page({
     hasMore: true
   },
 
-  onLoad() {
-    this.checkLoginAndLoad()
-  },
-
+  // 页面显示时检查登录并加载
   onShow() {
     this.checkLoginAndLoad()
-    
-    // 检查是否需要刷新数据（模式切换后）
-    if (app.globalData.needRefresh) {
-      console.log('记录页面检测到needRefresh标志，刷新数据');
-      app.globalData.needRefresh = false; // 重置标志
-      this.loadParrotsList();
-      this.loadRecords();
-    }
   },
 
   // 检查登录状态并加载数据
@@ -77,28 +66,9 @@ Page({
     }
   },
 
-  onPullDownRefresh() {
-    this.refreshData()
-  },
-
-  onReachBottom() {
-    if (this.data.hasMore && !this.data.loading) {
-      this.loadMoreRecords()
-    }
-  },
-
   // 刷新数据
-  async refreshData() {
-    this.setData({
-      page: 1,
-      hasMore: true
-    })
-    
-    try {
-      await this.loadRecords(true)
-    } finally {
-      wx.stopPullDownRefresh()
-    }
+  refreshData() {
+    this.loadRecords(true)
   },
 
   // 切换标签页
@@ -131,9 +101,36 @@ Page({
     }
   },
 
+  // 根据日期范围获取参数（统一为后端识别的 start_date / end_date）
+  getDateRangeParams() {
+    const { dateRange } = this.data
+    const now = new Date()
+    const formatDate = d => {
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
+    }
+    let start = null
+    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+    if (dateRange === 'today') {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    } else if (dateRange === 'week') {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
+    } else if (dateRange === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
+    }
+
+    if (start) {
+      return { start_date: formatDate(start), end_date: formatDate(end) }
+    }
+    return {}
+  },
+
   // 加载记录
   async loadRecords(refresh = false) {
-    if (this.data.loading) return
+    if (this.data.loading && !refresh) return
     
     this.setData({ loading: true })
     
@@ -163,7 +160,7 @@ Page({
       const currentPage = refresh ? 1 : this.data.page
       const params = {
         page: currentPage,
-        limit: 10,
+        per_page: 10,
         parrot_id: this.data.selectedParrotId,
         ...this.getDateRangeParams()
       }
@@ -181,115 +178,101 @@ Page({
           // 刷新时重置所有数据和分页状态
           this.setData({
             [dataKey]: newRecords,
-            page: 2,
-            hasMore: newRecords.length === 10
+            page: ((res.data && res.data.current_page) || 1) + 1,
+            hasMore: !!(res.data && res.data.has_next)
           })
         } else {
           // 加载更多时追加数据
+          const merged = [...(this.data[dataKey] || []), ...newRecords]
           this.setData({
-            [dataKey]: [...this.data[dataKey], ...newRecords],
-            page: this.data.page + 1,
-            hasMore: newRecords.length === 10
+            [dataKey]: merged,
+            page: ((res.data && res.data.current_page) || currentPage) + 1,
+            hasMore: !!(res.data && res.data.has_next)
           })
         }
       }
     } catch (error) {
       console.error('加载记录失败:', error)
-      app.showError('加载失败，请重试')
     } finally {
       this.setData({ loading: false })
     }
   },
 
-  // 加载更多记录
-  loadMoreRecords() {
-    this.loadRecords()
-  },
-
   // 格式化记录数据
   formatRecords(records) {
-    if (!Array.isArray(records)) {
-      return []
+    switch (this.data.activeTab) {
+      case 'feeding':
+        return this.aggregateFeedingRecords(records)
+      case 'health':
+      case 'cleaning':
+      case 'breeding':
+        return records.map(r => ({
+          ...r,
+          feeding_time_formatted: r.feeding_time ? app.formatDateTime(r.feeding_time) : '',
+          check_date_formatted: r.check_date ? app.formatDateTime(r.check_date) : '',
+          cleaning_date_formatted: r.cleaning_date ? app.formatDateTime(r.cleaning_date) : '',
+          mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
+          egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
+          hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
+        }))
+      default:
+        return records
     }
-    
-    return records.map(record => {
-      const formatted = { ...record }
-      
-      // 格式化时间字段
-      if (record.feeding_time) {
-        formatted.feeding_time_formatted = app.formatDateTime(record.feeding_time)
-      }
-      if (record.check_date) {
-        formatted.check_date_formatted = app.formatDate(record.check_date)
-      }
-      if (record.record_date) {
-        formatted.check_date_formatted = app.formatDate(record.record_date)
-      }
-      if (record.cleaning_time) {
-        formatted.cleaning_date_formatted = app.formatDate(record.cleaning_time)
-      }
-      
-      // 格式化繁殖记录的日期和鹦鹉名称
-      if (record.mating_date) {
-        formatted.mating_date_formatted = app.formatDate(record.mating_date)
-      }
-      if (record.egg_laying_date) {
-        formatted.egg_laying_date_formatted = app.formatDate(record.egg_laying_date)
-      }
-      if (record.hatching_date) {
-        formatted.hatching_date_formatted = app.formatDate(record.hatching_date)
-      }
-      
-      // 格式化鹦鹉名称 - 喂食记录
-      if (record.parrot && record.parrot.name) {
-        formatted.parrot_name = record.parrot.name
-      }
-      
-      // 格式化饲料类型名称 - 喂食记录
-      if (record.feed_type && record.feed_type.name) {
-        formatted.feed_type_name = record.feed_type.name
-      }
-      
-      // 格式化鹦鹉名称 - 健康记录
-      if (record.parrot && record.parrot.name) {
-        formatted.parrot_name = record.parrot.name
-      }
-      
-      // 格式化鹦鹉名称 - 繁殖记录
-      if (record.male_parrot && record.male_parrot.name) {
-        formatted.male_parrot_name = record.male_parrot.name
-      }
-      if (record.female_parrot && record.female_parrot.name) {
-        formatted.female_parrot_name = record.female_parrot.name
-      }
-      
-      return formatted
-    })
   },
 
-  // 获取日期范围参数
-  getDateRangeParams() {
-    const now = new Date()
-    const params = {}
+  // 聚合喂食记录以支持多选显示
+  aggregateFeedingRecords(records) {
+    const groupedRecords = {}
     
-    switch (this.data.dateRange) {
-      case 'today':
-        params.start_date = app.formatDate(now)
-        params.end_date = app.formatDate(now)
-        break
-      case 'week':
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        params.start_date = app.formatDate(weekAgo)
-        params.end_date = app.formatDate(now)
-        break
-      case 'month':
-        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        params.start_date = app.formatDate(monthAgo)
-        params.end_date = app.formatDate(now)
-        break
-    }
+    // 按时间、备注、数量分组
+    records.forEach((record) => {
+      const key = `${record.feeding_time}_${record.notes || ''}_${record.amount || ''}`
+      
+      if (!groupedRecords[key]) {
+        groupedRecords[key] = {
+          ...record,
+          feeding_time_formatted: app.formatDateTime(record.feeding_time),
+          parrot_names: [],
+          feed_type_names: [],
+          parrot_ids: [],
+          feed_type_ids: [],
+          record_ids: []
+        }
+      }
+      
+      // 收集鹦鹉
+      if (record.parrot && record.parrot.name) {
+        if (!groupedRecords[key].parrot_names.includes(record.parrot.name)) {
+          groupedRecords[key].parrot_names.push(record.parrot.name)
+          groupedRecords[key].parrot_ids.push(record.parrot.id)
+        }
+      }
+      
+      // 收集食物类型
+      if (record.feed_type && record.feed_type.name) {
+        if (!groupedRecords[key].feed_type_names.includes(record.feed_type.name)) {
+          groupedRecords[key].feed_type_names.push(record.feed_type.name)
+          groupedRecords[key].feed_type_ids.push(record.feed_type.id)
+        }
+      }
+
+      // 收集原始记录ID
+      if (record.id && !groupedRecords[key].record_ids.includes(record.id)) {
+        groupedRecords[key].record_ids.push(record.id)
+      }
+    })
     
-    return params
+    // 生成显示文本
+    const result = Object.values(groupedRecords).map(item => ({
+      ...item,
+      parrot_name: item.parrot_names.join('、'),
+      feed_type_names_text: item.feed_type_names.join('、')
+    }))
+    
+    // 保持与后端排序一致（按时间倒序）
+    result.sort((a, b) => new Date(b.feeding_time) - new Date(a.feeding_time))
+    
+    return result
   },
 
   // 显示鹦鹉筛选
@@ -388,74 +371,67 @@ Page({
     })
   },
 
-  // 编辑记录
+  // 编辑记录（传递聚合的多选ID到编辑页）
   editRecord(e) {
-    const { type, id } = e.currentTarget.dataset
+    const { type, id, ids, parrotIds, feedTypeIds } = e.currentTarget.dataset
     
-    const urlMap = {
-      'feeding': `/pages/records/add-record/add-record?type=feeding&id=${id}`,
-      'health': `/pages/records/add-record/add-record?type=health&id=${id}`,
-      'cleaning': `/pages/records/add-record/add-record?type=cleaning&id=${id}`,
-      'breeding': `/pages/records/add-record/add-record?type=breeding&id=${id}`
+    let url = `/pages/records/add-record/add-record?type=${type}&id=${id}`
+    if (type === 'feeding') {
+      const pids = Array.isArray(parrotIds) ? parrotIds.join(',') : (parrotIds || '')
+      const ftids = Array.isArray(feedTypeIds) ? feedTypeIds.join(',') : (feedTypeIds || '')
+      const rids = Array.isArray(ids) ? ids.join(',') : (ids || '')
+      if (pids) url += `&parrot_ids=${encodeURIComponent(pids)}`
+      if (ftids) url += `&food_type_ids=${encodeURIComponent(ftids)}`
+      if (rids) url += `&record_ids=${encodeURIComponent(rids)}`
     }
     
-    wx.navigateTo({
-      url: urlMap[type]
-    })
+    wx.navigateTo({ url })
   },
 
   // 删除记录
-  deleteRecord(e) {
+  async deleteRecord(e) {
     const { type, id } = e.currentTarget.dataset
+    if (!id || !type) return
     
-    wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这条记录吗？',
-      success: (res) => {
-        if (res.confirm) {
-          this.performDeleteRecord(type, id)
-        }
-      }
-    })
-  },
+    const paths = {
+      feeding: '/api/records/feeding',
+      health: '/api/records/health',
+      cleaning: '/api/records/cleaning',
+      breeding: '/api/records/breeding'
+    }
+    const base = paths[type]
+    if (!base) return
 
-  // 执行删除记录
-  async performDeleteRecord(type, id) {
     try {
-      app.showLoading('删除中...')
-      
-      let url = ''
-      switch (type) {
-        case 'feeding':
-          url = `/api/records/feeding/${id}`
-          break
-        case 'health':
-          url = `/api/records/health/${id}`
-          break
-        case 'cleaning':
-          url = `/api/records/cleaning/${id}`
-          break
-        case 'breeding':
-          url = `/api/records/breeding/${id}`
-          break
-      }
-      
-      const res = await app.request({
-        url,
-        method: 'DELETE'
+      const resModal = await new Promise((resolve) => {
+        wx.showModal({
+          title: '确认删除',
+          content: '确认删除该记录？此操作不可恢复',
+          confirmText: '删除',
+          confirmColor: '#e74c3c',
+          success: resolve,
+          fail: () => resolve({ confirm: false })
+        })
       })
-      
-      if (res.success) {
-        app.showSuccess('删除成功')
-        this.refreshData()
+      if (!resModal.confirm) return
+
+      if (type === 'feeding') {
+        const { ids } = e.currentTarget.dataset
+        const idList = Array.isArray(ids) ? ids : (ids ? [ids] : [id])
+        for (const rid of idList) {
+          const res = await app.request({ url: `${base}/${rid}`, method: 'DELETE' })
+          if (!res.success) throw new Error(res.message || `删除失败: ${rid}`)
+        }
       } else {
-        app.showError(res.message || '删除失败')
+        const res = await app.request({ url: `${base}/${id}`, method: 'DELETE' })
+        if (!res.success) throw new Error(res.message || '删除失败')
       }
+
+      wx.showToast({ title: '删除成功', icon: 'success' })
+      this.refreshData()
     } catch (error) {
       console.error('删除记录失败:', error)
-      app.showError('删除失败，请重试')
-    } finally {
-      app.hideLoading()
+      app.showError('删除记录失败')
     }
   }
 })

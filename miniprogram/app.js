@@ -3,7 +3,8 @@ App({
   globalData: {
     userInfo: null,
     openid: null,
-    baseUrl: 'https://bimai.xyz', // 后端API地址
+    //baseUrl: 'https://bimai.xyz', // 后端API地址
+    baseUrl: 'http://192.168.0.80:5085', // 后端API地址
     isLogin: false,
     userMode: 'personal' // 添加用户模式，默认为个人模式
   },

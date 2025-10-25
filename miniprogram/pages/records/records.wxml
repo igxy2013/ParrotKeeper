@@ -30,7 +30,7 @@
         <text class="filter-arrow">▼</text>
       </view>
       <view class="filter-item" bindtap="showDateFilter">
-        <text class="filter-text">{{dateFilterText}}</text>
+        <text class="filter-text">{{dateFilterText || '全部时间'}}</text>
         <text class="filter-arrow">▼</text>
       </view>
     </view>
@@ -48,10 +48,10 @@
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-feed-type-ids="{{item.feed_type_ids}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">✏️</text>
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="feeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" bindtap="deleteRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">🗑️</text>
             </view>
           </view>
@@ -59,8 +59,8 @@
         
         <view class="record-content">
           <view class="record-detail">
-            <text class="detail-label">饲料类型：</text>
-            <text class="detail-value">{{item.feed_type_name}}</text>
+            <text class="detail-label">食物类型：</text>
+            <text class="detail-value">{{item.feed_type_names_text || item.feed_type_name || '未指定'}}</text>
           </view>
           <view class="record-detail">
             <text class="detail-label">数量：</text>
@@ -93,12 +93,6 @@
             <!-- 团队模式下显示创建者 -->
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
-          <view class="health-status status-{{item.health_status}}">
-            <text wx:if="{{item.health_status === 'healthy'}}">健康</text>
-            <text wx:elif="{{item.health_status === 'sick'}}">生病</text>
-            <text wx:elif="{{item.health_status === 'recovering'}}">康复中</text>
-            <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
-          </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">✏️</text>
@@ -110,21 +104,17 @@
         </view>
         
         <view class="record-content">
+          <view class="record-detail">
+            <text class="detail-label">健康状态：</text>
+            <text class="detail-value">{{item.health_status_text || item.health_status}}</text>
+          </view>
           <view class="record-detail" wx:if="{{item.weight}}">
             <text class="detail-label">体重：</text>
-            <text class="detail-value">{{item.weight}}g</text>
+            <text class="detail-value">{{item.weight}} g</text>
           </view>
           <view class="record-detail" wx:if="{{item.temperature}}">
             <text class="detail-label">体温：</text>
-            <text class="detail-value">{{item.temperature}}°C</text>
-          </view>
-          <view class="record-detail" wx:if="{{item.symptoms}}">
-            <text class="detail-label">症状：</text>
-            <text class="detail-value">{{item.symptoms}}</text>
-          </view>
-          <view class="record-detail" wx:if="{{item.treatment}}">
-            <text class="detail-label">治疗：</text>
-            <text class="detail-value">{{item.treatment}}</text>
+            <text class="detail-value">{{item.temperature}} °C</text>
           </view>
           <view class="record-detail" wx:if="{{item.notes}}">
             <text class="detail-label">备注：</text>
@@ -133,7 +123,7 @@
         </view>
       </view>
     </view>
-    
+
     <view class="empty-state" wx:if="{{healthRecords.length === 0 && !loading}}">
       <view class="empty-icon">🏥</view>
       <view class="empty-text" wx:if="{{isLogin}}">暂无健康记录</view>
@@ -166,7 +156,11 @@
         <view class="record-content">
           <view class="record-detail">
             <text class="detail-label">清洁类型：</text>
-            <text class="detail-value">{{item.cleaning_type}}</text>
+            <text class="detail-value">{{item.cleaning_type_text || item.cleaning_type}}</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.description}}">
+            <text class="detail-label">描述：</text>
+            <text class="detail-value">{{item.description}}</text>
           </view>
           <view class="record-detail" wx:if="{{item.notes}}">
             <text class="detail-label">备注：</text>
@@ -177,7 +171,7 @@
     </view>
     
     <view class="empty-state" wx:if="{{cleaningRecords.length === 0 && !loading}}">
-      <view class="empty-icon">🧽</view>
+      <view class="empty-icon">🧹</view>
       <view class="empty-text" wx:if="{{isLogin}}">暂无清洁记录</view>
       <view class="empty-text" wx:else>请先登录查看记录</view>
       <button wx:if="{{isLogin && hasOperationPermission}}" class="btn btn-primary btn-large mt-30" bindtap="addCleaningRecord">添加清洁记录</button>
@@ -204,23 +198,27 @@
             </view>
           </view>
         </view>
-        
+      
         <view class="record-content">
+          <view class="record-detail" wx:if="{{item.mating_date}}">
+            <text class="detail-label">交配日期：</text>
+            <text class="detail-value">{{item.mating_date_formatted}}</text>
+          </view>
           <view class="record-detail" wx:if="{{item.egg_laying_date}}">
             <text class="detail-label">产蛋日期：</text>
-            <text class="detail-value">{{item.egg_laying_date}}</text>
-          </view>
-          <view class="record-detail" wx:if="{{item.egg_count}}">
-            <text class="detail-label">蛋数：</text>
-            <text class="detail-value">{{item.egg_count}}个</text>
+            <text class="detail-value">{{item.egg_laying_date_formatted}}</text>
           </view>
           <view class="record-detail" wx:if="{{item.hatching_date}}">
             <text class="detail-label">孵化日期：</text>
-            <text class="detail-value">{{item.hatching_date}}</text>
+            <text class="detail-value">{{item.hatching_date_formatted}}</text>
+          </view>
+          <view class="record-detail" wx:if="{{item.egg_count}}">
+            <text class="detail-label">产蛋数量：</text>
+            <text class="detail-value">{{item.egg_count}}</text>
           </view>
           <view class="record-detail" wx:if="{{item.chick_count}}">
-            <text class="detail-label">幼鸟数：</text>
-            <text class="detail-value">{{item.chick_count}}只</text>
+            <text class="detail-label">育雏数量：</text>
+            <text class="detail-value">{{item.chick_count}}</text>
           </view>
           <view class="record-detail" wx:if="{{item.success_rate}}">
             <text class="detail-label">成功率：</text>
@@ -233,24 +231,13 @@
         </view>
       </view>
     </view>
-    
+  
     <view class="empty-state" wx:if="{{breedingRecords.length === 0 && !loading}}">
       <view class="empty-icon">🥚</view>
       <view class="empty-text" wx:if="{{isLogin}}">暂无繁殖记录</view>
       <view class="empty-text" wx:else>请先登录查看记录</view>
       <button wx:if="{{isLogin && hasOperationPermission}}" class="btn btn-primary btn-large mt-30" bindtap="addBreedingRecord">添加繁殖记录</button>
     </view>
-  </view>
-
-  <!-- 加载状态 -->
-  <view class="loading-state" wx:if="{{loading}}">
-    <view class="loading-spinner"></view>
-    <text class="loading-text">加载中...</text>
-  </view>
-
-  <!-- 添加按钮 -->
-  <view class="fab" bindtap="addRecord" wx:if="{{isLogin && hasOperationPermission}}">
-    <text class="fab-icon">+</text>
   </view>
 </view>
 
@@ -280,17 +267,21 @@
       <view class="modal-close" bindtap="hideDateFilter">×</view>
     </view>
     <view class="modal-body">
-      <view class="filter-option" bindtap="selectDateRange" data-range="all">
+      <view class="filter-option {{dateRange === 'all' ? 'selected' : ''}}" bindtap="selectDateRange" data-range="all">
         <text class="option-text">全部时间</text>
+        <text class="option-check" wx:if="{{dateRange === 'all'}}">✓</text>
       </view>
-      <view class="filter-option" bindtap="selectDateRange" data-range="today">
+      <view class="filter-option {{dateRange === 'today' ? 'selected' : ''}}" bindtap="selectDateRange" data-range="today">
         <text class="option-text">今天</text>
+        <text class="option-check" wx:if="{{dateRange === 'today'}}">✓</text>
       </view>
-      <view class="filter-option" bindtap="selectDateRange" data-range="week">
+      <view class="filter-option {{dateRange === 'week' ? 'selected' : ''}}" bindtap="selectDateRange" data-range="week">
         <text class="option-text">最近一周</text>
+        <text class="option-check" wx:if="{{dateRange === 'week'}}">✓</text>
       </view>
-      <view class="filter-option" bindtap="selectDateRange" data-range="month">
+      <view class="filter-option {{dateRange === 'month' ? 'selected' : ''}}" bindtap="selectDateRange" data-range="month">
         <text class="option-text">最近一月</text>
+        <text class="option-check" wx:if="{{dateRange === 'month'}}">✓</text>
       </view>
     </view>
   </view>
