@@ -13,6 +13,24 @@ from datetime import datetime, date
 
 records_bp = Blueprint('records', __name__, url_prefix='/api/records')
 
+def _normalize_amount(amount):
+    """规范化分量值，将空字符串或无效值转换为None"""
+    if amount is None:
+        return None
+    
+    # 如果是字符串，去除空白字符
+    if isinstance(amount, str):
+        amount = amount.strip()
+        if not amount:  # 空字符串
+            return None
+    
+    # 尝试转换为数字
+    try:
+        normalized = float(amount)
+        return normalized if normalized > 0 else None
+    except (ValueError, TypeError):
+        return None
+
 # 通用记录获取接口
 @records_bp.route('/<int:record_id>', methods=['GET'])
 @login_required
@@ -114,6 +132,16 @@ def add_record():
         
         # 根据记录类型调用相应的添加方法
         if record_type == 'feeding':
+            # 前置清洗：将空字符串分量统一转换为None
+            amt = data.get('amount')
+            if isinstance(amt, str) and amt.strip() == '':
+                data['amount'] = None
+            fa = data.get('food_amounts')
+            if isinstance(fa, dict):
+                for k, v in list(fa.items()):
+                    if isinstance(v, str) and v.strip() == '':
+                        fa[k] = None
+                data['food_amounts'] = fa
             return add_feeding_record_internal(data)
         elif record_type == 'health':
             return add_health_record_internal(data)
@@ -253,7 +281,10 @@ def update_feeding_record_internal(record_id, data):
     if 'feed_type_id' in data:
         record.feed_type_id = data['feed_type_id']
     if 'amount' in data:
-        record.amount = data['amount']
+        normalized_amount = _normalize_amount(data['amount'])
+        if normalized_amount is None:
+            return error_response('分量值无效', 400)
+        record.amount = normalized_amount
     if 'feeding_time' in data:
         if data['feeding_time']:
             try:
@@ -419,6 +450,14 @@ def update_breeding_record_internal(record_id, data):
 def add_feeding_record_internal(data):
     """内部喂食记录添加方法"""
     user = request.current_user
+    # 兜底清洗：将传入payload中的空字符串分量转为None
+    if 'amount' in data and isinstance(data['amount'], str) and data['amount'].strip() == '':
+        data['amount'] = None
+    if isinstance(data.get('food_amounts'), dict):
+        for k in list(data['food_amounts'].keys()):
+            v = data['food_amounts'][k]
+            if isinstance(v, str) and v.strip() == '':
+                data['food_amounts'][k] = None
     
     # 在团队模式下，只有管理员才能添加喂食记录
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
@@ -490,13 +529,17 @@ def add_feeding_record_internal(data):
                         amount_value = food_amounts.get(food_type_id)
                 if amount_value is None:
                     amount_value = data.get('amount')
-                if amount_value is None:
+                
+                # 规范化分量值
+                normalized_amount = _normalize_amount(amount_value)
+                # 单食物类型允许分量为空；多食物类型必须提供每项分量
+                if normalized_amount is None and len(food_type_ids) > 1:
                     return error_response('请为每个食物类型填写分量', 400)
                 
                 record = FeedingRecord(
                     parrot_id=parrot_id,
                     feed_type_id=food_type_id,
-                    amount=amount_value,
+                    amount=normalized_amount,
                     feeding_time=feeding_time,
                     notes=data.get('notes'),
                     created_by_user_id=user.id,
@@ -510,13 +553,16 @@ def add_feeding_record_internal(data):
             amount_value = data.get('amount')
             if amount_value is None and isinstance(food_amounts, dict) and len(food_amounts) == 1:
                 amount_value = next(iter(food_amounts.values()))
-            if amount_value is None:
+            
+            # 规范化分量值
+            normalized_amount = _normalize_amount(amount_value)
+            if normalized_amount is None:
                 return error_response('请填写分量', 400)
             
             record = FeedingRecord(
                 parrot_id=parrot_id,
                 feed_type_id=None,
-                amount=amount_value,
+                amount=normalized_amount,
                 feeding_time=feeding_time,
                 notes=data.get('notes'),
                 created_by_user_id=user.id,
@@ -576,7 +622,10 @@ def update_feeding_record(record_id):
         if 'feed_type_id' in data:
             record.feed_type_id = data['feed_type_id']
         if 'amount' in data:
-            record.amount = data['amount']
+            normalized_amount = _normalize_amount(data['amount'])
+            if normalized_amount is None:
+                return error_response('分量值无效', 400)
+            record.amount = normalized_amount
         if 'feeding_time' in data:
             if data['feeding_time']:
                 try:
@@ -1180,7 +1229,10 @@ def update_feeding_records_batch(data):
         if 'feed_type_id' in item:
             record.feed_type_id = item['feed_type_id']
         if 'amount' in item:
-            record.amount = item['amount']
+            normalized_amount = _normalize_amount(item['amount'])
+            if normalized_amount is None:
+                return error_response(f'记录{rid}的分量值无效', 400)
+            record.amount = normalized_amount
         if 'feeding_time' in item:
             if item['feeding_time']:
                 try:
@@ -1275,19 +1327,23 @@ def upsert_feeding_records_by_time(data):
                     amount_value = food_amounts.get(food_type_id)
             if amount_value is None:
                 amount_value = data.get('amount')
-            if amount_value is None:
+            
+            # 规范化分量值
+            normalized_amount = _normalize_amount(amount_value)
+            # 单食物类型允许分量为空；多食物类型必须提供每项分量
+            if normalized_amount is None and len(food_types) > 1:
                 return error_response('请为每个食物类型填写分量', 400)
 
             if food_type_id in existing_map:
                 record = existing_map[food_type_id]
-                record.amount = amount_value
+                record.amount = normalized_amount
                 record.notes = data.get('notes')
                 updated_records.append(record)
             else:
                 record = FeedingRecord(
                     parrot_id=parrot_id,
                     feed_type_id=food_type_id,
-                    amount=amount_value,
+                    amount=normalized_amount,
                     feeding_time=feeding_time,
                     notes=data.get('notes'),
                     created_by_user_id=user.id,
