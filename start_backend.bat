@@ -11,7 +11,6 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-git pull
 :: Switch to backend directory
 cd /d "%~dp0backend"
 if %errorlevel% neq 0 (

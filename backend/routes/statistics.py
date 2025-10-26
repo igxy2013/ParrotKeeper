@@ -48,9 +48,10 @@ def get_overview():
             FeedingRecord.feeding_time,
             FeedingRecord.notes,
             FeedingRecord.amount
-        ).filter(
+        ).join(Parrot).filter(
             and_(
-                FeedingRecord.parrot_id.in_(parrot_ids),
+                Parrot.id.in_(parrot_ids),
+                Parrot.is_active == True,
                 func.date(FeedingRecord.feeding_time) == today
             )
         ).group_by(
@@ -67,12 +68,21 @@ def get_overview():
         ).scalar() or 0
         
         # 本月记录数
-        monthly_feeding = db.session.query(func.count(FeedingRecord.id)).filter(
+        monthly_feeding = db.session.query(
+            FeedingRecord.feeding_time,
+            FeedingRecord.notes,
+            FeedingRecord.amount
+        ).join(Parrot).filter(
             and_(
-                FeedingRecord.parrot_id.in_(parrot_ids),
+                Parrot.id.in_(parrot_ids),
+                Parrot.is_active == True,
                 func.date(FeedingRecord.feeding_time) >= current_month
             )
-        ).scalar() or 0
+        ).group_by(
+            FeedingRecord.feeding_time,
+            FeedingRecord.notes,
+            FeedingRecord.amount
+        ).count() or 0
         
         monthly_health_checks = db.session.query(func.count(HealthRecord.id)).filter(
             and_(
@@ -332,65 +342,145 @@ def get_expense_analysis():
 @statistics_bp.route('/care-frequency', methods=['GET'])
 @login_required
 def get_care_frequency():
-    """获取护理频率统计"""
+    """获取护理频率统计（返回聚合平均值，供前端展示）"""
     try:
         user = request.current_user
         days = request.args.get('days', 30, type=int)
         
         end_date = date.today()
-        start_date = end_date - timedelta(days=days-1)
+        start_date = end_date - timedelta(days=max(1, days)-1)
         
-        # 获取可访问的鹦鹉ID
+        # 获取可访问的鹦鹉ID（仅统计启用的鹦鹉）
         accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
         
-        # 喂食频率
-        feeding_frequency = db.session.query(
-            Parrot.name,
-            func.count(FeedingRecord.id).label('feeding_count')
-        ).join(FeedingRecord).filter(
+        # 喂食总次数（按 feeding_time、notes、amount 聚合，同首页统计保持一致）
+        feeding_total = db.session.query(
+            FeedingRecord.feeding_time,
+            FeedingRecord.notes,
+            FeedingRecord.amount
+        ).join(Parrot).filter(
             Parrot.id.in_(accessible_parrot_ids),
+            Parrot.is_active == True,
             func.date(FeedingRecord.feeding_time) >= start_date,
             func.date(FeedingRecord.feeding_time) <= end_date
-        ).group_by(Parrot.name).all()
+        ).group_by(
+            FeedingRecord.feeding_time,
+            FeedingRecord.notes,
+            FeedingRecord.amount
+        ).count() or 0
         
-        # 清洁频率
-        cleaning_frequency = db.session.query(
-            Parrot.name,
-            func.count(CleaningRecord.id).label('cleaning_count')
-        ).join(CleaningRecord).filter(
+        # 清洁总次数
+        cleaning_total = db.session.query(func.count(CleaningRecord.id)).join(Parrot).filter(
             Parrot.id.in_(accessible_parrot_ids),
+            Parrot.is_active == True,
             func.date(CleaningRecord.cleaning_time) >= start_date,
             func.date(CleaningRecord.cleaning_time) <= end_date
-        ).group_by(Parrot.name).all()
+        ).scalar() or 0
         
-        # 健康检查频率
-        health_frequency = db.session.query(
-            Parrot.name,
-            func.count(HealthRecord.id).label('health_count')
-        ).join(HealthRecord).filter(
+        # 健康检查总次数
+        health_total = db.session.query(func.count(HealthRecord.id)).join(Parrot).filter(
             Parrot.id.in_(accessible_parrot_ids),
+            Parrot.is_active == True,
             func.date(HealthRecord.record_date) >= start_date,
             func.date(HealthRecord.record_date) <= end_date
-        ).group_by(Parrot.name).all()
+        ).scalar() or 0
         
-        # 合并数据
-        parrot_care = {}
-        for r in feeding_frequency:
-            parrot_care[r.name] = {'name': r.name, 'feeding': r.feeding_count, 'cleaning': 0, 'health': 0}
+        # 计算平均值
+        days_count = max(1, days)
+        weeks = days_count / 7.0
+        months = days_count / 30.0
+        avg_feeding_per_day = round(feeding_total / days_count, 2)
+        avg_cleaning_per_week = round(cleaning_total / weeks, 2)
+        avg_health_check_per_month = round(health_total / months, 2)
         
-        for r in cleaning_frequency:
-            if r.name in parrot_care:
-                parrot_care[r.name]['cleaning'] = r.cleaning_count
-            else:
-                parrot_care[r.name] = {'name': r.name, 'feeding': 0, 'cleaning': r.cleaning_count, 'health': 0}
+        # 记录完整度：统计在周期内同时存在喂食、清洁、健康记录的启用鹦鹉占比
+        active_parrots = db.session.query(Parrot.id).filter(
+            Parrot.id.in_(accessible_parrot_ids),
+            Parrot.is_active == True
+        ).all()
+        active_ids = [pid for (pid,) in active_parrots]
+        record_completeness = 0.0
+        if active_ids:
+            feeding_ids = set(r[0] for r in db.session.query(FeedingRecord.parrot_id).filter(
+                FeedingRecord.parrot_id.in_(active_ids),
+                func.date(FeedingRecord.feeding_time) >= start_date,
+                func.date(FeedingRecord.feeding_time) <= end_date
+            ).distinct().all())
+            cleaning_ids = set(r[0] for r in db.session.query(CleaningRecord.parrot_id).filter(
+                CleaningRecord.parrot_id.in_(active_ids),
+                func.date(CleaningRecord.cleaning_time) >= start_date,
+                func.date(CleaningRecord.cleaning_time) <= end_date
+            ).distinct().all())
+            health_ids = set(r[0] for r in db.session.query(HealthRecord.parrot_id).filter(
+                HealthRecord.parrot_id.in_(active_ids),
+                func.date(HealthRecord.record_date) >= start_date,
+                func.date(HealthRecord.record_date) <= end_date
+            ).distinct().all())
+            complete_ids = feeding_ids & cleaning_ids & health_ids
+            record_completeness = round(len(complete_ids) / len(active_ids) * 100, 2)
         
-        for r in health_frequency:
-            if r.name in parrot_care:
-                parrot_care[r.name]['health'] = r.health_count
-            else:
-                parrot_care[r.name] = {'name': r.name, 'feeding': 0, 'cleaning': 0, 'health': r.health_count}
-        
-        return success_response(list(parrot_care.values()))
+        return success_response({
+            'avg_feeding_per_day': float(avg_feeding_per_day),
+            'avg_cleaning_per_week': float(avg_cleaning_per_week),
+            'avg_health_check_per_month': float(avg_health_check_per_month),
+            'record_completeness': float(record_completeness)
+        })
         
     except Exception as e:
         return error_response(f'获取护理频率统计失败: {str(e)}')
+
+
+@statistics_bp.route('/weight-trends', methods=['GET'])
+@login_required
+def get_weight_trends():
+    """获取每只鹦鹉的体重趋势（按天平均）"""
+    try:
+        user = request.current_user
+        days = request.args.get('days', 30, type=int)
+        end_date = date.today()
+        start_date = end_date - timedelta(days=max(1, days)-1)
+    
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+    
+        # 查询每只鹦鹉在日期范围内的每日平均体重
+        results = db.session.query(
+            HealthRecord.parrot_id.label('parrot_id'),
+            Parrot.name.label('parrot_name'),
+            func.date(HealthRecord.record_date).label('date'),
+            func.avg(HealthRecord.weight).label('avg_weight')
+        ).join(Parrot, HealthRecord.parrot_id == Parrot.id).filter(
+            HealthRecord.parrot_id.in_(accessible_parrot_ids),
+            Parrot.is_active == True,
+            HealthRecord.weight.isnot(None),
+            func.date(HealthRecord.record_date) >= start_date,
+            func.date(HealthRecord.record_date) <= end_date
+        ).group_by(
+            HealthRecord.parrot_id,
+            Parrot.name,
+            func.date(HealthRecord.record_date)
+        ).order_by(
+            HealthRecord.parrot_id,
+            func.date(HealthRecord.record_date)
+        ).all()
+    
+        series_map = {}
+        for r in results:
+            pid = r.parrot_id
+            if pid not in series_map:
+                series_map[pid] = {
+                    'parrot_id': pid,
+                    'parrot_name': r.parrot_name,
+                    'points': []
+                }
+            series_map[pid]['points'].append({
+                'date': str(r.date),
+                'weight': float(r.avg_weight or 0)
+            })
+    
+        return success_response({
+            'series': list(series_map.values()),
+            'start_date': str(start_date),
+            'end_date': str(end_date)
+        })
+    except Exception as e:
+        return error_response(f'获取体重趋势失败: {str(e)}')

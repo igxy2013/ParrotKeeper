@@ -49,7 +49,7 @@
         <text class="form-label required">选择鹦鹉</text>
         <view class="form-picker" bindtap="showParrotPicker">
           <text class="picker-text {{formData.parrot_ids.length > 0 ? '' : 'placeholder'}}">
-            {{selectedParrotNames || '请选择鹦鹉（可多选）'}}
+            {{selectedParrotNames || (recordType === 'health' ? '请选择鹦鹉（单选）' : '请选择鹦鹉（可多选）')}}
           </text>
           <text class="picker-arrow">▼</text>
         </view>

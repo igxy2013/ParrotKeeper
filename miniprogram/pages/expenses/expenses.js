@@ -12,6 +12,8 @@ Page({
     hasOperationPermission: false, // 添加操作权限标识
     categories: [], // 改为空数组，从API加载
     selectedCategory: '',
+    selectedCategoryIndex: -1,
+    selectedCategoryLabel: '',
     showFilter: false,
     startDate: '',
     endDate: '',
@@ -95,30 +97,24 @@ Page({
       console.log('支出类别API响应:', response)
       
       if (response && response.success) {
+        const categoriesWithAll = [{ value: '', label: '全部类别' }, ...response.data]
+        const hasSelected = !!this.data.selectedCategory
+        const selectedIndex = hasSelected 
+          ? categoriesWithAll.findIndex(cat => cat.value === this.data.selectedCategory)
+          : 0
+        const selectedLabel = hasSelected 
+          ? (categoriesWithAll.find(cat => cat.value === this.data.selectedCategory)?.label || '')
+          : '全部类别'
         this.setData({
-          categories: response.data
+          categories: categoriesWithAll,
+          selectedCategoryIndex: selectedIndex,
+          selectedCategoryLabel: selectedLabel
         })
-        console.log('设置的支出类别:', response.data)
+        console.log('设置的支出类别:', categoriesWithAll)
       } else {
         console.error('支出类别API返回错误:', response)
         // 如果API失败，使用默认类别
-        this.setData({
-          categories: [
-            { value: 'food', label: '食物' },
-            { value: 'medical', label: '医疗' },
-            { value: 'toys', label: '玩具' },
-            { value: 'cage', label: '笼具' },
-            { value: 'baby_bird', label: '幼鸟' },
-            { value: 'breeding_bird', label: '种鸟' },
-            { value: 'other', label: '其他' }
-          ]
-        })
-      }
-    } catch (error) {
-      console.error('加载支出类别失败:', error)
-      // 如果网络错误，使用默认类别
-      this.setData({
-        categories: [
+        const defaultCategories = [
           { value: 'food', label: '食物' },
           { value: 'medical', label: '医疗' },
           { value: 'toys', label: '玩具' },
@@ -127,6 +123,30 @@ Page({
           { value: 'breeding_bird', label: '种鸟' },
           { value: 'other', label: '其他' }
         ]
+        const categoriesWithAll = [{ value: '', label: '全部类别' }, ...defaultCategories]
+        this.setData({
+          categories: categoriesWithAll,
+          selectedCategoryIndex: 0,
+          selectedCategoryLabel: '全部类别'
+        })
+      }
+    } catch (error) {
+      console.error('加载支出类别失败:', error)
+      // 如果网络错误，使用默认类别
+      const defaultCategories = [
+        { value: 'food', label: '食物' },
+        { value: 'medical', label: '医疗' },
+        { value: 'toys', label: '玩具' },
+        { value: 'cage', label: '笼具' },
+        { value: 'baby_bird', label: '幼鸟' },
+        { value: 'breeding_bird', label: '种鸟' },
+        { value: 'other', label: '其他' }
+      ]
+      const categoriesWithAll = [{ value: '', label: '全部类别' }, ...defaultCategories]
+      this.setData({
+        categories: categoriesWithAll,
+        selectedCategoryIndex: 0,
+        selectedCategoryLabel: '全部类别'
       })
     }
   },
@@ -196,20 +216,22 @@ Page({
         
         const expenses = this.data.page === 1 ? processedExpenses : [...this.data.expenses, ...processedExpenses]
         
-        // 计算总金额
-        const totalAmount = expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0)
+        // 使用后端返回的筛选总金额（若不存在则前端计算当前已加载金额）
+        const filteredTotal = typeof response.data.total_amount === 'number'
+          ? parseFloat(response.data.total_amount) || 0
+          : expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0)
 
         this.setData({
           expenses,
-          totalAmount,
-          totalAmount_display: totalAmount.toFixed(2),
-          totalCount: response.data.total, // 使用API返回的总记录数
+          totalAmount: filteredTotal,
+          totalAmount_display: filteredTotal.toFixed(2),
+          totalCount: response.data.total, // 使用API返回的总记录数（按筛选条件）
           hasMore: response.data.has_next,
           page: this.data.page + 1
         })
         
         console.log('设置后的支出记录数据:', this.data.expenses)
-        console.log('计算的总金额:', totalAmount)
+        console.log('计算的总金额:', filteredTotal)
       } else {
         console.error('支出列表API返回错误:', response)
         wx.showToast({
@@ -367,9 +389,21 @@ Page({
 
   // 选择类别
   onCategoryChange(e) {
-    this.setData({
-      selectedCategory: e.detail.value
-    })
+    const index = parseInt(e.detail.value)
+    const selected = this.data.categories && this.data.categories[index]
+    if (selected) {
+      this.setData({
+        selectedCategory: selected.value,
+        selectedCategoryIndex: index,
+        selectedCategoryLabel: selected.label
+      })
+    } else {
+      this.setData({
+        selectedCategory: '',
+        selectedCategoryIndex: -1,
+        selectedCategoryLabel: ''
+      })
+    }
   },
 
   // 选择开始日期
@@ -401,6 +435,8 @@ Page({
   onResetFilter() {
     this.setData({
       selectedCategory: '',
+      selectedCategoryIndex: -1,
+      selectedCategoryLabel: '',
       startDate: '',
       endDate: '',
       expenses: [],

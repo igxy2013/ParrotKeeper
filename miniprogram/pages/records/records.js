@@ -437,5 +437,17 @@ Page({
       console.error('删除记录失败:', error)
       app.showError('删除记录失败')
     }
+  },
+
+  // 页面上拉触底事件：加载下一页
+  onReachBottom() {
+    if (this.data.loading || !this.data.hasMore) return
+    this.loadRecords(false)
+  },
+
+  // 页面下拉刷新事件：刷新到第一页
+  onPullDownRefresh() {
+    this.loadRecords(true)
+      .finally(() => wx.stopPullDownRefresh())
   }
 })

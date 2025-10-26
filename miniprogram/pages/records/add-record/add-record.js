@@ -451,30 +451,43 @@ Page({
   // 选择鹦鹉（多选）
   selectParrot: function(e) {
     const { id, name } = e.currentTarget.dataset
-    let { selectedParrots, parrotList } = this.data
+    let { selectedParrots, parrotList, recordType } = this.data
     
-    // 切换选中状态
-    const index = selectedParrots.findIndex(p => p.id === id)
-    if (index >= 0) {
-      selectedParrots.splice(index, 1)
+    if (recordType === 'health') {
+      // 健康记录：单选
+      selectedParrots = [{ id, name }]
+      parrotList = parrotList.map(p => ({
+        ...p,
+        selected: p.id === id
+      }))
+      const selectedParrotNames = name
+      this.setData({
+        selectedParrots,
+        parrotList,
+        selectedParrotNames,
+        'formData.parrot_ids': [id],
+        showParrotModal: false
+      })
     } else {
-      selectedParrots.push({ id, name })
+      // 其他类型：保持多选逻辑
+      const index = selectedParrots.findIndex(p => p.id === id)
+      if (index >= 0) {
+        selectedParrots.splice(index, 1)
+      } else {
+        selectedParrots.push({ id, name })
+      }
+      parrotList = parrotList.map(p => ({
+        ...p,
+        selected: selectedParrots.some(sp => sp.id === p.id)
+      }))
+      const selectedParrotNames = selectedParrots.map(p => p.name).join('、')
+      this.setData({
+        selectedParrots,
+        parrotList,
+        selectedParrotNames,
+        'formData.parrot_ids': selectedParrots.map(p => p.id)
+      })
     }
-    
-    // 更新列表选中状态
-    parrotList = parrotList.map(p => ({
-      ...p,
-      selected: selectedParrots.some(sp => sp.id === p.id)
-    }))
-    
-    const selectedParrotNames = selectedParrots.map(p => p.name).join('、')
-    
-    this.setData({
-      selectedParrots,
-      parrotList,
-      selectedParrotNames,
-      'formData.parrot_ids': selectedParrots.map(p => p.id)
-    })
     this.validateForm()
   },
   
@@ -809,13 +822,20 @@ Page({
         const isEdit = !!recordId
         const url = isEdit ? `/api/records/${recordId}` : '/api/records'
         const method = isEdit ? 'PUT' : 'POST'
+        // 将空字符串转换为 null，并解析为数字
+        const toNumberOrNull = (v) => {
+          const s = String(v || '').trim()
+          if (!s) return null
+          const n = Number(s)
+          return isNaN(n) ? null : n
+        }
         const payload = {
           ...baseCommon,
           type: 'health',
-          record_time: timeStr,
-          parrot_ids: formData.parrot_ids,
-          weight: formData.weight,
-          temperature: formData.temperature,
+          record_date: timeStr,
+          parrot_id: (formData.parrot_ids && formData.parrot_ids[0]) || '',
+          weight: toNumberOrNull(formData.weight),
+          temperature: toNumberOrNull(formData.temperature),
           health_status: formData.health_status
         }
         const res = await app.request({ url, method, data: payload })
@@ -840,7 +860,6 @@ Page({
         const res = await app.request({ url, method, data: payload })
         if (!res.success) throw new Error(res.message || '保存失败')
       }
-      
       wx.showToast({ title: '保存成功', icon: 'success' })
       const pages = getCurrentPages()
       const prevPage = pages[pages.length - 2]

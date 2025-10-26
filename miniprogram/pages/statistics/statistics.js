@@ -17,6 +17,13 @@ Page({
     // 筛选条件
     feedingPeriod: 'week',
     
+    // 体重趋势数据
+    weightSeries: [],
+    selectedParrotId: null,
+    weightDays: 30,
+    weightColors: ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22'],
+    weightLegend: [],
+    
     // 加载状态
     loading: false
   },
@@ -69,7 +76,8 @@ Page({
         this.loadFeedingTrends(),
         this.loadExpenseAnalysis(),
         this.loadCareFrequency(),
-        this.loadSpeciesDistribution()
+        this.loadSpeciesDistribution(),
+        this.loadWeightTrends()
       ])
     } catch (error) {
       console.error('加载统计数据失败:', error)
@@ -416,5 +424,192 @@ Page({
         });
       }
     });
+  },
+
+  // 加载体重趋势（每只鹦鹉的折线）
+  async loadWeightTrends() {
+    try {
+      const res = await app.request({
+        url: '/api/statistics/weight-trends',
+        method: 'GET',
+        data: { days: this.data.weightDays }
+      })
+      if (res.success && res.data && Array.isArray(res.data.series)) {
+        this.setData({ weightSeries: res.data.series })
+        this.updateWeightLegend()
+        // 绘制折线图
+        this.drawWeightChart()
+      }
+    } catch (err) {
+      console.error('加载体重趋势失败:', err)
+    }
+  },
+
+  // 选择要查看的鹦鹉（null 表示全部）
+  selectWeightParrot(e) {
+    const id = e.currentTarget.dataset.id || null
+    this.setData({ selectedParrotId: id })
+    this.updateWeightLegend()
+    this.drawWeightChart()
+  },
+
+  updateWeightLegend() {
+    const series = this.data.weightSeries || []
+    const selectedId = this.data.selectedParrotId
+    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series
+    const palette = this.data.weightColors || ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
+    const legend = (displaySeries || []).map((s, idx) => ({
+      parrot_id: s.parrot_id,
+      parrot_name: s.parrot_name,
+      color: palette[idx % palette.length]
+    }))
+    this.setData({ weightLegend: legend })
+  },
+
+  // 绘制体重折线图（canvas 2D）
+  drawWeightChart() {
+    const series = this.data.weightSeries || []
+    const selectedId = this.data.selectedParrotId
+    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series
+  
+    const query = wx.createSelectorQuery()
+    query.select('#weightCanvas').node()
+    query.select('#weightCanvas').boundingClientRect()
+    query.exec(res => {
+      const nodeRes = res && res[0]
+      const rect = res && res[1]
+      if (!nodeRes || !nodeRes.node || !rect) return
+      const canvas = nodeRes.node
+      const width = rect.width || 300
+      const height = rect.height || 200
+      const ctx = canvas.getContext('2d')
+      const winInfo = (wx.getWindowInfo && wx.getWindowInfo()) || {}
+      const dpr = winInfo.pixelRatio || 1
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      ctx.scale(dpr, dpr)
+  
+      // 清空
+      ctx.clearRect(0, 0, width, height)
+  
+      if (!displaySeries.length) {
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = '14px sans-serif'
+        ctx.fillText('暂无体重数据', width / 2, height / 2)
+        return
+      }
+  
+      // 收集所有日期与体重范围
+      const allPoints = []
+      displaySeries.forEach(s => {
+        (s.points || []).forEach(p => allPoints.push(p))
+      })
+      const dates = Array.from(new Set(allPoints.map(p => p.date))).sort()
+      const weights = allPoints.map(p => p.weight || 0)
+      let minW = Math.min(...weights)
+      let maxW = Math.max(...weights)
+      if (maxW === minW) {
+        // 防止纵轴范围为0
+        minW = Math.max(0, minW - 1)
+        maxW = maxW + 1
+      }
+  
+      // 内边距（为坐标轴标签预留空间）
+      const paddingLeft = 48
+      const paddingRight = 18
+      const paddingTop = 18
+      const paddingBottom = 36
+      const chartW = width - paddingLeft - paddingRight
+      const chartH = height - paddingTop - paddingBottom
+  
+      // 坐标轴
+      ctx.strokeStyle = '#ddd'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      // X 轴
+      ctx.moveTo(paddingLeft, height - paddingBottom)
+      ctx.lineTo(width - paddingRight, height - paddingBottom)
+      // Y 轴
+      ctx.moveTo(paddingLeft, height - paddingBottom)
+      ctx.lineTo(paddingLeft, paddingTop)
+      ctx.stroke()
+  
+      // 纵轴刻度与数值
+      const yTicks = 4
+      ctx.fillStyle = '#666'
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+      for (let i = 0; i <= yTicks; i++) {
+        const t = i / yTicks
+        const value = minW + t * (maxW - minW)
+        const y = paddingTop + (1 - t) * chartH
+        // 刻度线
+        ctx.strokeStyle = '#eee'
+        ctx.beginPath()
+        ctx.moveTo(paddingLeft, y)
+        ctx.lineTo(width - paddingRight, y)
+        ctx.stroke()
+        // 数值标签
+        ctx.fillStyle = '#666'
+        ctx.fillText(value.toFixed(1), paddingLeft - 6, y)
+      }
+  
+      // 横轴刻度与日期标签（避免过密，均匀采样最多6个）
+      const maxXTicks = Math.min(6, dates.length)
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      for (let i = 0; i < maxXTicks; i++) {
+        const idx = Math.round((i / (maxXTicks - 1)) * (dates.length - 1))
+        const dateStr = dates[idx]
+        const d = new Date(dateStr)
+        const label = `${d.getMonth() + 1}/${d.getDate()}`
+        const x = paddingLeft + (dates.length > 1 ? (idx / (dates.length - 1)) * chartW : chartW / 2)
+        const y = height - paddingBottom
+        // 刻度线
+        ctx.strokeStyle = '#eee'
+        ctx.beginPath()
+        ctx.moveTo(x, paddingTop)
+        ctx.lineTo(x, y)
+        ctx.stroke()
+        // 标签
+        ctx.fillStyle = '#666'
+        ctx.fillText(label, x, y + 4)
+      }
+  
+      const colorPalette = this.data.weightColors || ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
+  
+      // 绘制每条折线
+      displaySeries.forEach((s, idx) => {
+        const pts = (s.points || []).sort((a,b) => a.date.localeCompare(b.date))
+        const color = colorPalette[idx % colorPalette.length]
+        ctx.strokeStyle = color
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        pts.forEach((p, i) => {
+          const xIndex = dates.indexOf(p.date)
+          const x = paddingLeft + (dates.length > 1 ? (xIndex / (dates.length - 1)) * chartW : chartW / 2)
+          const norm = (p.weight - minW) / (maxW - minW)
+          const y = paddingTop + (1 - norm) * chartH
+          if (i === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        })
+        ctx.stroke()
+  
+        // 绘制点
+        ctx.fillStyle = color
+        pts.forEach(p => {
+          const xIndex = dates.indexOf(p.date)
+          const x = paddingLeft + (dates.length > 1 ? (xIndex / (dates.length - 1)) * chartW : chartW / 2)
+          const norm = (p.weight - minW) / (maxW - minW)
+          const y = paddingTop + (1 - norm) * chartH
+          ctx.beginPath()
+          ctx.arc(x, y, 3, 0, Math.PI * 2)
+          ctx.fill()
+        })
+      })
+    })
   }
 })

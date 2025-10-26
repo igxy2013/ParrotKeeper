@@ -92,6 +92,36 @@
     </view>
   </view>
 
+  <!-- 体重趋势 -->
+  <view class="weight-trends-section">
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">体重趋势</text>
+        <view class="time-filter">
+          <text class="filter-btn {{selectedParrotId === null ? 'active' : ''}}" bindtap="selectWeightParrot" data-id="">全部</text>
+          <block wx:for="{{weightSeries}}" wx:key="parrot_id">
+            <text class="filter-btn {{selectedParrotId === item.parrot_id ? 'active' : ''}}" bindtap="selectWeightParrot" data-id="{{item.parrot_id}}">{{item.parrot_name}}</text>
+          </block>
+        </view>
+      </view>
+      <view class="card-content">
+        <view class="legend-container" wx:if="{{weightLegend.length > 0}}">
+          <view class="legend-item" wx:for="{{weightLegend}}" wx:key="parrot_id">
+            <view class="legend-dot" style="background-color: {{item.color}}"></view>
+            <text class="legend-name">{{item.parrot_name}}</text>
+          </view>
+        </view>
+        <view class="chart-container">
+          <view class="chart-placeholder" wx:if="{{weightSeries.length === 0}}">
+            <text class="placeholder-text">暂无数据</text>
+          </view>
+          <canvas wx:else type="2d" canvas-id="weightCanvas" id="weightCanvas" style="width: 100%; height: 320rpx;"></canvas>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
   <!-- 喂食趋势 -->
   <view class="feeding-trends-section">
     <view class="card">
@@ -225,4 +255,4 @@
     <view class="loading-spinner"></view>
     <text class="loading-text">加载中...</text>
   </view>
-</view>
+

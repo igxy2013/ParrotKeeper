@@ -346,33 +346,24 @@ Page({
   },
 
   // 显示关于
-  async showAbout() {
+  showAbout() {
+    let envText = ''
     try {
-      // 从后端API获取版本信息
-      const res = await wx.request({
-        url: 'https://bimai.xyz/api/health',
-        method: 'GET'
-      })
-      
-      let version = 'v1.0' // 默认版本号
-      if (res.data && res.data.success && res.data.version) {
-        version = `v${res.data.version}`
-      }
-      
-      wx.showModal({
-        title: '关于应用',
-        content: `鹦鹉管家 ${version}\n专业的鹦鹉饲养管理工具\n帮助您更好地照顾您的鹦鹉朋友`,
-        showCancel: false
-      })
-    } catch (error) {
-      console.error('获取版本信息失败:', error)
-      // 如果获取失败，使用默认版本号
-      wx.showModal({
-        title: '关于应用',
-        content: '鹦鹉管家 v1.0\n专业的鹦鹉饲养管理工具\n帮助您更好地照顾您的鹦鹉朋友',
-        showCancel: false
-      })
+      const accountInfo = wx.getAccountInfoSync()
+      const envVersion = accountInfo?.miniProgram?.envVersion
+      const map = { develop: '开发版', trial: '体验版', release: '正式版' }
+      envText = map[envVersion] ? `（${map[envVersion]}）` : ''
+    } catch (e) {
+      // 忽略环境信息错误
     }
+
+    const appVersion = app.globalData.appVersion || '未设置'
+
+    wx.showModal({
+      title: '关于应用',
+      content: `鹦鹉管家\n版本：${appVersion}${envText}`,
+      showCancel: false
+    })
   },
 
   // 显示帮助
@@ -1088,3 +1079,4 @@ Page({
     // 空方法，防止点击弹窗内容区域时关闭弹窗
   }
 })
+

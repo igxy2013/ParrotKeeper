@@ -63,6 +63,9 @@ def get_expenses():
         
         print(f"[DEBUG] 查询SQL: {query}")
         
+        # 统计总金额（按当前筛选条件）
+        total_amount_value = query.with_entities(func.sum(Expense.amount)).order_by(None).scalar() or 0
+
         # 分页
         result = paginate_query(query, page, per_page)
         
@@ -81,6 +84,7 @@ def get_expenses():
             expenses.append(expense_data)
         
         result['items'] = expenses
+        result['total_amount'] = float(total_amount_value)
         return success_response(result)
         
     except Exception as e:
