@@ -1,5 +1,5 @@
 <!--pages/statistics/statistics.wxml-->
-<view class="page-container">
+<view class="page-container" bindtap="{{showParrotDropdown ? 'toggleParrotDropdown' : ''}}">
   <!-- 模式切换栏 -->
   <view class="team-switch-bar" wx:if="{{userMode && isLogin}}">
     <view class="team-info">
@@ -97,11 +97,23 @@
     <view class="card">
       <view class="card-header">
         <text class="card-title">体重趋势</text>
-        <view class="time-filter">
-          <text class="filter-btn {{selectedParrotId === null ? 'active' : ''}}" bindtap="selectWeightParrot" data-id="">全部</text>
-          <block wx:for="{{weightSeries}}" wx:key="parrot_id">
-            <text class="filter-btn {{selectedParrotId === item.parrot_id ? 'active' : ''}}" bindtap="selectWeightParrot" data-id="{{item.parrot_id}}">{{item.parrot_name}}</text>
-          </block>
+        <view class="parrot-selector">
+          <view class="selector-wrapper" bindtap="toggleParrotDropdown">
+            <text class="selector-text">{{selectedParrotName || '全部鹦鹉'}}</text>
+            <text class="selector-arrow {{showParrotDropdown ? 'rotate' : ''}}">▼</text>
+          </view>
+          <view class="dropdown-menu {{showParrotDropdown ? 'show' : ''}}" wx:if="{{showParrotDropdown}}" catchtap="preventBubble">
+            <view class="dropdown-item {{selectedParrotId === null ? 'selected' : ''}}" bindtap="selectWeightParrot" data-id="">
+              <text>全部鹦鹉</text>
+              <text class="check-icon" wx:if="{{selectedParrotId === null}}">✓</text>
+            </view>
+            <block wx:for="{{weightSeries}}" wx:key="parrot_id">
+              <view class="dropdown-item {{selectedParrotId === item.parrot_id ? 'selected' : ''}}" bindtap="selectWeightParrot" data-id="{{item.parrot_id}}">
+                <text>{{item.parrot_name}}</text>
+                <text class="check-icon" wx:if="{{selectedParrotId === item.parrot_id}}">✓</text>
+              </view>
+            </block>
+          </view>
         </view>
       </view>
       <view class="card-content">

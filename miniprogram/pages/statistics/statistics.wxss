@@ -718,4 +718,137 @@
 .legend-name {
   font-size: 24rpx;
   color: #666;
-}
+}
+
+/* 鹦鹉选择器样式 */
+.parrot-selector {
+  position: relative;
+  min-width: 200rpx;
+}
+
+.selector-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 20rpx;
+  background: #f8f9fa;
+  border-radius: 20rpx;
+  border: 2rpx solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 160rpx;
+}
+
+.selector-wrapper:active {
+  background: #e9ecef;
+  border-color: #667eea;
+}
+
+.selector-text {
+  font-size: 24rpx;
+  color: #333;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selector-arrow {
+  font-size: 20rpx;
+  color: #666;
+  margin-left: 10rpx;
+  transition: transform 0.3s ease;
+}
+
+.selector-arrow.rotate {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  background: white;
+  border-radius: 12rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+  border: 1rpx solid #e9ecef;
+  z-index: 1000;
+  max-height: 400rpx;
+  overflow-y: auto;
+  opacity: 0;
+  transform: translateY(-10rpx);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  font-size: 26rpx;
+  color: #333;
+  border-bottom: 1rpx solid #f5f5f5;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:active {
+  background-color: #f8f9ff;
+}
+
+.dropdown-item.selected {
+  background-color: #f0f2ff;
+  color: #667eea;
+}
+
+.check-icon {
+  font-size: 24rpx;
+  color: #667eea;
+  font-weight: bold;
+}
+
+.empty-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200rpx;
+}
+
+/* 图例样式 */
+.legend-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 4rpx 8rpx;
+  background: #f8f9ff;
+  border-radius: 12rpx;
+}
+
+.legend-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+}
+
+.legend-name {
+  font-size: 24rpx;
+  color: #666;
+}

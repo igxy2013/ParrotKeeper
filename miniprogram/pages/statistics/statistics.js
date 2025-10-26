@@ -3,9 +3,9 @@ const app = getApp()
 
 Page({
   data: {
-    currentMonth: new Date().getMonth() + 1,
     isLogin: false,
     userMode: null, // 当前用户模式
+    currentMonth: new Date().getMonth() + 1,
     
     // 统计数据
     overview: {},
@@ -16,10 +16,14 @@ Page({
     
     // 筛选条件
     feedingPeriod: 'week',
+    expenseData: [],
+    expensePeriod: 'month',
     
     // 体重趋势数据
     weightSeries: [],
     selectedParrotId: null,
+    selectedParrotName: '',
+    showParrotDropdown: false,
     weightDays: 30,
     weightColors: ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22'],
     weightLegend: [],
@@ -445,10 +449,30 @@ Page({
     }
   },
 
-  // 选择要查看的鹦鹉（null 表示全部）
+  // 切换鹦鹉下拉菜单显示状态
+  toggleParrotDropdown() {
+    this.setData({
+      showParrotDropdown: !this.data.showParrotDropdown
+    })
+  },
+
+  // 选择体重趋势的鹦鹉
   selectWeightParrot(e) {
-    const id = e.currentTarget.dataset.id || null
-    this.setData({ selectedParrotId: id })
+    const parrotId = e.currentTarget.dataset.id
+    let selectedParrotName = '全部鹦鹉'
+    
+    if (parrotId) {
+      const selectedParrot = this.data.weightSeries.find(s => String(s.parrot_id) === String(parrotId))
+      if (selectedParrot) {
+        selectedParrotName = selectedParrot.parrot_name
+      }
+    }
+    
+    this.setData({
+      selectedParrotId: parrotId || null,
+      selectedParrotName: selectedParrotName,
+      showParrotDropdown: false
+    })
     this.updateWeightLegend()
     this.drawWeightChart()
   },
@@ -504,12 +528,39 @@ Page({
       // 收集所有日期与体重范围
       const allPoints = []
       displaySeries.forEach(s => {
-        (s.points || []).forEach(p => allPoints.push(p))
+        (s.points || []).forEach(p => {
+          // 验证体重数据的有效性
+          if (p && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) {
+            allPoints.push(p)
+          }
+        })
       })
+
+      // 如果没有有效的体重数据点，显示提示信息
+      if (allPoints.length === 0) {
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = '14px sans-serif'
+        ctx.fillText('暂无有效体重数据', width / 2, height / 2)
+        return
+      }
+
       const dates = Array.from(new Set(allPoints.map(p => p.date))).sort()
-      const weights = allPoints.map(p => p.weight || 0)
+      const weights = allPoints.map(p => p.weight)
       let minW = Math.min(...weights)
       let maxW = Math.max(...weights)
+      
+      // 验证最小值和最大值的有效性
+      if (!isFinite(minW) || !isFinite(maxW) || isNaN(minW) || isNaN(maxW)) {
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = '14px sans-serif'
+        ctx.fillText('体重数据异常', width / 2, height / 2)
+        return
+      }
+
       if (maxW === minW) {
         // 防止纵轴范围为0
         minW = Math.max(0, minW - 1)
@@ -552,9 +603,10 @@ Page({
         ctx.moveTo(paddingLeft, y)
         ctx.lineTo(width - paddingRight, y)
         ctx.stroke()
-        // 数值标签
+        // 数值标签 - 添加数值验证
         ctx.fillStyle = '#666'
-        ctx.fillText(value.toFixed(1), paddingLeft - 6, y)
+        const displayValue = isFinite(value) && !isNaN(value) ? value.toFixed(1) : '0.0'
+        ctx.fillText(displayValue, paddingLeft - 6, y)
       }
   
       // 横轴刻度与日期标签（避免过密，均匀采样最多6个）
@@ -562,12 +614,21 @@ Page({
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
       for (let i = 0; i < maxXTicks; i++) {
-        const idx = Math.round((i / (maxXTicks - 1)) * (dates.length - 1))
+        let idx, x
+        if (dates.length === 1) {
+          // 单天数据时，将标签放在中央
+          idx = 0
+          x = paddingLeft + chartW / 2
+        } else {
+          idx = Math.round((i / (maxXTicks - 1)) * (dates.length - 1))
+          x = paddingLeft + (idx / (dates.length - 1)) * chartW
+        }
+        
         const dateStr = dates[idx]
         const d = new Date(dateStr)
         const label = `${d.getMonth() + 1}/${d.getDate()}`
-        const x = paddingLeft + (dates.length > 1 ? (idx / (dates.length - 1)) * chartW : chartW / 2)
         const y = height - paddingBottom
+        
         // 刻度线
         ctx.strokeStyle = '#eee'
         ctx.beginPath()
@@ -583,27 +644,62 @@ Page({
   
       // 绘制每条折线
       displaySeries.forEach((s, idx) => {
-        const pts = (s.points || []).sort((a,b) => a.date.localeCompare(b.date))
+        // 过滤有效的数据点
+        const validPoints = (s.points || []).filter(p => 
+          p && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0
+        ).sort((a,b) => a.date.localeCompare(b.date))
+        
+        if (validPoints.length === 0) return // 跳过没有有效数据的系列
+        
         const color = colorPalette[idx % colorPalette.length]
         ctx.strokeStyle = color
         ctx.lineWidth = 2
-        ctx.beginPath()
-        pts.forEach((p, i) => {
-          const xIndex = dates.indexOf(p.date)
-          const x = paddingLeft + (dates.length > 1 ? (xIndex / (dates.length - 1)) * chartW : chartW / 2)
-          const norm = (p.weight - minW) / (maxW - minW)
-          const y = paddingTop + (1 - norm) * chartH
-          if (i === 0) ctx.moveTo(x, y)
-          else ctx.lineTo(x, y)
-        })
-        ctx.stroke()
+        
+        // 只有一个点时不绘制线条，只绘制点
+        if (validPoints.length > 1) {
+          ctx.beginPath()
+          validPoints.forEach((p, i) => {
+            const xIndex = dates.indexOf(p.date)
+            if (xIndex === -1) return // 跳过无效日期
+            
+            let x
+            if (dates.length === 1) {
+              x = paddingLeft + chartW / 2
+            } else {
+              x = paddingLeft + (xIndex / (dates.length - 1)) * chartW
+            }
+            
+            const norm = (p.weight - minW) / (maxW - minW)
+            
+            // 验证计算结果
+            if (!isFinite(norm) || isNaN(norm)) return
+            
+            const y = paddingTop + (1 - norm) * chartH
+            
+            if (i === 0) ctx.moveTo(x, y)
+            else ctx.lineTo(x, y)
+          })
+          ctx.stroke()
+        }
   
         // 绘制点
         ctx.fillStyle = color
-        pts.forEach(p => {
+        validPoints.forEach(p => {
           const xIndex = dates.indexOf(p.date)
-          const x = paddingLeft + (dates.length > 1 ? (xIndex / (dates.length - 1)) * chartW : chartW / 2)
+          if (xIndex === -1) return // 跳过无效日期
+          
+          let x
+          if (dates.length === 1) {
+            x = paddingLeft + chartW / 2
+          } else {
+            x = paddingLeft + (xIndex / (dates.length - 1)) * chartW
+          }
+          
           const norm = (p.weight - minW) / (maxW - minW)
+          
+          // 验证计算结果
+          if (!isFinite(norm) || isNaN(norm)) return
+          
           const y = paddingTop + (1 - norm) * chartH
           ctx.beginPath()
           ctx.arc(x, y, 3, 0, Math.PI * 2)
@@ -611,5 +707,30 @@ Page({
         })
       })
     })
+  },
+
+  onLoad() {
+    this.checkLoginAndLoad()
+    
+    // 添加全局点击事件监听，用于关闭下拉菜单
+    this.globalTapHandler = () => {
+      if (this.data.showParrotDropdown) {
+        this.setData({
+          showParrotDropdown: false
+        })
+      }
+    }
+  },
+
+  onUnload() {
+    // 清理事件监听
+    if (this.globalTapHandler) {
+      this.globalTapHandler = null
+    }
+  },
+
+  // 阻止下拉菜单内部点击事件冒泡
+  preventBubble() {
+    // 空函数，用于阻止事件冒泡
   }
 })
