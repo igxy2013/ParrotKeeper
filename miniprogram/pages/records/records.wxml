@@ -144,10 +144,10 @@
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-cleaning-type-ids="{{item.cleaning_type_ids}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">✏️</text>
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
               <text class="action-icon">🗑️</text>
             </view>
           </view>

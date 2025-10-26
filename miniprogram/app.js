@@ -8,11 +8,29 @@ App({
     //baseUrl: 'https://acbim.cn:5075', // 后端API地址
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
-    appVersion: '1.0.0' // 小程序版本号（发布前手动更新）
+    appVersion: '1.0.0' // 小程序版本号（通过微信API动态获取）
+  },
+
+  // 初始化小程序版本号
+  initAppVersion() {
+    try {
+      const accountInfo = wx.getAccountInfoSync()
+      if (accountInfo && accountInfo.miniProgram && accountInfo.miniProgram.version) {
+        this.globalData.appVersion = accountInfo.miniProgram.version
+        console.log('获取到小程序版本号:', this.globalData.appVersion)
+      } else {
+        console.log('无法获取小程序版本号，使用默认版本号')
+      }
+    } catch (e) {
+      console.error('获取小程序版本号失败:', e)
+    }
   },
 
   onLaunch() {
     console.log('小程序启动')
+    
+    // 获取小程序真实版本号
+    this.initAppVersion()
     
     // 检查登录状态
     const openid = wx.getStorageSync('openid')

@@ -60,7 +60,7 @@ def create_app(config_name=None):
         return jsonify({
             'success': True,
             'message': '服务正常',
-            'version': '1.0.0'
+            'version': 'dynamic' # 版本号由前端动态获取
         })
     
     # 静态文件服务

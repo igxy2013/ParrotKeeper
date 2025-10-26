@@ -295,7 +295,7 @@ Page({
                   code: loginRes.code,
                   userInfo: {
                     nickName: profileRes.userInfo.nickName,
-                    avatarUrl: '/images/default-avatar.svg' // 使用默认头像
+                    avatarUrl: '/images/default-avatar.png' // 使用默认头像
                   }
                 },
                 header: {
@@ -309,7 +309,7 @@ Page({
                     // 构建用户信息对象，使用默认头像
                     const userInfo = {
                       nickname: responseUserInfo.nickname,
-                      avatar_url: '/images/default-avatar.svg', // 强制使用默认头像
+                      avatar_url: '/images/default-avatar.png', // 强制使用默认头像
                       openid: responseUserInfo.openid,
                       created_at: responseUserInfo.created_at
                     };

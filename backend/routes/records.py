@@ -361,8 +361,57 @@ def update_cleaning_record_internal(record_id, data):
     if not record:
         return error_response('记录不存在', 404)
     
-    if 'cleaning_type' in data:
-        record.cleaning_type = data['cleaning_type']
+    # 处理多清洁类型的编辑
+    if 'cleaning_types' in data and isinstance(data['cleaning_types'], list):
+        cleaning_types = [ct for ct in data['cleaning_types'] if ct and ct != '']
+        
+        if len(cleaning_types) > 1:
+            # 多清洁类型：需要删除原记录，创建多个新记录
+            original_parrot_id = record.parrot_id
+            original_description = record.description
+            original_cleaning_time = record.cleaning_time
+            original_notes = record.notes
+            original_created_by_user_id = record.created_by_user_id
+            original_team_id = record.team_id
+            
+            # 删除原记录
+            db.session.delete(record)
+            
+            # 为每个清洁类型创建新记录
+            created_records = []
+            for cleaning_type in cleaning_types:
+                new_record = CleaningRecord(
+                    parrot_id=original_parrot_id,
+                    cleaning_type=cleaning_type,
+                    description=data.get('description', original_description),
+                    cleaning_time=datetime.strptime(data['cleaning_time'], '%Y-%m-%d %H:%M:%S') if data.get('cleaning_time') else original_cleaning_time,
+                    notes=data.get('notes', original_notes),
+                    created_by_user_id=original_created_by_user_id,
+                    team_id=original_team_id
+                )
+                db.session.add(new_record)
+                created_records.append(new_record)
+            
+            db.session.commit()
+            
+            # 返回第一个记录作为代表
+            return success_response(cleaning_record_schema.dump(created_records[0]), '更新成功')
+        
+        elif len(cleaning_types) == 1:
+            # 单清洁类型：正常更新
+            record.cleaning_type = cleaning_types[0]
+        else:
+            # 空清洁类型
+            record.cleaning_type = None
+    elif 'cleaning_type' in data:
+        # 向后兼容单个cleaning_type
+        cleaning_type = data['cleaning_type']
+        if cleaning_type == '':
+            record.cleaning_type = None
+        else:
+            record.cleaning_type = cleaning_type
+    
+    # 更新其他字段
     if 'description' in data:
         record.description = data['description']
     if 'cleaning_time' in data:
@@ -942,18 +991,36 @@ def add_cleaning_record_internal(data):
     
     # 为每个选中的鹦鹉创建清洁记录
     created_records = []
+    
+    # 支持多选清洁类型
+    cleaning_types = data.get('cleaning_types', [])
+    if not cleaning_types:
+        # 向后兼容单选
+        cleaning_type = data.get('cleaning_type')
+        if cleaning_type:
+            cleaning_types = [cleaning_type]
+    
+    # 如果没有选择清洁类型，使用空值
+    if not cleaning_types:
+        cleaning_types = [None]
+    
     for parrot_id in parrot_ids:
-        record = CleaningRecord(
-            parrot_id=parrot_id,
-            cleaning_type=data.get('cleaning_type'),
-            description=data.get('description'),
-            cleaning_time=cleaning_time,
-            notes=data.get('notes'),
-            created_by_user_id=user.id,  # 记录创建者
-            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
-        )
-        db.session.add(record)
-        created_records.append(record)
+        for cleaning_type in cleaning_types:
+            # 处理空字符串的cleaning_type
+            if cleaning_type == '':
+                cleaning_type = None
+                
+            record = CleaningRecord(
+                parrot_id=parrot_id,
+                cleaning_type=cleaning_type,
+                description=data.get('description'),
+                cleaning_time=cleaning_time,
+                notes=data.get('notes'),
+                created_by_user_id=user.id,  # 记录创建者
+                team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
+            )
+            db.session.add(record)
+            created_records.append(record)
     
     db.session.commit()
     
@@ -962,6 +1029,84 @@ def add_cleaning_record_internal(data):
         return success_response(cleaning_record_schema.dump(created_records[0]), '添加成功')
     else:
         return success_response(cleaning_records_schema.dump(created_records), f'成功添加{len(created_records)}条清洁记录')
+
+@records_bp.route('/cleaning/batch-update', methods=['PUT'])
+@login_required
+def batch_update_cleaning_records():
+    """批量更新清洁记录"""
+    try:
+        data = request.get_json()
+        user = request.current_user
+        
+        # 获取要更新的记录ID列表
+        record_ids = data.get('record_ids', [])
+        if not record_ids:
+            return error_response('缺少记录ID列表')
+        
+        # 检查所有记录是否可访问
+        accessible_ids = get_accessible_cleaning_record_ids_by_mode(user)
+        for record_id in record_ids:
+            if record_id not in accessible_ids:
+                return error_response(f'记录 {record_id} 不存在或无权限访问', 404)
+        
+        # 获取所有旧记录以收集原始鹦鹉ID
+        old_records = CleaningRecord.query.filter(CleaningRecord.id.in_(record_ids)).all()
+        if not old_records:
+            return error_response('记录不存在', 404)
+        
+        # 收集原始鹦鹉ID和其他信息
+        original_parrot_ids = list(set([record.parrot_id for record in old_records]))
+        first_record = old_records[0]
+        original_created_by_user_id = first_record.created_by_user_id
+        original_team_id = first_record.team_id
+        
+        # 删除所有旧记录
+        for record in old_records:
+            db.session.delete(record)
+        
+        # 确定要使用的鹦鹉ID列表
+        parrot_ids = data.get('parrot_ids', original_parrot_ids)
+        if not parrot_ids:
+            parrot_ids = original_parrot_ids
+        
+        # 处理清洁类型
+        cleaning_types = data.get('cleaning_types', [])
+        if not cleaning_types:
+            # 如果没有清洁类型，为每个鹦鹉创建一个空记录
+            for parrot_id in parrot_ids:
+                new_record = CleaningRecord(
+                    parrot_id=parrot_id,
+                    cleaning_type=None,
+                    description=data.get('description', ''),
+                    cleaning_time=datetime.strptime(data['record_time'], '%Y-%m-%d %H:%M:%S') if data.get('record_time') else first_record.cleaning_time,
+                    notes=data.get('notes', ''),
+                    created_by_user_id=original_created_by_user_id,
+                    team_id=original_team_id
+                )
+                db.session.add(new_record)
+        else:
+            # 为每个鹦鹉和每个清洁类型创建新记录
+            for parrot_id in parrot_ids:
+                for cleaning_type in cleaning_types:
+                    new_record = CleaningRecord(
+                        parrot_id=parrot_id,
+                        cleaning_type=cleaning_type,
+                        description=data.get('description', ''),
+                        cleaning_time=datetime.strptime(data['record_time'], '%Y-%m-%d %H:%M:%S') if data.get('record_time') else first_record.cleaning_time,
+                        notes=data.get('notes', ''),
+                        created_by_user_id=original_created_by_user_id,
+                        team_id=original_team_id
+                    )
+                    db.session.add(new_record)
+        
+        db.session.commit()
+        return success_response({}, '批量更新成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'批量更新清洁记录失败: {str(e)}')
+
+
 
 @records_bp.route('/cleaning', methods=['POST'])
 @login_required

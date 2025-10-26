@@ -35,7 +35,7 @@
     </view>
     <view class="card-content">
       <view class="member-item" wx:for="{{members}}" wx:key="id">
-        <image class="avatar" src="{{item.avatar_url || '/images/default-avatar.svg'}}" mode="aspectFill"></image>
+        <image class="avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill"></image>
         <view class="member-info">
           <text class="name">{{item.nickname}}</text>
           <text class="role">{{item.role === 'owner' ? '创建者' : (item.role === 'admin' ? '管理员' : '成员')}}</text>

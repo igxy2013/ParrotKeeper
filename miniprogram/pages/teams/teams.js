@@ -108,7 +108,7 @@ Page({
           const members = (memberRes.data || []).map(m => ({
             id: m.id,
             name: this.decodeUnicode(m.nickname) || '无名',
-            avatar: m.avatar_url || '/images/default-avatar.svg',
+            avatar: m.avatar_url || '/images/default-avatar.png',
             role: (m.role === 'owner' || m.role === 'admin') ? '管理员' : '成员',
             joinTime: app.formatDate(m.joined_at),
             lastActive: '未知'

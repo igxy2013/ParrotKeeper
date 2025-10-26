@@ -128,7 +128,7 @@ class CleaningRecord(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'), nullable=False)
-    cleaning_type = db.Column(db.Enum('cage', 'toys', 'perches', 'food_water'))
+    cleaning_type = db.Column(db.Enum('cage', 'toys', 'perches', 'food_water', 'disinfection', 'water_change', 'water_bowl_clean'))
     description = db.Column(db.Text)
     cleaning_time = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)

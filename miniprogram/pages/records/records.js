@@ -203,8 +203,9 @@ Page({
     switch (this.data.activeTab) {
       case 'feeding':
         return this.aggregateFeedingRecords(records)
-      case 'health':
       case 'cleaning':
+        return this.aggregateCleaningRecords(records)
+      case 'health':
       case 'breeding':
         return records.map(r => ({
           ...r,
@@ -269,8 +270,63 @@ Page({
       feed_type_names_text: item.feed_type_names.join('、')
     }))
     
+    return result
+  },
+
+  // 聚合清洁记录以支持多选显示
+  aggregateCleaningRecords(records) {
+    const groupedRecords = {}
+    
+    // 按时间、备注、描述分组
+    records.forEach((record) => {
+      const key = `${record.cleaning_time}_${record.notes || ''}_${record.description || ''}`
+      
+      if (!groupedRecords[key]) {
+        groupedRecords[key] = {
+          ...record,
+          cleaning_time_formatted: app.formatDateTime(record.cleaning_time),
+          parrot_names: [],
+          cleaning_type_names: [],
+          parrot_ids: [],
+          cleaning_type_ids: [],
+          record_ids: []
+        }
+      }
+      
+      // 收集鹦鹉
+      if (record.parrot && record.parrot.name) {
+        if (!groupedRecords[key].parrot_names.includes(record.parrot.name)) {
+          groupedRecords[key].parrot_names.push(record.parrot.name)
+          groupedRecords[key].parrot_ids.push(record.parrot.id)
+        }
+      }
+      
+      // 收集清洁类型
+      if (record.cleaning_type_text || record.cleaning_type) {
+        const cleaningTypeName = record.cleaning_type_text || record.cleaning_type
+        if (!groupedRecords[key].cleaning_type_names.includes(cleaningTypeName)) {
+          groupedRecords[key].cleaning_type_names.push(cleaningTypeName)
+          if (record.cleaning_type) {
+            groupedRecords[key].cleaning_type_ids.push(record.cleaning_type)
+          }
+        }
+      }
+
+      // 收集原始记录ID
+      if (record.id && !groupedRecords[key].record_ids.includes(record.id)) {
+        groupedRecords[key].record_ids.push(record.id)
+      }
+    })
+    
+    // 生成显示文本
+    const result = Object.values(groupedRecords).map(item => ({
+      ...item,
+      parrot_name: item.parrot_names.join('、'),
+      cleaning_type_text: item.cleaning_type_names.join('、')
+    }))
+    
     // 保持与后端排序一致（按时间倒序）
-    result.sort((a, b) => new Date(b.feeding_time) - new Date(a.feeding_time))
+    result.sort((a, b) => new Date(b.cleaning_time) - new Date(a.cleaning_time))
     
     return result
   },
@@ -377,7 +433,7 @@ Page({
 
   // 编辑记录（传递聚合的多选ID到编辑页）
   editRecord(e) {
-    const { type, id, ids, parrotIds, feedTypeIds } = e.currentTarget.dataset
+    const { type, id, ids, parrotIds, feedTypeIds, cleaningTypeIds } = e.currentTarget.dataset
     
     let url = `/pages/records/add-record/add-record?type=${type}&id=${id}`
     if (type === 'feeding') {
@@ -386,6 +442,13 @@ Page({
       const rids = Array.isArray(ids) ? ids.join(',') : (ids || '')
       if (pids) url += `&parrot_ids=${encodeURIComponent(pids)}`
       if (ftids) url += `&food_type_ids=${encodeURIComponent(ftids)}`
+      if (rids) url += `&record_ids=${encodeURIComponent(rids)}`
+    } else if (type === 'cleaning') {
+      const pids = Array.isArray(parrotIds) ? parrotIds.join(',') : (parrotIds || '')
+      const ctids = Array.isArray(cleaningTypeIds) ? cleaningTypeIds.join(',') : (cleaningTypeIds || '')
+      const rids = Array.isArray(ids) ? ids.join(',') : (ids || '')
+      if (pids) url += `&parrot_ids=${encodeURIComponent(pids)}`
+      if (ctids) url += `&cleaning_type_ids=${encodeURIComponent(ctids)}`
       if (rids) url += `&record_ids=${encodeURIComponent(rids)}`
     }
     
@@ -419,7 +482,7 @@ Page({
       })
       if (!resModal.confirm) return
 
-      if (type === 'feeding') {
+      if (type === 'feeding' || type === 'cleaning') {
         const { ids } = e.currentTarget.dataset
         const idList = Array.isArray(ids) ? ids : (ids ? [ids] : [id])
         for (const rid of idList) {

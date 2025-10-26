@@ -20,7 +20,7 @@ Page({
       food_amounts: {},
       
       // 清洁记录字段
-      cleaning_type: '',
+      cleaning_types: [], // 改为数组支持多选
       description: '',
       
       // 健康检查字段
@@ -42,6 +42,7 @@ Page({
     // 预填ID（来自列表页聚合）
     prefillParrotIds: [],
     prefillFeedTypeIds: [],
+    prefillCleaningTypeIds: [],
     prefillRecordIds: [],
     
     // 选择器数据
@@ -56,7 +57,9 @@ Page({
     feedTypeList: [],
     selectedFeedTypes: [], // 改为数组存储多选的食物类型
     selectedFeedTypeNames: '', // 显示选中的食物类型名称
-    cleaningTypeText: '',
+    cleaningTypeList: [], // 清洁类型列表
+    selectedCleaningTypes: [], // 改为数组存储多选的清洁类型
+    selectedCleaningTypeNames: '', // 显示选中的清洁类型名称
     
     // 弹窗状态
     showParrotModal: false,
@@ -76,11 +79,12 @@ Page({
   },
 
   onLoad: async function(options) {
-    // 解析列表页传入的预填ID（仅喂食记录）
+    // 解析列表页传入的预填ID（支持喂食和清洁记录）
     const prefillParrotIds = options.parrot_ids ? decodeURIComponent(String(options.parrot_ids)).split(',').map(x => parseInt(x)).filter(x => !isNaN(x)) : []
     const prefillFeedTypeIds = options.food_type_ids ? decodeURIComponent(String(options.food_type_ids)).split(',').map(x => parseInt(x)).filter(x => !isNaN(x)) : []
+    const prefillCleaningTypeIds = options.cleaning_type_ids ? decodeURIComponent(String(options.cleaning_type_ids)).split(',').filter(x => x.trim() !== '') : []
     const prefillRecordIds = options.record_ids ? decodeURIComponent(String(options.record_ids)).split(',').map(x => parseInt(x)).filter(x => !isNaN(x)) : []
-    this.setData({ prefillParrotIds, prefillFeedTypeIds, prefillRecordIds })
+    this.setData({ prefillParrotIds, prefillFeedTypeIds, prefillCleaningTypeIds, prefillRecordIds })
 
     // 设置今天的日期
     const today = new Date()
@@ -100,6 +104,9 @@ Page({
     
     // 加载食物类型列表
     await this.loadFeedTypeList()
+    
+    // 初始化清洁类型列表
+    this.initCleaningTypeList()
     
     // 检查是否是编辑模式
     if (options.id) {
@@ -232,6 +239,22 @@ Page({
     }
   },
 
+  // 初始化清洁类型列表
+  initCleaningTypeList: function() {
+    const cleaningTypes = [
+      { id: 'cage', name: '笼子清洁', selected: false },
+      { id: 'toys', name: '玩具清洁', selected: false },
+      { id: 'perches', name: '栖木清洁', selected: false },
+      { id: 'food_water', name: '食物和水清洁', selected: false },
+      { id: 'disinfection', name: '消毒', selected: false },
+      { id: 'water_change', name: '饮用水更换', selected: false },
+      { id: 'water_bowl_clean', name: '水碗清洁', selected: false }
+    ]
+    this.setData({
+      cleaningTypeList: cleaningTypes
+    })
+  },
+
   // 加载记录数据（编辑模式）
   loadRecordData: async function(recordId) {
     try {
@@ -340,13 +363,20 @@ Page({
         }
         
         // 应用预填多选（若有）覆盖单选回填
-        const { prefillParrotIds, prefillFeedTypeIds } = this.data
+        const { prefillParrotIds, prefillFeedTypeIds, prefillCleaningTypeIds } = this.data
         if (this.data.recordType === 'feeding') {
           if (prefillParrotIds && prefillParrotIds.length) {
             formData.parrot_ids = prefillParrotIds.slice()
           }
           if (prefillFeedTypeIds && prefillFeedTypeIds.length) {
             formData.food_types = prefillFeedTypeIds.slice()
+          }
+        } else if (this.data.recordType === 'cleaning') {
+          if (prefillParrotIds && prefillParrotIds.length) {
+            formData.parrot_ids = prefillParrotIds.slice()
+          }
+          if (prefillCleaningTypeIds && prefillCleaningTypeIds.length) {
+            formData.cleaning_types = prefillCleaningTypeIds.slice()
           }
         }
         
@@ -392,14 +422,52 @@ Page({
           selected: p.id === parseInt(femaleParrotId)
         }))
         
-        // 清洁类型文本
+        // 清洁类型处理（支持多选）
         const cleaningTypeTextMap = {
           cage: '笼子清洁',
           toys: '玩具清洁',
           perches: '栖木清洁',
-          food_water: '食物和水清洁'
+          food_water: '食物和水清洁',
+          disinfection: '消毒',
+          water_change: '饮用水更换',
+          water_bowl_clean: '水碗清洁'
         }
-        const cleaningTypeText = cleaningTypeTextMap[record.cleaning_type] || ''
+        
+        let selectedCleaningTypes = []
+        let selectedCleaningTypeNames = ''
+        let cleaningTypeListSynced = [...this.data.cleaningTypeList]
+        
+        // 应用预填清洁类型（若有）
+        if (this.data.recordType === 'cleaning' && prefillCleaningTypeIds && prefillCleaningTypeIds.length) {
+          selectedCleaningTypes = prefillCleaningTypeIds.slice()
+          selectedCleaningTypeNames = prefillCleaningTypeIds
+            .map(type => cleaningTypeTextMap[type] || '')
+            .filter(name => name)
+            .join('、')
+          cleaningTypeListSynced = cleaningTypeListSynced.map(item => ({
+            ...item,
+            selected: prefillCleaningTypeIds.includes(item.id)
+          }))
+        } else if (record.cleaning_type) {
+          // 兼容旧的单选数据
+          selectedCleaningTypes = [record.cleaning_type]
+          selectedCleaningTypeNames = cleaningTypeTextMap[record.cleaning_type] || ''
+          cleaningTypeListSynced = cleaningTypeListSynced.map(item => ({
+            ...item,
+            selected: item.id === record.cleaning_type
+          }))
+        } else if (record.cleaning_types && Array.isArray(record.cleaning_types)) {
+          // 新的多选数据
+          selectedCleaningTypes = record.cleaning_types
+          selectedCleaningTypeNames = record.cleaning_types
+            .map(type => cleaningTypeTextMap[type] || '')
+            .filter(name => name)
+            .join('、')
+          cleaningTypeListSynced = cleaningTypeListSynced.map(item => ({
+            ...item,
+            selected: record.cleaning_types.includes(item.id)
+          }))
+        }
         
         this.setData({
           formData,
@@ -407,12 +475,14 @@ Page({
           selectedParrotNames,
           selectedFeedTypes,
           selectedFeedTypeNames,
+          selectedCleaningTypes,
+          selectedCleaningTypeNames,
           selectedMaleParrotName,
           selectedFemaleParrotName,
           healthStatusText: healthStatusMap[record.health_status] || '健康',
-          cleaningTypeText,
           parrotList: parrotListSynced,
           feedTypeList: feedTypeListSynced,
+          cleaningTypeList: cleaningTypeListSynced,
           maleParrotList: maleParrotListSynced,
           femaleParrotList: femaleParrotListSynced
         })
@@ -454,7 +524,7 @@ Page({
     let { selectedParrots, parrotList, recordType } = this.data
     
     if (recordType === 'health') {
-      // 健康记录：单选
+      // 健康记录：单选，直接关闭弹窗
       selectedParrots = [{ id, name }]
       parrotList = parrotList.map(p => ({
         ...p,
@@ -469,7 +539,7 @@ Page({
         showParrotModal: false
       })
     } else {
-      // 其他类型：保持多选逻辑
+      // 其他类型：多选逻辑，不自动关闭弹窗
       const index = selectedParrots.findIndex(p => p.id === id)
       if (index >= 0) {
         selectedParrots.splice(index, 1)
@@ -490,13 +560,20 @@ Page({
     }
     this.validateForm()
   },
+
+  // 确认鹦鹉选择
+  confirmParrotSelection: function() {
+    this.setData({
+      showParrotModal: false
+    })
+  },
   
   // 选择食物类型（多选）
   selectFeedType: function(e) {
     const { id, name } = e.currentTarget.dataset
     let { selectedFeedTypes, feedTypeList, formData } = this.data
     
-    // 切换选中状态
+    // 切换选中状态，不自动关闭弹窗
     const index = selectedFeedTypes.findIndex(f => f.id === id)
     if (index >= 0) {
       selectedFeedTypes.splice(index, 1)
@@ -533,6 +610,13 @@ Page({
     this.validateForm()
   },
 
+  // 确认食物类型选择
+  confirmFeedTypeSelection: function() {
+    this.setData({
+      showFeedTypeModal: false
+    })
+  },
+
   // 多食物类型分量输入处理
   onFoodAmountInput: function(e) {
     const idStr = String(e.currentTarget.dataset.id)
@@ -543,21 +627,52 @@ Page({
     this.validateForm()
   },
   
-  // 选择清洁类型（单选）
+  // 选择清洁类型（多选）
   selectCleaningType: function(e) {
     const type = e.currentTarget.dataset.type
-    const cleaningTypeTextMap = {
-      cage: '笼子清洁',
-      toys: '玩具清洁',
-      perches: '栖木清洁',
-      food_water: '食物和水清洁'
+    const cleaningTypeList = this.data.cleaningTypeList
+    const selectedCleaningTypes = [...this.data.selectedCleaningTypes]
+    
+    // 切换选中状态
+    const index = cleaningTypeList.findIndex(item => item.id === type)
+    if (index !== -1) {
+      cleaningTypeList[index].selected = !cleaningTypeList[index].selected
+      
+      if (cleaningTypeList[index].selected) {
+        // 添加到选中列表
+        if (!selectedCleaningTypes.includes(type)) {
+          selectedCleaningTypes.push(type)
+        }
+      } else {
+        // 从选中列表移除
+        const selectedIndex = selectedCleaningTypes.indexOf(type)
+        if (selectedIndex !== -1) {
+          selectedCleaningTypes.splice(selectedIndex, 1)
+        }
+      }
     }
+    
+    // 更新显示的名称
+    const selectedNames = cleaningTypeList
+      .filter(item => item.selected)
+      .map(item => item.name)
+      .join('、')
+    
     this.setData({
-      cleaningTypeText: cleaningTypeTextMap[type] || '',
-      'formData.cleaning_type': type,
+      cleaningTypeList,
+      selectedCleaningTypes,
+      selectedCleaningTypeNames: selectedNames,
+      'formData.cleaning_types': selectedCleaningTypes
+    })
+    
+    this.validateForm()
+  },
+
+  // 确认清洁类型选择
+  confirmCleaningTypeSelection: function() {
+    this.setData({
       showCleaningTypeModal: false
     })
-    this.validateForm()
   },
   
   // 选择健康状态（单选）
@@ -712,7 +827,7 @@ Page({
         break
       }
       case 'cleaning':
-        ok = ok && formData.parrot_ids && formData.parrot_ids.length > 0 && !!formData.cleaning_type
+        ok = ok && formData.parrot_ids && formData.parrot_ids.length > 0 && formData.cleaning_types && formData.cleaning_types.length > 0
         break
       case 'health':
         ok = ok && formData.parrot_ids && formData.parrot_ids.length > 0
@@ -723,6 +838,8 @@ Page({
       default:
         ok = false
     }
+    // 确保ok是布尔值，避免undefined
+    ok = Boolean(ok)
     this.setData({ canSubmit: ok })
   },
   
@@ -805,19 +922,55 @@ Page({
           if (!res.success) throw new Error(res.message || '保存失败')
         }
       } else if (recordType === 'cleaning') {
-        const isEdit = !!recordId
-        const url = isEdit ? `/api/records/${recordId}` : '/api/records'
-        const method = isEdit ? 'PUT' : 'POST'
-        const payload = {
-          ...baseCommon,
-          type: 'cleaning',
-          record_time: timeStr,
-          parrot_ids: formData.parrot_ids,
-          cleaning_type: formData.cleaning_type,
-          description: formData.description
+        if (recordId) {
+          // 编辑模式：检查是否有多个记录ID需要处理
+          const hasBatchIds = Array.isArray(prefillRecordIds) && prefillRecordIds.length > 1
+          
+          if (hasBatchIds) {
+            // 聚合编辑：需要处理多个记录ID的情况
+            // 使用批量更新接口，删除旧记录并创建新记录
+            const url = '/api/records/cleaning/batch-update'
+            const method = 'PUT'
+            const payload = {
+              ...baseCommon,
+              record_ids: prefillRecordIds, // 传递所有相关记录ID
+              record_time: timeStr,
+              parrot_ids: formData.parrot_ids,
+              cleaning_types: formData.cleaning_types || [],
+              description: formData.description
+            }
+            const res = await app.request({ url, method, data: payload })
+            if (!res.success) throw new Error(res.message || '保存失败')
+          } else {
+            // 单条记录编辑
+            const url = `/api/records/${recordId}`
+            const method = 'PUT'
+            const payload = {
+              ...baseCommon,
+              type: 'cleaning',
+              record_time: timeStr,
+              parrot_ids: formData.parrot_ids,
+              cleaning_types: formData.cleaning_types || [],
+              description: formData.description
+            }
+            const res = await app.request({ url, method, data: payload })
+            if (!res.success) throw new Error(res.message || '保存失败')
+          }
+        } else {
+          // 新增模式
+          const url = '/api/records'
+          const method = 'POST'
+          const payload = {
+            ...baseCommon,
+            type: 'cleaning',
+            record_time: timeStr,
+            parrot_ids: formData.parrot_ids,
+            cleaning_types: formData.cleaning_types || [],
+            description: formData.description
+          }
+          const res = await app.request({ url, method, data: payload })
+          if (!res.success) throw new Error(res.message || '保存失败')
         }
-        const res = await app.request({ url, method, data: payload })
-        if (!res.success) throw new Error(res.message || '保存失败')
       } else if (recordType === 'health') {
         const isEdit = !!recordId
         const url = isEdit ? `/api/records/${recordId}` : '/api/records'

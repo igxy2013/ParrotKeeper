@@ -23,7 +23,7 @@ Page({
     // 头像选择相关
     showAvatarModal: false, // 是否显示头像选择弹窗
     avatarOptions: [ // 预设头像选项
-      '/images/default-parrot.svg',
+      '/images/default-avatar.png',
       '/images/parrot-avatar-blue.svg',
       '/images/parrot-avatar-green.svg',
       '/images/parrot-avatar-orange.svg',
@@ -995,7 +995,7 @@ Page({
     }
     this.setData({
       showAvatarModal: true,
-      selectedAvatar: this.data.userInfo.avatar_url || '/images/default-parrot.svg'
+      selectedAvatar: this.data.userInfo.avatar_url || '/images/default-avatar.png'
     });
   },
 

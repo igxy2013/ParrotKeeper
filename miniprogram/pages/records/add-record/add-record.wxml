@@ -139,7 +139,7 @@
         <text class="form-label required">清洁类型</text>
         <view class="form-picker" bindtap="showCleaningTypePicker">
           <text class="picker-text {{formData.cleaning_type ? '' : 'placeholder'}}">
-            {{cleaningTypeText || '请选择清洁类型'}}
+            {{selectedCleaningTypeNames || '请选择清洁类型'}}
           </text>
           <text class="picker-arrow">▼</text>
         </view>
@@ -423,6 +423,9 @@
         </view>
       </view>
     </view>
+    <view class="modal-footer" wx:if="{{recordType !== 'health'}}">
+      <button class="confirm-btn" bindtap="confirmParrotSelection">确定</button>
+    </view>
   </view>
 </view>
 
@@ -436,34 +439,19 @@
     <view class="modal-body">
       <view class="cleaning-type-list">
         <view 
-          class="cleaning-type-item" 
+          class="cleaning-type-item {{item.selected ? 'selected' : ''}}" 
+          wx:for="{{cleaningTypeList}}" 
+          wx:key="id"
+          data-type="{{item.id}}"
           bindtap="selectCleaningType"
-          data-type="cage"
         >
-          <text class="cleaning-type-text">笼子清洁</text>
-        </view>
-        <view 
-          class="cleaning-type-item" 
-          bindtap="selectCleaningType"
-          data-type="toys"
-        >
-          <text class="cleaning-type-text">玩具清洁</text>
-        </view>
-        <view 
-          class="cleaning-type-item" 
-          bindtap="selectCleaningType"
-          data-type="perches"
-        >
-          <text class="cleaning-type-text">栖木清洁</text>
-        </view>
-        <view 
-          class="cleaning-type-item" 
-          bindtap="selectCleaningType"
-          data-type="food_water"
-        >
-          <text class="cleaning-type-text">食物和水清洁</text>
+          <text class="cleaning-type-name">{{item.name}}</text>
+          <text class="cleaning-type-check" wx:if="{{item.selected}}">✓</text>
         </view>
       </view>
+    </view>
+    <view class="modal-footer">
+      <button class="confirm-btn" bindtap="confirmCleaningTypeSelection">确定</button>
     </view>
   </view>
 </view>
@@ -484,11 +472,18 @@
         data-id="{{item.id}}"
         data-name="{{item.name}}"
       >
-        <text class="feed-type-name">{{item.name}}</text>
-        <text class="feed-type-brand">{{item.brand}}</text>
-        <text class="feed-type-type">{{item.typeText}}</text>
+        <view class="feed-type-info">
+          <text class="feed-type-name">{{item.name}}</text>
+          <view class="feed-type-details">
+            <text class="feed-type-brand">{{item.brand}}</text>
+            <text class="feed-type-type">{{item.typeText}}</text>
+          </view>
+        </view>
         <view class="selection-indicator" wx:if="{{item.selected}}">✓</view>
       </view>
+    </view>
+    <view class="modal-footer">
+      <button class="confirm-btn" bindtap="confirmFeedTypeSelection">确定</button>
     </view>
   </view>
 </view>

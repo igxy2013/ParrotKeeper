@@ -6,7 +6,7 @@
       <view class="avatar-container" bindtap="toggleAvatarEdit" wx:if="{{isEditingNickname}}">
         <image 
           class="avatar-image editable" 
-          src="{{userInfo.avatar_url || '/images/default-parrot.svg'}}" 
+          src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
           mode="aspectFill"
         />
         <view class="avatar-edit-overlay">
@@ -15,7 +15,7 @@
       </view>
       <image 
         class="avatar-image" 
-        src="{{userInfo.avatar_url || '/images/default-parrot.svg'}}" 
+        src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
         mode="aspectFill"
         wx:else
       />

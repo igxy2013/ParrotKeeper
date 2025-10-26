@@ -344,6 +344,32 @@
   overflow-y: auto;
 }
 
+/* 模态框底部 */
+.modal-footer {
+  padding: 20rpx 30rpx;
+  border-top: 1rpx solid #f0f0f0;
+  background: #fafafa;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.confirm-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  padding: 16rpx 32rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  min-width: 120rpx;
+  transition: all 0.3s ease;
+}
+
+.confirm-btn:active {
+  background: #45a049;
+  transform: scale(0.98);
+}
+
 /* 鹦鹉列表 */
 .parrot-list {
   padding: 15rpx 0;
@@ -676,10 +702,12 @@
 /* 食物类型选择器样式 */
 .feed-type-item {
   display: flex;
-  flex-direction: column;
-  padding: 30rpx;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #f0f0f0;
   transition: background-color 0.3s;
+  position: relative;
 }
 
 .feed-type-item:last-child {
@@ -690,26 +718,47 @@
   background-color: #f5f5f5;
 }
 
+.feed-type-item.selected {
+  background-color: #e8f4fd;
+}
+
+.feed-type-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 4rpx;
+}
+
 .feed-type-name {
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 10rpx;
+  line-height: 1.2;
+}
+
+.feed-type-details {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
 }
 
 .feed-type-brand {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #666;
-  margin-bottom: 5rpx;
 }
 
 .feed-type-type {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #999;
-  padding: 4rpx 12rpx;
+  padding: 2rpx 8rpx;
   background: #f0f0f0;
-  border-radius: 12rpx;
-  align-self: flex-start;
+  border-radius: 8rpx;
+}
+
+.selection-indicator {
+  font-size: 32rpx;
+  color: #007aff;
+  font-weight: bold;
 }
 
 /* 清洁类型选择器样式 */
@@ -720,6 +769,7 @@
 .cleaning-type-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 30rpx;
   border-bottom: 1rpx solid #f0f0f0;
   transition: background-color 0.3s;
@@ -733,8 +783,18 @@
   background-color: #f5f5f5;
 }
 
-.cleaning-type-text {
+.cleaning-type-item.selected {
+  background-color: #e8f4fd;
+}
+
+.cleaning-type-name {
   font-size: 30rpx;
   color: #333;
   font-weight: 500;
+}
+
+.cleaning-type-check {
+  font-size: 32rpx;
+  color: #007aff;
+  font-weight: bold;
 }
