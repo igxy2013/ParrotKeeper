@@ -18,7 +18,7 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-
+git pull
 :: Check if virtual environment exists
 if not exist "venv" (
     echo [INFO] Virtual environment not found, creating...
