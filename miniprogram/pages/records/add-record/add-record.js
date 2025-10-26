@@ -269,6 +269,20 @@ Page({
           feedTypeId = record.feed_type_id
         }
         
+        // 处理繁殖记录的雄性和雌性鹦鹉信息
+        let maleParrotId = ''
+        let femaleParrotId = ''
+        if (record.male_parrot) {
+          maleParrotId = record.male_parrot.id
+        } else if (record.male_parrot_id) {
+          maleParrotId = record.male_parrot_id
+        }
+        if (record.female_parrot) {
+          femaleParrotId = record.female_parrot.id
+        } else if (record.female_parrot_id) {
+          femaleParrotId = record.female_parrot_id
+        }
+        
         // 获取健康状态文本
         const healthStatusMap = {
           'healthy': '健康',
@@ -287,14 +301,14 @@ Page({
         
         // 根据记录类型设置表单数据
         let formData = {
-          parrot_ids: parrotId ? [parrotId] : [],
+          parrot_ids: parrotId ? [parseInt(parrotId)] : [],
           record_date: dateStr,
           record_time: timeStr,
           notes: record.notes || '',
           photos: record.photos ? JSON.parse(record.photos) : [],
           
           // 喂食记录字段（编辑旧数据时按单选回填到多选数组）
-          food_types: feedTypeId ? [feedTypeId] : [],
+          food_types: feedTypeId ? [parseInt(feedTypeId)] : [],
           amount: record.amount ? String(record.amount) : '',
           
           // 健康检查字段
@@ -307,14 +321,22 @@ Page({
           description: record.description || '',
           
           // 繁殖记录字段
-          male_parrot_id: record.male_parrot_id ? String(record.male_parrot_id) : '',
-          female_parrot_id: record.female_parrot_id ? String(record.female_parrot_id) : '',
+          male_parrot_id: maleParrotId ? String(maleParrotId) : '',
+          female_parrot_id: femaleParrotId ? String(femaleParrotId) : '',
           mating_date: record.mating_date || '',
           egg_laying_date: record.egg_laying_date || '',
           egg_count: record.egg_count ? String(record.egg_count) : '',
           hatching_date: record.hatching_date || '',
           chick_count: record.chick_count ? String(record.chick_count) : '',
           success_rate: record.success_rate ? String(record.success_rate) : ''
+        }
+        
+        // 如果是繁殖记录，基础信息的鹦鹉选择器预填为雄雌鹦鹉
+        if (this.data.recordType === 'breeding') {
+          const breedingParrotIds = [maleParrotId, femaleParrotId]
+            .map(id => parseInt(id))
+            .filter(id => !isNaN(id))
+          formData.parrot_ids = breedingParrotIds
         }
         
         // 应用预填多选（若有）覆盖单选回填
@@ -347,16 +369,35 @@ Page({
         // 查找雄性和雌性鹦鹉名称（繁殖记录）
         let selectedMaleParrotName = ''
         let selectedFemaleParrotName = ''
-        const maleParrot = this.data.maleParrotList.find(p => p.id === record.male_parrot_id)
-        const femaleParrot = this.data.femaleParrotList.find(p => p.id === record.female_parrot_id)
-        if (maleParrot) selectedMaleParrotName = maleParrot.name
-        if (femaleParrot) selectedFemaleParrotName = femaleParrot.name
+        if (record.male_parrot) {
+          selectedMaleParrotName = record.male_parrot.name
+        } else if (maleParrotId) {
+          const maleParrot = this.data.maleParrotList.find(p => p.id === parseInt(maleParrotId))
+          if (maleParrot) selectedMaleParrotName = maleParrot.name
+        }
+        if (record.female_parrot) {
+          selectedFemaleParrotName = record.female_parrot.name
+        } else if (femaleParrotId) {
+          const femaleParrot = this.data.femaleParrotList.find(p => p.id === parseInt(femaleParrotId))
+          if (femaleParrot) selectedFemaleParrotName = femaleParrot.name
+        }
+        
+        // 同步雄性和雌性鹦鹉列表的选中状态
+        const maleParrotListSynced = this.data.maleParrotList.map(p => ({
+          ...p,
+          selected: p.id === parseInt(maleParrotId)
+        }))
+        const femaleParrotListSynced = this.data.femaleParrotList.map(p => ({
+          ...p,
+          selected: p.id === parseInt(femaleParrotId)
+        }))
         
         // 清洁类型文本
         const cleaningTypeTextMap = {
-          cage: '鸟笼清洁',
-          bath: '洗澡',
-          environment: '环境清洁'
+          cage: '笼子清洁',
+          toys: '玩具清洁',
+          perches: '栖木清洁',
+          food_water: '食物和水清洁'
         }
         const cleaningTypeText = cleaningTypeTextMap[record.cleaning_type] || ''
         
@@ -371,7 +412,9 @@ Page({
           healthStatusText: healthStatusMap[record.health_status] || '健康',
           cleaningTypeText,
           parrotList: parrotListSynced,
-          feedTypeList: feedTypeListSynced
+          feedTypeList: feedTypeListSynced,
+          maleParrotList: maleParrotListSynced,
+          femaleParrotList: femaleParrotListSynced
         })
         
         this.validateForm()
@@ -491,13 +534,15 @@ Page({
   selectCleaningType: function(e) {
     const type = e.currentTarget.dataset.type
     const cleaningTypeTextMap = {
-      cage: '鸟笼清洁',
-      bath: '洗澡',
-      environment: '环境清洁'
+      cage: '笼子清洁',
+      toys: '玩具清洁',
+      perches: '栖木清洁',
+      food_water: '食物和水清洁'
     }
     this.setData({
       cleaningTypeText: cleaningTypeTextMap[type] || '',
-      'formData.cleaning_type': type
+      'formData.cleaning_type': type,
+      showCleaningTypeModal: false
     })
     this.validateForm()
   },
@@ -513,7 +558,8 @@ Page({
     }
     this.setData({
       healthStatusText: healthStatusMap[status] || '健康',
-      'formData.health_status': status
+      'formData.health_status': status,
+      showHealthStatusModal: false
     })
     this.validateForm()
   },
@@ -524,7 +570,8 @@ Page({
     const parrot = this.data.maleParrotList.find(p => p.id === id)
     this.setData({
       selectedMaleParrotName: parrot ? parrot.name : '',
-      'formData.male_parrot_id': id
+      'formData.male_parrot_id': id,
+      showMaleParrotModal: false
     })
     this.hideMaleParrotPicker()
     this.validateForm()
@@ -535,7 +582,8 @@ Page({
     const parrot = this.data.femaleParrotList.find(p => p.id === id)
     this.setData({
       selectedFemaleParrotName: parrot ? parrot.name : '',
-      'formData.female_parrot_id': id
+      'formData.female_parrot_id': id,
+      showFemaleParrotModal: false
     })
     this.hideFemaleParrotPicker()
     this.validateForm()
@@ -547,6 +595,46 @@ Page({
     const value = e.detail.value
     this.setData({
       [`formData.${field}`]: value
+    })
+    this.validateForm()
+  },
+
+  // 日期选择器变更
+  onDateChange: function(e) {
+    this.setData({
+      'formData.record_date': e.detail.value
+    })
+    this.validateForm()
+  },
+
+  // 时间选择器变更
+  onTimeChange: function(e) {
+    this.setData({
+      'formData.record_time': e.detail.value
+    })
+    this.validateForm()
+  },
+
+  // 交配日期选择器变更
+  onMatingDateChange: function(e) {
+    this.setData({
+      'formData.mating_date': e.detail.value
+    })
+    this.validateForm()
+  },
+
+  // 产蛋日期选择器变更
+  onEggLayingDateChange: function(e) {
+    this.setData({
+      'formData.egg_laying_date': e.detail.value
+    })
+    this.validateForm()
+  },
+
+  // 孵化日期选择器变更
+  onHatchingDateChange: function(e) {
+    this.setData({
+      'formData.hatching_date': e.detail.value
     })
     this.validateForm()
   },

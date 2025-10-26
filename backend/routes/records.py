@@ -377,7 +377,14 @@ def update_breeding_record_internal(record_id, data):
             except ValueError:
                 return error_response('产蛋日期格式错误')
     if 'egg_count' in data:
-        record.egg_count = data['egg_count']
+        egg_count = data['egg_count']
+        if egg_count == '' or egg_count is None:
+            record.egg_count = 0
+        else:
+            try:
+                record.egg_count = int(egg_count)
+            except (ValueError, TypeError):
+                record.egg_count = 0
     if 'hatching_date' in data:
         if data['hatching_date']:
             try:
@@ -385,9 +392,23 @@ def update_breeding_record_internal(record_id, data):
             except ValueError:
                 return error_response('孵化日期格式错误')
     if 'chick_count' in data:
-        record.chick_count = data['chick_count']
+        chick_count = data['chick_count']
+        if chick_count == '' or chick_count is None:
+            record.chick_count = 0
+        else:
+            try:
+                record.chick_count = int(chick_count)
+            except (ValueError, TypeError):
+                record.chick_count = 0
     if 'success_rate' in data:
-        record.success_rate = data['success_rate']
+        success_rate = data['success_rate']
+        if success_rate == '' or success_rate is None:
+            record.success_rate = None
+        else:
+            try:
+                record.success_rate = float(success_rate)
+            except (ValueError, TypeError):
+                record.success_rate = None
     if 'notes' in data:
         record.notes = data['notes']
     
@@ -1033,16 +1054,44 @@ def add_breeding_record_internal(data):
         if not female_parrot:
             return error_response('雌性鹦鹉不存在')
         
+        # 处理数值字段，将空字符串转换为适当的默认值
+        egg_count = data.get('egg_count')
+        if egg_count == '' or egg_count is None:
+            egg_count = 0
+        else:
+            try:
+                egg_count = int(egg_count)
+            except (ValueError, TypeError):
+                egg_count = 0
+        
+        chick_count = data.get('chick_count')
+        if chick_count == '' or chick_count is None:
+            chick_count = 0
+        else:
+            try:
+                chick_count = int(chick_count)
+            except (ValueError, TypeError):
+                chick_count = 0
+        
+        success_rate = data.get('success_rate')
+        if success_rate == '' or success_rate is None:
+            success_rate = None
+        else:
+            try:
+                success_rate = float(success_rate)
+            except (ValueError, TypeError):
+                success_rate = None
+        
         # 创建繁殖记录
         breeding_record = BreedingRecord(
             male_parrot_id=male_parrot_id,
             female_parrot_id=female_parrot_id,
             mating_date=datetime.strptime(data.get('mating_date'), '%Y-%m-%d').date() if data.get('mating_date') else None,
             egg_laying_date=datetime.strptime(data.get('egg_laying_date'), '%Y-%m-%d').date() if data.get('egg_laying_date') else None,
-            egg_count=data.get('egg_count', 0),
+            egg_count=egg_count,
             hatching_date=datetime.strptime(data.get('hatching_date'), '%Y-%m-%d').date() if data.get('hatching_date') else None,
-            chick_count=data.get('chick_count', 0),
-            success_rate=data.get('success_rate'),
+            chick_count=chick_count,
+            success_rate=success_rate,
             notes=data.get('notes', ''),
             created_by_user_id=user.id,  # 记录创建者
             team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识

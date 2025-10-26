@@ -217,21 +217,23 @@ Page({
           type: 'cleaning',
           time: app.formatDate(time),
           parrot_names: [],
-          cleaning_type: record.cleaning_type || ''
+          cleaning_type: record.cleaning_type || '',
+          cleaning_type_text: record.cleaning_type_text || record.cleaning_type || ''
         }
       }
       const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
       if (parrotName && !grouped[key].parrot_names.includes(parrotName)) {
         grouped[key].parrot_names.push(parrotName)
       }
-      // 如果同一组记录的清洁类型不同，合并为“综合清洁”
+      // 如果同一组记录的清洁类型不同，合并为"综合清洁"
       if (grouped[key].cleaning_type && record.cleaning_type && grouped[key].cleaning_type !== record.cleaning_type) {
         grouped[key].cleaning_type = '综合'
+        grouped[key].cleaning_type_text = '综合'
       }
     })
     const result = Object.values(grouped).map(item => ({
       id: item.id,
-      title: `${item.cleaning_type || ''}清洁`,
+      title: item.cleaning_type_text || `${item.cleaning_type || ''}清洁`,
       type: 'cleaning',
       parrot_name: item.parrot_names.join('、'),
       time: item.time

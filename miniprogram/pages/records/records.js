@@ -209,8 +209,8 @@ Page({
         return records.map(r => ({
           ...r,
           feeding_time_formatted: r.feeding_time ? app.formatDateTime(r.feeding_time) : '',
-          check_date_formatted: r.check_date ? app.formatDateTime(r.check_date) : '',
-          cleaning_date_formatted: r.cleaning_date ? app.formatDateTime(r.cleaning_date) : '',
+          record_date_formatted: r.record_date ? app.formatDateTime(r.record_date) : '',
+          cleaning_time_formatted: r.cleaning_time ? app.formatDateTime(r.cleaning_time) : '',
           mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
           egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
           hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
@@ -366,6 +366,10 @@ Page({
 
   // 添加繁殖记录
   addBreedingRecord() {
+    // 确保切换到繁殖记录标签页
+    this.setData({
+      activeTab: 'breeding'
+    })
     wx.navigateTo({
       url: '/pages/records/add-record/add-record?type=breeding'
     })

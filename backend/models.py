@@ -105,6 +105,7 @@ class HealthRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'), nullable=False)
     record_type = db.Column(db.Enum('checkup', 'illness', 'treatment', 'vaccination', 'weight'))
+    health_status = db.Column(db.Enum('healthy', 'sick', 'recovering', 'observation'), default='healthy')
     description = db.Column(db.Text)
     weight = db.Column(db.Numeric(5, 2))
     temperature = db.Column(db.Numeric(4, 1))

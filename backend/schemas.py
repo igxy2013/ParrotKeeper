@@ -71,12 +71,23 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
     created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
+    health_status_text = fields.Method('get_health_status_text', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
     
     def get_created_by_username(self, obj):
         return obj.created_by.username if obj.created_by else None
+    
+    def get_health_status_text(self, obj):
+        """将英文健康状态转换为中文显示"""
+        status_map = {
+            'healthy': '健康',
+            'sick': '生病',
+            'recovering': '康复中',
+            'observation': '观察中'
+        }
+        return status_map.get(obj.health_status, obj.health_status)
 
 class CleaningRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -88,12 +99,23 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
     created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
+    cleaning_type_text = fields.Method('get_cleaning_type_text', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
     
     def get_created_by_username(self, obj):
         return obj.created_by.username if obj.created_by else None
+    
+    def get_cleaning_type_text(self, obj):
+        """将英文清洁类型转换为中文显示"""
+        cleaning_type_map = {
+            'cage': '笼子清洁',
+            'toys': '玩具清洁', 
+            'perches': '栖木清洁',
+            'food_water': '食物和水清洁'
+        }
+        return cleaning_type_map.get(obj.cleaning_type, obj.cleaning_type)
 
 class BreedingRecordSchema(SQLAlchemyAutoSchema):
     class Meta:

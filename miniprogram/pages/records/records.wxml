@@ -89,7 +89,7 @@
         <view class="record-header">
           <view class="record-info">
             <text class="record-title">{{item.parrot_name}}</text>
-            <text class="record-time">{{item.check_date_formatted}}</text>
+            <text class="record-time">{{item.record_date_formatted}}</text>
             <!-- 团队模式下显示创建者 -->
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
@@ -139,7 +139,7 @@
         <view class="record-header">
           <view class="record-info">
             <text class="record-title">{{item.parrot_name}}</text>
-            <text class="record-time">{{item.cleaning_date_formatted}}</text>
+            <text class="record-time">{{item.cleaning_time_formatted}}</text>
             <!-- 团队模式下显示创建者 -->
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
