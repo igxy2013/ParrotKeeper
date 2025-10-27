@@ -1,0 +1,69 @@
+/* pages/settings/settings.wxss */
+.page-container { min-height: 100vh; background: linear-gradient(180deg, #f8f9ff, #eef2ff); }
+.page-content { padding: 20rpx; }
+
+.section-title { display: flex; align-items: center; gap: 12rpx; font-weight: 600; color: #111827; font-size: 28rpx; margin: 16rpx 8rpx 20rpx; }
+.title-icon { font-size: 30rpx; }
+
+.settings-actions { display: flex; flex-direction: column; gap: 12rpx; }
+.setting-action-item { display: flex; align-items: center; padding: 20rpx; background: #ffffff; border: 1rpx solid #eef2f7; border-radius: 24rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.05); transition: all 0.3s ease; }
+.setting-action-item:active { background: #fafafa; transform: scale(0.98); }
+.setting-action-item.logout-item { background: rgba(239, 68, 68, 0.06); border: 1rpx solid rgba(239, 68, 68, 0.18); }
+.setting-action-item.logout-item:active { background: rgba(239, 68, 68, 0.12); }
+.setting-icon-wrapper { width: 56rpx; height: 56rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 16rpx; flex-shrink: 0; background: #f3f4f6; }
+.setting-icon { font-size: 28rpx; }
+.setting-content { flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
+.setting-name { font-weight: 600; color: #1f2937; }
+.setting-desc { color: #6b7280; font-size: 24rpx; }
+.setting-arrow { font-size: 24rpx; color: #9ca3af; margin-left: auto; }
+.logout-item .setting-name { color: #ef4444; }
+.logout-item .setting-desc { color: #ef7a7a; }
+
+/* 主题适配（简版） */
+.page-container.theme-dark { background: linear-gradient(180deg, #0f172a, #111827); }
+.page-container.theme-dark .section-title { color: #e5e7eb; }
+.page-container.theme-dark .setting-action-item { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+.page-container.theme-dark .setting-action-item:active { background: rgba(255,255,255,0.1); }
+.page-container.theme-dark .setting-icon-wrapper { background: rgba(255,255,255,0.08); }
+.page-container.theme-dark .setting-name { color: #e5e7eb; }
+.page-container.theme-dark .setting-desc { color: #9ca3af; }
+.page-container.theme-dark .setting-arrow { color: #9ca3af; }
+
+/* 头部保存按钮（对齐参考APP） */
+.header-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  padding: 0 24rpx;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.22);
+  box-shadow: none; /* 去除悬浮阴影效果 */
+  backdrop-filter: none; /* 去除玻璃态悬浮效果 */
+}
+.header-save-btn:active { background: rgba(255,255,255,0.28); }
+.page-container.theme-dark .header-save-btn { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.16); }
+
+/* 右对齐系统控件 */
+.setting-action-item switch { margin-left: auto; transform: scale(0.96); }
+
+/* 语言切换底部弹窗 */
+.lang-sheet-overlay { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 2000; }
+.lang-sheet-mask { position: absolute; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(2rpx); }
+.lang-sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-top-left-radius: 28rpx; border-top-right-radius: 28rpx; box-shadow: 0 -12rpx 24rpx rgba(0,0,0,0.12); padding: 20rpx; }
+.lang-sheet-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10rpx; }
+.lang-sheet-title { font-size: 30rpx; font-weight: 700; color: #111827; }
+.lang-sheet-close { font-size: 26rpx; color: #6b7280; }
+.lang-options { display: flex; flex-direction: column; gap: 12rpx; }
+.lang-option { display: flex; align-items: center; padding: 20rpx; border-radius: 20rpx; border: 1rpx solid #e5e7eb; }
+.lang-name { font-size: 28rpx; color: #1f2937; font-weight: 600; }
+.lang-check { margin-left: auto; font-size: 28rpx; color: #10b981; font-weight: 700; }
+.page-container.theme-dark .lang-sheet { background: #111827; box-shadow: 0 -12rpx 24rpx rgba(0,0,0,0.5); }
+.page-container.theme-dark .lang-sheet-title { color: #e5e7eb; }
+.page-container.theme-dark .lang-sheet-close { color: #9ca3af; }
+.page-container.theme-dark .lang-option { border-color: rgba(255,255,255,0.14); }
+.page-container.theme-dark .lang-name { color: #e5e7eb; }
+.page-container.theme-dark .lang-check { color: #34d399; }

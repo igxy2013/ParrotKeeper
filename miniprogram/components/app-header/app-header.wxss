@@ -1,0 +1,58 @@
+.ah-app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  padding: 16rpx 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.25);
+}
+
+.ah-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ah-header-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.ah-back-btn {
+  width: 72rpx;
+  height: 72rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12rpx);
+}
+
+.ah-back-icon {
+  font-size: 36rpx;
+  color: #ffffff;
+}
+
+.ah-app-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ah-app-title {
+  color: #ffffff;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.ah-app-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 24rpx;
+}
+
+.ah-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}

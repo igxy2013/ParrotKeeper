@@ -9,12 +9,37 @@ Page({
     overview: {},
     recentRecords: [],
     healthAlerts: [],
-    weather: null
+    weather: null,
+    menuRightPadding: 0,
+    // 新增：我的鹦鹉（首页展示最多三只）
+    myParrots: [],
+    // 新增：通知中心
+    showNotifications: false,
+    notifications: [],
+    unreadCount: 0
   },
 
   onLoad() {
     this.setGreeting()
     this.checkLoginStatus()
+    this.computeMenuRightPadding()
+    // 初始化通知
+    this.initNotifications()
+  },
+
+  // 计算右上角胶囊菜单到屏幕右侧的总内边距，便于自定义导航栏布局
+  computeMenuRightPadding() {
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : {}
+      const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+      if (win && rect && typeof win.windowWidth === 'number') {
+        const rightGap = win.windowWidth - rect.right
+        const menuRightPadding = rightGap + rect.width + 8
+        this.setData({ menuRightPadding })
+      }
+    } catch (e) {
+      this.setData({ menuRightPadding: 0 })
+    }
   },
 
   onShow() {
@@ -83,7 +108,8 @@ Page({
       await Promise.all([
         this.loadOverview(),
         this.loadRecentRecords(),
-        this.loadHealthAlerts()
+        this.loadHealthAlerts(),
+        this.loadMyParrots() // 新增：加载我的鹦鹉（最多三只）
       ])
     } catch (error) {
       console.error('加载数据失败:', error)
@@ -105,6 +131,34 @@ Page({
       }
     } catch (error) {
       console.error('加载概览数据失败:', error)
+    }
+  },
+
+  // 新增：加载首页-我的鹦鹉（最多三只）
+  async loadMyParrots() {
+    try {
+      const res = await app.request({
+        url: '/api/parrots',
+        method: 'GET',
+        data: { page: 1, limit: 3, sort_by: 'created_desc' }
+      })
+      if (res.success) {
+        const parrots = (res.data.parrots || []).map(p => ({
+          ...p,
+          species_name: p.species && p.species.name ? p.species.name : (p.species_name || ''),
+          health_text: ({
+            healthy: '健康',
+            sick: '生病',
+            recovering: '康复中',
+            observation: '观察中',
+            excellent: '优秀'
+          })[p.health_status] || '健康',
+          photo_url: p.photo_url || '/images/default-parrot.svg'
+        }))
+        this.setData({ myParrots: parrots.slice(0, 3) })
+      }
+    } catch (error) {
+      console.error('加载我的鹦鹉失败:', error)
     }
   },
 
@@ -382,7 +436,34 @@ Page({
     })
   },
 
+  // 新增：从首页卡片打开鹦鹉详情
+  openParrotDetail(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id) return
+    wx.navigateTo({
+      url: `/pages/parrots/detail/detail?id=${id}`
+    })
+  },
+
+  // 新增：卡片图片加载错误时替换为占位图
+  handleIndexParrotImageError(e) {
+    const id = e.currentTarget.dataset.id
+    const parrots = (this.data.myParrots || []).map(p => {
+      if (p.id === id) {
+        return { ...p, photo_url: '/images/default-parrot.svg' }
+      }
+      return p
+    })
+    this.setData({ myParrots: parrots })
+  },
+
   // 导航到记录页面
+  navigateToStatistics() {
+    wx.switchTab({
+      url: '/pages/statistics/statistics'
+    })
+  },
+
   navigateToRecords() {
     console.log('navigateToRecords 被调用')
     console.log('当前登录状态:', this.data.isLogin)
@@ -481,19 +562,60 @@ Page({
     }
     
     wx.navigateTo({
-      url: '/pages/expenses/add-expense/add-expense'
+      url: '/pages/records/add-record/add-record?type=expense'
     })
   },
 
-  // 管理支出
+  // 进入用品购买页
   goToExpenseManagement() {
     if (!this.data.isLogin) {
       app.showError('请先登录后使用此功能')
       return
     }
-    
+
     wx.navigateTo({
       url: '/pages/expenses/expenses'
     })
+  },
+
+  // 通知中心：初始化与交互
+  initNotifications() {
+    const notifications = [
+      { id: 1, type: 'health', title: '小彩体检提醒', description: '今天 14:00 到期', time: '今天 14:00', unread: true },
+      { id: 2, type: 'feeding', title: '喂食提醒', description: '上午 9:00 喂食', time: '上午 9:00', unread: true },
+      { id: 3, type: 'system', title: '欢迎使用鹦鹉管家', description: '新手指引已更新', time: '昨天', unread: false }
+    ]
+    const unreadCount = notifications.filter(n => n.unread).length
+    this.setData({ notifications, unreadCount })
+  },
+
+  openNotifications() {
+    this.setData({ showNotifications: true })
+  },
+
+  closeNotifications() {
+    this.setData({ showNotifications: false })
+  },
+
+  markAllNotificationsRead() {
+    const notifications = (this.data.notifications || []).map(n => ({ ...n, unread: false }))
+    this.setData({ notifications, unreadCount: 0 })
+  },
+
+  clearAllNotifications() {
+    this.setData({ notifications: [], unreadCount: 0 })
+  },
+
+  handleNotificationTap(e) {
+    const { id } = e.detail || {}
+    const notifications = (this.data.notifications || []).map(n => {
+      if (n.id === id) return { ...n, unread: false }
+      return n
+    })
+    const unreadCount = notifications.filter(n => n.unread).length
+    this.setData({ notifications, unreadCount })
   }
 })
+
+
+

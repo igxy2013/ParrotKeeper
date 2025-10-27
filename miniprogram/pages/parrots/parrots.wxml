@@ -1,8 +1,41 @@
 <!--pages/parrots/parrots.wxml-->
 <view class="page-container">
+  <!-- 顶部导航统一为组件 -->
+  <app-header title="我的鹦鹉" subtitle="管理您的鹦鹉宝贝们">
+    <view slot="actions" class="header-btn" bindtap="addParrot">
+      <text class="header-btn-icon">+</text>
+    </view>
+  </app-header>
+
+  <!-- 统计概览卡片 -->
+  <view class="stats-overview-card">
+    <view class="background-circles">
+      <view class="bg-circle bg-circle-1"></view>
+      <view class="bg-circle bg-circle-2"></view>
+    </view>
+    <view class="stats-content">
+      <text class="stats-title">鹦鹉总览</text>
+      <view class="stats-grid-overview">
+        <view class="stat-overview-item">
+          <text class="stat-overview-value">{{parrots.length}}</text>
+          <text class="stat-overview-label">总数量</text>
+        </view>
+        <view class="stat-overview-item">
+          <text class="stat-overview-value">{{healthyCount}}</text>
+          <text class="stat-overview-label">健康状态</text>
+        </view>
+        <view class="stat-overview-item">
+          <text class="stat-overview-value">{{activeCount}}</text>
+          <text class="stat-overview-label">活跃状态</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 搜索和筛选 -->
-  <view class="search-section">
+  <view class="search-filter-card">
     <view class="search-bar">
+      <text class="search-icon">🔍</text>
       <input 
         class="search-input" 
         placeholder="搜索鹦鹉名称、编号或脚环号..." 
@@ -10,21 +43,18 @@
         bindinput="onSearchInput"
         bindconfirm="onSearch"
       />
-      <view class="search-btn" bindtap="onSearch">
-        <text class="icon">🔍</text>
-      </view>
     </view>
     
     <view class="filter-bar">
-      <view class="filter-item" bindtap="showSpeciesFilter">
-        <text class="filter-text">{{selectedSpecies ? selectedSpecies : '品种'}}</text>
+      <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}" bindtap="showSpeciesFilter">
+        <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
         <text class="filter-arrow">▼</text>
       </view>
-      <view class="filter-item" bindtap="showStatusFilter">
-        <text class="filter-text">{{selectedStatus ? selectedStatus : '状态'}}</text>
+      <view class="filter-item {{selectedStatus ? 'active' : ''}}" bindtap="showStatusFilter">
+        <text class="filter-text">{{selectedStatus ? selectedStatusText : '状态'}}</text>
         <text class="filter-arrow">▼</text>
       </view>
-      <view class="filter-item" bindtap="showSortFilter">
+      <view class="filter-item {{sortText !== '默认排序' ? 'active' : ''}}" bindtap="showSortFilter">
         <text class="filter-text">{{sortText}}</text>
         <text class="filter-arrow">▼</text>
       </view>
@@ -35,7 +65,7 @@
   <view class="parrot-list" wx:if="{{parrots.length > 0}}">
     <view class="parrot-card" wx:for="{{parrots}}" wx:key="id" bindtap="viewParrotDetail" data-id="{{item.id}}">
       <view class="parrot-main">
-        <!-- 鹦鹉头像和状态 -->
+        <!-- 鹦鹉头像 -->
         <view class="parrot-avatar">
           <image 
             class="parrot-image" 
@@ -44,67 +74,60 @@
             binderror="handleImageError"
             data-id="{{item.id}}"
           />
-          <view class="status-badge status-{{item.health_status}}">
-            <text wx:if="{{item.health_status === 'healthy'}}">✓</text>
-            <text wx:elif="{{item.health_status === 'sick'}}">!</text>
-            <text wx:elif="{{item.health_status === 'recovering'}}">↗</text>
-            <text wx:else="{{item.health_status === 'observation'}}">👁</text>
-          </view>
         </view>
         
         <!-- 基本信息 -->
         <view class="parrot-info">
-          <view class="name-section">
+          <view class="parrot-header">
             <text class="parrot-name">{{item.name}}</text>
-            <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
-          </view>
-          <text class="parrot-species">{{item.species_name}}</text>
-          <view class="info-tags">
-            <text class="info-tag">{{item.age_days}}天</text>
-            <text class="info-tag" wx:if="{{item.weight}}">{{item.weight}}g</text>
-            <text class="info-tag status-tag status-{{item.health_status}}">
+            <view class="health-badge health-{{item.health_status}}">
               <text wx:if="{{item.health_status === 'healthy'}}">健康</text>
               <text wx:elif="{{item.health_status === 'sick'}}">生病</text>
               <text wx:elif="{{item.health_status === 'recovering'}}">康复中</text>
               <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
-            </text>
+            </view>
+          </view>
+          <text class="parrot-species">{{item.species_name}} • {{item.age_days}}天 • {{item.weight}}g</text>
+          <view class="parrot-status">
+            <view class="status-item">
+              <text class="status-icon">🍽️</text>
+              <text class="status-text">{{item.last_feed || '2小时前'}}</text>
+            </view>
+            <view class="mood-badge mood-{{item.mood || 'active'}}">
+              <text wx:if="{{item.mood === 'active' || !item.mood}}">活跃</text>
+              <text wx:elif="{{item.mood === 'quiet'}}">安静</text>
+              <text wx:elif="{{item.mood === 'excited'}}">兴奋</text>
+              <text wx:else="{{item.mood === 'curious'}}">好奇</text>
+            </view>
           </view>
         </view>
         
-        <!-- 操作按钮 -->
-        <view class="parrot-actions">
-          <view class="action-btn edit" bindtap="editParrot" data-id="{{item.id}}">
-            <text class="action-icon">✏️</text>
-          </view>
+        <!-- 箭头图标 -->
+        <view class="parrot-arrow">
+          <text class="arrow-icon">→</text>
         </view>
-      </view>
-      
-      <!-- 备注信息（如果有） -->
-      <view class="parrot-notes" wx:if="{{item.notes}}">
-        <text class="notes-text">{{item.notes}}</text>
       </view>
     </view>
   </view>
 
   <!-- 空状态 -->
-  <view class="empty-state" wx:if="{{parrots.length === 0 && !loading}}">
-    <view class="empty-icon">🦜</view>
-    <view class="empty-text" wx:if="{{isLogin}}">还没有鹦鹉记录</view>
-    <view class="empty-text" wx:else>游客模式</view>
-    <view class="empty-subtitle" wx:if="{{isLogin}}">点击下方按钮添加您的第一只鹦鹉</view>
-    <view class="empty-subtitle" wx:else>登录后可以管理您的鹦鹉档案</view>
-    <button class="btn btn-primary btn-large mt-30" wx:if="{{isLogin}}" bindtap="addParrot">添加鹦鹉</button>
+  <view class="empty-state-card" wx:if="{{parrots.length === 0 && !loading}}">
+    <view class="empty-content">
+      <view class="empty-icon">🦜</view>
+      <text class="empty-title" wx:if="{{isLogin}}">还没有鹦鹉记录</text>
+      <text class="empty-title" wx:else>游客模式</text>
+      <text class="empty-subtitle" wx:if="{{isLogin}}">点击下方按钮添加您的第一只鹦鹉</text>
+      <text class="empty-subtitle" wx:else>登录后可以管理您的鹦鹉档案</text>
+      <view class="empty-btn" wx:if="{{isLogin}}" bindtap="addParrot">
+        <text class="empty-btn-text">添加鹦鹉</text>
+      </view>
+    </view>
   </view>
 
   <!-- 加载状态 -->
   <view class="loading-state" wx:if="{{loading}}">
     <view class="loading-spinner"></view>
     <text class="loading-text">加载中...</text>
-  </view>
-
-  <!-- 添加按钮 -->
-  <view class="fab" wx:if="{{isLogin && hasOperationPermission}}" bindtap="addParrot">
-    <text class="fab-icon">+</text>
   </view>
 </view>
 
@@ -116,10 +139,10 @@
       <view class="modal-close" bindtap="hideSpeciesFilter">×</view>
     </view>
     <view class="modal-body">
-      <view class="filter-option" bindtap="selectSpecies" data-species="">
+      <view class="filter-option" bindtap="selectSpecies" data-id="" data-name="">
         <text class="option-text">全部品种</text>
       </view>
-      <view class="filter-option" wx:for="{{speciesList}}" wx:key="id" bindtap="selectSpecies" data-species="{{item.name}}">
+      <view class="filter-option" wx:for="{{speciesList}}" wx:key="id" bindtap="selectSpecies" data-id="{{item.id}}" data-name="{{item.name}}">
         <text class="option-text">{{item.name}}</text>
       </view>
     </view>
@@ -161,19 +184,19 @@
       <view class="modal-close" bindtap="hideSortFilter">×</view>
     </view>
     <view class="modal-body">
-      <view class="filter-option" bindtap="selectSort" data-sort="name_asc">
+      <view class="filter-option" bindtap="selectSort" data-by="name" data-order="asc">
         <text class="option-text">名称 A-Z</text>
       </view>
-      <view class="filter-option" bindtap="selectSort" data-sort="name_desc">
+      <view class="filter-option" bindtap="selectSort" data-by="name" data-order="desc">
         <text class="option-text">名称 Z-A</text>
       </view>
-      <view class="filter-option" bindtap="selectSort" data-sort="age_asc">
+      <view class="filter-option" bindtap="selectSort" data-by="birth_date" data-order="desc">
         <text class="option-text">年龄从小到大</text>
       </view>
-      <view class="filter-option" bindtap="selectSort" data-sort="age_desc">
+      <view class="filter-option" bindtap="selectSort" data-by="birth_date" data-order="asc">
         <text class="option-text">年龄从大到小</text>
       </view>
-      <view class="filter-option" bindtap="selectSort" data-sort="created_desc">
+      <view class="filter-option" bindtap="selectSort" data-by="created_at" data-order="desc">
         <text class="option-text">最新添加</text>
       </view>
     </view>

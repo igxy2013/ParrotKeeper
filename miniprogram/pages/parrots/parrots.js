@@ -7,9 +7,12 @@ Page({
     speciesList: [],
     loading: false,
     searchKeyword: '',
-    selectedSpecies: '',
+    selectedSpeciesId: '',
+    selectedSpeciesName: '',
     selectedStatus: '',
-    sortBy: 'created_desc',
+    selectedStatusText: '',
+    sortBy: 'created_at',
+    sortOrder: 'desc',
     sortText: '最新添加',
     isLogin: false, // 添加登录状态
     userMode: null, // 当前用户模式
@@ -23,7 +26,8 @@ Page({
     
     // 分页相关
     page: 1,
-    hasMore: true
+    hasMore: true,
+    menuRightPadding: 0
   },
 
   onLoad() {
@@ -47,6 +51,7 @@ Page({
         loading: false
       })
     }
+    this.computeMenuRightPadding()
   },
 
   onShow() {
@@ -158,9 +163,10 @@ Page({
         page: refresh ? 1 : this.data.page,
         limit: 10,
         search: this.data.searchKeyword,
-        species: this.data.selectedSpecies,
+        species_id: this.data.selectedSpeciesId,
         health_status: this.data.selectedStatus,
-        sort_by: this.data.sortBy
+        sort_by: this.data.sortBy,
+        sort_order: this.data.sortOrder
       }
       
       console.log('请求参数:', params);
@@ -233,9 +239,10 @@ Page({
 
   // 选择品种
   selectSpecies(e) {
-    const species = e.currentTarget.dataset.species || ''
+    const { id, name } = e.currentTarget.dataset
     this.setData({
-      selectedSpecies: species,
+      selectedSpeciesId: id || '',
+      selectedSpeciesName: name || '',
       showSpeciesModal: false
     })
     this.refreshData()
@@ -264,6 +271,7 @@ Page({
     
     this.setData({
       selectedStatus: status,
+      selectedStatusText: statusMap[status],
       showStatusModal: false
     })
     this.refreshData()
@@ -281,18 +289,20 @@ Page({
 
   // 选择排序
   selectSort(e) {
-    const sort = e.currentTarget.dataset.sort
-    const sortMap = {
+    const { by, order } = e.currentTarget.dataset
+    const sortLabelMap = {
       'name_asc': '名称 A-Z',
       'name_desc': '名称 Z-A',
-      'age_asc': '年龄从小到大',
-      'age_desc': '年龄从大到小',
-      'created_desc': '最新添加'
+      'birth_date_desc': '年龄从小到大',
+      'birth_date_asc': '年龄从大到小',
+      'created_at_desc': '最新添加'
     }
+    const key = `${by}_${order}`
     
     this.setData({
-      sortBy: sort,
-      sortText: sortMap[sort],
+      sortBy: by,
+      sortOrder: order,
+      sortText: sortLabelMap[key],
       showSortModal: false
     })
     this.refreshData()
@@ -428,5 +438,18 @@ Page({
         });
       }
     });
+  },
+  computeMenuRightPadding() {
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : {}
+      const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+      if (win && rect && typeof win.windowWidth === 'number') {
+        const rightGap = win.windowWidth - rect.right
+        const menuRightPadding = rightGap + rect.width + 8
+        this.setData({ menuRightPadding })
+      }
+    } catch (e) {
+      this.setData({ menuRightPadding: 0 })
+    }
   }
 })

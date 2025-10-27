@@ -1,7 +1,10 @@
 <!--pages/profile/profile.wxml-->
-<view class="page-container">
+<view class="page-container {{pageThemeClass}}">
+  <app-header title="个人中心" subtitle="管理您的账户信息"></app-header>
+  <view class="page-content">
   <!-- 用户信息卡片 -->
   <view class="user-card" wx:if="{{isLogin}}">
+    <view class="card-background"></view>
     <view class="user-avatar">
       <view class="avatar-container" bindtap="toggleAvatarEdit" wx:if="{{isEditingNickname}}">
         <image 
@@ -10,6 +13,7 @@
           mode="aspectFill"
         />
         <view class="avatar-edit-overlay">
+          <view class="edit-icon">📷</view>
           <text class="avatar-edit-text">点击选择</text>
         </view>
       </view>
@@ -24,9 +28,10 @@
       <view class="nickname-display">
         <text class="user-name">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
         <view class="edit-nickname-btn" bindtap="toggleNicknameEdit">
-          <text class="edit-icon">✏️</text>
+          <view class="edit-icon">✏️</view>
         </view>
       </view>
+      <text class="user-role">{{roleDisplay}}</text>
       <view class="nickname-edit" wx:if="{{isEditingNickname}}">
         <input 
           class="nickname-edit-input" 
@@ -41,7 +46,13 @@
           <button class="cancel-btn" bindtap="cancelNicknameEdit">取消</button>
         </view>
       </view>
-      <text class="join-date">加入时间: {{joinDate}}</text>
+      <view class="info-row">
+        <text class="join-date">加入时间：{{joinDate}}</text>
+        <view class="points-row">
+          <text class="user-points">积分：</text>
+          <text class="user-points-val">{{points}}</text>
+        </view>
+      </view>
     </view>
   </view>
 
@@ -60,100 +71,18 @@
   <!-- 功能卡片区域 -->
   <view class="function-cards" wx:if="{{isLogin}}">
     <!-- 模式设置卡片 -->
-    <view class="function-card mode-card">
-      <view class="card-header">
-        <view class="card-icon">⚙️</view>
-        <text class="card-title">模式设置</text>
-      </view>
+      <view class="function-card mode-card">
       <view class="card-content">
-        <view class="mode-display">
-          <text class="current-mode">{{userMode === 'personal' ? '个人模式' : '团队模式'}}</text>
-          <text class="mode-desc">{{userMode === 'personal' ? '管理个人鹦鹉数据' : '查看团队鹦鹉数据'}}</text>
-        </view>
-        <view class="card-action" bindtap="showModeSwitch">
-          <text class="action-text">切换</text>
-          <text class="action-arrow">></text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 团队协作卡片 -->
-    <view class="function-card team-card">
-      <view class="card-header">
-        <view class="card-icon">👥</view>
-        <text class="card-title">团队协作</text>
-      </view>
-      <view class="card-content">
-        <view class="team-actions">
-          <view class="team-action-item info-only" bindtap="showTeamInfoModal">
-            <view class="action-info">
-              <text class="action-title">当前团队</text>
-              <text class="action-desc">{{currentTeamName || '未选择团队'}}</text>
-            </view>
-          </view>
-          <view class="team-action-item" bindtap="goToJoinTeam">
-            <view class="action-info">
-              <text class="action-title">加入团队</text>
-              <text class="action-desc">通过邀请码加入团队</text>
-            </view>
-            <text class="action-arrow">></text>
-          </view>
-          <view class="team-action-item" bindtap="goToCreateTeam">
-            <view class="action-info">
-              <text class="action-title">创建团队</text>
-              <text class="action-desc">创建新的团队并邀请成员</text>
-            </view>
-            <text class="action-arrow">></text>
-          </view>
-          <view class="team-action-item" wx:if="{{isTeamAdmin}}" bindtap="goToTeams">
-            <view class="action-info">
-              <text class="action-title">团队管理</text>
-              <text class="action-desc">管理团队成员和设置</text>
-            </view>
-            <text class="action-arrow">></text>
+        <view class="mode-header">
+          <view class="mode-icon">⚙️</view>
+          <view class="mode-text">
+            <text class="card-title mode-title">模式设置</text>
+            <text class="mode-desc">选择应用使用模式</text>
           </view>
         </view>
-      </view>
-    </view>
-
-    <!-- 应用设置卡片 -->
-    <view class="function-card settings-card">
-      <view class="card-header">
-        <view class="card-icon">🔧</view>
-        <text class="card-title">应用设置</text>
-      </view>
-      <view class="card-content">
-        <view class="settings-actions">
-          <view class="setting-action-item" bindtap="showAbout">
-            <view class="setting-icon-wrapper">
-              <view class="setting-icon">ℹ️</view>
-            </view>
-            <view class="setting-content">
-              <view class="setting-name">关于应用</view>
-              <view class="setting-desc">查看应用版本和信息</view>
-            </view>
-            <view class="setting-arrow">></view>
-          </view>
-          <view class="setting-action-item" bindtap="showHelp">
-            <view class="setting-icon-wrapper">
-              <view class="setting-icon">❓</view>
-            </view>
-            <view class="setting-content">
-              <view class="setting-name">帮助反馈</view>
-              <view class="setting-desc">获取帮助或提交反馈</view>
-            </view>
-            <view class="setting-arrow">></view>
-          </view>
-          <view class="setting-action-item logout-item" bindtap="handleLogout">
-            <view class="setting-icon-wrapper">
-              <view class="setting-icon">🚪</view>
-            </view>
-            <view class="setting-content">
-              <view class="setting-name">退出登录</view>
-              <view class="setting-desc">安全退出当前账户</view>
-            </view>
-            <view class="setting-arrow">></view>
-          </view>
+        <view class="mode-toggle">
+          <view class="mode-pill {{userMode === 'personal' ? 'active' : ''}}" data-mode="personal" bindtap="chooseUserMode">个人模式</view>
+          <view class="mode-pill {{userMode === 'team' ? 'active' : ''}}" data-mode="team" bindtap="chooseUserMode">团队模式</view>
         </view>
       </view>
     </view>
@@ -191,7 +120,6 @@
       </view>
     </view>
   </view>
-</view>
 
 <!-- 头像选择弹窗 -->
 <view class="modal-overlay" wx:if="{{showAvatarModal}}" bindtap="hideAvatarModal">
@@ -220,106 +148,88 @@
   </view>
 </view>
 
-<!-- 团队信息弹窗 -->
-<view class="modal-overlay" wx:if="{{showTeamInfoModal}}" bindtap="hideTeamInfoModal">
-  <view class="modal-container team-info-modal" catchtap="">
-    <view class="modal-header">
-      <text class="modal-title">团队信息</text>
-      <text class="modal-close" bindtap="hideTeamInfoModal">×</text>
-    </view>
-    <view class="modal-body">
-      <view class="team-info-section">
-        <view class="info-item">
-          <text class="info-label">团队名称</text>
-          <text class="info-value">{{teamInfo.name || '未知团队'}}</text>
-        </view>
-        <view class="info-item">
-          <text class="info-label">团队描述</text>
-          <text class="info-value">{{teamInfo.description || '暂无描述'}}</text>
-        </view>
-        <view class="info-item">
-          <text class="info-label">成员数量</text>
-          <text class="info-value">{{teamInfo.memberCount || 0}}人</text>
-        </view>
-        <view class="info-item">
-          <text class="info-label">创建时间</text>
-          <text class="info-value">{{teamInfo.createdAt || '未知'}}</text>
-        </view>
-        <view class="info-item">
-          <text class="info-label">我的角色</text>
-          <text class="info-value">{{teamInfo.myRole || '成员'}}</text>
-        </view>
-      </view>
-    </view>
-    <view class="modal-footer">
-      <button class="btn btn-secondary" bindtap="hideTeamInfoModal">关闭</button>
-      <button class="btn btn-danger" bindtap="leaveTeam" wx:if="{{teamInfo.myRole !== '创建者'}}">退出团队</button>
-    </view>
+<!-- 在用户信息卡片后新增统计网格 -->
+<view class="stats-grid" wx:if="{{isLogin}}">
+  <view class="stat-card red">
+    <view class="stat-icon">❤️</view>
+    <view class="stat-value">{{stats.parrotCount}}</view>
+    <view class="stat-label">我的鹦鹉</view>
+  </view>
+  <view class="stat-card orange">
+    <view class="stat-icon">🍽️</view>
+    <view class="stat-value">{{stats.totalFeedings}}</view>
+    <view class="stat-label">总喂食次数</view>
+  </view>
+  <view class="stat-card green">
+    <view class="stat-icon">🛡️</view>
+    <view class="stat-value">{{stats.totalCheckups}}</view>
+    <view class="stat-label">健康检查</view>
   </view>
 </view>
 
-<!-- 加入团队弹窗 -->
-<view class="modal-overlay" wx:if="{{showJoinTeamModal}}" bindtap="hideJoinTeamModal">
-  <view class="modal-container join-team-modal" catchtap="preventClose">
-    <view class="modal-header">
-      <text class="modal-title">加入团队</text>
-      <text class="modal-close" bindtap="hideJoinTeamModal">×</text>
-    </view>
-    <view class="modal-body">
-      <view class="join-form">
-        <view class="form-item">
-          <text class="form-label">邀请码</text>
-          <input class="form-input" 
-                 placeholder="请输入团队邀请码" 
-                 value="{{inviteCode}}" 
-                 bindinput="onInviteCodeInput"
-                 maxlength="8" />
-        </view>
-        <view class="form-tips">
-          <text>请向团队管理员获取8位邀请码</text>
-        </view>
+<!-- 成就模块 -->
+<view class="achievements-card" wx:if="{{isLogin && userMode !== 'team'}}">
+  <view class="section-title">
+    <text class="title-icon">🏆</text>
+    <text>我的成就</text>
+  </view>
+  <view class="achievements-grid">
+    <block wx:for="{{achievements}}" wx:key="index">
+      <view class="achievement-item">
+        <view class="achievement-icon {{item.bgClass}}">{{item.icon}}</view>
+        <view class="achievement-title">{{item.title}}</view>
+        <view class="achievement-desc">{{item.desc}}</view>
       </view>
-    </view>
-    <view class="modal-footer">
-      <button class="btn btn-secondary" bindtap="hideJoinTeamModal">取消</button>
-      <button class="btn btn-primary" bindtap="confirmJoinTeam" disabled="{{!inviteCode}}">加入团队</button>
-    </view>
+    </block>
   </view>
 </view>
 
-<!-- 创建团队弹窗 -->
-<view class="modal-overlay" wx:if="{{showCreateTeamModal}}" bindtap="hideCreateTeamModal">
-  <view class="modal-container create-team-modal" catchtap="preventClose">
-    <view class="modal-header">
-      <text class="modal-title">创建团队</text>
-      <text class="modal-close" bindtap="hideCreateTeamModal">×</text>
-    </view>
-    <view class="modal-body">
-      <view class="create-form">
-        <view class="form-item">
-          <text class="form-label">团队名称</text>
-          <input class="form-input" 
-                 placeholder="请输入团队名称" 
-                 value="{{teamName}}" 
-                 bindinput="onTeamNameInput"
-                 maxlength="20" />
-        </view>
-        <view class="form-item">
-          <text class="form-label">团队描述</text>
-          <textarea class="form-textarea" 
-                    placeholder="请输入团队描述（可选）" 
-                    value="{{teamDescription}}" 
-                    bindinput="onTeamDescriptionInput"
-                    maxlength="100" />
-        </view>
-        <view class="form-tips">
-          <text>团队名称将作为您团队的标识</text>
-        </view>
-      </view>
-    </view>
-    <view class="modal-footer">
-      <button class="btn btn-secondary" bindtap="hideCreateTeamModal">取消</button>
-      <button class="btn btn-primary" bindtap="confirmCreateTeam" disabled="{{!teamName}}">创建团队</button>
-    </view>
+<!-- 团队协作模块（仅团队模式显示） -->
+<view class="team-card" wx:if="{{isLogin && userMode === 'team'}}">
+  <view class="section-title">
+    <text class="title-icon">👥</text>
+    <text>团队协作</text>
   </view>
+  <view class="team-list">
+    <block wx:for="{{teamItems}}" wx:key="index">
+      <view class="team-item" bindtap="onTeamItemTap" data-title="{{item.title}}">
+        <view class="team-item-icon {{item.bgClass}}">{{item.icon}}</view>
+        <view class="team-item-content">
+          <view class="team-item-title">{{item.title}}</view>
+          <view class="team-item-desc">{{item.desc}}</view>
+        </view>
+        <text class="arrow">></text>
+      </view>
+    </block>
+  </view>
+</view>
+
+<!-- 功能菜单模块 -->
+<view class="menu-card">
+  <view class="section-title">
+    <text class="title-icon">📋</text>
+    <text>功能菜单</text>
+  </view>
+  <view class="menu-list">
+    <block wx:for="{{menuItems}}" wx:key="index">
+      <view class="menu-item" bindtap="onMenuItemTap" data-title="{{item.title}}">
+        <view class="menu-item-icon {{item.bgClass}}">{{item.icon}}</view>
+        <view class="menu-item-content">
+          <view class="menu-item-title">{{item.title}}</view>
+          <view class="menu-item-desc">{{item.desc}}</view>
+        </view>
+        <text class="arrow">></text>
+      </view>
+    </block>
+  </view>
+</view>
+
+<!-- 版本信息模块 -->
+<view class="version-card">
+  <view class="version-logo">❤️</view>
+  <view class="version-title">鹦鹉管家</view>
+  <view class="version-sub">专业的鹦鹉护理助手</view>
+  <view class="version-info">版本 1.0.0 • 用心呵护每一只小鹦鹉</view>
+</view>
+</view>
 </view>

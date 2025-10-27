@@ -1,226 +1,170 @@
 <!--pages/statistics/statistics.wxml-->
 <view class="page-container" bindtap="{{showParrotDropdown ? 'toggleParrotDropdown' : ''}}">
+  <app-header title="数据统计" subtitle="全局数据概览"></app-header>
+  <view class="page-content">
   <!-- 游客模式提示 -->
-  <view wx:if="{{!isLogin}}" class="guest-tip">
-    <text class="tip-text">🎯 您正在以游客身份浏览示例数据</text>
-    <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
-  </view>
-
-  <!-- 概览统计 -->
-  <view class="overview-section">
-    <view class="section-title">
-      <text class="title-text">数据概览</text>
-      <text class="title-subtitle">{{currentMonth}}月统计</text>
-    </view>
-    
-    <view class="overview-grid">
-      <view class="overview-card">
-        <view class="card-icon">🦜</view>
-        <view class="card-content">
-          <text class="card-number">{{overview.total_parrots || 0}}</text>
-          <text class="card-label">鹦鹉总数</text>
-        </view>
-      </view>
-      
-      <view class="overview-card">
-        <view class="card-icon">🍎</view>
-        <view class="card-content">
-          <text class="card-number">{{overview.monthly_feeding || 0}}</text>
-          <text class="card-label">本月喂食</text>
-        </view>
-      </view>
-      
-      <view class="overview-card">
-        <view class="card-icon">🏥</view>
-        <view class="card-content">
-          <text class="card-number">{{overview.monthly_health_checks || 0}}</text>
-          <text class="card-label">健康检查</text>
-        </view>
-      </view>
-      
-      <view class="overview-card">
-        <view class="card-icon">💰</view>
-        <view class="card-content">
-          <text class="card-number">¥{{overview.monthly_expense || 0}}</text>
-          <text class="card-label">本月支出</text>
-        </view>
-      </view>
+  <view wx:if="{{!isLogin}}" class="guest-tip-card">
+    <view class="tip-icon">🎯</view>
+    <view class="tip-content">
+      <text class="tip-text">您正在以游客身份浏览示例数据</text>
+      <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
     </view>
   </view>
+  <!-- 顶部时间段选择器 -->
+  <view class="period-selector-card">
+    <view class="period-btn {{selectedPeriod === '今天' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="今天">今天</view>
+    <view class="period-btn {{selectedPeriod === '本周' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本周">本周</view>
+    <view class="period-btn {{selectedPeriod === '本月' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本月">本月</view>
+    <view class="period-btn {{selectedPeriod === '本年' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本年">本年</view>
+  </view>
 
-  <!-- 健康状态分布 -->
+  <!-- 概览统计（APP风格2×2渐变卡） -->
+  <view class="overview-grid">
+    <view class="overview-card emerald">
+      <view class="overview-header">
+        <text class="overview-icon">❤️</text>
+        <text class="label-chip">总数</text>
+      </view>
+      <text class="overview-value">{{overview.total_parrots || 0}}</text>
+      <text class="overview-label">我的鹦鹉</text>
+    </view>
+
+    <view class="overview-card blue">
+      <view class="overview-header">
+        <text class="overview-icon">🛡️</text>
+        <text class="label-chip">健康</text>
+      </view>
+      <text class="overview-value">{{overview.health_status.healthy || 0}}</text>
+      <text class="overview-label">健康状态</text>
+    </view>
+
+    <view class="overview-card orange">
+      <view class="overview-header">
+        <text class="overview-icon">🍽️</text>
+        <text class="label-chip">今日</text>
+      </view>
+      <text class="overview-value">{{overview.today_feeding || 0}}</text>
+      <text class="overview-label">喂食次数</text>
+    </view>
+
+    <view class="overview-card purple">
+      <view class="overview-header">
+        <text class="overview-icon">⚖️</text>
+        <text class="label-chip">平均</text>
+      </view>
+      <text class="overview-value">{{avgWeight || '--'}}</text>
+      <text class="overview-label">体重</text>
+    </view>
+  </view>
+  <!-- 游客模式提示 -->
+  <view wx:if="{{!isLogin}}" class="guest-tip-card">
+    <view class="tip-icon">🎯</view>
+    <view class="tip-content">
+      <text class="tip-text">您正在以游客身份浏览示例数据</text>
+      <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
+    </view>
+  </view>
+
+  <!-- 体重趋势曲线 -->
   <view class="health-section">
-    <view class="card">
+    <view class="info-card">
       <view class="card-header">
-        <text class="card-title">健康状态分布</text>
-      </view>
-      <view class="card-content">
-        <view class="health-stats">
-          <view class="health-item">
-            <view class="health-indicator healthy"></view>
-            <text class="health-label">健康</text>
-            <text class="health-count">{{overview.health_status.healthy || 0}}</text>
-          </view>
-          <view class="health-item">
-            <view class="health-indicator sick"></view>
-            <text class="health-label">生病</text>
-            <text class="health-count">{{overview.health_status.sick || 0}}</text>
-          </view>
-          <view class="health-item">
-            <view class="health-indicator recovering"></view>
-            <text class="health-label">康复中</text>
-            <text class="health-count">{{overview.health_status.recovering || 0}}</text>
-          </view>
-          <view class="health-item">
-            <view class="health-indicator observation"></view>
-            <text class="health-label">观察中</text>
-            <text class="health-count">{{overview.health_status.observation || 0}}</text>
-          </view>
+        <view class="header-left">
+          <view class="card-icon">⚖️</view>
+          <text class="card-title">体重趋势曲线</text>
         </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 体重趋势 -->
-  <view class="weight-trends-section">
-    <view class="card">
-      <view class="card-header">
-        <text class="card-title">体重趋势</text>
         <view class="parrot-selector">
           <view class="selector-wrapper" bindtap="toggleParrotDropdown">
             <text class="selector-text">{{selectedParrotName || '全部鹦鹉'}}</text>
             <text class="selector-arrow {{showParrotDropdown ? 'rotate' : ''}}">▼</text>
           </view>
-          <view class="dropdown-menu {{showParrotDropdown ? 'show' : ''}}" wx:if="{{showParrotDropdown}}" catchtap="preventBubble">
-            <view class="dropdown-item {{selectedParrotId === null ? 'selected' : ''}}" bindtap="selectWeightParrot" data-id="">
+          <view class="dropdown-menu {{showParrotDropdown ? 'show' : ''}}">
+            <view class="dropdown-item" bindtap="selectWeightParrot" data-id="">
               <text>全部鹦鹉</text>
-              <text class="check-icon" wx:if="{{selectedParrotId === null}}">✓</text>
+              <text class="check-icon">{{!selectedParrotId ? '✓' : ''}}</text>
             </view>
-            <block wx:for="{{weightSeries}}" wx:key="parrot_id">
-              <view class="dropdown-item {{selectedParrotId === item.parrot_id ? 'selected' : ''}}" bindtap="selectWeightParrot" data-id="{{item.parrot_id}}">
-                <text>{{item.parrot_name}}</text>
-                <text class="check-icon" wx:if="{{selectedParrotId === item.parrot_id}}">✓</text>
-              </view>
-            </block>
+            <view class="dropdown-item" wx:for="{{weightSeries}}" wx:key="parrot_id" bindtap="selectWeightParrot" data-id="{{item.parrot_id}}">
+              <text>{{item.parrot_name}}</text>
+              <text class="check-icon">{{selectedParrotId == item.parrot_id ? '✓' : ''}}</text>
+            </view>
           </view>
         </view>
       </view>
       <view class="card-content">
         <view class="legend-container" wx:if="{{weightLegend.length > 0}}">
           <view class="legend-item" wx:for="{{weightLegend}}" wx:key="parrot_id">
-            <view class="legend-dot" style="background-color: {{item.color}}"></view>
+            <view class="legend-dot" style="background: {{item.color}};"></view>
             <text class="legend-name">{{item.parrot_name}}</text>
           </view>
         </view>
-        <view class="chart-container">
-          <view class="chart-placeholder" wx:if="{{weightSeries.length === 0}}">
-            <text class="placeholder-text">暂无数据</text>
-          </view>
-          <canvas wx:else type="2d" canvas-id="weightCanvas" id="weightCanvas" style="width: 100%; height: 320rpx;"></canvas>
+        <view class="weight-chart-container">
+          <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;"></canvas>
         </view>
       </view>
     </view>
   </view>
-</view>
 
-  <!-- 喂食趋势 -->
-  <view class="feeding-trends-section">
-    <view class="card">
-      <view class="card-header">
-        <text class="card-title">喂食趋势</text>
-        <view class="time-filter">
-          <text class="filter-btn {{feedingPeriod === 'week' ? 'active' : ''}}" bindtap="changeFeedingPeriod" data-period="week">7天</text>
-          <text class="filter-btn {{feedingPeriod === 'month' ? 'active' : ''}}" bindtap="changeFeedingPeriod" data-period="month">30天</text>
-        </view>
-      </view>
-      <view class="card-content">
-        <view class="chart-container">
-          <view class="chart-placeholder" wx:if="{{feedingTrends.length === 0}}">
-            <text class="placeholder-text">暂无数据</text>
-          </view>
-          <view class="trend-chart" wx:else>
-            <view class="chart-item" wx:for="{{feedingTrends}}" wx:key="date">
-              <view class="chart-bar">
-                <view class="bar-fill" style="height: {{item.percentage}}%"></view>
-              </view>
-              <text class="chart-label">{{item.date_short}}</text>
-              <text class="chart-value">{{item.count}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
-  </view>
+  <!-- 喂食趋势：已按需求移除 -->
 
   <!-- 支出分析 -->
   <view class="expense-section">
-    <view class="card">
+    <view class="info-card">
       <view class="card-header">
-        <text class="card-title">支出分析</text>
+        <view class="header-left">
+          <view class="card-icon">💰</view>
+          <text class="card-title">支出分析</text>
+        </view>
         <view class="view-all-btn" bindtap="navigateToExpenses">
           <text>查看全部</text>
+          <view class="arrow-icon">→</view>
         </view>
       </view>
       <view class="card-content">
-        <view class="expense-list" wx:if="{{expenseAnalysis.length > 0}}">
-          <view class="expense-item" wx:for="{{expenseAnalysis}}" wx:key="category">
-            <view class="expense-info">
-              <text class="expense-category">{{item.category}}</text>
-              <text class="expense-amount">¥{{item.amount}}</text>
+        <view wx:if="{{expenseAnalysis.length > 0}}">
+          <view class="legend-container">
+            <view class="legend-item" wx:for="{{expenseAnalysis}}" wx:key="category">
+              <view class="legend-dot" style="background: {{item.color}};"></view>
+              <text class="legend-name">{{item.category}}</text>
             </view>
-            <view class="expense-bar">
-              <view class="expense-fill" style="width: {{item.percentage}}%"></view>
-            </view>
-            <text class="expense-percentage">{{item.percentage}}%</text>
+          </view>
+          <view class="chart-container">
+            <canvas id="expensePieCanvas" type="2d" style="width: 100%; height: 280rpx;"></canvas>
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
+          <view class="placeholder-icon">💰</view>
           <text class="placeholder-text">暂无支出记录</text>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- 护理频率 -->
-  <view class="care-frequency-section">
-    <view class="card">
+  <!-- 护理频率统计：已按需求移除 -->
+
+  <!-- 食物偏好分析 -->
+  <view class="food-pref-section">
+    <view class="info-card">
       <view class="card-header">
-        <text class="card-title">护理频率统计</text>
-        <text class="card-subtitle">最近30天</text>
+        <view class="header-left">
+          <view class="card-icon">🍽️</view>
+          <text class="card-title">食物偏好分析</text>
+        </view>
       </view>
       <view class="card-content">
-        <view class="frequency-grid">
-          <view class="frequency-item">
-            <view class="frequency-icon">🍎</view>
-            <view class="frequency-info">
-              <text class="frequency-label">平均喂食</text>
-              <text class="frequency-value">{{careFrequency.avg_feeding_per_day || 0}}次/天</text>
+        <view wx:if="{{foodPreference.length > 0}}">
+          <view class="legend-container">
+            <view class="legend-item" wx:for="{{foodPreference}}" wx:key="type">
+              <view class="legend-dot" style="background: {{item.color}};"></view>
+              <text class="legend-name">{{item.label}}</text>
             </view>
           </view>
-          
-          <view class="frequency-item">
-            <view class="frequency-icon">🧽</view>
-            <view class="frequency-info">
-              <text class="frequency-label">清洁频率</text>
-              <text class="frequency-value">{{careFrequency.avg_cleaning_per_week || 0}}次/周</text>
-            </view>
+          <view class="chart-container">
+            <canvas id="foodPrefCanvas" type="2d" style="width: 100%; height: 280rpx;"></canvas>
           </view>
-          
-          <view class="frequency-item">
-            <view class="frequency-icon">🏥</view>
-            <view class="frequency-info">
-              <text class="frequency-label">健康检查</text>
-              <text class="frequency-value">{{careFrequency.avg_health_check_per_month || 0}}次/月</text>
-            </view>
-          </view>
-          
-          <view class="frequency-item">
-            <view class="frequency-icon">📊</view>
-            <view class="frequency-info">
-              <text class="frequency-label">记录完整度</text>
-              <text class="frequency-value">{{careFrequency.record_completeness || 0}}%</text>
-            </view>
-          </view>
+        </view>
+        <view class="empty-placeholder" wx:else>
+          <view class="placeholder-icon">🍽️</view>
+          <text class="placeholder-text">暂无数据</text>
         </view>
       </view>
     </view>
@@ -228,9 +172,12 @@
 
   <!-- 品种分布 -->
   <view class="species-section">
-    <view class="card">
+    <view class="info-card">
       <view class="card-header">
-        <text class="card-title">品种分布</text>
+        <view class="header-left">
+          <view class="card-icon">🦜</view>
+          <text class="card-title">品种分布</text>
+        </view>
       </view>
       <view class="card-content">
         <view class="species-list" wx:if="{{speciesDistribution.length > 0}}">
@@ -245,7 +192,31 @@
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
+          <view class="placeholder-icon">🦜</view>
           <text class="placeholder-text">暂无数据</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 健康趋势 -->
+  <view class="health-trends-section">
+    <view class="info-card">
+      <view class="card-header">
+        <view class="header-left">
+          <view class="card-icon">🏥</view>
+          <text class="card-title">健康趋势</text>
+        </view>
+      </view>
+      <view class="card-content">
+        <view class="chart-container">
+          <view class="chart-placeholder" wx:if="{{!healthTrends || (healthTrends.length === 0)}}">
+            <view class="placeholder-icon">🏥</view>
+            <text class="placeholder-text">暂无数据</text>
+          </view>
+          <view wx:else>
+            <canvas id="healthTrendCanvas" type="2d" style="width: 100%; height: 280rpx;"></canvas>
+          </view>
         </view>
       </view>
     </view>
@@ -256,4 +227,10 @@
     <view class="loading-spinner"></view>
     <text class="loading-text">加载中...</text>
   </view>
+
+  </view>
+</view>
+
+
+
 

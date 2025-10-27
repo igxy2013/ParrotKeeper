@@ -13,6 +13,9 @@ Page({
     expenseAnalysis: [],
     careFrequency: {},
     speciesDistribution: [],
+    // 新增数据源
+    foodPreference: [],
+    healthTrends: [],
     
     // 筛选条件
     feedingPeriod: 'week',
@@ -77,11 +80,11 @@ Page({
     try {
       await Promise.all([
         this.loadOverview(),
-        this.loadFeedingTrends(),
         this.loadExpenseAnalysis(),
-        this.loadCareFrequency(),
         this.loadSpeciesDistribution(),
-        this.loadWeightTrends()
+        this.loadWeightTrends(),
+        this.loadFoodPreference(),
+        this.loadHealthTrends()
       ])
     } catch (error) {
       console.error('加载统计数据失败:', error)
@@ -128,6 +131,8 @@ Page({
         this.setData({
           feedingTrends: trends
         })
+        // 数据就绪后绘制喂食折线面积图
+        this.drawFeedingChart()
       }
     } catch (error) {
       console.error('加载喂食趋势失败:', error)
@@ -168,9 +173,8 @@ Page({
       if (res.success) {
         const analysis = this.processExpenseAnalysis(res.data)
         console.log('处理后的支出分析数据:', analysis)
-        this.setData({
-          expenseAnalysis: analysis
-        })
+        this.setData({ expenseAnalysis: analysis })
+        wx.nextTick(() => this.drawExpensePieChart())
       } else {
         console.error('支出分析API返回失败:', res)
       }
@@ -199,14 +203,113 @@ Page({
         'other': '其他'
       }
     
+    const palette = ['#667eea','#23a6d5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#22c55e','#f97316','#9ca3af']
     const categoryData = data.category_expenses
     const total = categoryData.reduce((sum, item) => sum + (item.total_amount || 0), 0)
     
-    return categoryData.map(item => ({
+    return categoryData.map((item, idx) => ({
       category: categoryMap[item.category] || item.category,
       amount: item.total_amount,
-      percentage: total > 0 ? Math.round(((item.total_amount || 0) / total) * 100) : 0
+      percentage: total > 0 ? Math.round(((item.total_amount || 0) / total) * 100) : 0,
+      color: palette[idx % palette.length]
     }))
+  },
+
+  // 绘制支出分析饼图（对齐APP：圆环+中心总额+标签）
+  drawExpensePieChart() {
+    const data = this.data.expenseAnalysis || []
+    const query = wx.createSelectorQuery()
+    query.select('#expensePieCanvas').node()
+    query.select('#expensePieCanvas').boundingClientRect()
+    query.exec(res => {
+      const nodeRes = res && res[0]
+      const rect = res && res[1]
+      if (!nodeRes || !nodeRes.node || !rect) return
+      const canvas = nodeRes.node
+      const width = rect.width || 300
+      const height = rect.height || 200
+      const ctx = canvas.getContext('2d')
+      const winInfo = (wx.getWindowInfo && wx.getWindowInfo()) || {}
+      const dpr = winInfo.pixelRatio || 1
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      ctx.scale(dpr, dpr)
+      ctx.clearRect(0, 0, width, height)
+
+      // 空数据占位
+      if (!data.length) {
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = '14px sans-serif'
+        ctx.fillText('暂无支出数据', width/2, height/2)
+        return
+      }
+
+      const cx = width / 2
+      const cy = height / 2
+      const radius = Math.min(width, height) / 2 - 16
+      const inner = radius * 0.6 // 圆环内径，APP样式
+      const totalAmount = data.reduce((s, i) => s + (i.amount || 0), 0)
+
+      // 绘制圆环分片
+      let start = -Math.PI / 2
+      data.forEach(item => {
+        const angle = (item.percentage / 100) * Math.PI * 2
+        const end = start + angle
+        if (angle > 0) {
+          ctx.beginPath()
+          // 外圈
+          ctx.arc(cx, cy, radius, start, end)
+          // 内圈反向，形成圆环扇形
+          ctx.arc(cx, cy, inner, end, start, true)
+          ctx.closePath()
+          ctx.fillStyle = item.color || '#667eea'
+          ctx.fill()
+        }
+        start = end
+      })
+
+      // 扇区标签（大于5%显示，带指引线）
+      start = -Math.PI / 2
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#333'
+      data.forEach(item => {
+        const angle = (item.percentage / 100) * Math.PI * 2
+        const end = start + angle
+        if (item.percentage >= 5 && angle > 0) {
+          const mid = (start + end) / 2
+          const ex = cx + Math.cos(mid) * (radius + 6)
+          const ey = cy + Math.sin(mid) * (radius + 6)
+          const lx = cx + Math.cos(mid) * (radius + 24)
+          const ly = cy + Math.sin(mid) * (radius + 24)
+          // 指引线
+          ctx.strokeStyle = item.color || '#667eea'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.moveTo(ex, ey)
+          ctx.lineTo(lx, ly)
+          ctx.stroke()
+          // 文本位置与对齐
+          const alignRight = Math.cos(mid) > 0
+          ctx.textAlign = alignRight ? 'left' : 'right'
+          const label = `${item.category} ${item.percentage}%`
+          ctx.fillText(label, lx + (alignRight ? 6 : -6), ly)
+        }
+        start = end
+      })
+
+      // 中心总额与标题
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#1f2937'
+      ctx.font = '14px sans-serif'
+      ctx.fillText('总支出', cx, cy - 10)
+      ctx.font = '16px sans-serif'
+      ctx.fillText(`¥${(totalAmount || 0).toFixed(2)}`, cx, cy + 12)
+    })
   },
 
   // 加载护理频率
@@ -283,11 +386,205 @@ Page({
       .sort((a, b) => b.count - a.count)
   },
 
+  // 加载食物偏好
+  async loadFoodPreference() {
+    try {
+      const end = new Date()
+      const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      const start_date = start.toISOString().slice(0, 10)
+      const end_date = end.toISOString().slice(0, 10)
+      const res = await app.request({
+        url: '/api/records/feeding',
+        method: 'GET',
+        data: { start_date, end_date }
+      })
+      if (res.success) {
+        const pref = this.processFoodPreference(res.data)
+        this.setData({ foodPreference: pref })
+        wx.nextTick(() => this.drawFoodPreferenceChart())
+      }
+    } catch (e) {
+      console.error('加载食物偏好失败:', e)
+    }
+  },
+
+  // 处理食物偏好数据
+  processFoodPreference(data) {
+    const records = Array.isArray(data) ? data : ((data && data.records) ? data.records : [])
+    const typeMap = {
+      seed: { label: '种子', color: '#f59e0b' },
+      pellet: { label: '颗粒', color: '#10b981' },
+      fruit: { label: '水果', color: '#ef4444' },
+      vegetable: { label: '蔬菜', color: '#22c55e' },
+      supplement: { label: '补充剂', color: '#06b6d4' },
+      milk_powder: { label: '奶粉', color: '#8b5cf6' }
+    }
+    const counter = {}
+    (records || []).forEach(r => {
+      const t = (r && r.feed_type && r.feed_type.type) ? r.feed_type.type : 'other'
+      counter[t] = (counter[t] || 0) + 1
+    })
+    const total = Object.values(counter).reduce((s, v) => s + v, 0)
+    return Object.keys(counter).map(k => ({
+      type: k,
+      label: (typeMap[k] && typeMap[k].label) ? typeMap[k].label : '其他',
+      count: counter[k],
+      percentage: total > 0 ? Math.round(counter[k] * 100 / total) : 0,
+      color: (typeMap[k] && typeMap[k].color) ? typeMap[k].color : '#9ca3af'
+    }))
+  },
+
+  // 绘制食物偏好饼图
+  drawFoodPreferenceChart() {
+    const data = this.data.foodPreference || []
+    const query = wx.createSelectorQuery()
+    query.select('#foodPrefCanvas').node()
+    query.select('#foodPrefCanvas').boundingClientRect()
+    query.exec(res => {
+      const nodeRes = res && res[0]
+      const rect = res && res[1]
+      if (!nodeRes || !nodeRes.node || !rect) return
+      const canvas = nodeRes.node
+      const width = rect.width || 300
+      const height = rect.height || 200
+      const ctx = canvas.getContext('2d')
+      const winInfo = (wx.getWindowInfo && wx.getWindowInfo()) || {}
+      const dpr = winInfo.pixelRatio || 1
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      ctx.scale(dpr, dpr)
+      ctx.clearRect(0, 0, width, height)
+      if (!data.length) {
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = '14px sans-serif'
+        ctx.fillText('暂无数据', width/2, height/2)
+        return
+      }
+      const cx = width / 2
+      const cy = height / 2
+      const radius = Math.min(width, height) / 2 - 16
+      let start = -Math.PI / 2
+      data.forEach(item => {
+        const angle = (item.percentage / 100) * Math.PI * 2
+        const end = start + angle
+        ctx.beginPath()
+        ctx.moveTo(cx, cy)
+        ctx.arc(cx, cy, radius, start, end)
+        ctx.closePath()
+        ctx.fillStyle = item.color
+        ctx.fill()
+        start = end
+      })
+    })
+  },
+
   // 切换喂食趋势时间段
   changeFeedingPeriod(e) {
     const period = e.currentTarget.dataset.period
     this.setData({ feedingPeriod: period })
     this.loadFeedingTrends()
+  },
+
+  // 绘制喂食趋势折线面积图（canvas 2D）
+  drawFeedingChart() {
+    const trends = this.data.feedingTrends || []
+    const query = wx.createSelectorQuery()
+    query.select('#feedingCanvas').node()
+    query.select('#feedingCanvas').boundingClientRect()
+    query.exec(res => {
+      const nodeRes = res && res[0]
+      const rect = res && res[1]
+      if (!nodeRes || !nodeRes.node || !rect) return
+      const canvas = nodeRes.node
+      const width = rect.width || 300
+      const height = rect.height || 200
+      const ctx = canvas.getContext('2d')
+      const winInfo = (wx.getWindowInfo && wx.getWindowInfo()) || {}
+      const dpr = winInfo.pixelRatio || 1
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      ctx.scale(dpr, dpr)
+
+      ctx.clearRect(0, 0, width, height)
+      if (!trends.length) {
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = '14px sans-serif'
+        ctx.fillText('暂无喂食数据', width / 2, height / 2)
+        return
+      }
+
+      const counts = trends.map(t => t.count || 0)
+      const maxCount = Math.max(...counts)
+      const minCount = 0
+
+      const paddingLeft = 24
+      const paddingRight = 12
+      const paddingTop = 12
+      const paddingBottom = 24
+      const chartW = width - paddingLeft - paddingRight
+      const chartH = height - paddingTop - paddingBottom
+
+      ctx.strokeStyle = '#e5e7eb'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(paddingLeft, height - paddingBottom)
+      ctx.lineTo(width - paddingRight, height - paddingBottom)
+      ctx.moveTo(paddingLeft, paddingTop)
+      ctx.lineTo(paddingLeft, height - paddingBottom)
+      ctx.stroke()
+
+      const stepX = chartW / Math.max(trends.length - 1, 1)
+      const scaleY = maxCount > minCount ? chartH / (maxCount - minCount) : 0
+
+      const points = trends.map((t, idx) => {
+        const x = paddingLeft + idx * stepX
+        const y = paddingTop + (maxCount - (t.count || 0)) * scaleY
+        return { x, y, v: t.count || 0 }
+      })
+
+      const grad = ctx.createLinearGradient(0, paddingTop, 0, height - paddingBottom)
+      grad.addColorStop(0, 'rgba(102, 126, 234, 0.35)')
+      grad.addColorStop(1, 'rgba(118, 75, 162, 0.05)')
+
+      ctx.beginPath()
+      ctx.moveTo(points[0].x, points[0].y)
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y)
+      }
+      ctx.lineTo(points[points.length - 1].x, height - paddingBottom)
+      ctx.lineTo(points[0].x, height - paddingBottom)
+      ctx.closePath()
+      ctx.fillStyle = grad
+      ctx.fill()
+
+      ctx.strokeStyle = '#667eea'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(points[0].x, points[0].y)
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y)
+      }
+      ctx.stroke()
+
+      ctx.fillStyle = '#667eea'
+      points.forEach(p => {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+        ctx.fill()
+      })
+
+      ctx.fillStyle = '#1f2937'
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'center'
+      points.forEach(p => {
+        const label = String(p.v)
+        ctx.fillText(label, p.x, p.y - 8)
+      })
+    })
   },
 
   // 跳转到支出管理页面
@@ -430,6 +727,19 @@ Page({
     });
   },
 
+  // 设置顶部时间段并刷新相关数据
+  setSelectedPeriod(e) {
+    const period = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.period) || '本周'
+    let weightDays = 7
+    if (period === '今天') weightDays = 1
+    else if (period === '本周') weightDays = 7
+    else if (period === '本月') weightDays = 30
+    else if (period === '本年') weightDays = 365
+    this.setData({ selectedPeriod: period, weightDays })
+    // 刷新体重趋势（概览平均体重依赖该数据）
+    this.loadWeightTrends()
+  },
+
   // 加载体重趋势（每只鹦鹉的折线）
   async loadWeightTrends() {
     try {
@@ -439,9 +749,27 @@ Page({
         data: { days: this.data.weightDays }
       })
       if (res.success && res.data && Array.isArray(res.data.series)) {
-        this.setData({ weightSeries: res.data.series })
+        const seriesArr = Array.isArray(res.data.series) ? res.data.series : []
+        this.setData({ weightSeries: seriesArr })
         this.updateWeightLegend()
-        // 绘制折线图
+        // 计算平均体重用于概览卡（避免链式调用导致的编译异常）
+        const allPoints = []
+        for (let i = 0; i < seriesArr.length; i++) {
+          const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
+          for (let j = 0; j < pts.length; j++) {
+            const w = pts[j] && pts[j].weight
+            if (typeof w === 'number' && !isNaN(w) && w > 0) {
+              allPoints.push(w)
+            }
+          }
+        }
+        let avg = ''
+        if (allPoints.length > 0) {
+          let sum = 0
+          for (let k = 0; k < allPoints.length; k++) sum += allPoints[k]
+          avg = Math.round(sum / allPoints.length) + 'g'
+        }
+        this.setData({ avgWeight: avg || '--' })
         this.drawWeightChart()
       }
     } catch (err) {
@@ -829,6 +1157,102 @@ Page({
     })
   },
 
+  async loadHealthTrends() {
+    try {
+      const res = await app.request({ url: '/api/statistics/health-trends', method: 'GET' })
+      if (res.success) {
+        const list = Array.isArray(res.data && res.data.weight_trends) ? res.data.weight_trends : (Array.isArray(res.data) ? res.data : [])
+        const points = list.map(i => ({ date: i.date, value: i.avg_weight })).filter(p => typeof p.value === 'number' && !isNaN(p.value))
+        this.setData({ healthTrends: points })
+        wx.nextTick(() => this.drawHealthTrendChart())
+      }
+    } catch (e) {
+      console.error('加载健康趋势失败:', e)
+    }
+  },
+
+  drawHealthTrendChart() {
+    const points = this.data.healthTrends || []
+    const query = wx.createSelectorQuery()
+    query.select('#healthTrendCanvas').node()
+    query.select('#healthTrendCanvas').boundingClientRect()
+    query.exec(res => {
+      const nodeRes = res && res[0]
+      const rect = res && res[1]
+      if (!nodeRes || !nodeRes.node || !rect) return
+      const canvas = nodeRes.node
+      const width = rect.width || 300
+      const height = rect.height || 200
+      const ctx = canvas.getContext('2d')
+      const winInfo = (wx.getWindowInfo && wx.getWindowInfo()) || {}
+      const dpr = winInfo.pixelRatio || 1
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      ctx.scale(dpr, dpr)
+      ctx.clearRect(0, 0, width, height)
+      if (!points.length) {
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = '14px sans-serif'
+        ctx.fillText('暂无健康数据', width/2, height/2)
+        return
+      }
+      const paddingLeft = 48, paddingRight = 18, paddingTop = 18, paddingBottom = 36
+      const chartW = width - paddingLeft - paddingRight
+      const chartH = height - paddingTop - paddingBottom
+      const values = points.map(p => p.value)
+      let minV = Math.min(...values)
+      let maxV = Math.max(...values)
+      if (!isFinite(minV) || !isFinite(maxV) || isNaN(minV) || isNaN(maxV)) {
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.font = '14px sans-serif'
+        ctx.fillText('健康数据异常', width/2, height/2)
+        return
+      }
+      if (maxV === minV) { minV = Math.max(0, minV - 1); maxV = maxV + 1 }
+      // 网格
+      ctx.strokeStyle = '#eee'
+      ctx.lineWidth = 1
+      for (let i = 0; i <= 4; i++) {
+        const y = paddingTop + (i / 4) * chartH
+        ctx.beginPath(); ctx.moveTo(paddingLeft, y); ctx.lineTo(width - paddingRight, y); ctx.stroke()
+      }
+      // 折线与面积
+      const baseY = height - paddingBottom
+      const toXY = (idx, val) => {
+        const x = paddingLeft + (idx / (points.length - 1)) * chartW
+        const norm = (val - minV) / (maxV - minV)
+        const y = paddingTop + (1 - norm) * chartH
+        return { x, y }
+      }
+      const gradient = ctx.createLinearGradient(0, paddingTop, 0, baseY)
+      gradient.addColorStop(0, 'rgba(102,126,234,0.35)')
+      gradient.addColorStop(1, 'rgba(102,126,234,0.0)')
+      // 面积
+      ctx.beginPath()
+      const first = toXY(0, points[0].value)
+      ctx.moveTo(first.x, baseY)
+      points.forEach((p, i) => { const {x,y} = toXY(i, p.value); ctx.lineTo(x, y) })
+      const last = toXY(points.length - 1, points[points.length - 1].value)
+      ctx.lineTo(last.x, baseY)
+      ctx.closePath()
+      ctx.fillStyle = gradient
+      ctx.fill()
+      // 线
+      ctx.strokeStyle = '#667eea'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      points.forEach((p, i) => { const {x,y} = toXY(i, p.value); i?ctx.lineTo(x,y):ctx.moveTo(x,y) })
+      ctx.stroke()
+      // 点
+      ctx.fillStyle = '#667eea'
+      points.forEach((p, i) => { const {x,y} = toXY(i, p.value); ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill() })
+    })
+  },
+
   onLoad() {
     this.checkLoginAndLoad()
     
@@ -854,3 +1278,5 @@ Page({
     // 空函数，用于阻止事件冒泡
   }
 })
+
+// 已迁移：drawFeedingChart 方法已移入 Page 对象内部

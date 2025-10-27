@@ -1,10 +1,29 @@
 <!--pages/records/records.wxml-->
 <view class="page-container">
-  <!-- 游客模式提示 -->
-  <view wx:if="{{!isLogin}}" class="guest-tip">
-    <text class="tip-text">📝 记录功能需要登录使用</text>
-    <text class="tip-subtitle">登录后可以记录和查看您的鹦鹉护理记录</text>
+  <!-- 自定义页头 -->
+  <view class="custom-header">
+    <view class="header-content">
+      <view class="header-left">
+        <view class="header-icon"></view>
+        <view class="header-title-section">
+          <text class="header-title">鹦鹉管家</text>
+          <text class="header-subtitle">专业鹦鹉护理助手</text>
+        </view>
+      </view>
+      <view class="header-right" style="margin-right: {{menuRightPadding}}px;">
+        <button class="header-btn notification"></button>
+        <button class="header-btn more"></button>
+      </view>
+    </view>
   </view>
+
+  <!-- 内容区域需要增加顶部间距 -->
+  <view style="padding-top: 240rpx;">
+    <!-- 游客模式提示 -->
+    <view wx:if="{{!isLogin}}" class="guest-tip">
+      <text class="tip-text">📝 记录功能需要登录使用</text>
+      <text class="tip-subtitle">登录后可以记录和查看您的鹦鹉护理记录</text>
+    </view>
 
   <!-- 标签页切换 -->
   <view class="tab-bar">
@@ -259,6 +278,26 @@
   </view>
 </view>
 
+<!-- 鹦鹉筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showParrotModal}}" bindtap="hideParrotFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择鹦鹉</text>
+      <view class="modal-close" bindtap="hideParrotFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option {{selectedParrot === '' ? 'selected' : ''}}" bindtap="selectParrot" data-parrot="">
+        <text class="option-text">全部鹦鹉</text>
+        <text class="option-check" wx:if="{{selectedParrot === ''}}">✓</text>
+      </view>
+      <view class="filter-option {{selectedParrot === item.name ? 'selected' : ''}}" wx:for="{{parrots}}" wx:key="id" bindtap="selectParrot" data-parrot="{{item.name}}">
+        <text class="option-text">{{item.name}}</text>
+        <text class="option-check" wx:if="{{selectedParrot === item.name}}">✓</text>
+      </view>
+    </view>
+  </view>
+</view>
+
 <!-- 日期筛选弹窗 -->
 <view class="modal-overlay" wx:if="{{showDateModal}}" bindtap="hideDateFilter">
   <view class="modal-content" catchtap="stopPropagation">
@@ -286,3 +325,4 @@
     </view>
   </view>
 </view>
+  </view>

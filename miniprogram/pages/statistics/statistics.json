@@ -1,5 +1,6 @@
 {
-  "usingComponents": {},
+  "usingComponents": { "app-header": "/components/app-header/app-header" },
+  "navigationStyle": "custom",
   "navigationBarTitleText": "数据统计",
   "enablePullDownRefresh": true,
   "backgroundColor": "#f8f9fa",

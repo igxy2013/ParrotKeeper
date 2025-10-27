@@ -1,5 +1,9 @@
 {
-  "usingComponents": {},
+  "usingComponents": { 
+    "app-header": "/components/app-header/app-header",
+    "notification-center": "/components/notification-center/notification-center"
+  },
+  "navigationStyle": "custom",
   "navigationBarTitleText": "鹦鹉管家AI",
   "enablePullDownRefresh": true,
   "backgroundColor": "#f8f9fa",

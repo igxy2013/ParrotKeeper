@@ -1,0 +1,28 @@
+<view wx:if="{{visible}}" class="nc-overlay" catchtouchmove="true" bindtap="onOverlayTap">
+  <view class="nc-panel" catchtap="noop">
+    <view class="nc-header">
+      <text class="nc-title">通知中心</text>
+      <view class="nc-actions">
+        <text class="nc-action" bindtap="markAllRead">全部已读</text>
+        <text class="nc-action danger" bindtap="clearAll">清空</text>
+        <text class="nc-close" bindtap="close">×</text>
+      </view>
+    </view>
+    <view class="nc-list">
+      <view class="nc-item" wx:for="{{notifications}}" wx:key="id" bindtap="onItemTap" data-id="{{item.id}}">
+        <view class="nc-icon {{item.type}}">
+          <text class="nc-icon-text">{{item.type === 'health' ? '♥' : (item.type === 'feeding' ? '🍎' : (item.type === 'system' ? '🔔' : '📣'))}}</text>
+        </view>
+        <view class="nc-content">
+          <text class="nc-item-title">{{item.title}}</text>
+          <text class="nc-item-sub">{{item.time || item.description}}</text>
+        </view>
+        <view class="nc-dot" wx:if="{{item.unread}}"></view>
+      </view>
+      <view class="nc-empty" wx:if="{{!notifications || notifications.length === 0}}">
+        <text class="nc-empty-icon">🔔</text>
+        <text class="nc-empty-text">暂无通知</text>
+      </view>
+    </view>
+  </view>
+</view>

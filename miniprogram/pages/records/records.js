@@ -30,11 +30,13 @@ Page({
     
     // 分页
     page: 1,
-    hasMore: true
+    hasMore: true,
+    menuRightPadding: 0
   },
 
   // 页面显示时检查登录并加载
   onShow() {
+    this.computeMenuRightPadding()
     this.checkLoginAndLoad()
   },
 
@@ -512,5 +514,18 @@ Page({
   onPullDownRefresh() {
     this.loadRecords(true)
       .finally(() => wx.stopPullDownRefresh())
+  },
+  computeMenuRightPadding() {
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : {}
+      const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+      if (win && rect && typeof win.windowWidth === 'number') {
+        const rightGap = win.windowWidth - rect.right
+        const menuRightPadding = rightGap + rect.width + 8
+        this.setData({ menuRightPadding })
+      }
+    } catch (e) {
+      this.setData({ menuRightPadding: 0 })
+    }
   }
 })

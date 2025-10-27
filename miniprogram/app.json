@@ -10,6 +10,7 @@
                   "pages/records/add-record/add-record",
                   "pages/statistics/statistics",
                   "pages/profile/profile",
+                  "pages/settings/settings",
                   "pages/expenses/expenses",
                   "pages/expenses/add-expense/add-expense",
                   "pages/expenses/edit-expense/edit-expense",
@@ -20,8 +21,8 @@
               ],
     "window":  {
                    "backgroundTextStyle":  "light",
-                   "navigationBarBackgroundColor":  "#4CAF50",
-                   "navigationBarTitleText":  "鹦鹉管家AI",
+                   "navigationBarBackgroundColor":  "#10b981",
+                   "navigationBarTitleText":  "鹦鹉管家",
                    "navigationBarTextStyle":  "white",
                    "backgroundColor":  "#f5f5f5"
                },
@@ -39,7 +40,7 @@
                                 },
                                 {
                                     "pagePath":  "pages/parrots/parrots",
-                                    "text":  "鹦鹉档案",
+                                    "text":  "我的鹦鹉",
                                     "iconPath":  "images/parrot.png",
                                     "selectedIconPath":  "images/parrot-active.png"
                                 },

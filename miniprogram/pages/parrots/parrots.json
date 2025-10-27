@@ -1,5 +1,6 @@
 {
-  "usingComponents": {},
+  "usingComponents": { "app-header": "/components/app-header/app-header" },
+  "navigationStyle": "custom",
   "navigationBarTitleText": "我的鹦鹉",
   "enablePullDownRefresh": true,
   "onReachBottomDistance": 50,

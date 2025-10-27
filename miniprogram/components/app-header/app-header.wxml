@@ -1,0 +1,16 @@
+<view class="ah-app-header" style="padding-top: {{statusBarPadding}}px;">
+  <view class="ah-header-content">
+    <view class="ah-header-left">
+      <view wx:if="{{showBack}}" class="ah-back-btn" bindtap="onBack">
+        <text class="ah-back-icon">←</text>
+      </view>
+      <view class="ah-app-info">
+        <text class="ah-app-title">{{title}}</text>
+        <text wx:if="{{subtitle}}" class="ah-app-subtitle">{{subtitle}}</text>
+      </view>
+    </view>
+    <view class="ah-header-right" style="margin-right: {{menuRightPadding}}px;">
+      <slot name="actions"></slot>
+    </view>
+  </view>
+</view>
