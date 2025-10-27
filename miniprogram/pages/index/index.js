@@ -23,7 +23,6 @@ Page({
     newParrot: {
       name: '',
       type: '',
-      age: '',
       weight: '',
       gender: '',
       color: '',
@@ -746,7 +745,7 @@ Page({
   closeAddParrotModal() {
     this.setData({
       showAddParrotModal: false,
-      newParrot: { name: '', type: '', age: '', weight: '', gender: '', color: '', birthDate: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' },
+      newParrot: { name: '', type: '', weight: '', gender: '', color: '', birthDate: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' },
       typeIndex: 0
     })
   },
@@ -756,7 +755,6 @@ Page({
 
   // 输入绑定
   onParrotNameInput(e) { this.setData({ 'newParrot.name': e.detail.value }) },
-  onParrotAgeInput(e) { this.setData({ 'newParrot.age': e.detail.value }) },
   onParrotWeightInput(e) { this.setData({ 'newParrot.weight': e.detail.value }) },
   onParrotColorInput(e) { this.setData({ 'newParrot.color': e.detail.value }) },
   onParrotNotesInput(e) { this.setData({ 'newParrot.notes': e.detail.value }) },
@@ -850,9 +848,6 @@ Page({
       if (match) species_id = match.id
     } catch (_) { species_id = '' }
     let notes = np.notes || ''
-    if (np.age) {
-      notes = notes ? `${notes}\n年龄: ${np.age}` : `年龄: ${np.age}`
-    }
     const payload = {
       name: np.name,
       species_id,

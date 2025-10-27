@@ -164,15 +164,36 @@
       
       <view class="photo-upload">
         <view class="photo-preview" wx:if="{{formData.photo_url}}">
-          <image 
-            class="preview-image" 
-            src="{{formData.photo_url}}" 
-            mode="aspectFill"
-            bindtap="previewPhoto"
-          />
+          <!-- 原图预览 -->
+          <view class="image-container">
+            <text class="image-label">原图</text>
+            <image 
+              class="preview-image" 
+              src="{{formData.photo_url}}" 
+              mode="aspectFill"
+              bindtap="previewPhoto"
+            />
+          </view>
+          
+          <!-- 抠图预览 -->
+          <view class="image-container" wx:if="{{formData.processed_photo_url}}">
+            <text class="image-label">抠图效果</text>
+            <image 
+              class="preview-image processed-image" 
+              src="{{formData.processed_photo_url}}" 
+              mode="aspectFill"
+              bindtap="previewPhoto"
+            />
+          </view>
+          
           <view class="photo-actions">
+            <view class="action-btn" bindtap="processExistingImage" wx:if="{{!formData.processed_photo_url}}">
+              <text class="action-icon">✂️</text>
+              <text class="action-text">抠图</text>
+            </view>
             <view class="action-btn" bindtap="deletePhoto">
               <text class="action-icon">🗑️</text>
+              <text class="action-text">删除</text>
             </view>
           </view>
         </view>
@@ -180,7 +201,7 @@
         <view class="upload-area" wx:else bindtap="choosePhoto">
           <view class="upload-icon">📷</view>
           <text class="upload-text">点击上传照片</text>
-          <text class="upload-tip">支持jpg、png格式，大小不超过5MB</text>
+          <text class="upload-tip">支持jpg、png格式，自动抠图处理</text>
         </view>
       </view>
     </view>

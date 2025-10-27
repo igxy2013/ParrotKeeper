@@ -1,0 +1,53 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 玄凤鹦鹉 - 特点：头顶冠羽，灰色身体，橙色脸颊 -->
+  
+  <!-- 身体 -->
+  <ellipse cx="100" cy="120" rx="35" ry="45" fill="#D3D3D3" stroke="#A9A9A9" stroke-width="1"/>
+  
+  <!-- 胸部 -->
+  <ellipse cx="100" cy="105" rx="28" ry="25" fill="#E8E8E8"/>
+  
+  <!-- 头部 -->
+  <circle cx="100" cy="75" r="25" fill="#F5F5F5" stroke="#D3D3D3" stroke-width="1"/>
+  
+  <!-- 冠羽 (玄凤鹦鹉的特征) -->
+  <path d="M85 55 Q90 45 95 50 Q100 40 105 50 Q110 45 115 55" 
+        fill="#D3D3D3" stroke="#A9A9A9" stroke-width="1"/>
+  <path d="M88 58 Q92 48 96 53 Q100 43 104 53 Q108 48 112 58" 
+        fill="#E8E8E8"/>
+  
+  <!-- 橙色脸颊斑 (玄凤鹦鹉特征) -->
+  <circle cx="85" cy="78" r="8" fill="#FF8C00"/>
+  <circle cx="115" cy="78" r="8" fill="#FF8C00"/>
+  
+  <!-- 喙 -->
+  <path d="M100 85 Q95 90 100 92 Q105 90 100 85" fill="#8B4513"/>
+  
+  <!-- 眼睛 -->
+  <circle cx="90" cy="72" r="4" fill="#000"/>
+  <circle cx="110" cy="72" r="4" fill="#000"/>
+  <circle cx="91" cy="71" r="1.5" fill="#FFF"/>
+  <circle cx="111" cy="71" r="1.5" fill="#FFF"/>
+  
+  <!-- 左翅膀 -->
+  <ellipse cx="75" cy="115" rx="15" ry="35" fill="#C0C0C0" stroke="#A9A9A9" stroke-width="1"/>
+  <ellipse cx="75" cy="115" rx="10" ry="25" fill="#D3D3D3"/>
+  
+  <!-- 右翅膀 -->
+  <ellipse cx="125" cy="115" rx="15" ry="35" fill="#C0C0C0" stroke="#A9A9A9" stroke-width="1"/>
+  <ellipse cx="125" cy="115" rx="10" ry="25" fill="#D3D3D3"/>
+  
+  <!-- 尾巴 -->
+  <ellipse cx="100" cy="165" rx="12" ry="25" fill="#A9A9A9" stroke="#808080" stroke-width="1"/>
+  <ellipse cx="100" cy="165" rx="8" ry="20" fill="#C0C0C0"/>
+  
+  <!-- 腿部 -->
+  <rect x="92" y="160" width="3" height="15" fill="#8B4513"/>
+  <rect x="105" y="160" width="3" height="15" fill="#8B4513"/>
+  
+  <!-- 爪子 -->
+  <path d="M90 175 L88 178 M92 175 L90 178 M94 175 L96 178" 
+        stroke="#8B4513" stroke-width="2" fill="none"/>
+  <path d="M103 175 L101 178 M105 175 L103 178 M107 175 L109 178" 
+        stroke="#8B4513" stroke-width="2" fill="none"/>
+</svg>

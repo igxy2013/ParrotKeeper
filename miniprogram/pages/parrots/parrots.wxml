@@ -87,7 +87,7 @@
               <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
             </view>
           </view>
-          <text class="parrot-species">{{item.species_name}} • {{item.age_days}}天 • {{item.weight ? item.weight + 'g' : ''}}</text>
+          <text class="parrot-species">{{item.species_name}} • {{item.age_days ? item.age_days + '天' : '未知'}} • {{item.weight ? item.weight + 'g' : ''}}</text>
           <view class="parrot-status">
             <view class="status-item">
               <text class="status-icon">🍽️</text>
@@ -139,6 +139,127 @@
       <view class="filter-option" wx:for="{{speciesList}}" wx:key="id" bindtap="selectSpecies" data-id="{{item.id}}" data-name="{{item.name}}">
         <text class="option-text">{{item.name}}</text>
       </view>
+    </view>
+  </view>
+</view>
+
+<!-- 添加鹦鹉弹窗（严格参考参考APP设计风格） -->
+<view wx:if="{{showAddParrotModal}}" class="modal-overlay" catchtouchmove="true" bindtap="closeAddParrotModal">
+  <view class="modal-content" catchtap="stopPropagation" style="margin-top: {{modalTopOffsetPx}}px; margin-bottom: {{modalBottomOffsetPx}}px;">
+    <!-- 头部渐变区域 -->
+    <view class="modal-header-gradient">
+      <view class="modal-header-row">
+        <text class="modal-title">添加新鹦鹉</text>
+        <view class="modal-close-btn" bindtap="closeAddParrotModal"><text class="modal-close-icon">✕</text></view>
+      </view>
+    </view>
+
+    <!-- 弹窗内容 -->
+    <scroll-view scroll-y="true" class="modal-scroll">
+      <view class="form-section">
+        <!-- 名字 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">❤</text>鹦鹉名字 *</text>
+          <input class="text-input" placeholder="给您的鹦鹉起个可爱的名字" value="{{newParrot.name}}" bindinput="onParrotNameInput" />
+        </view>
+
+        <!-- 品种 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">🍃</text>鹦鹉品种 *</text>
+          <view class="picker-wrapper">
+            <picker mode="selector" range="{{parrotTypes}}" value="{{typeIndex}}" bindchange="onTypePickerChange">
+              <view class="picker-display">
+                <text>{{newParrot.type ? newParrot.type : '请选择品种'}}</text>
+                <text class="picker-arrow">▾</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <!-- 编号 与 脚环号 -->
+        <view class="form-grid">
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">#</text>鹦鹉编号</text>
+            <input class="text-input" placeholder="例如：PK-2025-001" value="{{newParrot.parrot_number}}" bindinput="onParrotNumberInput" />
+          </view>
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">🪙</text>脚环号</text>
+            <input class="text-input" placeholder="例如：R-88921" value="{{newParrot.ring_number}}" bindinput="onRingNumberInput" />
+          </view>
+        </view>
+
+        <!-- 体重 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">⚖</text>体重(g)</text>
+          <input class="text-input" placeholder="如: 35" value="{{newParrot.weight}}" bindinput="onParrotWeightInput" />
+        </view>
+
+        <!-- 性别 与 颜色 -->
+        <view class="form-grid">
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">👤</text>性别</text>
+            <view class="gender-row">
+              <view class="gender-btn {{newParrot.gender === '雄性' ? 'gender-male active' : 'gender-male'}}" bindtap="setParrotGender" data-gender="雄性">雄性</view>
+              <view class="gender-btn {{newParrot.gender === '雌性' ? 'gender-female active' : 'gender-female'}}" bindtap="setParrotGender" data-gender="雌性">雌性</view>
+            </view>
+          </view>
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">🎨</text>主要颜色</text>
+            <input class="text-input" placeholder="如: 绿色" value="{{newParrot.color}}" bindinput="onParrotColorInput" />
+          </view>
+        </view>
+
+        <!-- 出生日期 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">📅</text>出生日期</text>
+          <picker mode="date" value="{{newParrot.birthDate}}" bindchange="onBirthDateChange">
+            <view class="picker-display">
+              <text>{{newParrot.birthDate ? newParrot.birthDate : '请选择日期'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+
+        <!-- 入住日期 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">🏠</text>入住日期</text>
+          <picker mode="date" value="{{newParrot.acquisition_date}}" bindchange="onAcquisitionDateChange">
+            <view class="picker-display">
+              <text>{{newParrot.acquisition_date ? newParrot.acquisition_date : '请选择日期'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+
+        <!-- 鹦鹉照片 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">📷</text>鹦鹉照片</text>
+          <view class="photo-upload">
+            <view class="photo-preview" wx:if="{{newParrot.photo_url}}">
+              <image class="preview-image" src="{{newParrot.photo_url}}" mode="aspectFill" bindtap="previewParrotPhoto" />
+              <view class="photo-actions">
+                <view class="action-btn" bindtap="deleteParrotPhoto"><text class="action-icon">🗑️</text></view>
+              </view>
+            </view>
+            <view class="upload-area" wx:else bindtap="chooseParrotPhoto">
+              <view class="upload-icon">📷</view>
+              <text class="upload-text">点击上传照片</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 备注信息 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">📝</text>备注信息</text>
+          <textarea class="textarea-input" placeholder="记录一些特殊信息，如性格特点、喜好等..." value="{{newParrot.notes}}" bindinput="onParrotNotesInput" />
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 底部按钮 -->
+    <view class="modal-footer">
+      <button class="btn-secondary" bindtap="closeAddParrotModal">取消</button>
+      <button class="btn-primary" bindtap="submitNewParrot" disabled="{{!newParrot.name || !newParrot.type}}">添加鹦鹉</button>
     </view>
   </view>
 </view>

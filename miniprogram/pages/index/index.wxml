@@ -242,16 +242,10 @@
           </view>
         </view>
 
-        <!-- 年龄 与 体重 -->
-        <view class="form-grid">
-          <view class="form-item">
-            <text class="form-label"><text class="label-icon">⏱</text>年龄</text>
-            <input class="text-input" placeholder="如: 2岁" value="{{newParrot.age}}" bindinput="onParrotAgeInput" />
-          </view>
-          <view class="form-item">
-            <text class="form-label"><text class="label-icon">⚖</text>体重(g)</text>
-            <input class="text-input" placeholder="如: 35" value="{{newParrot.weight}}" bindinput="onParrotWeightInput" />
-          </view>
+        <!-- 体重 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">⚖</text>体重(g)</text>
+          <input class="text-input" placeholder="如: 35" value="{{newParrot.weight}}" bindinput="onParrotWeightInput" />
         </view>
 
         <!-- 性别 与 颜色 -->

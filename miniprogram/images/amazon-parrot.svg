@@ -1,0 +1,64 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 亚马逊鹦鹉 - 特点：绿色为主，头部有彩色斑块 -->
+  
+  <!-- 身体 -->
+  <ellipse cx="100" cy="120" rx="38" ry="48" fill="#228B22" stroke="#006400" stroke-width="1"/>
+  
+  <!-- 胸部 -->
+  <ellipse cx="100" cy="105" rx="30" ry="28" fill="#32CD32"/>
+  
+  <!-- 头部 -->
+  <circle cx="100" cy="72" r="26" fill="#228B22" stroke="#006400" stroke-width="1"/>
+  
+  <!-- 头顶黄色区域 (亚马逊鹦鹉特征) -->
+  <ellipse cx="100" cy="58" rx="22" ry="12" fill="#FFD700"/>
+  
+  <!-- 面颊红色斑块 (亚马逊鹦鹉特征) -->
+  <ellipse cx="82" cy="75" rx="8" ry="6" fill="#DC143C"/>
+  <ellipse cx="118" cy="75" rx="8" ry="6" fill="#DC143C"/>
+  
+  <!-- 喙 -->
+  <path d="M100 85 Q92 92 98 96 Q100 94 102 96 Q108 92 100 85" fill="#8B4513"/>
+  <path d="M100 85 Q96 88 100 90 Q104 88 100 85" fill="#A0522D"/>
+  
+  <!-- 眼睛 -->
+  <circle cx="90" cy="70" r="4.5" fill="#000"/>
+  <circle cx="110" cy="70" r="4.5" fill="#000"/>
+  <circle cx="91" cy="68" r="1.8" fill="#FFF"/>
+  <circle cx="111" cy="68" r="1.8" fill="#FFF"/>
+  
+  <!-- 左翅膀 -->
+  <ellipse cx="72" cy="118" rx="16" ry="38" fill="#228B22" stroke="#006400" stroke-width="1"/>
+  <ellipse cx="72" cy="118" rx="11" ry="28" fill="#32CD32"/>
+  <!-- 翅膀蓝色边缘 (亚马逊鹦鹉特征) -->
+  <path d="M60 100 Q65 115 60 130 Q65 145 60 155" stroke="#4169E1" stroke-width="3" fill="none"/>
+  
+  <!-- 右翅膀 -->
+  <ellipse cx="128" cy="118" rx="16" ry="38" fill="#228B22" stroke="#006400" stroke-width="1"/>
+  <ellipse cx="128" cy="118" rx="11" ry="28" fill="#32CD32"/>
+  <!-- 翅膀蓝色边缘 -->
+  <path d="M140 100 Q135 115 140 130 Q135 145 140 155" stroke="#4169E1" stroke-width="3" fill="none"/>
+  
+  <!-- 尾巴 -->
+  <ellipse cx="100" cy="168" rx="14" ry="30" fill="#228B22" stroke="#006400" stroke-width="1"/>
+  <ellipse cx="100" cy="168" rx="10" ry="25" fill="#32CD32"/>
+  <!-- 尾巴红色羽毛 -->
+  <ellipse cx="95" cy="175" rx="4" ry="15" fill="#DC143C"/>
+  <ellipse cx="105" cy="175" rx="4" ry="15" fill="#FFD700"/>
+  
+  <!-- 腿部 -->
+  <rect x="92" y="165" width="3.5" height="16" fill="#8B4513"/>
+  <rect x="104.5" y="165" width="3.5" height="16" fill="#8B4513"/>
+  
+  <!-- 爪子 -->
+  <path d="M90 181 L87 185 M92 181 L89 185 M94 181 L97 185" 
+        stroke="#8B4513" stroke-width="2" fill="none"/>
+  <path d="M102 181 L99 185 M104 181 L101 185 M106 181 L109 185" 
+        stroke="#8B4513" stroke-width="2" fill="none"/>
+        
+  <!-- 颈部绿色渐变 -->
+  <ellipse cx="100" cy="90" rx="20" ry="8" fill="#32CD32" opacity="0.7"/>
+  
+  <!-- 额头橙色斑块 -->
+  <ellipse cx="100" cy="65" rx="12" ry="6" fill="#FF8C00"/>
+</svg>

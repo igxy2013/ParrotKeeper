@@ -1,0 +1,53 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- 虎皮鹦鹉 - 绿色和黄色羽毛，黑色条纹 -->
+  
+  <!-- 身体主体 -->
+  <ellipse cx="60" cy="75" rx="25" ry="35" fill="#7CB342" stroke="#4A7C59" stroke-width="1"/>
+  
+  <!-- 胸部 -->
+  <ellipse cx="60" cy="65" rx="20" ry="25" fill="#FFEB3B"/>
+  
+  <!-- 头部 -->
+  <circle cx="60" cy="35" r="22" fill="#FFEB3B"/>
+  
+  <!-- 头部绿色区域 -->
+  <path d="M 45 25 Q 60 15 75 25 Q 75 35 60 40 Q 45 35 45 25" fill="#7CB342"/>
+  
+  <!-- 黑色条纹 - 头部 -->
+  <path d="M 48 22 Q 52 20 56 22 Q 52 25 48 22" fill="#2E2E2E"/>
+  <path d="M 64 22 Q 68 20 72 22 Q 68 25 64 22" fill="#2E2E2E"/>
+  <path d="M 50 28 Q 54 26 58 28 Q 54 31 50 28" fill="#2E2E2E"/>
+  <path d="M 62 28 Q 66 26 70 28 Q 66 31 62 28" fill="#2E2E2E"/>
+  
+  <!-- 翅膀 -->
+  <ellipse cx="40" cy="70" rx="12" ry="25" fill="#7CB342" transform="rotate(-20 40 70)"/>
+  <ellipse cx="80" cy="70" rx="12" ry="25" fill="#7CB342" transform="rotate(20 80 70)"/>
+  
+  <!-- 翅膀上的黑色条纹 -->
+  <path d="M 35 60 Q 40 58 45 60 Q 40 63 35 60" fill="#2E2E2E" transform="rotate(-20 40 70)"/>
+  <path d="M 35 70 Q 40 68 45 70 Q 40 73 35 70" fill="#2E2E2E" transform="rotate(-20 40 70)"/>
+  <path d="M 75 60 Q 80 58 85 60 Q 80 63 75 60" fill="#2E2E2E" transform="rotate(20 80 70)"/>
+  <path d="M 75 70 Q 80 68 85 70 Q 80 73 75 70" fill="#2E2E2E" transform="rotate(20 80 70)"/>
+  
+  <!-- 尾巴 -->
+  <ellipse cx="60" cy="105" rx="8" ry="20" fill="#7CB342"/>
+  <path d="M 55 100 Q 60 98 65 100 Q 60 103 55 100" fill="#2E2E2E"/>
+  <path d="M 55 110 Q 60 108 65 110 Q 60 113 55 110" fill="#2E2E2E"/>
+  
+  <!-- 喙 -->
+  <path d="M 55 40 Q 60 45 65 40 Q 60 42 55 40" fill="#FFA726"/>
+  
+  <!-- 眼睛 -->
+  <circle cx="52" cy="32" r="4" fill="#FFFFFF"/>
+  <circle cx="68" cy="32" r="4" fill="#FFFFFF"/>
+  <circle cx="52" cy="32" r="2" fill="#2E2E2E"/>
+  <circle cx="68" cy="32" r="2" fill="#2E2E2E"/>
+  
+  <!-- 腿部 -->
+  <rect x="55" y="105" width="3" height="8" fill="#FFA726"/>
+  <rect x="62" y="105" width="3" height="8" fill="#FFA726"/>
+  
+  <!-- 脚爪 -->
+  <path d="M 53 113 L 51 115 M 55 113 L 57 115 M 57 113 L 59 115" stroke="#FFA726" stroke-width="1.5" fill="none"/>
+  <path d="M 60 113 L 58 115 M 62 113 L 64 115 M 64 113 L 66 115" stroke="#FFA726" stroke-width="1.5" fill="none"/>
+</svg>

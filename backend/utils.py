@@ -4,6 +4,8 @@ import json
 from functools import wraps
 from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
+from PIL import Image
+import io
 
 def allowed_file(filename):
     """检查文件扩展名是否允许"""
@@ -29,6 +31,64 @@ def save_uploaded_file(file, folder='parrots'):
         # 返回相对路径用于存储在数据库中
         return f"{folder}/{filename}"
     return None
+
+def remove_background(image_path):
+    """使用rembg库移除图片背景"""
+    try:
+        from rembg import remove
+        
+        # 读取原始图片
+        with open(image_path, 'rb') as input_file:
+            input_data = input_file.read()
+        
+        # 移除背景
+        output_data = remove(input_data)
+        
+        # 生成新的文件名
+        name, ext = os.path.splitext(image_path)
+        output_path = f"{name}_no_bg.png"  # 输出为PNG格式以支持透明背景
+        
+        # 保存处理后的图片
+        with open(output_path, 'wb') as output_file:
+            output_file.write(output_data)
+        
+        return output_path
+    except Exception as e:
+        print(f"背景移除失败: {str(e)}")
+        return None
+
+def process_parrot_image(file, folder='parrots'):
+    """处理鹦鹉图片：保存原图并生成抠图版本"""
+    if not file or not allowed_file(file.filename):
+        return None, None
+    
+    filename = secure_filename(file.filename)
+    # 添加时间戳避免文件名冲突
+    import time
+    timestamp = str(int(time.time()))
+    name, ext = os.path.splitext(filename)
+    
+    upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], folder)
+    os.makedirs(upload_path, exist_ok=True)
+    
+    # 保存原图
+    original_filename = f"{name}_{timestamp}{ext}"
+    original_path = os.path.join(upload_path, original_filename)
+    file.save(original_path)
+    
+    # 生成抠图版本
+    processed_path = remove_background(original_path)
+    
+    if processed_path:
+        # 获取处理后文件的相对路径
+        processed_filename = os.path.basename(processed_path)
+        processed_relative_path = f"{folder}/{processed_filename}"
+        original_relative_path = f"{folder}/{original_filename}"
+        
+        return original_relative_path, processed_relative_path
+    else:
+        # 如果抠图失败，只返回原图
+        return f"{folder}/{original_filename}", None
 
 def get_wechat_session(code):
     """通过微信code获取session信息"""

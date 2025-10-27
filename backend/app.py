@@ -10,6 +10,7 @@ from routes.upload import upload_bp
 from routes.expenses import expenses_bp
 from routes.teams import teams_bp
 from routes.achievements import achievements_bp
+from routes.image_processing import image_processing_bp
 import os
 
 def create_app(config_name=None):
@@ -36,6 +37,7 @@ def create_app(config_name=None):
     app.register_blueprint(expenses_bp)
     app.register_blueprint(teams_bp)
     app.register_blueprint(achievements_bp)
+    app.register_blueprint(image_processing_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
@@ -93,8 +95,7 @@ if __name__ == '__main__':
     # 调试：打印所有路由
     print("注册的路由:")
     for rule in app.url_map.iter_rules():
-        if 'achievement' in rule.rule.lower():
-            print(f"  {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
+        print(f"  {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
     
     # 使用Flask开发服务器进行测试
     print("启动开发服务器...")

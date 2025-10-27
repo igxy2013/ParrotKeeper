@@ -13,6 +13,7 @@ Page({
       weight: '',
       health_status: 'healthy',
       photo_url: '',
+      processed_photo_url: '', // 添加抠图后的图片URL
       avatar_url: '/images/parrot-avatar-green.svg', // 默认头像
       notes: '',
       parrot_number: '',
@@ -315,38 +316,93 @@ Page({
     })
   },
 
-  // 上传照片
+  // 上传照片并自动抠图
   async uploadPhoto(filePath) {
     try {
-      app.showLoading('上传中...')
+      app.showLoading('上传并处理中...')
       
       const uploadRes = await new Promise((resolve, reject) => {
         wx.uploadFile({
-          url: app.globalData.baseUrl + '/api/upload/image',
+          url: app.globalData.baseUrl + '/api/image/remove-background',
           filePath: filePath,
-          name: 'file',
+          name: 'image',
           header: {
             'X-OpenID': app.globalData.openid
           },
-          success: resolve,
-          fail: reject
+          success: (res) => {
+            console.log('上传响应:', res)
+            if (res.statusCode === 200) {
+              resolve(res)
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}: ${res.data}`))
+            }
+          },
+          fail: (err) => {
+            console.error('上传请求失败:', err)
+            reject(err)
+          }
         })
       })
       
+      console.log('解析响应数据:', uploadRes.data)
       const result = JSON.parse(uploadRes.data)
-      if (result.success) {
-        // 将相对路径转换为完整URL
-        const fullUrl = app.globalData.baseUrl + '/uploads/' + result.data.url
+      
+      if (result.original_url) {
+        // 设置原图和抠图后的图片URL
         this.setData({
-          'formData.photo_url': fullUrl
+          'formData.photo_url': result.original_url
         })
-        app.showSuccess('上传成功')
+        
+        if (result.processed_url) {
+          this.setData({
+            'formData.processed_photo_url': result.processed_url
+          })
+          app.showSuccess('上传成功，已自动抠图')
+        } else {
+          app.showSuccess('上传成功，抠图处理失败')
+        }
+      } else if (result.error) {
+        throw new Error(result.error)
       } else {
-        throw new Error(result.message)
+        throw new Error('上传失败，未知错误')
       }
     } catch (error) {
       console.error('上传照片失败:', error)
-      app.showError('上传照片失败')
+      app.showError(`上传照片失败: ${error.message}`)
+    } finally {
+      app.hideLoading()
+    }
+  },
+
+  // 手动对已上传图片进行抠图
+  async processExistingImage() {
+    if (!this.data.formData.photo_url) {
+      app.showError('请先上传图片')
+      return
+    }
+    
+    try {
+      app.showLoading('抠图处理中...')
+      
+      const res = await app.request({
+        url: '/api/image/process-existing',
+        method: 'POST',
+        data: {
+          image_path: this.data.formData.photo_url
+        }
+      })
+      
+      if (res.processed_url) {
+        this.setData({
+          'formData.processed_photo_url': res.processed_url
+        })
+        app.showSuccess('抠图处理成功')
+      } else {
+        throw new Error(res.error || '抠图处理失败')
+      }
+    } catch (error) {
+      console.error('抠图处理失败:', error)
+      app.showError('抠图处理失败')
     } finally {
       app.hideLoading()
     }
