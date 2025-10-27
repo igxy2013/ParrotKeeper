@@ -1,4 +1,4 @@
-<!--pages/expenses/expenses.wxml-->
+<!-- pages/expenses/transactions/transactions.wxml -->
 <view class="page-container">
   <app-header title="收支管理" subtitle="记录鹦鹉相关收入支出" showBack="{{true}}">
     <view slot="actions" class="header-actions">
@@ -25,7 +25,7 @@
     </view>
 
     <view class="stats-grid">
-      <view class="stat-card net {{stats.netIncome >= 0 ? 'positive' : 'negative'}}">
+      <view class="stat-card net" wx:class="{{stats.netIncome >= 0 ? 'positive' : 'negative'}}">
         <view class="stat-icon">💼</view>
         <view class="stat-value">¥{{stats.netIncome}}</view>
         <view class="stat-label">净收入</view>
@@ -37,7 +37,7 @@
       </view>
     </view>
 
-    <!-- 筛选条件 -->
+    <!-- 筛选区 -->
     <view class="card">
       <view class="card-header">
         <text class="card-title">筛选条件</text>
@@ -46,16 +46,16 @@
         <view class="filter-section">
           <text class="filter-label">记录类型</text>
           <view class="chip-group">
-            <block wx:for="{{types}}" wx:key="*this">
-              <button class="chip {{selectedType === item ? 'active ' + (item === '收入' ? 'income' : item === '支出' ? 'expense' : 'all') : ''}}" bindtap="onSelectType" data-type="{{item}}">{{item}}</button>
-            </block>
+            <button class="chip {{selectedType === '全部' ? 'active all' : ''}}" bindtap="onSelectType" data-type="全部">全部</button>
+            <button class="chip {{selectedType === '收入' ? 'active income' : ''}}" bindtap="onSelectType" data-type="收入">收入</button>
+            <button class="chip {{selectedType === '支出' ? 'active expense' : ''}}" bindtap="onSelectType" data-type="支出">支出</button>
           </view>
         </view>
 
         <view class="filter-section">
           <text class="filter-label">选择鹦鹉</text>
           <view class="chip-group">
-            <block wx:for="{{parrots}}" wx:key="*this">
+            <block wx:for="{{parrots}}" wx:key="name">
               <button class="chip {{selectedParrot === item ? 'active parrot' : ''}}" bindtap="onSelectParrot" data-parrot="{{item}}">{{item}}</button>
             </block>
           </view>
@@ -64,7 +64,7 @@
         <view class="filter-section">
           <text class="filter-label">记录类别</text>
           <view class="chip-group">
-            <block wx:for="{{filterCategories}}" wx:key="*this">
+            <block wx:for="{{filterCategories}}" wx:key="name">
               <button class="chip {{selectedCategory === item ? 'active category' : ''}}" bindtap="onSelectCategory" data-category="{{item}}">{{item}}</button>
             </block>
           </view>
@@ -146,9 +146,10 @@
 
           <view class="form-item">
             <text class="form-label">选择鹦鹉</text>
-            <picker range="{{parrots}}" range-key="name" value="{{parrotIndex}}" bindchange="onNewParrotChange">
+            <picker range="{{parrots}}" value="{{parrotIndex}}" bindchange="onNewParrotChange">
               <view class="picker-view">
-                <text class="picker-text">{{newRecord.parrot || '小彩'}}</text>
+                <text class="picker-text">{{newRecord.parrot || '小彩'}}
+                </text>
                 <text class="picker-arrow">▼</text>
               </view>
             </picker>
@@ -166,12 +167,12 @@
 
           <view class="form-item">
             <text class="form-label">{{newRecord.type}}金额</text>
-            <input type="number" value="{{newRecord.amount}}" bindinput="onNewAmountChange" placeholder="请输入金额" class="form-input" />
+            <input class="form-input" type="digit" placeholder="请输入金额" value="{{newRecord.amount}}" bindinput="onNewAmountInput" />
           </view>
 
           <view class="form-item">
             <text class="form-label">{{newRecord.type}}描述</text>
-            <input type="text" value="{{newRecord.description}}" bindinput="onNewDescriptionChange" placeholder="请输入{{newRecord.type}}描述" class="form-input" />
+            <input class="form-input" placeholder="请输入描述" value="{{newRecord.description}}" bindinput="onNewDescriptionInput" />
           </view>
 
           <view class="form-item">
@@ -184,10 +185,9 @@
             </picker>
           </view>
         </view>
-
         <view class="modal-actions">
           <button class="btn btn-secondary" bindtap="onHideAddRecord">取消</button>
-          <button class="btn {{newRecord.type === '收入' ? 'btn-success' : 'btn-primary'}}" bindtap="onAddRecord">添加</button>
+          <button class="btn btn-primary" bindtap="onSubmitNewRecord">添加</button>
         </view>
       </view>
     </view>

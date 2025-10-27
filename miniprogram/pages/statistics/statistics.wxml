@@ -121,14 +121,17 @@
       </view>
       <view class="card-content">
         <view wx:if="{{expenseAnalysis.length > 0}}">
-          <view class="legend-container">
-            <view class="legend-item" wx:for="{{expenseAnalysis}}" wx:key="category">
-              <view class="legend-dot" style="background: {{item.color}};"></view>
-              <text class="legend-name">{{item.category}}</text>
+          <view class="expense-legend-list">
+            <view class="expense-legend-item" wx:for="{{expenseAnalysis}}" wx:key="category">
+              <view class="expense-indicator" style="background-color: {{item.color}}"></view>
+              <text class="expense-category-name">{{item.category}}</text>
+              <view class="expense-amount-wrapper">
+                <text class="expense-amount">¥{{item.amount}}</text>
+              </view>
             </view>
           </view>
           <view class="chart-container">
-            <canvas id="expensePieCanvas" type="2d" style="width: 100%; height: 280rpx;"></canvas>
+            <canvas id="expensePieCanvas" type="2d" style="width: 100%; height: 360rpx;"></canvas>
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
@@ -152,14 +155,15 @@
       </view>
       <view class="card-content">
         <view wx:if="{{foodPreference.length > 0}}">
-          <view class="legend-container">
-            <view class="legend-item" wx:for="{{foodPreference}}" wx:key="type">
-              <view class="legend-dot" style="background: {{item.color}};"></view>
-              <text class="legend-name">{{item.label}}</text>
+          <view class="pref-list">
+            <view class="pref-item" wx:for="{{foodPreference}}" wx:key="type">
+              <text class="pref-name">{{item.label}}</text>
+              <view class="pref-bar">
+                <view class="pref-fill" style="width: {{item.percentage}}%;"></view>
+              </view>
+              <text class="pref-count">{{item.count}}</text>
+              <text class="pref-percent">{{item.percentage}}%</text>
             </view>
-          </view>
-          <view class="chart-container">
-            <canvas id="foodPrefCanvas" type="2d" style="width: 100%; height: 280rpx;"></canvas>
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
@@ -182,41 +186,17 @@
       <view class="card-content">
         <view class="species-list" wx:if="{{speciesDistribution.length > 0}}">
           <view class="species-item" wx:for="{{speciesDistribution}}" wx:key="species">
-            <view class="species-info">
-              <text class="species-name">{{item.species}}</text>
-              <text class="species-count">{{item.count}}只</text>
-            </view>
-            <view class="species-bar">
-              <view class="species-fill" style="width: {{item.percentage}}%"></view>
+            <view class="species-indicator" style="background-color: {{item.color}}"></view>
+            <text class="species-name">{{item.species}}</text>
+            <view class="species-count-wrapper">
+              <text class="species-count">{{item.count}}</text>
+              <text class="species-unit">只</text>
             </view>
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
           <view class="placeholder-icon">🦜</view>
           <text class="placeholder-text">暂无数据</text>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 健康趋势 -->
-  <view class="health-trends-section">
-    <view class="info-card">
-      <view class="card-header">
-        <view class="header-left">
-          <view class="card-icon">🏥</view>
-          <text class="card-title">健康趋势</text>
-        </view>
-      </view>
-      <view class="card-content">
-        <view class="chart-container">
-          <view class="chart-placeholder" wx:if="{{!healthTrends || (healthTrends.length === 0)}}">
-            <view class="placeholder-icon">🏥</view>
-            <text class="placeholder-text">暂无数据</text>
-          </view>
-          <view wx:else>
-            <canvas id="healthTrendCanvas" type="2d" style="width: 100%; height: 280rpx;"></canvas>
-          </view>
         </view>
       </view>
     </view>
@@ -230,7 +210,6 @@
 
   </view>
 </view>
-
 
 
 

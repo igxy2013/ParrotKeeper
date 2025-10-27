@@ -16,7 +16,39 @@ Page({
     // 新增：通知中心
     showNotifications: false,
     notifications: [],
-    unreadCount: 0
+    unreadCount: 0,
+
+    // 添加鹦鹉弹窗&表单
+    showAddParrotModal: false,
+    newParrot: {
+      name: '',
+      type: '',
+      age: '',
+      weight: '',
+      gender: '',
+      color: '',
+      birthDate: '',
+      notes: ''
+    },
+    parrotTypes: ['虎皮鹦鹉','玄凤鹦鹉','牡丹鹦鹉','蓝和尚鹦鹉','太阳锥尾鹦鹉','金刚鹦鹉','灰鹦鹉','亚马逊鹦鹉'],
+    typeIndex: 0,
+    speciesList: [],
+    // 添加收支弹窗与表单
+    showAddExpenseModal: false,
+    parrotOptions: [],
+    categoryOptions: [],
+    canSubmitExpense: false,
+    expenseForm: {
+      type: '支出',
+      parrotIndex: 0,
+      categoryIndex: 0,
+      amount: '',
+      description: '',
+      date: ''
+    },
+    // 类别标签列表（UI使用）
+    incomeCategoryLabels: ['销售幼鸟','配种服务','其他收入'],
+    expenseCategoryLabels: ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
   },
 
   onLoad() {
@@ -464,6 +496,30 @@ Page({
     })
   },
 
+  // 跳转到喂食记录页面
+  navigateToFeedingRecords() {
+    console.log('navigateToFeedingRecords 被调用')
+    console.log('当前登录状态:', this.data.isLogin)
+    
+    if (!this.data.isLogin) {
+      console.log('用户未登录，显示错误提示')
+      app.showError('请先登录')
+      return
+    }
+    
+    console.log('准备跳转到喂食记录页面')
+    wx.navigateTo({
+      url: '/pages/records/feeding/feeding',
+      success: () => {
+        console.log('跳转到喂食记录页面成功')
+      },
+      fail: (err) => {
+        console.error('跳转失败:', err)
+        app.showError('跳转失败，请重试')
+      }
+    })
+  },
+
   navigateToRecords() {
     console.log('navigateToRecords 被调用')
     console.log('当前登录状态:', this.data.isLogin)
@@ -514,7 +570,7 @@ Page({
     }
     
     wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=cleaning'
+      url: '/pages/records/cleaning/cleaning'
     })
   },
 
@@ -526,7 +582,7 @@ Page({
     }
     
     wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=health'
+      url: '/pages/records/health/health'
     })
   },
 
@@ -538,7 +594,7 @@ Page({
     }
 
     wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=breeding'
+      url: '/pages/breeding/breeding'
     })
   },
 
@@ -548,21 +604,43 @@ Page({
       app.showError('请先登录后使用此功能')
       return
     }
-    
-    wx.navigateTo({
-      url: '/pages/parrots/add-parrot/add-parrot'
-    })
+    // 直接打开首页添加鹦鹉弹窗
+    this.setData({ showAddParrotModal: true })
+    // 加载品种列表用于提交时映射 species_id
+    this.loadSpeciesList()
   },
 
-  // 快速添加支出
+  // 快速添加收支：直接弹窗
   quickExpense() {
     if (!this.data.isLogin) {
       app.showError('请先登录后使用此功能')
       return
     }
-    
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=expense'
+    // 预备鹦鹉选项
+    const parrotOptions = (this.data.myParrots || []).map(p => p.name)
+    // 默认日期：今天
+    const today = new Date()
+    const yyyy = today.getFullYear()
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    const dateStr = `${yyyy}-${mm}-${dd}`
+
+    // 初始化类别选项为支出类别
+    const categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
+
+    this.setData({
+      showAddExpenseModal: true,
+      parrotOptions,
+      categoryOptions,
+      canSubmitExpense: false,
+      expenseForm: {
+        type: '支出',
+        parrotIndex: 0,
+        categoryIndex: 0,
+        amount: '',
+        description: '',
+        date: dateStr
+      }
     })
   },
 
@@ -614,8 +692,238 @@ Page({
     })
     const unreadCount = notifications.filter(n => n.unread).length
     this.setData({ notifications, unreadCount })
+  },
+
+
+
+  // 弹窗：添加鹦鹉（参考APP设计）相关方法
+  // 加载鹦鹉品种列表（用于将选择的中文品种映射到后端 species_id）
+  async loadSpeciesList() {
+    try {
+      const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
+      if (res.success) {
+        this.setData({ speciesList: res.data || [] })
+      }
+    } catch (e) {
+      // 静默失败，不影响弹窗使用
+    }
+  },
+
+  // 关闭弹窗并重置
+  closeAddParrotModal() {
+    this.setData({
+      showAddParrotModal: false,
+      newParrot: { name: '', type: '', age: '', weight: '', gender: '', color: '', birthDate: '', notes: '' },
+      typeIndex: 0
+    })
+  },
+
+  // 阻止事件冒泡（避免点击内容区关闭弹窗）
+  stopPropagation() {},
+
+  // 输入绑定
+  onParrotNameInput(e) { this.setData({ 'newParrot.name': e.detail.value }) },
+  onParrotAgeInput(e) { this.setData({ 'newParrot.age': e.detail.value }) },
+  onParrotWeightInput(e) { this.setData({ 'newParrot.weight': e.detail.value }) },
+  onParrotColorInput(e) { this.setData({ 'newParrot.color': e.detail.value }) },
+  onParrotNotesInput(e) { this.setData({ 'newParrot.notes': e.detail.value }) },
+  onBirthDateChange(e) { this.setData({ 'newParrot.birthDate': e.detail.value }) },
+  onTypePickerChange(e) {
+    const idx = Number(e.detail.value)
+    const type = this.data.parrotTypes[idx]
+    this.setData({ typeIndex: idx, 'newParrot.type': type })
+  },
+  setParrotGender(e) {
+    const gender = e.currentTarget.dataset.gender
+    this.setData({ 'newParrot.gender': gender })
+  },
+
+  // 提交添加鹦鹉
+  async submitNewParrot() {
+    if (!this.data.isLogin) {
+      app.showError('请先登录后使用此功能')
+      return
+    }
+    const np = this.data.newParrot
+    if (!np.name || !np.type) {
+      app.showError('请填写必填项：名字与品种')
+      return
+    }
+    let gender = 'unknown'
+    if (np.gender === '雄性') gender = 'male'
+    else if (np.gender === '雌性') gender = 'female'
+    let species_id = ''
+    try {
+      const match = (this.data.speciesList || []).find(s => s.name === np.type)
+      if (match) species_id = match.id
+    } catch (_) { species_id = '' }
+    let notes = np.notes || ''
+    if (np.age) {
+      notes = notes ? `${notes}\n年龄: ${np.age}` : `年龄: ${np.age}`
+    }
+    const payload = {
+      name: np.name,
+      species_id,
+      gender,
+      birth_date: np.birthDate || '',
+      color: np.color || '',
+      weight: np.weight || '',
+      notes
+    }
+    try {
+      const res = await app.request({ url: '/api/parrots', method: 'POST', data: payload })
+      if (res.success) {
+        app.showSuccess('添加成功')
+        this.closeAddParrotModal()
+        if (typeof this.loadMyParrots === 'function') {
+          this.loadMyParrots()
+        }
+      } else {
+        app.showError(res.message || '添加失败')
+      }
+    } catch (e) {
+      app.showError('网络错误，添加失败')
+    }
+  },
+
+  /* ===== 收支弹窗逻辑 ===== */
+  // 切换记录类型
+  setExpenseType(e) {
+    const type = e.currentTarget.dataset.type
+    let categoryOptions = []
+    if (type === '收入') {
+      categoryOptions = this.data.incomeCategoryLabels || ['销售幼鸟','配种服务','其他收入']
+    } else {
+      categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
+    }
+    this.setData({
+      'expenseForm.type': type,
+      categoryOptions,
+      'expenseForm.categoryIndex': 0
+    })
+    this.updateCanSubmitExpense()
+  },
+
+  // 选择鹦鹉
+  onExpenseParrotChange(e) {
+    const idx = Number(e.detail.value)
+    this.setData({ 'expenseForm.parrotIndex': idx })
+  },
+
+  // 选择类别
+  onExpenseCategoryChange(e) {
+    const idx = Number(e.detail.value)
+    this.setData({ 'expenseForm.categoryIndex': idx })
+    this.updateCanSubmitExpense()
+  },
+
+  // 金额输入
+  onExpenseAmountInput(e) {
+    this.setData({ 'expenseForm.amount': e.detail.value })
+    this.updateCanSubmitExpense()
+  },
+
+  // 描述输入
+  onExpenseDescInput(e) {
+    this.setData({ 'expenseForm.description': e.detail.value })
+  },
+
+  // 日期选择
+  onExpenseDateChange(e) {
+    this.setData({ 'expenseForm.date': e.detail.value })
+    this.updateCanSubmitExpense()
+  },
+
+  // 更新提交可用态
+  updateCanSubmitExpense() {
+    const f = this.data.expenseForm || {}
+    const ok = !!(f.amount && Number(f.amount) > 0 && this.data.categoryOptions && this.data.categoryOptions.length > 0)
+    this.setData({ canSubmitExpense: ok })
+  },
+
+  // 关闭弹窗
+  closeAddExpenseModal() {
+    this.setData({
+      showAddExpenseModal: false,
+      expenseForm: {
+        type: '支出',
+        parrotIndex: 0,
+        categoryIndex: 0,
+        amount: '',
+        description: '',
+        date: ''
+      },
+      categoryOptions: [],
+      canSubmitExpense: false
+    })
+  },
+
+  // 提交收支记录（支出走后端，收入暂不支持后端）
+  async submitExpenseRecord() {
+    const f = this.data.expenseForm
+    if (!f || !f.amount || Number(f.amount) <= 0) {
+      app.showError('请输入有效金额')
+      return
+    }
+    const categoryLabel = (this.data.categoryOptions || [])[f.categoryIndex] || ''
+    if (!categoryLabel) {
+      app.showError('请选择类别')
+      return
+    }
+
+    // 映射鹦鹉ID（可选）
+    let parrot_id = null
+    const parrots = this.data.myParrots || []
+    if (parrots.length > 0 && f.parrotIndex >= 0 && f.parrotIndex < parrots.length) {
+      parrot_id = parrots[f.parrotIndex].id
+    }
+
+    if (f.type === '收入') {
+      // 暂无收入后端接口，遵循UI设计仅展示交互
+      app.showError('收入记录暂未支持后端提交')
+      return
+    }
+
+    // 支出类别映射到后端值
+    const expenseMap = {
+      '食物': 'food',
+      '医疗': 'medical',
+      '玩具': 'toys',
+      '笼具': 'cage',
+      '幼鸟': 'baby_bird',
+      '种鸟': 'breeding_bird',
+      '其他': 'other'
+    }
+    const categoryValue = expenseMap[categoryLabel]
+    if (!categoryValue) {
+      app.showError('不支持的支出类别')
+      return
+    }
+
+    // 组装payload
+    const payload = {
+      category: categoryValue,
+      amount: Number(f.amount),
+      description: f.description || '',
+      expense_date: f.date || ''
+    }
+    if (parrot_id) payload.parrot_id = parrot_id
+
+    try {
+      const res = await app.request({
+        url: '/api/expenses',
+        method: 'POST',
+        data: payload
+      })
+      if (res && res.success) {
+        wx.showToast({ title: '添加成功', icon: 'success' })
+        this.closeAddExpenseModal()
+      } else {
+        app.showError((res && res.message) || '添加失败')
+      }
+    } catch (err) {
+      console.error('提交支出记录失败:', err)
+      app.showError('网络错误，添加失败')
+    }
   }
 })
-
-
-

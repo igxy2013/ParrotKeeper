@@ -1,3 +1,9 @@
 {
-  "navigationBarTitleText": "添加支出"
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "添加支出",
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
 }

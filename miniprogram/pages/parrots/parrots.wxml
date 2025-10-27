@@ -21,12 +21,12 @@
           <text class="stat-overview-label">总数量</text>
         </view>
         <view class="stat-overview-item">
-          <text class="stat-overview-value">{{healthyCount}}</text>
-          <text class="stat-overview-label">健康状态</text>
+          <text class="stat-overview-value">{{maleCount}}</text>
+          <text class="stat-overview-label">雄性鹦鹉</text>
         </view>
         <view class="stat-overview-item">
-          <text class="stat-overview-value">{{activeCount}}</text>
-          <text class="stat-overview-label">活跃状态</text>
+          <text class="stat-overview-value">{{femaleCount}}</text>
+          <text class="stat-overview-label">雌性鹦鹉</text>
         </view>
       </view>
     </view>
@@ -87,17 +87,11 @@
               <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
             </view>
           </view>
-          <text class="parrot-species">{{item.species_name}} • {{item.age_days}}天 • {{item.weight}}g</text>
+          <text class="parrot-species">{{item.species_name}} • {{item.age_days}}天 • {{item.weight ? item.weight + 'g' : ''}}</text>
           <view class="parrot-status">
             <view class="status-item">
               <text class="status-icon">🍽️</text>
               <text class="status-text">{{item.last_feed || '2小时前'}}</text>
-            </view>
-            <view class="mood-badge mood-{{item.mood || 'active'}}">
-              <text wx:if="{{item.mood === 'active' || !item.mood}}">活跃</text>
-              <text wx:elif="{{item.mood === 'quiet'}}">安静</text>
-              <text wx:elif="{{item.mood === 'excited'}}">兴奋</text>
-              <text wx:else="{{item.mood === 'curious'}}">好奇</text>
             </view>
           </view>
         </view>

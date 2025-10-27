@@ -190,3 +190,49 @@ class Reminder(db.Model):
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Achievement(db.Model):
+    __tablename__ = 'achievements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(50), unique=True, nullable=False)  # 成就唯一标识
+    title = db.Column(db.String(100), nullable=False)  # 成就标题
+    description = db.Column(db.String(255), nullable=False)  # 成就描述
+    icon = db.Column(db.String(50), nullable=False)  # 图标名称
+    color = db.Column(db.String(20), default='blue')  # 背景颜色
+    condition_type = db.Column(db.Enum('parrot_count', 'feeding_count', 'health_check_count', 'stats_view_count'), nullable=False)  # 条件类型
+    target_value = db.Column(db.Integer, nullable=False)  # 目标值
+    is_active = db.Column(db.Boolean, default=True)  # 是否启用
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 关系
+    user_achievements = db.relationship('UserAchievement', backref='achievement', lazy=True, cascade='all, delete-orphan')
+
+class UserAchievement(db.Model):
+    __tablename__ = 'user_achievements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    achievement_id = db.Column(db.Integer, db.ForeignKey('achievements.id'), nullable=False)
+    unlocked_at = db.Column(db.DateTime, default=datetime.utcnow)  # 解锁时间
+    current_progress = db.Column(db.Integer, default=0)  # 当前进度
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 唯一约束：每个用户每个成就只能有一条记录
+    __table_args__ = (db.UniqueConstraint('user_id', 'achievement_id', 'team_id', name='unique_user_achievement'),)
+
+class UserStatistics(db.Model):
+    __tablename__ = 'user_statistics'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    stats_views = db.Column(db.Integer, default=0)  # 统计页面查看次数
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 唯一约束：每个用户每个团队只能有一条统计记录
+    __table_args__ = (db.UniqueConstraint('user_id', 'team_id', name='unique_user_statistics'),)

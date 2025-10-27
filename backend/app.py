@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import config
 from models import db
@@ -9,6 +9,7 @@ from routes.statistics import statistics_bp
 from routes.upload import upload_bp
 from routes.expenses import expenses_bp
 from routes.teams import teams_bp
+from routes.achievements import achievements_bp
 import os
 
 def create_app(config_name=None):
@@ -34,6 +35,7 @@ def create_app(config_name=None):
     app.register_blueprint(upload_bp)
     app.register_blueprint(expenses_bp)
     app.register_blueprint(teams_bp)
+    app.register_blueprint(achievements_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
@@ -69,6 +71,11 @@ def create_app(config_name=None):
         from flask import send_from_directory
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     
+    # 添加调试中间件
+    @app.before_request
+    def log_request():
+        print(f"请求: {request.method} {request.path}")
+    
     return app
 
 def init_db(app):
@@ -83,8 +90,13 @@ if __name__ == '__main__':
     # 初始化数据库
     init_db(app)
     
-    # 使用waitress生产级WSGI服务器
-    from waitress import serve
-    print("启动生产服务器...")
+    # 调试：打印所有路由
+    print("注册的路由:")
+    for rule in app.url_map.iter_rules():
+        if 'achievement' in rule.rule.lower():
+            print(f"  {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
+    
+    # 使用Flask开发服务器进行测试
+    print("启动开发服务器...")
     print("服务器地址: http://0.0.0.0:5085")
-    serve(app, host='0.0.0.0', port=5085)
+    app.run(host='0.0.0.0', port=5085, debug=True)

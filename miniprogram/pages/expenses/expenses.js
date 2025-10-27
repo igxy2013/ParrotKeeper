@@ -2,459 +2,284 @@ const app = getApp()
 
 Page({
   data: {
-    expenses: [],
     loading: false,
-    hasMore: true,
-    page: 1,
-    per_page: 20,
-    totalAmount: 0,
-    totalCount: 0, // 添加总记录数字段
-    hasOperationPermission: false, // 添加操作权限标识
-    categories: [], // 改为空数组，从API加载
-    selectedCategory: '',
-    selectedCategoryIndex: -1,
-    selectedCategoryLabel: '',
-    showFilter: false,
-    startDate: '',
-    endDate: '',
-    summary: {
-      monthly_total: 0,
-      yearly_total: 0,
-      categories: []
-    }
+    showAddRecord: false,
+    selectedParrot: '全部',
+    selectedCategory: '全部',
+    selectedType: '全部',
+
+    parrots: ['全部', '小彩', '阿福', '小绿'],
+    types: ['全部', '收入', '支出'],
+
+    // 类别集合
+    expenseCategories: ['全部', '食物', '玩具', '医疗', '用品', '其他'],
+    incomeCategories: ['全部', '繁殖收入', '出售用品', '培训服务', '其他收入'],
+
+    filterCategories: ['全部', '食物', '玩具', '医疗', '用品', '其他', '繁殖收入', '出售用品', '培训服务', '其他收入'],
+
+    // 展示用类别网格
+    recordCategories: [
+      { name: '食物', iconText: '🍚', type: '支出' },
+      { name: '玩具', iconText: '🧸', type: '支出' },
+      { name: '医疗', iconText: '❤️', type: '支出' },
+      { name: '用品', iconText: '🛍️', type: '支出' },
+      { name: '其他', iconText: '➕', type: '支出' },
+      { name: '繁殖收入', iconText: '🐣', type: '收入' },
+      { name: '出售用品', iconText: '🏪', type: '收入' },
+      { name: '培训服务', iconText: '🎓', type: '收入' },
+      { name: '其他收入', iconText: '💵', type: '收入' },
+    ],
+
+    // 示例记录数据（参考APP UI）
+    records: [
+      { id: 1, type: '支出', parrot: '小彩', category: '食物', amount: 45, description: '优质小米和谷子', date: '2024-01-15', time: '14:30' },
+      { id: 2, type: '支出', parrot: '阿福', category: '医疗', amount: 180, description: '定期健康检查', date: '2024-01-14', time: '10:15' },
+      { id: 3, type: '支出', parrot: '小绿', category: '玩具', amount: 68, description: '智力训练玩具套装', date: '2024-01-13', time: '16:45' },
+      { id: 4, type: '支出', parrot: '小彩', category: '用品', amount: 120, description: '新款鸟笼垫料', date: '2024-01-12', time: '11:20' },
+      { id: 5, type: '收入', parrot: '阿福', category: '繁殖收入', amount: 800, description: '出售幼鸟2只', date: '2024-01-11', time: '09:30' },
+      { id: 6, type: '收入', parrot: '小绿', category: '培训服务', amount: 300, description: '鹦鹉训练指导服务', date: '2024-01-10', time: '15:10' },
+      { id: 7, type: '收入', parrot: '小彩', category: '出售用品', amount: 150, description: '出售闲置鸟笼', date: '2024-01-09', time: '16:20' },
+    ],
+
+    filteredRecords: [],
+    stats: {
+      totalIncome: 0,
+      totalExpense: 0,
+      netIncome: 0,
+      monthlyIncome: 0,
+      monthlyExpense: 0,
+      monthlyNet: 0,
+    },
+
+    // 添加记录表单
+    newRecord: {
+      type: '支出',
+      parrot: '小彩',
+      category: '食物',
+      amount: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0]
+    },
+    parrotIndex: 1,
+    categoryIndex: 0,
+    modalCategories: [],
   },
 
   onLoad() {
-    // 检查操作权限
-    const hasOperationPermission = app.hasOperationPermission()
-    this.setData({ hasOperationPermission })
-    
-    // 检查登录状态
-    if (!app.globalData.openid) {
-      const openid = wx.getStorageSync('openid')
-      if (openid) {
-        app.globalData.openid = openid
-        console.log('从存储中恢复openid:', openid)
-      } else {
-        console.log('未找到openid，跳转到登录页面')
-        wx.redirectTo({
-          url: '/pages/login/login'
-        })
-        return
-      }
-    }
-    
-    // 加载数据
-    this.loadCategories() // 先加载类别
-    this.loadExpenses()
-    this.loadSummary()
+    this.initData()
   },
 
   onShow() {
-    // 检查操作权限
-    const hasOperationPermission = app.hasOperationPermission()
-    this.setData({ hasOperationPermission })
+    this.updateFilteredRecords()
+    this.updateStats()
+  },
+
+  initData() {
+    // 初始化筛选后的记录
+    this.updateFilteredRecords()
+    this.updateStats()
+    this.updateModalCategories()
+  },
+
+  // 更新筛选后的记录
+  updateFilteredRecords() {
+    const { records, selectedParrot, selectedCategory, selectedType } = this.data
     
-    // 检查是否需要刷新数据（模式切换后）
-    if (app.globalData.needRefresh) {
-      console.log('支出页面检测到needRefresh标志，刷新数据');
-      app.globalData.needRefresh = false; // 重置标志
-      this.setData({
-        expenses: [],
-        page: 1,
-        hasMore: true
-      });
-      this.loadExpenses();
-      this.loadSummary();
-    }
+    const filteredRecords = records.filter(record => {
+      const parrotMatch = selectedParrot === '全部' || record.parrot === selectedParrot
+      const categoryMatch = selectedCategory === '全部' || record.category === selectedCategory
+      const typeMatch = selectedType === '全部' || record.type === selectedType
+      return parrotMatch && categoryMatch && typeMatch
+    })
+
+    this.setData({ filteredRecords })
   },
 
-  onPullDownRefresh() {
+  // 更新统计数据
+  updateStats() {
+    const { filteredRecords, records } = this.data
+    
+    // 当前筛选的收入和支出
+    const totalIncome = filteredRecords.filter(r => r.type === '收入').reduce((sum, record) => sum + record.amount, 0)
+    const totalExpense = filteredRecords.filter(r => r.type === '支出').reduce((sum, record) => sum + record.amount, 0)
+    const netIncome = totalIncome - totalExpense
+    
+    // 本月总收入和支出
+    const monthlyIncome = records.filter(r => r.type === '收入').reduce((sum, record) => sum + record.amount, 0)
+    const monthlyExpense = records.filter(r => r.type === '支出').reduce((sum, record) => sum + record.amount, 0)
+    const monthlyNet = monthlyIncome - monthlyExpense
+
     this.setData({
-      expenses: [],
-      page: 1,
-      hasMore: true
-    })
-    this.loadExpenses()
-    this.loadSummary()
-    wx.stopPullDownRefresh()
-  },
-
-  onReachBottom() {
-    if (this.data.hasMore && !this.data.loading) {
-      this.loadExpenses()
-    }
-  },
-
-  // 加载支出类别
-  async loadCategories() {
-    try {
-      const response = await app.request({
-        url: '/api/expenses/categories',
-        method: 'GET'
-      })
-
-      console.log('支出类别API响应:', response)
-      
-      if (response && response.success) {
-        const categoriesWithAll = [{ value: '', label: '全部类别' }, ...response.data]
-        const hasSelected = !!this.data.selectedCategory
-        const selectedIndex = hasSelected 
-          ? categoriesWithAll.findIndex(cat => cat.value === this.data.selectedCategory)
-          : 0
-        const selectedLabel = hasSelected 
-          ? (categoriesWithAll.find(cat => cat.value === this.data.selectedCategory)?.label || '')
-          : '全部类别'
-        this.setData({
-          categories: categoriesWithAll,
-          selectedCategoryIndex: selectedIndex,
-          selectedCategoryLabel: selectedLabel
-        })
-        console.log('设置的支出类别:', categoriesWithAll)
-      } else {
-        console.error('支出类别API返回错误:', response)
-        // 如果API失败，使用默认类别
-        const defaultCategories = [
-          { value: 'food', label: '食物' },
-          { value: 'medical', label: '医疗' },
-          { value: 'toys', label: '玩具' },
-          { value: 'cage', label: '笼具' },
-          { value: 'baby_bird', label: '幼鸟' },
-          { value: 'breeding_bird', label: '种鸟' },
-          { value: 'other', label: '其他' }
-        ]
-        const categoriesWithAll = [{ value: '', label: '全部类别' }, ...defaultCategories]
-        this.setData({
-          categories: categoriesWithAll,
-          selectedCategoryIndex: 0,
-          selectedCategoryLabel: '全部类别'
-        })
-      }
-    } catch (error) {
-      console.error('加载支出类别失败:', error)
-      // 如果网络错误，使用默认类别
-      const defaultCategories = [
-        { value: 'food', label: '食物' },
-        { value: 'medical', label: '医疗' },
-        { value: 'toys', label: '玩具' },
-        { value: 'cage', label: '笼具' },
-        { value: 'baby_bird', label: '幼鸟' },
-        { value: 'breeding_bird', label: '种鸟' },
-        { value: 'other', label: '其他' }
-      ]
-      const categoriesWithAll = [{ value: '', label: '全部类别' }, ...defaultCategories]
-      this.setData({
-        categories: categoriesWithAll,
-        selectedCategoryIndex: 0,
-        selectedCategoryLabel: '全部类别'
-      })
-    }
-  },
-
-  // 加载支出列表
-  async loadExpenses() {
-    if (this.data.loading) return
-
-    this.setData({ loading: true })
-
-    console.log('开始加载支出记录，当前页码:', this.data.page)
-    console.log('使用的openid:', app.globalData.openid)
-    console.log('当前用户模式:', app.globalData.userMode)
-
-    try {
-      const params = {
-        page: this.data.page,
-        per_page: this.data.per_page
-      }
-
-      if (this.data.selectedCategory) {
-        params.category = this.data.selectedCategory
-      }
-
-      if (this.data.startDate) {
-        params.start_date = this.data.startDate
-      }
-
-      if (this.data.endDate) {
-        params.end_date = this.data.endDate
-      }
-
-      const response = await app.request({
-        url: '/api/expenses',
-        method: 'GET',
-        data: params
-      })
-
-      console.log('支出列表API响应:', response)
-      
-      if (response && response.success) {
-        const newExpenses = response.data.items
-        console.log('获取到的支出记录:', newExpenses)
-        
-        // 处理类别翻译
-        const processedExpenses = newExpenses.map(expense => {
-          const categoryMap = {
-            'food': '食物',
-            'medical': '医疗',
-            'toys': '玩具',
-            'accessories': '用品',
-            'grooming': '美容',
-            'training': '训练',
-            'cage': '笼具',
-            'baby_bird': '幼鸟',
-            'breeding_bird': '种鸟',
-            'other': '其他'
-          }
-          
-          return {
-            ...expense,
-            categoryName: categoryMap[expense.category] || expense.category,
-            amount: parseFloat(expense.amount) || 0,  // 确保金额是数字类型
-            amount_display: (parseFloat(expense.amount) || 0).toFixed(2)
-          }
-        })
-        
-        const expenses = this.data.page === 1 ? processedExpenses : [...this.data.expenses, ...processedExpenses]
-        
-        // 使用后端返回的筛选总金额（若不存在则前端计算当前已加载金额）
-        const filteredTotal = typeof response.data.total_amount === 'number'
-          ? parseFloat(response.data.total_amount) || 0
-          : expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0)
-
-        this.setData({
-          expenses,
-          totalAmount: filteredTotal,
-          totalAmount_display: filteredTotal.toFixed(2),
-          totalCount: response.data.total, // 使用API返回的总记录数（按筛选条件）
-          hasMore: response.data.has_next,
-          page: this.data.page + 1
-        })
-        
-        console.log('设置后的支出记录数据:', this.data.expenses)
-        console.log('计算的总金额:', filteredTotal)
-      } else {
-        console.error('支出列表API返回错误:', response)
-        wx.showToast({
-          title: response?.message || '加载失败',
-          icon: 'none'
-        })
-      }
-    } catch (error) {
-      console.error('加载支出列表失败:', error)
-      wx.showToast({
-        title: '网络错误',
-        icon: 'none'
-      })
-    } finally {
-      this.setData({ loading: false })
-    }
-  },
-
-  // 加载汇总数据
-  async loadSummary() {
-    try {
-      const response = await app.request({
-        url: '/api/expenses/summary',
-        method: 'GET'
-      })
-
-      console.log('汇总数据API响应:', response)
-      
-      if (response && response.success) {
-        const summaryData = response.data
-        console.log('汇总数据:', summaryData)
-        
-        // 确保汇总数据中的金额是数字类型
-        const processedSummary = {
-          monthly_total: parseFloat(summaryData.monthly_total) || 0,
-          yearly_total: parseFloat(summaryData.yearly_total) || 0,
-          categories: summaryData.categories || [],
-          monthly_total_display: (parseFloat(summaryData.monthly_total) || 0).toFixed(2),
-          yearly_total_display: (parseFloat(summaryData.yearly_total) || 0).toFixed(2)
-        }
-        
-        this.setData({
-          summary: processedSummary
-        })
-        
-        console.log('设置的汇总数据:', processedSummary)
-      } else {
-        console.error('汇总数据API返回错误:', response)
-      }
-    } catch (error) {
-      console.error('加载汇总数据失败:', error)
-      wx.showToast({
-        title: '网络错误，请检查网络连接',
-        icon: 'none'
-      })
-    }
-  },
-
-  // 添加支出
-  onAddExpense() {
-    wx.navigateTo({
-      url: '/pages/expenses/add-expense/add-expense'
-    })
-  },
-
-  // 编辑支出
-  onEditExpense(e) {
-    const expenseId = e.currentTarget.dataset.id
-    wx.navigateTo({
-      url: `/pages/expenses/edit-expense/edit-expense?id=${expenseId}`
-    })
-  },
-
-  // 删除支出
-  onDeleteExpense(e) {
-    const expenseId = e.currentTarget.dataset.id
-    const expenseIndex = e.currentTarget.dataset.index
-
-    wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这条支出记录吗？',
-      success: (res) => {
-        if (res.confirm) {
-          this.deleteExpense(expenseId, expenseIndex)
-        }
+      stats: {
+        totalIncome,
+        totalExpense,
+        netIncome,
+        monthlyIncome,
+        monthlyExpense,
+        monthlyNet
       }
     })
   },
 
-  // 执行删除
-  async deleteExpense(expenseId, expenseIndex) {
-    try {
-      const response = await app.request({
-        url: `/api/expenses/${expenseId}`,
-        method: 'DELETE'
-      })
-
-      console.log('删除支出API响应:', response)
-      
-      if (response && response.success) {
-        const expenses = [...this.data.expenses]
-        const deletedExpense = expenses[expenseIndex]
-        
-        // 检查deletedExpense是否存在，防止访问undefined的属性
-        if (!deletedExpense) {
-          console.error('删除的支出记录不存在，索引:', expenseIndex)
-          wx.showToast({
-            title: '删除失败，记录不存在',
-            icon: 'none'
-          })
-          return
-        }
-        
-        expenses.splice(expenseIndex, 1)
-        
-        const totalAmount = this.data.totalAmount - (deletedExpense.amount || 0)
-        const totalCount = Math.max(0, this.data.totalCount - 1) // 减少总记录数
-
-        this.setData({
-          expenses,
-          totalAmount,
-          totalAmount_display: totalAmount.toFixed(2),
-          totalCount
-        })
-
-        wx.showToast({
-          title: '删除成功',
-          icon: 'success'
-        })
-
-        // 重新加载汇总数据
-        this.loadSummary()
-      } else {
-        console.error('删除支出API返回错误:', response)
-        wx.showToast({
-          title: response?.message || '删除失败',
-          icon: 'none'
-        })
-      }
-    } catch (error) {
-      console.error('删除支出失败:', error)
-      wx.showToast({
-        title: '网络错误，请检查网络连接',
-        icon: 'none'
-      })
-    }
+  // 更新模态框类别选项
+  updateModalCategories() {
+    const { newRecord } = this.data
+    const categories = newRecord.type === '收入' ? 
+      this.data.incomeCategories.slice(1).map(cat => ({ value: cat, label: cat })) :
+      this.data.expenseCategories.slice(1).map(cat => ({ value: cat, label: cat }))
+    
+    this.setData({ modalCategories: categories })
   },
 
-  // 显示筛选
-  onShowFilter() {
-    this.setData({
-      showFilter: !this.data.showFilter
+  // 筛选事件处理
+  onSelectType(e) {
+    const type = e.currentTarget.dataset.type
+    this.setData({ selectedType: type }, () => {
+      this.updateFilteredRecords()
+      this.updateStats()
+      this.updateFilterCategories()
     })
   },
 
-  // 选择类别
-  onCategoryChange(e) {
-    const index = parseInt(e.detail.value)
-    const selected = this.data.categories && this.data.categories[index]
-    if (selected) {
-      this.setData({
-        selectedCategory: selected.value,
-        selectedCategoryIndex: index,
-        selectedCategoryLabel: selected.label
-      })
+  onSelectParrot(e) {
+    const parrot = e.currentTarget.dataset.parrot
+    this.setData({ selectedParrot: parrot }, () => {
+      this.updateFilteredRecords()
+      this.updateStats()
+    })
+  },
+
+  onSelectCategory(e) {
+    const category = e.currentTarget.dataset.category
+    this.setData({ selectedCategory: category }, () => {
+      this.updateFilteredRecords()
+      this.updateStats()
+    })
+  },
+
+  onQuickSelectCategory(e) {
+    const category = e.currentTarget.dataset.category
+    this.setData({ selectedCategory: category }, () => {
+      this.updateFilteredRecords()
+      this.updateStats()
+    })
+  },
+
+  // 更新筛选类别
+  updateFilterCategories() {
+    const { selectedType } = this.data
+    let filterCategories = []
+    
+    if (selectedType === '收入') {
+      filterCategories = this.data.incomeCategories
+    } else if (selectedType === '支出') {
+      filterCategories = this.data.expenseCategories
     } else {
-      this.setData({
-        selectedCategory: '',
-        selectedCategoryIndex: -1,
-        selectedCategoryLabel: ''
-      })
+      filterCategories = ['全部', '食物', '玩具', '医疗', '用品', '其他', '繁殖收入', '出售用品', '培训服务', '其他收入']
     }
+    
+    this.setData({ filterCategories })
   },
 
-  // 选择开始日期
-  onStartDateChange(e) {
+  // 添加记录相关方法
+  onShowAddRecord() {
+    this.setData({ showAddRecord: true })
+    this.updateModalCategories()
+  },
+
+  onHideAddRecord() {
+    this.setData({ showAddRecord: false })
+  },
+
+  onSetNewType(e) {
+    const type = e.currentTarget.dataset.type
+    const category = type === '收入' ? '繁殖收入' : '食物'
+    
     this.setData({
-      startDate: e.detail.value
+      'newRecord.type': type,
+      'newRecord.category': category,
+      categoryIndex: 0
+    }, () => {
+      this.updateModalCategories()
     })
   },
 
-  // 选择结束日期
-  onEndDateChange(e) {
+  onNewParrotChange(e) {
+    const index = e.detail.value
+    const parrot = this.data.parrots[index + 1] || '小彩' // +1 因为parrots包含"全部"
     this.setData({
-      endDate: e.detail.value
+      'newRecord.parrot': parrot,
+      parrotIndex: index
     })
   },
 
-  // 应用筛选
-  onApplyFilter() {
+  onNewCategoryChange(e) {
+    const index = e.detail.value
+    const category = this.data.modalCategories[index]
     this.setData({
-      expenses: [],
-      page: 1,
-      hasMore: true,
-      showFilter: false
+      'newRecord.category': category.value,
+      categoryIndex: index
     })
-    this.loadExpenses()
   },
 
-  // 重置筛选
-  onResetFilter() {
+  onNewAmountChange(e) {
     this.setData({
-      selectedCategory: '',
-      selectedCategoryIndex: -1,
-      selectedCategoryLabel: '',
-      startDate: '',
-      endDate: '',
-      expenses: [],
-      page: 1,
-      hasMore: true,
-      showFilter: false
+      'newRecord.amount': e.detail.value
     })
-    this.loadExpenses()
   },
 
-  // 获取类别标签
-  getCategoryLabel(category) {
-    const categoryItem = this.data.categories.find(item => item.value === category)
-    return categoryItem ? categoryItem.label : category
+  onNewDescriptionChange(e) {
+    this.setData({
+      'newRecord.description': e.detail.value
+    })
   },
 
-  // 格式化金额
-  formatAmount(amount) {
-    return amount.toFixed(2)
+  onNewDateChange(e) {
+    this.setData({
+      'newRecord.date': e.detail.value
+    })
+  },
+
+  onAddRecord() {
+    const { newRecord } = this.data
+    
+    if (!newRecord.amount || !newRecord.description) {
+      wx.showToast({
+        title: '请填写完整的记录信息',
+        icon: 'none'
+      })
+      return
+    }
+
+    // 生成新记录
+    const newId = Math.max(...this.data.records.map(r => r.id)) + 1
+    const record = {
+      id: newId,
+      type: newRecord.type,
+      parrot: newRecord.parrot,
+      category: newRecord.category,
+      amount: parseFloat(newRecord.amount),
+      description: newRecord.description,
+      date: newRecord.date,
+      time: new Date().toTimeString().slice(0, 5)
+    }
+
+    // 添加到记录列表
+    const records = [record, ...this.data.records]
+    
+    this.setData({
+      records,
+      showAddRecord: false,
+      'newRecord.amount': '',
+      'newRecord.description': '',
+      'newRecord.date': new Date().toISOString().split('T')[0]
+    }, () => {
+      this.updateFilteredRecords()
+      this.updateStats()
+      wx.showToast({
+        title: `${newRecord.type}记录添加成功！`,
+        icon: 'success'
+      })
+    })
   }
 })

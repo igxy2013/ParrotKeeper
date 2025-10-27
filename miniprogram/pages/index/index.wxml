@@ -42,7 +42,7 @@
         <view class="stat-value emerald-text">{{overview.total_parrots || 0}}</view>
         <view class="stat-label">我的鹦鹉</view>
       </view>
-      <view class="stat-card" bindtap="navigateToRecords">
+      <view class="stat-card" bindtap="navigateToFeedingRecords">
         <view class="stat-icon-container orange">
           <text class="stat-icon">🍎</text>
         </view>
@@ -51,10 +51,10 @@
       </view>
       <view class="stat-card">
         <view class="stat-icon-container green">
-          <text class="stat-icon">🛡</text>
+          <text class="stat-icon">💰</text>
         </view>
-        <view class="stat-value green-text">优秀</view>
-        <view class="stat-label">健康状态</view>
+        <view class="stat-value green-text">¥{{overview.monthly_income || 0}}</view>
+        <view class="stat-label">本月收入</view>
       </view>
       <view class="stat-card">
         <view class="stat-icon-container blue">
@@ -87,7 +87,7 @@
         <text class="card-title">⚡ 快速操作</text>
       </view>
       <view class="actions-grid">
-        <view class="action-item feeding {{!isLogin ? 'disabled' : ''}}" bindtap="quickFeeding">
+        <view class="action-item feeding {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToFeedingRecords">
           <view class="action-icon-wrapper">
             <text class="action-icon">🍎</text>
           </view>
@@ -99,17 +99,17 @@
           </view>
           <text class="action-label">健康检查</text>
         </view>
-        <view class="action-item training {{!isLogin ? 'disabled' : ''}}" bindtap="quickBreeding">
+        <view class="action-item training {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
           <view class="action-icon-wrapper">
-            <text class="action-icon">📅</text>
+            <text class="action-icon">🧽</text>
           </view>
-          <text class="action-label">训练计划</text>
+          <text class="action-label">清洁记录</text>
         </view>
-        <view class="action-item add-expense {{!isLogin ? 'disabled' : ''}}" bindtap="quickExpense">
+        <view class="action-item add-expense {{!isLogin ? 'disabled' : ''}}" bindtap="quickBreeding">
           <view class="action-icon-wrapper">
-            <text class="action-icon">💰</text>
+            <text class="action-icon">🥚</text>
           </view>
-          <text class="action-label">添加支出</text>
+    <text class="action-label">繁殖记录</text>
         </view>
         <view class="action-item add {{!isLogin ? 'disabled' : ''}}" bindtap="addParrot">
           <view class="action-icon-wrapper">
@@ -117,17 +117,17 @@
           </view>
           <text class="action-label">添加鹦鹉</text>
         </view>
-        <view class="action-item expenses {{!isLogin ? 'disabled' : ''}}" bindtap="goToExpenseManagement">
+        <view class="action-item expenses {{!isLogin ? 'disabled' : ''}}" bindtap="quickExpense">
           <view class="action-icon-wrapper">
-            <text class="action-icon">🛒</text>
+            <text class="action-icon">💰</text>
           </view>
-          <text class="action-label">用品购买</text>
+          <text class="action-label">添加收支</text>
         </view>
-        <view class="action-item statistics {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToRecords">
+        <view class="action-item statistics {{!isLogin ? 'disabled' : ''}}" bindtap="goToExpenseManagement">
           <view class="action-icon-wrapper">
-            <text class="action-icon">📊</text>
+            <text class="action-icon">💰</text>
           </view>
-          <text class="action-label">数据统计</text>
+          <text class="action-label">收支管理</text>
         </view>
         <view class="action-item guide {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
           <view class="action-icon-wrapper">
@@ -142,7 +142,6 @@
     <view class="recent-activity-card" wx:if="{{recentRecords.length > 0}}">
       <view class="card-header">
         <text class="card-title">🕒 最近活动</text>
-        <text class="more-link" bindtap="viewAllRecords">查看全部 →</text>
       </view>
       <view class="activity-list">
         <view class="activity-item orange-theme" wx:if="{{recentRecords.length > 0}}">
@@ -193,10 +192,179 @@
               <view class="alert-subtitle">{{item.description}}</view>
             </view>
           </view>
-        </view>
       </view>
     </view>
   </view>
+</view>
+
+<!-- 添加鹦鹉弹窗（严格参考参考APP设计风格） -->
+<view wx:if="{{showAddParrotModal}}" class="modal-overlay" catchtouchmove="true" bindtap="closeAddParrotModal">
+  <view class="modal-content" catchtap="stopPropagation">
+    <!-- 头部渐变区域 -->
+    <view class="modal-header-gradient">
+      <view class="modal-header-row">
+        <text class="modal-title">添加新鹦鹉</text>
+        <view class="modal-close-btn" bindtap="closeAddParrotModal">
+          <text class="modal-close-icon">✕</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 弹窗内容 -->
+    <scroll-view scroll-y="true" class="modal-scroll">
+      <view class="form-section">
+        <!-- 名字 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">❤</text>鹦鹉名字 *</text>
+          <input class="text-input" placeholder="给您的鹦鹉起个可爱的名字" value="{{newParrot.name}}" bindinput="onParrotNameInput" />
+        </view>
+
+        <!-- 品种 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">🍃</text>鹦鹉品种 *</text>
+          <view class="picker-wrapper">
+            <picker mode="selector" range="{{parrotTypes}}" value="{{typeIndex}}" bindchange="onTypePickerChange">
+              <view class="picker-display">
+                <text>{{newParrot.type ? newParrot.type : '请选择品种'}}</text>
+                <text class="picker-arrow">▾</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <!-- 年龄 与 体重 -->
+        <view class="form-grid">
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">⏱</text>年龄</text>
+            <input class="text-input" placeholder="如: 2岁" value="{{newParrot.age}}" bindinput="onParrotAgeInput" />
+          </view>
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">⚖</text>体重</text>
+            <input class="text-input" placeholder="如: 35g" value="{{newParrot.weight}}" bindinput="onParrotWeightInput" />
+          </view>
+        </view>
+
+        <!-- 性别 与 颜色 -->
+        <view class="form-grid">
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">👤</text>性别</text>
+            <view class="gender-row">
+              <view class="gender-btn {{newParrot.gender === '雄性' ? 'gender-male active' : 'gender-male'}}" bindtap="setParrotGender" data-gender="雄性">雄性</view>
+              <view class="gender-btn {{newParrot.gender === '雌性' ? 'gender-female active' : 'gender-female'}}" bindtap="setParrotGender" data-gender="雌性">雌性</view>
+            </view>
+          </view>
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">🎨</text>主要颜色</text>
+            <input class="text-input" placeholder="如: 绿色" value="{{newParrot.color}}" bindinput="onParrotColorInput" />
+          </view>
+        </view>
+
+        <!-- 出生日期 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">📅</text>出生日期</text>
+          <picker mode="date" value="{{newParrot.birthDate}}" bindchange="onBirthDateChange">
+            <view class="picker-display">
+              <text>{{newParrot.birthDate ? newParrot.birthDate : '请选择日期'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+
+        <!-- 备注信息 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">📝</text>备注信息</text>
+          <textarea class="textarea-input" placeholder="记录一些特殊信息，如性格特点、喜好等..." value="{{newParrot.notes}}" bindinput="onParrotNotesInput" />
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 底部按钮 -->
+    <view class="modal-footer">
+      <button class="btn-secondary" bindtap="closeAddParrotModal">取消</button>
+      <button class="btn-primary" bindtap="submitNewParrot" disabled="{{!newParrot.name || !newParrot.type}}">添加鹦鹉</button>
+    </view>
+  </view>
+</view>
+
+<!-- 添加收支记录弹窗（严格参考参考APP设计） -->
+<view wx:if="{{showAddExpenseModal}}" class="modal-overlay" catchtouchmove="true" bindtap="closeAddExpenseModal">
+  <view class="expense-modal-card" catchtap="stopPropagation">
+    <!-- 弹窗头部：标题与关闭按钮 -->
+    <view class="expense-modal-header">
+      <text class="expense-modal-title">添加收支记录</text>
+      <view class="expense-modal-close" bindtap="closeAddExpenseModal">✕</view>
+    </view>
+
+    <!-- 弹窗主体内容 -->
+    <scroll-view scroll-y="true" class="expense-modal-scroll">
+      <view class="expense-form-section">
+        <!-- 类型切换：收入 / 支出 -->
+        <view class="form-item">
+          <text class="form-label">记录类型</text>
+          <view class="type-switch-row">
+            <view class="type-btn {{expenseForm.type==='收入' ? 'type-income active' : 'type-income'}}" bindtap="setExpenseType" data-type="收入">收入</view>
+            <view class="type-btn {{expenseForm.type==='支出' ? 'type-expense active' : 'type-expense'}}" bindtap="setExpenseType" data-type="支出">支出</view>
+          </view>
+        </view>
+
+        <!-- 选择鹦鹉 -->
+        <view class="form-item">
+          <text class="form-label">选择鹦鹉</text>
+          <view class="picker-wrapper">
+            <picker mode="selector" range="{{parrotOptions}}" value="{{expenseForm.parrotIndex}}" bindchange="onExpenseParrotChange">
+              <view class="picker-display">
+                <text>{{parrotOptions[expenseForm.parrotIndex] || '请选择鹦鹉'}}</text>
+                <text class="picker-arrow">▾</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <!-- 选择类别 -->
+        <view class="form-item">
+          <text class="form-label">{{expenseForm.type}}类别</text>
+          <view class="picker-wrapper">
+            <picker mode="selector" range="{{categoryOptions}}" value="{{expenseForm.categoryIndex}}" bindchange="onExpenseCategoryChange">
+              <view class="picker-display">
+                <text>{{categoryOptions[expenseForm.categoryIndex] || '请选择类别'}}</text>
+                <text class="picker-arrow">▾</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <!-- 金额 -->
+        <view class="form-item">
+          <text class="form-label">{{expenseForm.type}}金额</text>
+          <input class="text-input" type="number" placeholder="请输入金额" value="{{expenseForm.amount}}" bindinput="onExpenseAmountInput" />
+        </view>
+
+        <!-- 描述 -->
+        <view class="form-item">
+          <text class="form-label">{{expenseForm.type}}描述</text>
+          <input class="text-input" placeholder="请输入描述" value="{{expenseForm.description}}" bindinput="onExpenseDescInput" />
+        </view>
+
+        <!-- 日期 -->
+        <view class="form-item">
+          <text class="form-label">{{expenseForm.type}}日期</text>
+          <picker mode="date" value="{{expenseForm.date}}" bindchange="onExpenseDateChange">
+            <view class="picker-display">
+              <text>{{expenseForm.date || '请选择日期'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 底部按钮 -->
+    <view class="expense-modal-footer">
+      <button class="btn-secondary" bindtap="closeAddExpenseModal">取消</button>
+      <button class="btn-add {{expenseForm.type==='收入' ? 'btn-add-income' : 'btn-add-expense'}}" bindtap="submitExpenseRecord" disabled="{{!canSubmitExpense}}">添加</button>
+    </view>
+  </view>
+</view>
 
     <!-- 登录提示 -->
     <view class="login-prompt-card" wx:if="{{!isLogin}}">

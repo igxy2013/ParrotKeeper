@@ -401,6 +401,20 @@ Page({
     })
   },
 
+  // 顶部返回按钮：优先返回上一页，无历史时回首页
+  goBack() {
+    const pages = getCurrentPages()
+    if (pages && pages.length > 1) {
+      wx.navigateBack({ delta: 1 })
+    } else {
+      if (wx.switchTab) {
+        wx.switchTab({ url: '/pages/index/index' })
+      } else {
+        wx.redirectTo({ url: '/pages/index/index' })
+      }
+    }
+  },
+
   // 添加喂食记录
   addFeedingRecord() {
     wx.navigateTo({
@@ -424,12 +438,8 @@ Page({
 
   // 添加繁殖记录
   addBreedingRecord() {
-    // 确保切换到繁殖记录标签页
-    this.setData({
-      activeTab: 'breeding'
-    })
     wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=breeding'
+      url: '/pages/breeding/breeding'
     })
   },
 

@@ -1,5 +1,10 @@
 {
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
   "navigationBarTitleText": "团队协作",
   "enablePullDownRefresh": true,
-  "backgroundColor": "#f5f5f5"
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
 }

@@ -1,24 +1,7 @@
 <!--pages/records/records.wxml-->
 <view class="page-container">
-  <!-- 自定义页头 -->
-  <view class="custom-header">
-    <view class="header-content">
-      <view class="header-left">
-        <view class="header-icon"></view>
-        <view class="header-title-section">
-          <text class="header-title">鹦鹉管家</text>
-          <text class="header-subtitle">专业鹦鹉护理助手</text>
-        </view>
-      </view>
-      <view class="header-right" style="margin-right: {{menuRightPadding}}px;">
-        <button class="header-btn notification"></button>
-        <button class="header-btn more"></button>
-      </view>
-    </view>
-  </view>
-
-  <!-- 内容区域需要增加顶部间距 -->
-  <view style="padding-top: 240rpx;">
+  <app-header title="养殖记录" subtitle="专业鹦鹉护理助手"></app-header>
+  <view class="page-content">
     <!-- 游客模式提示 -->
     <view wx:if="{{!isLogin}}" class="guest-tip">
       <text class="tip-text">📝 记录功能需要登录使用</text>

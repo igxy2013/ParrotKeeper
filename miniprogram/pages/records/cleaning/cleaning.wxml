@@ -1,3 +1,96 @@
-﻿？<？!？-？-？p？a？g？e？s？/？r？e？c？o？r？d？s？/？c？l？e？a？n？i？n？g？/？c？l？e？a？n？i？n？g？.？w？x？m？l？-？-？>？？
-？<？t？e？x？t？>？p？a？g？e？s？/？r？e？c？o？r？d？s？/？c？l？e？a？n？i？n？g？/？c？l？e？a？n？i？n？g？.？w？x？m？l？<？/？t？e？x？t？>？？
-？
+<!-- pages/records/cleaning/cleaning.wxml -->
+<view class="cleaning-page">
+  <!-- Header -->
+  <view class="header" style="padding-right: {{menuRightPadding}}px;">
+    <view class="header-left">
+      <view class="back-btn" bindtap="goBack"><text class="back-icon">←</text></view>
+      <view class="title-wrap">
+        <text class="title">清洁记录</text>
+        <text class="subtitle">鹦鹉清洁护理管理</text>
+      </view>
+    </view>
+    <view class="header-right">
+      <view class="add-btn" bindtap="addCleaningRecord"><text class="add-icon">＋</text></view>
+    </view>
+  </view>
+
+  <!-- Content -->
+  <scroll-view class="content" scroll-y="true">
+    <!-- Stats Cards -->
+    <view class="stats-grid">
+      <view class="stat-card">
+        <view class="stat-icon stat-blue">📅</view>
+        <text class="stat-value">{{stats.weeklyCount}}</text>
+        <text class="stat-label">本周清洁</text>
+      </view>
+      <view class="stat-card">
+        <view class="stat-icon stat-green">🛡️</view>
+        <text class="stat-value">{{stats.uniqueTypes}}</text>
+        <text class="stat-label">清洁类型</text>
+      </view>
+      <view class="stat-card">
+        <view class="stat-icon stat-purple">⏱️</view>
+        <text class="stat-value">{{stats.lastTimeText || '—'}}</text>
+        <text class="stat-label">最近一次</text>
+      </view>
+    </view>
+
+    <!-- Filter Tabs -->
+    <view class="filter-tabs">
+      <scroll-view scroll-x="true" class="filter-scroll">
+        <view class="filter-row">
+          <block wx:for="{{filterOptions}}" wx:key="*this">
+            <view class="filter-chip {{selectedFilter === item ? 'active' : ''}}" bindtap="selectFilter" data-filter="{{item}}">
+              <text class="chip-text">{{item}}</text>
+            </view>
+          </block>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- Cleaning Records -->
+    <view class="list" wx:if="{{displayRecords.length > 0}}">
+      <block wx:for="{{displayRecords}}" wx:key="id">
+        <view class="card">
+          <view class="card-left">
+            <image class="avatar" mode="cover" src="/images/default-parrot.png" />
+          </view>
+          <view class="card-right">
+            <view class="card-head">
+              <view class="info">
+                <text class="name">{{item.parrot_name}}</text>
+                <text class="type-badge">{{item.cleaning_type_text || item.cleaning_type}}</text>
+              </view>
+              <view class="time">{{item.cleaning_time_formatted}}</view>
+            </view>
+
+            <view class="card-body">
+              <view class="detail" wx:if="{{item.description}}">
+                <text class="label">描述：</text>
+                <text class="value">{{item.description}}</text>
+              </view>
+              <view class="detail" wx:if="{{item.notes}}">
+                <text class="label">备注：</text>
+                <text class="value">{{item.notes}}</text>
+              </view>
+              <view class="detail" wx:if="{{isTeamMode && item.created_by_username}}">
+                <text class="label">记录者：</text>
+                <text class="value">{{item.created_by_username}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty" wx:if="{{displayRecords.length === 0 && !loading}}">
+      <view class="empty-icon">🧹</view>
+      <text class="empty-text" wx:if="{{isLogin}}">暂无{{selectedFilter}}记录</text>
+      <text class="empty-text" wx:else>请先登录查看记录</text>
+      <button class="btn btn-primary" wx:if="{{isLogin && hasOperationPermission}}" bindtap="addCleaningRecord">添加清洁记录</button>
+    </view>
+
+    <view class="loading" wx:if="{{loading}}">加载中...</view>
+  </scroll-view>
+</view>

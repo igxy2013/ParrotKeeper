@@ -7,8 +7,14 @@ Page({
     parrot: {},
     statistics: null,
     recentRecords: [],
+    hasFeedingRecords: false,
     loading: true,
     hasOperationPermission: false,
+    // 菜单状态
+    showMenu: false,
+    // 选项卡
+    activeTab: '基本信息',
+    tabs: ['基本信息', '喂食记录', '健康档案', '训练记录'],
     
     // 健康状态映射
     healthStatusText: '',
@@ -21,14 +27,26 @@ Page({
     typeNames: {
       'feeding': '喂食记录',
       'cleaning': '清洁记录',
-      'health_check': '健康检查'
+      'health_check': '健康检查',
+      'training': '训练记录'
     },
     
     typeIcons: {
       'feeding': '🍽️',
       'cleaning': '🧹',
-      'health_check': '🏥'
-    }
+      'health_check': '🏥',
+      'training': '🎯'
+    },
+
+    // 喂食记录数据
+    feedingRecords: [],
+    // 健康档案数据
+    healthRecords: [],
+    // 训练记录数据
+    trainingRecords: [],
+    
+    // 最后喂食时间信息
+    lastFeedingInfo: ''
   },
 
   onLoad(options) {
@@ -56,6 +74,23 @@ Page({
     if (this.data.parrotId) {
       this.loadParrotDetail()
     }
+  },
+
+  // 返回上一页
+  goBack() {
+    const pages = getCurrentPages()
+    if (pages.length > 1) {
+      wx.navigateBack({ delta: 1 })
+    } else {
+      // 无历史栈时返回到鹦鹉列表
+      wx.switchTab({ url: '/pages/parrots/parrots' })
+    }
+  },
+
+  // 切换选项卡
+  setActiveTab(e) {
+    const tab = e.currentTarget.dataset.tab || e.detail || '基本信息'
+    this.setData({ activeTab: tab })
   },
 
   // 加载鹦鹉详情
@@ -103,14 +138,47 @@ Page({
         wx.setNavigationBarTitle({ title: parrot.name })
       }
       
-      // 先处理最近记录，便于计算“距上次喂食”
+      // 先处理最近记录，便于计算"距上次喂食"
       if (recordsRes.success) {
         const recordsRaw = recordsRes.data.records || []
         const recentRecords = recordsRaw.map(r => ({
           ...r,
           created_at: r.time ? new Date(r.time).toLocaleString() : ''
         }))
-        this.setData({ recentRecords })
+        const hasFeedingRecords = recentRecords.some(r => r.type === 'feeding')
+        
+        // 按类型分类记录
+        const feedingRecords = recentRecords.filter(r => r.type === 'feeding')
+        const healthRecords = recentRecords.filter(r => r.type === 'health_check')
+        const trainingRecords = recentRecords.filter(r => r.type === 'training')
+        
+        // 计算最后喂食时间信息
+        let lastFeedingInfo = '暂无喂食记录'
+        if (feedingRecords.length > 0) {
+          const lastFeeding = feedingRecords[0] // 假设记录已按时间排序
+          if (lastFeeding.time) {
+            const lastTime = new Date(lastFeeding.time)
+            const now = new Date()
+            const diffHours = Math.floor((now - lastTime) / (1000 * 60 * 60))
+            if (diffHours < 1) {
+              lastFeedingInfo = '刚刚喂食'
+            } else if (diffHours < 24) {
+              lastFeedingInfo = `${diffHours}小时前`
+            } else {
+              const diffDays = Math.floor(diffHours / 24)
+              lastFeedingInfo = `${diffDays}天前`
+            }
+          }
+        }
+        
+        this.setData({ 
+          recentRecords, 
+          hasFeedingRecords,
+          feedingRecords,
+          healthRecords,
+          trainingRecords,
+          lastFeedingInfo
+        })
       }
       
       // 将后端统计数据映射到前端所需字段
@@ -183,27 +251,86 @@ Page({
 
   // 快速喂食
   quickFeeding() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
     wx.navigateTo({
       url: `/pages/records/add-record/add-record?type=feeding&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
     })
   },
 
-  // 快速清洁
-  quickCleaning() {
-    wx.navigateTo({
-      url: `/pages/records/add-record/add-record?type=cleaning&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
-    })
-  },
-
   // 快速健康检查
   quickHealthCheck() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
     wx.navigateTo({
       url: `/pages/records/add-record/add-record?type=health_check&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
     })
   },
 
+  // 快速训练记录
+  quickTraining() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
+    wx.navigateTo({
+      url: `/pages/records/add-record/add-record?type=training&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
+    })
+  },
+
+  // 快速拍照
+  quickPhoto() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tempFilePath = res.tempFiles[0].tempFilePath
+        // 这里可以添加上传照片的逻辑
+        wx.showToast({
+          title: '照片功能开发中',
+          icon: 'none'
+        })
+      }
+    })
+  },
+
+  // 快速清洁（保留原有功能）
+  quickCleaning() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
+    wx.navigateTo({
+      url: `/pages/records/add-record/add-record?type=cleaning&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
+    })
+  },
+
+  // 切换菜单显示状态
+  toggleMenu() {
+    this.setData({
+      showMenu: !this.data.showMenu
+    })
+  },
+
+  // 关闭菜单
+  closeMenu() {
+    this.setData({
+      showMenu: false
+    })
+  },
+
   // 编辑鹦鹉
   editParrot() {
+    this.setData({ showMenu: false }) // 关闭菜单
     wx.navigateTo({
       url: `/pages/parrots/add-parrot/add-parrot?id=${this.data.parrotId}`
     })
@@ -223,6 +350,8 @@ Page({
 
   // 删除鹦鹉
   deleteParrot() {
+    this.setData({ showMenu: false }) // 关闭菜单
+    
     // 检查parrotId是否存在
     if (!this.data.parrotId) {
       app.showError('鹦鹉ID不存在，无法删除')

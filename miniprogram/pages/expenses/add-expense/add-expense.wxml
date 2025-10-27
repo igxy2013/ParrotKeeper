@@ -1,5 +1,7 @@
 <!--pages/expenses/add-expense/add-expense.wxml-->
 <view class="page-container">
+  <app-header title="添加支出" subtitle="记录一笔支出" showBack="{{true}}"></app-header>
+  <view class="page-content">
   <form bindsubmit="onSubmit">
     <view class="form-section">
       <view class="section-title">添加支出记录</view>
@@ -70,4 +72,5 @@
       </button>
     </view>
   </form>
+  </view>
 </view>

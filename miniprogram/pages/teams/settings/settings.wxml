@@ -1,8 +1,5 @@
 <view class="container">
-  <view class="page-header">
-    <view class="header-title">团队设置</view>
-    <view class="header-subtitle">管理团队信息与成员权限</view>
-  </view>
+  <app-header title="团队设置" subtitle="管理团队信息与成员权限" showBack="{{true}}"></app-header>
 
   <view class="card">
     <view class="card-header">

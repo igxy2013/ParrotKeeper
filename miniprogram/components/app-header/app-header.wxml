@@ -1,4 +1,4 @@
-<view class="ah-app-header" style="padding-top: {{statusBarPadding}}px;">
+<view class="ah-app-header {{themeClass}}" style="padding-top: {{statusBarPadding}}px;">
   <view class="ah-header-content">
     <view class="ah-header-left">
       <view wx:if="{{showBack}}" class="ah-back-btn" bindtap="onBack">

@@ -248,6 +248,166 @@
   color: #2196F3;
 }
 
+/* 弹窗覆盖层 */
+.modal-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8rpx);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+
+/* 弹窗容器 */
+.modal-content {
+  width: 100%;
+  max-width: 700rpx;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 48rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.18);
+}
+
+/* 渐变头部 */
+.modal-header-gradient {
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  padding: 24rpx 32rpx;
+}
+
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  color: #ffffff;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.modal-close-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-icon {
+  color: #ffffff;
+  font-size: 32rpx;
+}
+
+/* 滚动内容区 */
+.modal-scroll {
+  max-height: calc(90vh - 240rpx);
+}
+
+.form-section {
+  padding: 32rpx;
+}
+
+.form-item { margin-bottom: 24rpx; }
+
+.form-label {
+  display: block;
+  font-size: 26rpx;
+  color: #374151;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.label-icon { color: #10B981; margin-right: 12rpx; }
+
+.text-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+}
+
+.textarea-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  min-height: 140rpx;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24rpx;
+}
+
+.picker-wrapper { position: relative; }
+
+.picker-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  background: #ffffff;
+}
+
+.picker-arrow { color: #9CA3AF; }
+
+.gender-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.gender-btn {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  border-radius: 24rpx;
+  font-size: 26rpx;
+  border: 2rpx solid transparent;
+}
+
+.gender-male { background: #f1f5ff; color: #1e40af; }
+.gender-male.active { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+.gender-female { background: #fff1f5; color: #9d174d; }
+.gender-female.active { background: #ffe4e6; border-color: #f9a8d4; color: #831843; }
+
+.modal-footer {
+  display: flex;
+  gap: 16rpx;
+  padding: 24rpx 32rpx;
+  border-top: 2rpx solid #f3f4f6;
+  background: #f9fafb;
+}
+
+.btn-secondary,
+.btn-primary {
+  flex: 1;
+  padding: 24rpx;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+}
+
+.btn-secondary { background: #e5e7eb; color: #374151; }
+.btn-primary { background: linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4); color: #ffffff; }
+.btn-primary[disabled] { opacity: 0.5; }
+
 .stat-label {
   font-size: 28rpx;
   color: #666666;
@@ -704,3 +864,97 @@
 
 
 
+
+/* ====== 添加收支弹窗样式（参考APP） ====== */
+.expense-modal-card {
+  width: 100%;
+  max-width: 700rpx;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 32rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.16);
+  display: flex;
+  flex-direction: column;
+}
+
+.expense-modal-header {
+  padding: 24rpx 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2rpx solid #f3f4f6;
+}
+
+.expense-modal-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #374151;
+}
+
+.expense-modal-close {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 28rpx;
+}
+
+.expense-modal-scroll {
+  max-height: calc(90vh - 220rpx);
+}
+
+.expense-form-section {
+  padding: 32rpx;
+}
+
+.type-switch-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.type-btn {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  border-radius: 9999rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.type-income.active {
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  color: #ffffff;
+  box-shadow: 0 8rpx 20rpx rgba(16, 185, 129, 0.35);
+}
+
+.type-expense.active {
+  background: linear-gradient(135deg, #fb923c, #ef4444);
+  color: #ffffff;
+  box-shadow: 0 8rpx 20rpx rgba(239, 68, 68, 0.35);
+}
+
+.expense-modal-footer {
+  display: flex;
+  gap: 16rpx;
+  padding: 24rpx 32rpx;
+  border-top: 2rpx solid #f3f4f6;
+  background: #f9fafb;
+}
+
+.btn-add {
+  flex: 1;
+  padding: 24rpx;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+}
+
+.btn-add-income { background: linear-gradient(135deg, #22c55e, #10b981); color: #ffffff; }
+.btn-add-expense { background: linear-gradient(135deg, #fb923c, #ef4444); color: #ffffff; }
+.btn-add[disabled] { opacity: 0.5; }

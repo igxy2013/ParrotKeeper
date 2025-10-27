@@ -19,6 +19,10 @@ Page({
     lastUserMode: null, // 记录上次的用户模式，用于检测模式变化
     hasOperationPermission: false, // 是否有操作权限
     
+    // 性别统计
+    maleCount: 0,
+    femaleCount: 0,
+    
     // 筛选和排序相关
     showSpeciesModal: false,
     showStatusModal: false,
@@ -192,10 +196,18 @@ Page({
         
         console.log('处理后的鹦鹉数据:', newParrots);
         
+        const updatedParrots = refresh ? newParrots : [...this.data.parrots, ...newParrots];
+        
+        // 计算性别统计
+        const maleCount = updatedParrots.filter(parrot => parrot.gender === 'male').length;
+        const femaleCount = updatedParrots.filter(parrot => parrot.gender === 'female').length;
+        
         this.setData({
-          parrots: refresh ? newParrots : [...this.data.parrots, ...newParrots],
+          parrots: updatedParrots,
           page: refresh ? 2 : this.data.page + 1,
-          hasMore: newParrots.length === 10
+          hasMore: newParrots.length === 10,
+          maleCount,
+          femaleCount
         })
         
         console.log('设置数据完成，当前parrots数量:', this.data.parrots.length);

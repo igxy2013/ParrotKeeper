@@ -1,10 +1,6 @@
 <!--pages/teams/create/create.wxml-->
 <view class="container">
-  <!-- 页面头部 -->
-  <view class="page-header">
-    <text class="page-title">创建团队</text>
-    <text class="page-subtitle">创建一个新的团队并邀请成员加入</text>
-  </view>
+  <app-header title="创建团队" subtitle="创建一个新的团队并邀请成员加入" showBack="{{true}}"></app-header>
 
   <!-- 团队信息表单 -->
   <view class="form-card">

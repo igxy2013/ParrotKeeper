@@ -1,10 +1,6 @@
 <!--pages/teams/teams.wxml-->
 <view class="container">
-  <!-- 页面头部 -->
-  <view class="page-header">
-    <view class="header-title">团队协作</view>
-    <view class="header-subtitle">管理您的团队，提升协作效率</view>
-  </view>
+  <app-header title="团队协作" subtitle="管理您的团队，提升协作效率"></app-header>
 
   <!-- 团队信息卡片 -->
   <view class="team-info-card">

@@ -1,10 +1,6 @@
 <!--pages/teams/join/join.wxml-->
 <view class="container">
-  <!-- 页面头部 -->
-  <view class="page-header">
-    <view class="header-title">加入团队</view>
-    <view class="header-subtitle">通过邀请码加入团队协作</view>
-  </view>
+  <app-header title="加入团队" subtitle="通过邀请码加入团队协作" showBack="{{true}}"></app-header>
 
   <!-- 加入团队表单 -->
   <view class="join-form-card">

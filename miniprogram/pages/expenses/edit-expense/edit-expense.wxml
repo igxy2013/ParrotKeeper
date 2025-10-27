@@ -1,5 +1,7 @@
 <!--pages/expenses/edit-expense/edit-expense.wxml-->
 <view class="page-container">
+  <app-header title="编辑支出" subtitle="更新支出记录" showBack="{{true}}"></app-header>
+  <view class="page-content">
   <view class="loading" wx:if="{{loading}}">
     <text>加载中...</text>
   </view>
@@ -74,4 +76,5 @@
       </button>
     </view>
   </form>
+  </view>
 </view>

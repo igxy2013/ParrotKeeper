@@ -3,7 +3,7 @@
     "app-header": "/components/app-header/app-header"
   },
   "navigationStyle": "custom",
-  "navigationBarTitleText": "团队设置",
+  "navigationBarTitleText": "喂食记录",
   "backgroundColor": "#f8f9fa",
   "backgroundTextStyle": "dark"
 }

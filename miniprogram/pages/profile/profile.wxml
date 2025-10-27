@@ -175,10 +175,16 @@
   </view>
   <view class="achievements-grid">
     <block wx:for="{{achievements}}" wx:key="index">
-      <view class="achievement-item">
+      <view class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}}">
         <view class="achievement-icon {{item.bgClass}}">{{item.icon}}</view>
         <view class="achievement-title">{{item.title}}</view>
         <view class="achievement-desc">{{item.desc}}</view>
+        <view class="achievement-progress" wx:if="{{!item.unlocked}}">
+          <text class="progress-text">{{stats[item.condition] || 0}}/{{item.target}}</text>
+        </view>
+        <view class="achievement-badge" wx:if="{{item.unlocked}}">
+          <text class="badge-text">已解锁</text>
+        </view>
       </view>
     </block>
   </view>

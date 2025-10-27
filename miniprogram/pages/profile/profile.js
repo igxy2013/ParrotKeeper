@@ -40,13 +40,8 @@ Page({
     languageDisplay: '简体中文',
     theme: 'system',
     themeDisplay: '跟随系统',
-    stats: { parrotCount: 0, totalFeedings: 0, totalCheckups: 0 },
-    achievements: [
-      { icon: '🏆', title: '新手上路', desc: '成功添加第一只鹦鹉', bgClass: 'bg-yellow' },
-      { icon: '❤️', title: '爱心饲养员', desc: '连续30天按时喂食', bgClass: 'bg-red' },
-      { icon: '🛡️', title: '健康守护者', desc: '完成10次健康检查', bgClass: 'bg-green' },
-      { icon: '⭐', title: '专业训练师', desc: '训练鹦鹉学会5个技能', bgClass: 'bg-purple' }
-    ],
+    stats: { parrotCount: 0, totalFeedings: 0, totalCheckups: 0, statsViews: 0 },
+    achievements: [], // 改为空数组，从后端加载
     teamItems: [
       { icon: '👥', title: '当前团队', desc: '查看团队成员', bgClass: 'bg-blue' },
       { icon: '➕', title: '加入团队', desc: '通过邀请码加入团队', bgClass: 'bg-green' },
@@ -66,26 +61,88 @@ Page({
     this.initUser();
     this.loadPreferences();
     this.loadOverviewStats();
+    this.loadAchievements(); // 加载成就列表
   },
 
   // 加载统计概览用于展示统计网格
   loadOverviewStats() {
-    const app = getApp();
-    if (!app.globalData.openid) return;
-    app.request('/api/statistics/overview', {
-      method: 'GET'
-    }).then(res => {
-      const data = res.data || {};
-      this.setData({
-        stats: {
-          parrotCount: data.total_parrots || 0,
-          totalFeedings: data.monthly_feeding || 0,
-          totalCheckups: data.monthly_health_checks || 0
+    wx.request({
+      url: `${this.data.baseUrl}/api/statistics/overview`,
+      method: 'GET',
+      header: {
+        'X-OpenID': wx.getStorageSync('openid')
+      },
+      success: (res) => {
+        if (res.data.success) {
+          this.setData({
+            stats: {
+              ...this.data.stats,
+              ...res.data.data,
+              statsViews: res.data.data.stats_views || 0
+            }
+          });
+          // 检查成就解锁
+          this.checkAchievements();
         }
-      });
-    }).catch(() => {
-      // 回退默认值
-      this.setData({ stats: { parrotCount: 0, totalFeedings: 0, totalCheckups: 0 } });
+      },
+      fail: (err) => {
+        console.error('获取统计数据失败:', err);
+      }
+    });
+  },
+
+  // 检查成就解锁
+  checkAchievements() {
+    wx.request({
+      url: `${this.data.baseUrl}/api/achievements/check`,
+      method: 'POST',
+      header: {
+        'X-OpenID': wx.getStorageSync('openid'),
+        'Content-Type': 'application/json'
+      },
+      success: (res) => {
+        if (res.data.success && res.data.data.newly_unlocked.length > 0) {
+          // 显示新解锁的成就
+          res.data.data.newly_unlocked.forEach(achievement => {
+            this.showAchievementUnlock(achievement);
+          });
+          // 重新加载成就列表
+          this.loadAchievements();
+        }
+      },
+      fail: (err) => {
+        console.error('检查成就失败:', err);
+      }
+    });
+  },
+
+  // 加载成就列表
+  loadAchievements() {
+    wx.request({
+      url: `${this.data.baseUrl}/api/achievements`,
+      method: 'GET',
+      header: {
+        'X-OpenID': wx.getStorageSync('openid')
+      },
+      success: (res) => {
+        if (res.data.success) {
+          this.setData({
+            achievements: res.data.data
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('获取成就列表失败:', err);
+      }
+    });
+  },
+
+  // 显示成就解锁提示
+  showAchievementUnlock(achievement) {
+    wx.showToast({
+      title: `🎉 解锁成就：${achievement.title}`,
+      icon: 'none',
+      duration: 3000
     });
   },
 

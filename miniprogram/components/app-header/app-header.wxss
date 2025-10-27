@@ -7,6 +7,12 @@
   box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.25);
 }
 
+/* 橙色主题（喂食页面使用） */
+.ah-theme-orange {
+  background: linear-gradient(90deg, #fb923c 0%, #fbbf24 50%, #facc15 100%);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(251, 146, 60, 0.35);
+}
+
 .ah-header-content {
   display: flex;
   align-items: center;

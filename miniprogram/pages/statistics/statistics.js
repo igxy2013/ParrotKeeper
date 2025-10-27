@@ -15,19 +15,19 @@ Page({
     speciesDistribution: [],
     // 新增数据源
     foodPreference: [],
-    healthTrends: [],
     
     // 筛选条件
     feedingPeriod: 'week',
     expenseData: [],
     expensePeriod: 'month',
+    selectedPeriod: '本周', // 默认选择本周
     
     // 体重趋势数据
     weightSeries: [],
     selectedParrotId: null,
     selectedParrotName: '',
     showParrotDropdown: false,
-    weightDays: 30,
+    weightDays: 7, // 本周对应7天
     weightColors: ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22'],
     weightLegend: [],
     
@@ -81,10 +81,10 @@ Page({
       await Promise.all([
         this.loadOverview(),
         this.loadExpenseAnalysis(),
+        this.loadCareFrequency(),
         this.loadSpeciesDistribution(),
         this.loadWeightTrends(),
-        this.loadFoodPreference(),
-        this.loadHealthTrends()
+        this.loadFoodPreference()
       ])
     } catch (error) {
       console.error('加载统计数据失败:', error)
@@ -203,16 +203,33 @@ Page({
         'other': '其他'
       }
     
-    const palette = ['#667eea','#23a6d5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#22c55e','#f97316','#9ca3af']
+    // 根据图片配置特定颜色
+    const categoryColors = {
+      '食物': '#10b981', // 绿色
+      '玩具': '#3b82f6', // 蓝色
+      '医疗': '#f59e0b', // 橙色
+      '用品': '#ec4899', // 粉色
+      '笼具': '#8b5cf6', // 紫色
+      '幼鸟': '#06b6d4', // 青色
+      '种鸟': '#ef4444', // 红色
+      '配件': '#22c55e', // 浅绿色
+      '美容': '#f97316', // 深橙色
+      '训练': '#9ca3af', // 灰色
+      '其他': '#6b7280'  // 深灰色
+    }
+    
     const categoryData = data.category_expenses
     const total = categoryData.reduce((sum, item) => sum + (item.total_amount || 0), 0)
     
-    return categoryData.map((item, idx) => ({
-      category: categoryMap[item.category] || item.category,
-      amount: item.total_amount,
-      percentage: total > 0 ? Math.round(((item.total_amount || 0) / total) * 100) : 0,
-      color: palette[idx % palette.length]
-    }))
+    return categoryData.map((item, idx) => {
+      const categoryName = categoryMap[item.category] || item.category
+      return {
+        category: categoryName,
+        amount: item.total_amount,
+        percentage: total > 0 ? Math.round(((item.total_amount || 0) / total) * 100) : 0,
+        color: categoryColors[categoryName] || '#667eea' // 默认颜色
+      }
+    })
   },
 
   // 绘制支出分析饼图（对齐APP：圆环+中心总额+标签）
@@ -248,8 +265,8 @@ Page({
 
       const cx = width / 2
       const cy = height / 2
-      const radius = Math.min(width, height) / 2 - 16
-      const inner = radius * 0.6 // 圆环内径，APP样式
+      const radius = Math.min(width, height) / 2 - 10 // 进一步减少边距，增大图表尺寸
+      const inner = radius * 0.4 // 进一步调整圆环内径，使环形更粗
       const totalAmount = data.reduce((s, i) => s + (i.amount || 0), 0)
 
       // 绘制圆环分片
@@ -270,45 +287,52 @@ Page({
         start = end
       })
 
-      // 扇区标签（大于5%显示，带指引线）
-      start = -Math.PI / 2
-      ctx.font = '12px sans-serif'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'middle'
-      ctx.fillStyle = '#333'
-      data.forEach(item => {
-        const angle = (item.percentage / 100) * Math.PI * 2
-        const end = start + angle
-        if (item.percentage >= 5 && angle > 0) {
-          const mid = (start + end) / 2
-          const ex = cx + Math.cos(mid) * (radius + 6)
-          const ey = cy + Math.sin(mid) * (radius + 6)
-          const lx = cx + Math.cos(mid) * (radius + 24)
-          const ly = cy + Math.sin(mid) * (radius + 24)
-          // 指引线
-          ctx.strokeStyle = item.color || '#667eea'
-          ctx.lineWidth = 1
-          ctx.beginPath()
-          ctx.moveTo(ex, ey)
-          ctx.lineTo(lx, ly)
-          ctx.stroke()
-          // 文本位置与对齐
-          const alignRight = Math.cos(mid) > 0
-          ctx.textAlign = alignRight ? 'left' : 'right'
-          const label = `${item.category} ${item.percentage}%`
-          ctx.fillText(label, lx + (alignRight ? 6 : -6), ly)
-        }
-        start = end
-      })
+      // 扇区标签（大于5%显示，带指引线）- 已移除
+      // start = -Math.PI / 2
+      // ctx.font = '12px sans-serif'
+      // ctx.textAlign = 'left'
+      // ctx.textBaseline = 'middle'
+      // ctx.fillStyle = '#333'
+      // data.forEach(item => {
+      //   const angle = (item.percentage / 100) * Math.PI * 2
+      //   const end = start + angle
+      //   if (item.percentage >= 5 && angle > 0) {
+      //     const mid = (start + end) / 2
+      //     const ex = cx + Math.cos(mid) * (radius + 8)
+      //     const ey = cy + Math.sin(mid) * (radius + 8)
+      //     const lx = cx + Math.cos(mid) * (radius + 30)
+      //     const ly = cy + Math.sin(mid) * (radius + 30)
+      //     // 指引线
+      //     ctx.strokeStyle = item.color || '#667eea'
+      //     ctx.lineWidth = 1
+      //     ctx.beginPath()
+      //     ctx.moveTo(ex, ey)
+      //     ctx.lineTo(lx, ly)
+      //     ctx.stroke()
+      //     // 文本位置与对齐
+      //     const alignRight = Math.cos(mid) > 0
+      //     ctx.textAlign = alignRight ? 'left' : 'right'
+      //     const label = `${item.category} ${item.percentage}%`
+      //     // 确保文本不超出画布边界
+      //     const textX = alignRight ? 
+      //       Math.min(lx + 8, width - 10) : 
+      //       Math.max(lx - 8, 10)
+      //     ctx.fillText(label, textX, ly)
+      //   }
+      //   start = end
+      // })
 
       // 中心总额与标题
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
+      // 标题样式
+      ctx.fillStyle = '#6b7280'
+      ctx.font = '12px sans-serif'
+      ctx.fillText('总支出', cx, cy - 16)
+      // 金额样式
       ctx.fillStyle = '#1f2937'
-      ctx.font = '14px sans-serif'
-      ctx.fillText('总支出', cx, cy - 10)
-      ctx.font = '16px sans-serif'
-      ctx.fillText(`¥${(totalAmount || 0).toFixed(2)}`, cx, cy + 12)
+      ctx.font = 'bold 20px sans-serif'
+      ctx.fillText(`¥${(totalAmount || 0).toFixed(2)}`, cx, cy + 8)
     })
   },
 
@@ -377,11 +401,15 @@ Page({
     
     const total = parrots.length
     
+    // 定义颜色数组，使用更鲜艳的颜色以增强可见性
+    const colors = ['#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#ef4444', '#8b5cf6', '#06b6d4']
+    
     return Object.entries(speciesCount)
-      .map(([species, count]) => ({
+      .map(([species, count], index) => ({
         species,
         count,
-        percentage: total > 0 ? Math.round((count / total) * 100) : 0
+        percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+        color: colors[index % colors.length]
       }))
       .sort((a, b) => b.count - a.count)
   },
@@ -401,7 +429,6 @@ Page({
       if (res.success) {
         const pref = this.processFoodPreference(res.data)
         this.setData({ foodPreference: pref })
-        wx.nextTick(() => this.drawFoodPreferenceChart())
       }
     } catch (e) {
       console.error('加载食物偏好失败:', e)
@@ -410,28 +437,52 @@ Page({
 
   // 处理食物偏好数据
   processFoodPreference(data) {
-    const records = Array.isArray(data) ? data : ((data && data.records) ? data.records : [])
+    // 兼容分页结构：后端返回 { items, page, per_page, total }
+    // 同时兼容旧结构 { records: [...] } 以及直接数组
+    const records = Array.isArray(data)
+      ? data
+      : (data && Array.isArray(data.items))
+        ? data.items
+        : (data && Array.isArray(data.records))
+          ? data.records
+          : []
     const typeMap = {
       seed: { label: '种子', color: '#f59e0b' },
       pellet: { label: '颗粒', color: '#10b981' },
       fruit: { label: '水果', color: '#ef4444' },
       vegetable: { label: '蔬菜', color: '#22c55e' },
-      supplement: { label: '补充剂', color: '#06b6d4' },
+      supplement: { label: '营养补充', color: '#06b6d4' },
       milk_powder: { label: '奶粉', color: '#8b5cf6' }
     }
-    const counter = {}
-    (records || []).forEach(r => {
+    const counter = Object.create(null)
+    const list = Array.isArray(records) ? records : []
+    for (let i = 0; i < list.length; i++) {
+      const r = list[i]
       const t = (r && r.feed_type && r.feed_type.type) ? r.feed_type.type : 'other'
       counter[t] = (counter[t] || 0) + 1
-    })
-    const total = Object.values(counter).reduce((s, v) => s + v, 0)
-    return Object.keys(counter).map(k => ({
-      type: k,
-      label: (typeMap[k] && typeMap[k].label) ? typeMap[k].label : '其他',
-      count: counter[k],
-      percentage: total > 0 ? Math.round(counter[k] * 100 / total) : 0,
-      color: (typeMap[k] && typeMap[k].color) ? typeMap[k].color : '#9ca3af'
-    }))
+    }
+    let total = 0
+    for (const k in counter) {
+      if (Object.prototype.hasOwnProperty.call(counter, k)) {
+        total += counter[k] || 0
+      }
+    }
+    const result = []
+    for (const k in counter) {
+      if (Object.prototype.hasOwnProperty.call(counter, k)) {
+        const mapItem = typeMap[k] || {}
+        result.push({
+          type: k,
+          label: mapItem.label || '其他',
+          count: counter[k],
+          percentage: total > 0 ? Math.round(counter[k] * 100 / total) : 0,
+          color: mapItem.color || '#9ca3af'
+        })
+      }
+    }
+    // 按数量降序排序以贴近参考APP展示
+    result.sort((a, b) => (b.count || 0) - (a.count || 0))
+    return result
   },
 
   // 绘制食物偏好饼图
@@ -1154,102 +1205,6 @@ Page({
           ctx.shadowOffsetY = 0
         })
       })
-    })
-  },
-
-  async loadHealthTrends() {
-    try {
-      const res = await app.request({ url: '/api/statistics/health-trends', method: 'GET' })
-      if (res.success) {
-        const list = Array.isArray(res.data && res.data.weight_trends) ? res.data.weight_trends : (Array.isArray(res.data) ? res.data : [])
-        const points = list.map(i => ({ date: i.date, value: i.avg_weight })).filter(p => typeof p.value === 'number' && !isNaN(p.value))
-        this.setData({ healthTrends: points })
-        wx.nextTick(() => this.drawHealthTrendChart())
-      }
-    } catch (e) {
-      console.error('加载健康趋势失败:', e)
-    }
-  },
-
-  drawHealthTrendChart() {
-    const points = this.data.healthTrends || []
-    const query = wx.createSelectorQuery()
-    query.select('#healthTrendCanvas').node()
-    query.select('#healthTrendCanvas').boundingClientRect()
-    query.exec(res => {
-      const nodeRes = res && res[0]
-      const rect = res && res[1]
-      if (!nodeRes || !nodeRes.node || !rect) return
-      const canvas = nodeRes.node
-      const width = rect.width || 300
-      const height = rect.height || 200
-      const ctx = canvas.getContext('2d')
-      const winInfo = (wx.getWindowInfo && wx.getWindowInfo()) || {}
-      const dpr = winInfo.pixelRatio || 1
-      canvas.width = width * dpr
-      canvas.height = height * dpr
-      ctx.scale(dpr, dpr)
-      ctx.clearRect(0, 0, width, height)
-      if (!points.length) {
-        ctx.fillStyle = '#999'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.font = '14px sans-serif'
-        ctx.fillText('暂无健康数据', width/2, height/2)
-        return
-      }
-      const paddingLeft = 48, paddingRight = 18, paddingTop = 18, paddingBottom = 36
-      const chartW = width - paddingLeft - paddingRight
-      const chartH = height - paddingTop - paddingBottom
-      const values = points.map(p => p.value)
-      let minV = Math.min(...values)
-      let maxV = Math.max(...values)
-      if (!isFinite(minV) || !isFinite(maxV) || isNaN(minV) || isNaN(maxV)) {
-        ctx.fillStyle = '#999'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.font = '14px sans-serif'
-        ctx.fillText('健康数据异常', width/2, height/2)
-        return
-      }
-      if (maxV === minV) { minV = Math.max(0, minV - 1); maxV = maxV + 1 }
-      // 网格
-      ctx.strokeStyle = '#eee'
-      ctx.lineWidth = 1
-      for (let i = 0; i <= 4; i++) {
-        const y = paddingTop + (i / 4) * chartH
-        ctx.beginPath(); ctx.moveTo(paddingLeft, y); ctx.lineTo(width - paddingRight, y); ctx.stroke()
-      }
-      // 折线与面积
-      const baseY = height - paddingBottom
-      const toXY = (idx, val) => {
-        const x = paddingLeft + (idx / (points.length - 1)) * chartW
-        const norm = (val - minV) / (maxV - minV)
-        const y = paddingTop + (1 - norm) * chartH
-        return { x, y }
-      }
-      const gradient = ctx.createLinearGradient(0, paddingTop, 0, baseY)
-      gradient.addColorStop(0, 'rgba(102,126,234,0.35)')
-      gradient.addColorStop(1, 'rgba(102,126,234,0.0)')
-      // 面积
-      ctx.beginPath()
-      const first = toXY(0, points[0].value)
-      ctx.moveTo(first.x, baseY)
-      points.forEach((p, i) => { const {x,y} = toXY(i, p.value); ctx.lineTo(x, y) })
-      const last = toXY(points.length - 1, points[points.length - 1].value)
-      ctx.lineTo(last.x, baseY)
-      ctx.closePath()
-      ctx.fillStyle = gradient
-      ctx.fill()
-      // 线
-      ctx.strokeStyle = '#667eea'
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      points.forEach((p, i) => { const {x,y} = toXY(i, p.value); i?ctx.lineTo(x,y):ctx.moveTo(x,y) })
-      ctx.stroke()
-      // 点
-      ctx.fillStyle = '#667eea'
-      points.forEach((p, i) => { const {x,y} = toXY(i, p.value); ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill() })
     })
   },
 

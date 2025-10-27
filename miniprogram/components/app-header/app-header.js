@@ -6,11 +6,13 @@ Component({
   properties: {
     title: { type: String, value: '鹦鹉管家' },
     subtitle: { type: String, value: '' },
-    showBack: { type: Boolean, value: false }
+    showBack: { type: Boolean, value: false },
+    theme: { type: String, value: '' } // 主题：''(默认绿色)、'orange'
   },
   data: {
     statusBarPadding: 20,
-    menuRightPadding: 0
+    menuRightPadding: 0,
+    themeClass: ''
   },
   lifetimes: {
     attached() {
@@ -25,9 +27,11 @@ Component({
             menuRightPadding = rightGap + rect.width + 8 // 额外留一点间距
           }
         } catch (e) { /* 胶囊获取失败则不留白 */ }
-        this.setData({ statusBarPadding: padding, menuRightPadding })
+        const themeClass = this.properties.theme === 'orange' ? 'ah-theme-orange' : ''
+        this.setData({ statusBarPadding: padding, menuRightPadding, themeClass })
       } catch (e) {
-        this.setData({ statusBarPadding: 20, menuRightPadding: 0 })
+        const themeClass = this.properties.theme === 'orange' ? 'ah-theme-orange' : ''
+        this.setData({ statusBarPadding: 20, menuRightPadding: 0, themeClass })
       }
     }
   },

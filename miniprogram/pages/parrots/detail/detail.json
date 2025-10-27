@@ -1,5 +1,6 @@
 {
   "usingComponents": {},
+  "navigationStyle": "custom",
   "navigationBarTitleText": "鹦鹉详情",
   "enablePullDownRefresh": true,
   "backgroundColor": "#f5f5f5"

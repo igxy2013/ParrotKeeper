@@ -1,3 +1,79 @@
-﻿？<？!？-？-？p？a？g？e？s？/？r？e？c？o？r？d？s？/？h？e？a？l？t？h？/？h？e？a？l？t？h？.？w？x？m？l？-？-？>？？
-？<？t？e？x？t？>？p？a？g？e？s？/？r？e？c？o？r？d？s？/？h？e？a？l？t？h？/？h？e？a？l？t？h？.？w？x？m？l？<？/？t？e？x？t？>？？
-？
+<!--pages/records/health/health.wxml-->
+<view class="page-container">
+  <app-header title="健康检查" subtitle="记录鹦鹉健康状况" showBack="true"></app-header>
+
+  <view class="page-content">
+    <!-- 游客模式提示 -->
+    <view wx:if="{{!isLogin}}" class="guest-tip">
+      <text class="tip-text">🏥 健康检查需要登录使用</text>
+      <text class="tip-subtitle">登录后可以记录和查看您的健康记录</text>
+    </view>
+
+    <!-- 已登录内容 -->
+    <view wx:if="{{isLogin}}">
+      <!-- 筛选：鹦鹉标签 -->
+      <view class="filter-section">
+        <scroll-view scroll-x="true" class="chip-scroll" show-scrollbar="false">
+          <view class="chip {{selectedParrotId === '' ? 'active' : ''}}" bindtap="switchParrot" data-id="" data-name="全部">
+            <text>全部</text>
+          </view>
+          <view class="chip {{selectedParrotId === item.id ? 'active' : ''}}" wx:for="{{parrotsList}}" wx:key="id" bindtap="switchParrot" data-id="{{item.id}}" data-name="{{item.name}}">
+            <text>{{item.name}}</text>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 健康概览卡片（对齐参考APP：三项指标） -->
+      <view class="overview-card">
+        <text class="overview-title">健康概览</text>
+        <view class="overview-grid">
+          <view class="metric">
+            <text class="metric-value">{{overview.healthyCount}}</text>
+            <text class="metric-label">健康鹦鹉</text>
+          </view>
+          <view class="metric">
+            <text class="metric-value">{{overview.attentionCount}}</text>
+            <text class="metric-label">需关注</text>
+          </view>
+          <view class="metric">
+            <text class="metric-value">{{overview.checkCount}}</text>
+            <text class="metric-label">检查次数</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 记录列表 -->
+      <view class="record-list" wx:if="{{healthRecords.length > 0}}">
+        <view class="record-card" wx:for="{{healthRecords}}" wx:key="id">
+          <view class="record-header">
+            <view class="record-info">
+              <text class="record-title">{{item.parrot_name}}</text>
+              <text class="record-time">{{item.record_date_formatted}}</text>
+            </view>
+          </view>
+          <view class="record-body">
+            <view class="record-detail" wx:if="{{item.weight}}">
+              <text class="detail-label">体重：</text>
+              <text class="detail-value">{{item.weight}} g</text>
+            </view>
+            <view class="record-detail" wx:if="{{item.temperature}}">
+              <text class="detail-label">体温：</text>
+              <text class="detail-value">{{item.temperature}} °C</text>
+            </view>
+            <view class="record-detail" wx:if="{{item.notes}}">
+              <text class="detail-label">备注：</text>
+              <text class="detail-value">{{item.notes}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{healthRecords.length === 0 && !loading}}">
+        <view class="empty-icon">🏥</view>
+        <view class="empty-text">暂无健康记录</view>
+        <button wx:if="{{hasOperationPermission}}" class="btn btn-primary btn-large mt-20" bindtap="addHealthRecord">添加健康记录</button>
+      </view>
+    </view>
+  </view>
+</view>

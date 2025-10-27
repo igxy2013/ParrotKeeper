@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense
+from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense, UserStatistics
 from utils import login_required, success_response, error_response
 from team_utils import get_accessible_parrots
 from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode
@@ -14,6 +14,22 @@ def get_overview():
     """获取总览统计"""
     try:
         user = request.current_user
+        
+        # 记录统计页面查看次数
+        team_id = getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+        user_stats = UserStatistics.query.filter_by(user_id=user.id, team_id=team_id).first()
+        if not user_stats:
+            user_stats = UserStatistics(user_id=user.id, team_id=team_id, stats_views=1)
+            db.session.add(user_stats)
+        else:
+            user_stats.stats_views += 1
+            user_stats.updated_at = datetime.utcnow()
+        
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"[WARNING] 更新统计查看次数失败: {str(e)}")
         
         # 根据用户模式获取可访问的鹦鹉ID
         parrot_ids = get_accessible_parrot_ids_by_mode(user)
@@ -95,8 +111,10 @@ def get_overview():
             'total_parrots': total_parrots,
             'health_status': health_status,
             'monthly_expense': float(monthly_expense),
+            'monthly_income': 0.0,  # 添加本月收入字段，暂时设为0
             'monthly_feeding': monthly_feeding,
             'monthly_health_checks': monthly_health_checks,
+            'stats_views': user_stats.stats_views,  # 添加统计查看次数
             'today_records': {
                 'feeding': today_feeding,
                 'cleaning': today_cleaning

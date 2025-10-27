@@ -14,7 +14,7 @@
   right: 0;
   z-index: 1000;
   background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-  padding: 88rpx 32rpx 24rpx 32rpx;
+  padding: 64rpx 32rpx 24rpx 32rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 
@@ -27,12 +27,13 @@
 .header-left {
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: 16rpx;
 }
 
-.header-icon {
-  width: 80rpx;
-  height: 80rpx;
+/* 返回按钮样式，与右侧圆形按钮风格一致 */
+.back-btn {
+  width: 72rpx;
+  height: 72rpx;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
@@ -41,10 +42,17 @@
   backdrop-filter: blur(20rpx);
 }
 
-.header-icon::before {
-  content: '❤️';
-  font-size: 36rpx;
+.back-btn::before {
+  content: '←';
+  color: #ffffff;
+  font-size: 32rpx;
 }
+
+.back-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
 
 .header-title-section {
   display: flex;
