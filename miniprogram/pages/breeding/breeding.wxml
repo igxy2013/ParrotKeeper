@@ -6,11 +6,8 @@
     subtitle="专业繁殖管理助手"
     showBack="{{true}}"
   >
-    <view slot="actions" class="header-actions">
-      <button class="btn btn-primary btn-small" bindtap="showAddForm">
-        <text class="action-icon">➕</text>
-        添加记录
-      </button>
+    <view slot="actions" class="header-btn" bindtap="showAddForm">
+      <text class="header-btn-icon">+</text>
     </view>
   </app-header>
 
@@ -21,47 +18,32 @@
       <text class="tip-subtitle">登录后可以记录和管理您的鹦鹉繁殖信息</text>
     </view>
 
-    <!-- 统计卡片 -->
-    <view wx:if="{{isLogin}}" class="stats-section">
-      <view class="stats-grid">
-        <view class="stat-card breeding-pairs">
-          <view class="stat-content">
-            <view class="stat-info">
-              <text class="stat-label">总繁殖对数</text>
-              <text class="stat-value">{{stats.totalPairs}}</text>
-            </view>
-            <view class="stat-icon">
-              <text class="icon">💕</text>
-            </view>
-          </view>
+    <!-- 概览统计（与喂食页面统计卡片设计对齐） -->
+    <view wx:if="{{isLogin}}" class="summary-card">
+      <text class="summary-title">繁殖统计</text>
+      <view class="summary-grid summary-grid-2">
+        <view class="summary-metric">
+          <text class="summary-value">{{stats.totalPairs}}</text>
+          <text class="summary-label">总繁殖对数</text>
         </view>
-        <view class="stat-card success-hatching">
-          <view class="stat-content">
-            <view class="stat-info">
-              <text class="stat-label">成功孵化</text>
-              <text class="stat-value">{{stats.successfulHatching}}</text>
-            </view>
-            <view class="stat-icon">
-              <text class="icon">🐣</text>
-            </view>
-          </view>
+        <view class="summary-metric">
+          <text class="summary-value">{{stats.successfulHatching}}</text>
+          <text class="summary-label">成功孵化</text>
         </view>
       </view>
     </view>
 
-    <!-- 状态筛选 -->
+    <!-- 状态筛选（与健康页面的过滤器保持一致） -->
     <view wx:if="{{isLogin}}" class="filter-section">
-      <scroll-view class="status-filter" scroll-x="true">
-        <view class="filter-options">
-          <view 
-            class="filter-option {{selectedStatus === item ? 'active' : ''}}"
-            wx:for="{{statusOptions}}" 
-            wx:key="*this"
-            bindtap="selectStatus"
-            data-status="{{item}}"
-          >
-            <text class="option-text">{{item}}</text>
-          </view>
+      <scroll-view class="chip-scroll" scroll-x="true">
+        <view 
+          class="chip {{selectedStatus === item ? 'active' : ''}}"
+          wx:for="{{statusOptions}}" 
+          wx:key="*this"
+          bindtap="selectStatus"
+          data-status="{{item}}"
+        >
+          <text class="option-text">{{item}}</text>
         </view>
       </scroll-view>
     </view>

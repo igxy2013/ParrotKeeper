@@ -63,6 +63,9 @@ Page({
     parrotIndex: 1,
     categoryIndex: 0,
     modalCategories: [],
+    // 弹窗避让参数
+    modalTopOffsetPx: 24,
+    modalBottomOffsetPx: 24,
   },
 
   onLoad() {
@@ -184,11 +187,31 @@ Page({
   // 添加记录相关方法
   onShowAddRecord() {
     this.setData({ showAddRecord: true })
+    this.computeModalCapsulePadding()
     this.updateModalCategories()
   },
 
   onHideAddRecord() {
     this.setData({ showAddRecord: false })
+  },
+
+  // 计算弹窗的顶部胶囊与底部安全区避让
+  computeModalCapsulePadding() {
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+      const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+      if (win && rect && typeof win.windowWidth === 'number') {
+        const modalTopOffsetPx = Math.max(0, rect.bottom + 12)
+        let modalBottomOffsetPx = 24
+        if (win && win.safeArea && typeof win.windowHeight === 'number') {
+          const bottomInset = win.windowHeight - win.safeArea.bottom
+          modalBottomOffsetPx = Math.max(24, bottomInset + 12)
+        }
+        this.setData({ modalTopOffsetPx, modalBottomOffsetPx })
+      }
+    } catch (e) {
+      this.setData({ modalTopOffsetPx: 24, modalBottomOffsetPx: 24 })
+    }
   },
 
   onSetNewType(e) {

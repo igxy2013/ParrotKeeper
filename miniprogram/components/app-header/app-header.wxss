@@ -13,6 +13,24 @@
   box-shadow: 0 20rpx 50rpx -24rpx rgba(251, 146, 60, 0.35);
 }
 
+/* 新增：蓝色主题（清洁记录） */
+.ah-theme-blue {
+  background: linear-gradient(90deg, #60a5fa 0%, #38bdf8 50%, #22d3ee 100%);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(56, 189, 248, 0.35);
+}
+
+/* 新增：紫色主题（繁殖记录） */
+.ah-theme-purple {
+  background: linear-gradient(90deg, #a78bfa 0%, #c084fc 50%, #d946ef 100%);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(167, 139, 250, 0.35);
+}
+
+/* 新增：粉色主题（清洁记录按钮对应的粉色） */
+.ah-theme-pink {
+  background: linear-gradient(90deg, #f472b6 0%, #fb7185 50%, #f43f5e 100%);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(244, 113, 181, 0.35);
+}
+
 .ah-header-content {
   display: flex;
   align-items: center;

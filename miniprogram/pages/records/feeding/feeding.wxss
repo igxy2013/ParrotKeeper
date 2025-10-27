@@ -33,6 +33,10 @@
 .z-50 {
   z-index: 50;
 }
+/* 提升弹窗层级，确保位于 sticky 头部之上 */
+.z-modal {
+  z-index: 2001;
+}
 
 /* 头部导航样式 */
 .bg-gradient-header {
@@ -243,7 +247,24 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* 筛选标签 */
+/* Filter chips aligned with health design */
+.filter-section { margin: 24rpx 0 16rpx; }
+.chip-scroll { white-space: nowrap; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 12rpx 24rpx;
+  margin-right: 12rpx;
+  border-radius: 9999rpx;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 24rpx;
+}
+.chip.active {
+  background: #fb923c; /* orange theme */
+  color: #ffffff;
+  box-shadow: 0 4rpx 10rpx rgba(251, 146, 60, 0.35);
+}
 .px-4 {
   padding-left: 32rpx;
   padding-right: 32rpx;
@@ -570,7 +591,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2002; /* 高于头部和普通弹窗 */
   padding: 32rpx;
   backdrop-filter: blur(10rpx);
 }

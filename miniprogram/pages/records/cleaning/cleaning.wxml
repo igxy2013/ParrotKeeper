@@ -1,50 +1,41 @@
 <!-- pages/records/cleaning/cleaning.wxml -->
 <view class="cleaning-page">
-  <!-- Header -->
-  <view class="header" style="padding-right: {{menuRightPadding}}px;">
-    <view class="header-left">
-      <view class="back-btn" bindtap="goBack"><text class="back-icon">←</text></view>
-      <view class="title-wrap">
-        <text class="title">清洁记录</text>
-        <text class="subtitle">鹦鹉清洁护理管理</text>
-      </view>
+  <!-- 通用头部组件 -->
+  <app-header title="清洁记录" subtitle="鹦鹉清洁护理管理" showBack="{{true}}" theme="pink">
+    <view slot="actions" class="header-btn" bindtap="addCleaningRecord">
+      <text class="header-btn-icon">+</text>
     </view>
-    <view class="header-right">
-      <view class="add-btn" bindtap="addCleaningRecord"><text class="add-icon">＋</text></view>
-    </view>
-  </view>
+  </app-header>
 
   <!-- Content -->
   <scroll-view class="content" scroll-y="true">
-    <!-- Stats Cards -->
-    <view class="stats-grid">
-      <view class="stat-card">
-        <view class="stat-icon stat-blue">📅</view>
-        <text class="stat-value">{{stats.weeklyCount}}</text>
-        <text class="stat-label">本周清洁</text>
-      </view>
-      <view class="stat-card">
-        <view class="stat-icon stat-green">🛡️</view>
-        <text class="stat-value">{{stats.uniqueTypes}}</text>
-        <text class="stat-label">清洁类型</text>
-      </view>
-      <view class="stat-card">
-        <view class="stat-icon stat-purple">⏱️</view>
-        <text class="stat-value">{{stats.lastTimeText || '—'}}</text>
-        <text class="stat-label">最近一次</text>
+    <!-- Summary Card (aligned with feeding stats design) -->
+    <view class="summary-card">
+      <text class="summary-title">清洁统计</text>
+      <view class="summary-grid">
+        <view class="summary-metric">
+          <text class="summary-value">{{stats.weeklyCount}}</text>
+          <text class="summary-label">本周清洁</text>
+        </view>
+        <view class="summary-metric">
+          <text class="summary-value">{{stats.uniqueTypes}}</text>
+          <text class="summary-label">清洁类型</text>
+        </view>
+        <view class="summary-metric">
+          <text class="summary-value">{{stats.lastTimeText || '—'}}</text>
+          <text class="summary-label">最近一次</text>
+        </view>
       </view>
     </view>
 
-    <!-- Filter Tabs -->
-    <view class="filter-tabs">
-      <scroll-view scroll-x="true" class="filter-scroll">
-        <view class="filter-row">
-          <block wx:for="{{filterOptions}}" wx:key="*this">
-            <view class="filter-chip {{selectedFilter === item ? 'active' : ''}}" bindtap="selectFilter" data-filter="{{item}}">
-              <text class="chip-text">{{item}}</text>
-            </view>
-          </block>
-        </view>
+    <!-- Filter Chips (aligned with health page design) -->
+    <view class="filter-section">
+      <scroll-view scroll-x="true" class="chip-scroll">
+        <block wx:for="{{filterOptions}}" wx:key="*this">
+          <view class="chip {{selectedFilter === item ? 'active' : ''}}" bindtap="selectFilter" data-filter="{{item}}">
+            <text class="chip-text">{{item}}</text>
+          </view>
+        </block>
       </scroll-view>
     </view>
 

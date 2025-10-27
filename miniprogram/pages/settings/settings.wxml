@@ -1,5 +1,5 @@
 <!--pages/settings/settings.wxml-->
-<view class="page-container {{pageThemeClass}}">
+<view class="page-container">
   <app-header title="设置" subtitle="个人偏好与系统设置" showBack="true">
     <view slot="actions" class="header-save-btn" bindtap="savePreferences">保存</view>
   </app-header>
@@ -22,27 +22,7 @@
         <view class="setting-arrow">></view>
       </view>
 
-      <view class="setting-action-item" bindtap="showLanguageSheet">
-        <view class="setting-icon-wrapper">
-          <view class="setting-icon lang-icon">🌐</view>
-        </view>
-        <view class="setting-content">
-          <view class="setting-name">语言切换</view>
-          <view class="setting-desc">当前：{{languageDisplay}}</view>
-        </view>
-        <view class="setting-arrow">></view>
-      </view>
-
-      <view class="setting-action-item" bindtap="showThemeSheet">
-        <view class="setting-icon-wrapper">
-          <view class="setting-icon theme-icon">🎨</view>
-        </view>
-        <view class="setting-content">
-          <view class="setting-name">主题选择</view>
-          <view class="setting-desc">当前：{{themeDisplay}}</view>
-        </view>
-        <view class="setting-arrow">></view>
-      </view>
+      
 
       <view class="setting-action-item">
         <view class="setting-icon-wrapper">
@@ -92,23 +72,5 @@
   </view>
 </view>
 
-<!-- 语言切换底部弹窗 -->
-<view class="lang-sheet-overlay" wx:if="{{showLangSheet}}">
-  <view class="lang-sheet-mask" bindtap="closeLangSheet"></view>
-  <view class="lang-sheet">
-    <view class="lang-sheet-header">
-      <text class="lang-sheet-title">语言切换</text>
-      <text class="lang-sheet-close" bindtap="closeLangSheet">取消</text>
-    </view>
-    <view class="lang-options">
-      <view class="lang-option" data-lang="zh-CN" bindtap="chooseLanguage">
-        <text class="lang-name">简体中文</text>
-        <text class="lang-check" wx:if="{{language === 'zh-CN'}}">✓</text>
-      </view>
-      <view class="lang-option" data-lang="en-US" bindtap="chooseLanguage">
-        <text class="lang-name">English</text>
-        <text class="lang-check" wx:if="{{language === 'en-US'}}">✓</text>
-      </view>
-    </view>
-  </view>
-</view>
+<!-- 底部导航栏（非 Tab 页复用） -->
+<bottom-nav active="profile" />

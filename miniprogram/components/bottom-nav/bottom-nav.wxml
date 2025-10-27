@@ -1,0 +1,6 @@
+<view class="bn-tabbar">
+  <view class="bn-item" wx:for="{{items}}" wx:key="text" data-page="{{item.pagePath}}" bindtap="onTap">
+    <image class="bn-icon" src="{{active === item.key ? item.selectedIconPath : item.iconPath}}" mode="aspectFit"></image>
+    <text class="bn-text" style="color: {{active === item.key ? selectedColor : defaultColor}}">{{item.text}}</text>
+  </view>
+</view>

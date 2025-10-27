@@ -2,7 +2,8 @@
 
 .page-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #fdf2f8 0%, #f3e8ff 100%);
+  /* 默认绿色主题背景，与首页繁殖按钮一致 */
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #dcfce7 100%);
   padding-bottom: 40rpx;
 }
 
@@ -45,120 +46,63 @@
   margin-right: 8rpx;
 }
 
+/* 统一头部右侧加号按钮样式（与喂食页一致） */
+.header-btn {
+  width: 72rpx;
+  height: 72rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10rpx);
+}
+
+.header-btn-icon {
+  color: #ffffff;
+  font-size: 32rpx;
+}
+
 /* 统计卡片 */
 .stats-section {
   margin-bottom: 32rpx;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24rpx;
-}
-
-.stat-card {
-  background: white;
+/* Feeding-style summary card (green theme) */
+.summary-card {
+  background: linear-gradient(90deg, #22c55e, #10b981, #0ea5e9);
+  color: #ffffff;
   border-radius: 32rpx;
   padding: 32rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 12rpx 32rpx rgba(16, 185, 129, 0.25);
+  margin-bottom: 24rpx;
 }
-
-.stat-card.breeding-pairs {
-  border: 2rpx solid #fce7f3;
-}
-
-.stat-card.success-hatching {
-  border: 2rpx solid #e9d5ff;
-}
-
-.stat-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-label {
-  display: block;
-  font-size: 28rpx;
-  color: #6b7280;
-  margin-bottom: 8rpx;
-}
-
-.stat-value {
-  display: block;
-  font-size: 48rpx;
-  font-weight: bold;
-}
-
-.breeding-pairs .stat-value {
-  color: #ec4899;
-}
-
-.success-hatching .stat-value {
-  color: #8b5cf6;
-}
-
-.stat-icon {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 16rpx;
-}
-
-.breeding-pairs .stat-icon {
-  background: #fce7f3;
-}
-
-.success-hatching .stat-icon {
-  background: #e9d5ff;
-}
-
-.stat-icon .icon {
-  font-size: 40rpx;
-}
+.summary-title { font-size: 32rpx; font-weight: 800; margin-bottom: 24rpx; }
+.summary-grid { display: grid; gap: 24rpx; }
+.summary-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.summary-value { font-size: 40rpx; font-weight: 900; }
+.summary-label { margin-top: 8rpx; font-size: 24rpx; color: rgba(255,255,255,0.85); }
 
 /* 筛选区域 */
 .filter-section {
   margin-bottom: 32rpx;
 }
 
-.status-filter {
-  white-space: nowrap;
+.chip-scroll { white-space: nowrap; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  margin-right: 12rpx;
+  border-radius: 9999rpx;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 24rpx;
 }
-
-.filter-options {
-  display: flex;
-  gap: 16rpx;
-  padding-bottom: 16rpx;
-}
-
-.filter-option {
-  padding: 16rpx 32rpx;
-  border-radius: 50rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: all 0.3s ease;
-  background: white;
-  color: #6b7280;
-  border: 2rpx solid #e5e7eb;
-}
-
-.filter-option.active {
-  background: #ec4899;
-  color: white;
-  border-color: #ec4899;
-}
-
-.filter-option:not(.active):hover {
-  background: #fce7f3;
+.chip.active {
+  background: #10b981; /* green theme */
+  color: #ffffff;
+  box-shadow: 0 4rpx 10rpx rgba(16, 185, 129, 0.35);
 }
 
 /* 记录列表 */
@@ -173,11 +117,12 @@
 }
 
 .record-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8rpx);
   border-radius: 32rpx;
   padding: 32rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-  border: 2rpx solid #f3f4f6;
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(0, 0, 0, 0.25);
+  border: 1rpx solid rgba(17, 24, 39, 0.06);
   transition: all 0.3s ease;
 }
 
@@ -316,7 +261,7 @@
 }
 
 .btn-primary {
-  background: #ec4899;
+  background: #10b981;
   color: white;
   border: none;
   border-radius: 50rpx;
@@ -337,7 +282,7 @@
   width: 60rpx;
   height: 60rpx;
   border: 4rpx solid #f3f4f6;
-  border-top: 4rpx solid #ec4899;
+  border-top: 4rpx solid #10b981;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 24rpx;
@@ -471,7 +416,7 @@
 }
 
 .form-input:focus {
-  border-color: #ec4899;
+  border-color: #10b981;
 }
 
 .form-textarea {
@@ -485,7 +430,7 @@
 }
 
 .form-textarea:focus {
-  border-color: #ec4899;
+  border-color: #10b981;
 }
 
 .form-actions {
@@ -509,7 +454,7 @@
 .btn-submit {
   flex: 1;
   padding: 24rpx;
-  background: #ec4899;
+  background: #10b981;
   color: white;
   border: none;
   border-radius: 16rpx;

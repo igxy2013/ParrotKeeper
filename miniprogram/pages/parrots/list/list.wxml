@@ -1,3 +1,4 @@
-﻿？<？!？-？-？p？a？g？e？s？/？p？a？r？r？o？t？s？/？l？i？s？t？/？l？i？s？t？.？w？x？m？l？-？-？>？？
-？<？t？e？x？t？>？p？a？g？e？s？/？p？a？r？r？o？t？s？/？l？i？s？t？/？l？i？s？t？.？w？x？m？l？<？/？t？e？x？t？>？？
-？
+<!-- pages/parrots/list/list.wxml -->
+<view class="page-container">
+  <text>该页面未使用，请返回上一页。</text>
+</view>

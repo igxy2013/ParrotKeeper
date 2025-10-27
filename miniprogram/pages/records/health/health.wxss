@@ -1,7 +1,8 @@
 /* 健康检查页面样式 */
 .page-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #eff6ff 100%);
+  /* 统一为紫色主题背景，与页面头部一致 */
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 50%, #ede9fe 100%);
 }
 
 .page-content {
@@ -31,14 +32,15 @@
   color: #4b5563;
   font-size: 24rpx;
 }
-.chip.active { background: #10b981; color: #ffffff; box-shadow: 0 4rpx 10rpx rgba(16,185,129,0.35); }
+.chip.active { background: #8b5cf6; color: #ffffff; box-shadow: 0 4rpx 10rpx rgba(139, 92, 246, 0.35); }
 
 .overview-card {
-  background: linear-gradient(90deg, #10b981, #14b8a6, #3b82f6);
+  /* 紫色主题渐变，与头部 theme=purple 保持一致 */
+  background: linear-gradient(90deg, #a78bfa, #c084fc, #d946ef);
   color: #ffffff;
   border-radius: 32rpx;
   padding: 32rpx;
-  box-shadow: 0 12rpx 32rpx rgba(16,185,129,0.35);
+  box-shadow: 0 12rpx 32rpx rgba(167, 139, 250, 0.35);
 }
 .overview-title { font-size: 32rpx; font-weight: 800; margin-bottom: 24rpx; }
 .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24rpx; }
@@ -48,12 +50,13 @@
 
 .record-list { margin-top: 24rpx; }
 .record-card {
-  background: #ffffff;
-  border: 1px solid #eef2f7;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8rpx);
+  border: 1rpx solid rgba(17, 24, 39, 0.06);
   border-radius: 28rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(0, 0, 0, 0.25);
 }
 .record-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12rpx; }
 .record-title { font-size: 30rpx; font-weight: 700; color: #111827; }
@@ -68,6 +71,6 @@
 .empty-text { margin-top: 12rpx; font-size: 26rpx; }
 
 .btn { border-radius: 9999rpx; }
-.btn-primary { background: #10b981; color: #ffffff; }
+.btn-primary { background: #8b5cf6; color: #ffffff; }
 .btn-large { padding: 20rpx 28rpx; font-size: 28rpx; }
 .mt-20 { margin-top: 20rpx; }

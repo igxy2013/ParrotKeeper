@@ -28,9 +28,13 @@ Page({
       gender: '',
       color: '',
       birthDate: '',
-      notes: ''
+      notes: '',
+      parrot_number: '',
+      ring_number: '',
+      acquisition_date: '',
+      photo_url: ''
     },
-    parrotTypes: ['虎皮鹦鹉','玄凤鹦鹉','牡丹鹦鹉','蓝和尚鹦鹉','太阳锥尾鹦鹉','金刚鹦鹉','灰鹦鹉','亚马逊鹦鹉'],
+    parrotTypes: [],
     typeIndex: 0,
     speciesList: [],
     // 添加收支弹窗与表单
@@ -55,6 +59,7 @@ Page({
     this.setGreeting()
     this.checkLoginStatus()
     this.computeMenuRightPadding()
+    this.computeModalCapsulePadding()
     // 初始化通知
     this.initNotifications()
   },
@@ -71,6 +76,32 @@ Page({
       }
     } catch (e) {
       this.setData({ menuRightPadding: 0 })
+    }
+  },
+
+  // 为弹窗头部计算胶囊避让内边距
+  computeModalCapsulePadding() {
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+      const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+      if (win && rect && typeof win.windowWidth === 'number') {
+        // 右侧需要预留：胶囊到屏幕右侧的距离 + 胶囊宽度 + 16px缓冲
+        const rightGap = win.windowWidth - rect.right
+        const modalRightPaddingPx = rightGap + rect.width + 16
+        // 顶部微调，避免圆角与胶囊重叠
+        const modalTopPaddingPx = Math.max(0, rect.top - 4)
+        // 整体下移：以胶囊底部为基准，下方留出 12px
+        const modalTopOffsetPx = Math.max(0, rect.bottom + 12)
+        // 底部安全区：根据 safeArea 计算底部避让（再额外加 12px 让按钮更上移）
+        let modalBottomOffsetPx = 24
+        if (win && win.safeArea && typeof win.windowHeight === 'number') {
+          const bottomInset = win.windowHeight - win.safeArea.bottom
+          modalBottomOffsetPx = Math.max(24, bottomInset + 12)
+        }
+        this.setData({ modalRightPaddingPx, modalTopPaddingPx, modalTopOffsetPx, modalBottomOffsetPx })
+      }
+    } catch (e) {
+      this.setData({ modalRightPaddingPx: 0, modalTopPaddingPx: 0, modalTopOffsetPx: 24, modalBottomOffsetPx: 24 })
     }
   },
 
@@ -635,7 +666,7 @@ Page({
       canSubmitExpense: false,
       expenseForm: {
         type: '支出',
-        parrotIndex: 0,
+        parrotIndex: -1,
         categoryIndex: 0,
         amount: '',
         description: '',
@@ -702,7 +733,9 @@ Page({
     try {
       const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
       if (res.success) {
-        this.setData({ speciesList: res.data || [] })
+        const species = res.data || []
+        const names = species.map(s => s.name)
+        this.setData({ speciesList: species, parrotTypes: names })
       }
     } catch (e) {
       // 静默失败，不影响弹窗使用
@@ -713,7 +746,7 @@ Page({
   closeAddParrotModal() {
     this.setData({
       showAddParrotModal: false,
-      newParrot: { name: '', type: '', age: '', weight: '', gender: '', color: '', birthDate: '', notes: '' },
+      newParrot: { name: '', type: '', age: '', weight: '', gender: '', color: '', birthDate: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' },
       typeIndex: 0
     })
   },
@@ -728,6 +761,9 @@ Page({
   onParrotColorInput(e) { this.setData({ 'newParrot.color': e.detail.value }) },
   onParrotNotesInput(e) { this.setData({ 'newParrot.notes': e.detail.value }) },
   onBirthDateChange(e) { this.setData({ 'newParrot.birthDate': e.detail.value }) },
+  onParrotNumberInput(e) { this.setData({ 'newParrot.parrot_number': e.detail.value }) },
+  onRingNumberInput(e) { this.setData({ 'newParrot.ring_number': e.detail.value }) },
+  onAcquisitionDateChange(e) { this.setData({ 'newParrot.acquisition_date': e.detail.value }) },
   onTypePickerChange(e) {
     const idx = Number(e.detail.value)
     const type = this.data.parrotTypes[idx]
@@ -736,6 +772,62 @@ Page({
   setParrotGender(e) {
     const gender = e.currentTarget.dataset.gender
     this.setData({ 'newParrot.gender': gender })
+  },
+
+  // 选择/上传/预览/删除照片（与 add-parrot 逻辑保持一致）
+  chooseParrotPhoto() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tempFilePath = res.tempFiles[0].tempFilePath
+        this.uploadParrotPhoto(tempFilePath)
+      }
+    })
+  },
+  async uploadParrotPhoto(filePath) {
+    try {
+      app.showLoading('上传中...')
+      const uploadRes = await new Promise((resolve, reject) => {
+        wx.uploadFile({
+          url: app.globalData.baseUrl + '/api/upload/image',
+          filePath: filePath,
+          name: 'file',
+          header: { 'X-OpenID': app.globalData.openid },
+          success: resolve,
+          fail: reject
+        })
+      })
+      const result = JSON.parse(uploadRes.data)
+      if (result.success) {
+        const fullUrl = app.globalData.baseUrl + '/uploads/' + result.data.url
+        this.setData({ 'newParrot.photo_url': fullUrl })
+        app.showSuccess('上传成功')
+      } else {
+        throw new Error(result.message)
+      }
+    } catch (error) {
+      console.error('上传照片失败:', error)
+      app.showError('上传照片失败')
+    } finally {
+      app.hideLoading()
+    }
+  },
+  previewParrotPhoto() {
+    if (!this.data.newParrot.photo_url) return
+    wx.previewImage({ urls: [this.data.newParrot.photo_url] })
+  },
+  deleteParrotPhoto() {
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这张照片吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({ 'newParrot.photo_url': '' })
+        }
+      }
+    })
   },
 
   // 提交添加鹦鹉
@@ -768,7 +860,11 @@ Page({
       birth_date: np.birthDate || '',
       color: np.color || '',
       weight: np.weight || '',
-      notes
+      notes,
+      parrot_number: np.parrot_number || '',
+      ring_number: np.ring_number || '',
+      acquisition_date: np.acquisition_date || '',
+      photo_url: np.photo_url || ''
     }
     try {
       const res = await app.request({ url: '/api/parrots', method: 'POST', data: payload })

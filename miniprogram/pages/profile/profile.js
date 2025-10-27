@@ -36,8 +36,6 @@ Page({
 
     // 应用设置
     notificationsEnabled: false,
-    language: 'zh-CN',
-    languageDisplay: '简体中文',
     theme: 'system',
     themeDisplay: '跟随系统',
     stats: { parrotCount: 0, totalFeedings: 0, totalCheckups: 0, statsViews: 0 },
@@ -200,14 +198,13 @@ Page({
   loadPreferences() {
     try {
       const notificationsEnabled = wx.getStorageSync('pref_notifications') || false;
-      const language = wx.getStorageSync('pref_language') || 'zh-CN';
       const theme = wx.getStorageSync('pref_theme') || 'system';
       const storedMode = wx.getStorageSync('pref_user_mode');
       const userMode = storedMode ? storedMode : this.data.userMode;
+      // 清理遗留的语言偏好存储键
+      try { wx.removeStorageSync('pref_language'); } catch (_) {}
       this.setData({
         notificationsEnabled,
-        language,
-        languageDisplay: this.langLabel(language),
         theme,
         themeDisplay: this.themeLabel(theme),
         userMode,
@@ -229,10 +226,9 @@ Page({
 
   // 偏好保存
   savePreferences() {
-    const { notificationsEnabled, language, theme } = this.data;
+    const { notificationsEnabled, theme } = this.data;
     try {
       wx.setStorageSync('pref_notifications', notificationsEnabled);
-      wx.setStorageSync('pref_language', language);
       wx.setStorageSync('pref_theme', theme);
     } catch (e) {
       console.warn('保存偏好失败', e);
@@ -247,20 +243,7 @@ Page({
     wx.showToast({ title: enabled ? '已开启通知' : '已关闭通知', icon: 'none' });
   },
 
-  // 语言与主题 ActionSheet
-  showLanguageSheet() {
-    const items = ['简体中文', 'English'];
-    wx.showActionSheet({
-      itemList: items,
-      success: (res) => {
-        const idx = res.tapIndex;
-        const val = idx === 1 ? 'en-US' : 'zh-CN';
-        this.setData({ language: val, languageDisplay: this.langLabel(val) });
-        this.savePreferences();
-        wx.showToast({ title: `语言切换为${this.langLabel(val)}`, icon: 'none' });
-      }
-    });
-  },
+  // 主题选择
 
   showThemeSheet() {
     const items = ['跟随系统', '浅色', '深色'];
@@ -276,9 +259,6 @@ Page({
     });
   },
 
-  langLabel(lang) {
-    return lang === 'en-US' ? 'English' : '简体中文';
-  },
   themeLabel(theme) {
     if (theme === 'light') return '浅色';
     if (theme === 'dark') return '深色';

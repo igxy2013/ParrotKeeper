@@ -1,11 +1,10 @@
 <!--pages/expenses/expenses.wxml-->
 <view class="page-container">
-  <app-header title="收支管理" subtitle="记录鹦鹉相关收入支出" showBack="{{true}}">
+  <app-header title="收支管理" subtitle="记录鹦鹉相关收入支出" showBack="{{true}}" theme="orange">
     <view slot="actions" class="header-actions">
-      <button class="btn btn-primary btn-small" bindtap="onShowAddRecord">
-        <text class="action-icon">➕</text>
-        添加收支
-      </button>
+      <view class="header-add-btn" bindtap="onShowAddRecord">
+        <text class="add-icon">＋</text>
+      </view>
     </view>
   </app-header>
 
@@ -45,21 +44,14 @@
       <view class="card-content">
         <view class="filter-section">
           <text class="filter-label">记录类型</text>
-          <view class="chip-group">
+          <view class="chip-group chip-group-tight">
             <block wx:for="{{types}}" wx:key="*this">
               <button class="chip {{selectedType === item ? 'active ' + (item === '收入' ? 'income' : item === '支出' ? 'expense' : 'all') : ''}}" bindtap="onSelectType" data-type="{{item}}">{{item}}</button>
             </block>
           </view>
         </view>
 
-        <view class="filter-section">
-          <text class="filter-label">选择鹦鹉</text>
-          <view class="chip-group">
-            <block wx:for="{{parrots}}" wx:key="*this">
-              <button class="chip {{selectedParrot === item ? 'active parrot' : ''}}" bindtap="onSelectParrot" data-parrot="{{item}}">{{item}}</button>
-            </block>
-          </view>
-        </view>
+        
 
         <view class="filter-section">
           <text class="filter-label">记录类别</text>
@@ -72,23 +64,7 @@
       </view>
     </view>
 
-    <!-- 类别网格 -->
-    <view class="card">
-      <view class="card-header">
-        <text class="card-title">收支类别</text>
-      </view>
-      <view class="card-content">
-        <view class="category-grid">
-          <block wx:for="{{recordCategories}}" wx:key="name">
-            <button class="category-item {{selectedCategory === item.name ? 'active' : ''}}" bindtap="onQuickSelectCategory" data-category="{{item.name}}">
-              <view class="category-icon">{{item.iconText}}</view>
-              <text class="category-name">{{item.name}}</text>
-              <text class="category-type {{item.type === '收入' ? 'income' : 'expense'}}">{{item.type}}</text>
-            </button>
-          </block>
-        </view>
-      </view>
-    </view>
+    
 
     <!-- 记录列表 -->
     <view class="card">
@@ -96,8 +72,8 @@
         <text class="card-title">记录列表</text>
         <text class="total-text">共 {{filteredRecords.length}} 条</text>
       </view>
-    </view>
-    <view class="list-container">
+      <view class="card-content">
+        <view class="list-container">
       <block wx:for="{{filteredRecords}}" wx:key="id">
         <view class="list-item">
           <view class="list-item-content">
@@ -126,11 +102,13 @@
         <text class="empty-text">暂无记录</text>
         <button class="btn btn-primary btn-small" bindtap="onShowAddRecord">添加第一条收支</button>
       </view>
+        </view>
+      </view>
     </view>
 
     <!-- 添加记录弹窗 -->
-    <view class="modal-mask" wx:if="{{showAddRecord}}">
-      <view class="modal">
+    <view class="modal-overlay" wx:if="{{showAddRecord}}">
+      <view class="modal-content" style="margin-top: {{modalTopOffsetPx}}px; margin-bottom: {{modalBottomOffsetPx}}px;">
         <view class="modal-header">
           <text class="modal-title">添加收支记录</text>
           <button class="modal-close" bindtap="onHideAddRecord">✖</button>
@@ -145,13 +123,7 @@
           </view>
 
           <view class="form-item">
-            <text class="form-label">选择鹦鹉</text>
-            <picker range="{{parrots}}" range-key="name" value="{{parrotIndex}}" bindchange="onNewParrotChange">
-              <view class="picker-view">
-                <text class="picker-text">{{newRecord.parrot || '小彩'}}</text>
-                <text class="picker-arrow">▼</text>
-              </view>
-            </picker>
+            <!-- 已移除选择鹦鹉字段 -->
           </view>
 
           <view class="form-item">

@@ -1,0 +1,13 @@
+/* pages/parrots/add/add.wxss */
+.page-container { min-height: 100vh; background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #dcfce7 100%); }
+.page-content { padding: 24rpx; }
+.form-card { background: rgba(255,255,255,0.96); backdrop-filter: blur(8rpx); border: 1rpx solid rgba(17,24,39,0.06); border-radius: 28rpx; padding: 24rpx; box-shadow: 0 20rpx 50rpx -24rpx rgba(0,0,0,0.25); }
+.form-group { margin-bottom: 16rpx; }
+.form-label { font-size: 26rpx; color: #374151; margin-bottom: 8rpx; display: block; }
+.form-input { padding: 20rpx; border: 2rpx solid #e5e7eb; border-radius: 16rpx; font-size: 26rpx; background: #fff; }
+.form-input:focus { border-color: #10b981; }
+.form-actions { display: flex; gap: 24rpx; margin-top: 24rpx; }
+.btn-cancel { flex: 1; padding: 24rpx; background: #f3f4f6; color: #6b7280; border-radius: 16rpx; }
+.btn-submit { flex: 1; padding: 24rpx; background: #10b981; color: #fff; border-radius: 16rpx; }
+.header-btn { width: 72rpx; height: 72rpx; background: rgba(255,255,255,0.2); border-radius: 50%; display:flex; align-items:center; justify-content:center; backdrop-filter: blur(10rpx); }
+.header-btn-icon { color: #ffffff; font-size: 28rpx; }

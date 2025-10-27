@@ -1,4 +1,7 @@
 {
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
   "navigationStyle": "custom",
   "navigationBarTitleText": "清洁记录",
   "backgroundColor": "#f8fafc",

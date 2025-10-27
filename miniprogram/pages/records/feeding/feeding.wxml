@@ -9,25 +9,25 @@
 
   <!-- Main Content -->
   <view class="pt-6 px-4 space-y-6">
-    <!-- Filter Tabs -->
-    <view class="bg-white-80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white-50">
-      <scroll-view class="flex space-x-2 overflow-x-auto" scroll-x="true">
-        <button
+    <!-- Filter Chips (aligned with health page design) -->
+    <view class="filter-section">
+      <scroll-view class="chip-scroll" scroll-x="true">
+        <view
           bindtap="selectParrot"
           data-parrot="全部"
-          class="inline-flex btn-pill px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 {{selectedParrot === '全部' ? 'bg-orange-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover-bg-gray-200'}}"
+          class="chip {{selectedParrot === '全部' ? 'active' : ''}}"
         >
-          全部
-        </button>
-        <button
+          <text>全部</text>
+        </view>
+        <view
           wx:for="{{parrots}}"
           wx:key="id"
           bindtap="selectParrot"
           data-parrot="{{item.name}}"
-          class="inline-flex btn-pill px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 {{selectedParrot === item.name ? 'bg-orange-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover-bg-gray-200'}}"
+          class="chip {{selectedParrot === item.name ? 'active' : ''}}"
         >
           <text>{{item.name}}</text>
-        </button>
+        </view>
       </scroll-view>
     </view>
 
@@ -68,8 +68,8 @@
           <view class="flex-1">
             <view class="flex items-center justify-between mb-2">
               <view>
-                <text class="font-semibold text-gray-800 block">{{item.parrot_name}}</text>
-                <text class="text-xs text-gray-500">{{item.parrot_type || '鹦鹉'}}</text>
+                <text class="font-semibold text-gray-800 block">{{item.parrot_names_display}}</text>
+                <text class="text-xs text-gray-500">共{{item.parrot_count}}只鹦鹉</text>
               </view>
               <view class="text-right">
                 <view class="text-sm font-medium text-gray-800">{{item.formatted_time}}</view>
@@ -83,7 +83,7 @@
               </view>
               <view class="flex items-center justify-between" wx:if="{{item.food_types.length === 1}}">
                 <text class="text-sm font-medium text-gray-700">食用量</text>
-                <text class="text-sm text-orange-600 font-semibold">{{item.amount}}g</text>
+                <text class="text-sm text-orange-600 font-semibold">{{item.food_types[0].amount}}g</text>
               </view>
               <!-- Multiple food types -->
               <view wx:if="{{item.food_types.length > 1}}">
@@ -104,7 +104,7 @@
   </view>
 
   <!-- Add Record Modal -->
-  <view class="fixed inset-0 bg-black-50 backdrop-blur-sm flex items-center justify-center z-50 p-4" wx:if="{{showAddModal}}" bindtap="hideAddForm">
+  <view class="fixed inset-0 bg-black-50 backdrop-blur-sm flex items-center justify-center z-modal p-4" wx:if="{{showAddModal}}" bindtap="hideAddForm">
     <view class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl modal-content modal-card" bindtap="stopPropagation">
       <view class="flex items-center justify-between mb-6 modal-header">
         <text class="text-lg font-bold text-gray-800">添加喂食记录</text>

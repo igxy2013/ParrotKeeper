@@ -3,9 +3,8 @@ App({
   globalData: {
     userInfo: null,
     openid: null,
-    //baseUrl: 'https://bimai.xyz', // 后端API地址
-    baseUrl: 'http://192.168.0.80:5085', // 后端API地址
-    //baseUrl: 'https://acbim.cn:5075', // 后端API地址
+    //baseUrl: 'https://bimai.xyz', // 后端API地址（固定使用正式地址）
+    baseUrl: 'http://192.168.0.80:5085', // 后端API地址（固定使用正式地址）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
     appVersion: '1.0.0' // 小程序版本号（通过微信API动态获取）
@@ -120,6 +119,7 @@ App({
     wx.removeStorageSync('openid')
     wx.removeStorageSync('userInfo')
     wx.removeStorageSync('userMode') // 清除用户模式存储
+    try { wx.removeStorageSync('pref_language') } catch (_) {}
   },
 
   // 检查登录状态

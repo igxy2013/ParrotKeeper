@@ -129,11 +129,11 @@
           </view>
           <text class="action-label">收支管理</text>
         </view>
-        <view class="action-item guide {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
+        <view class="action-item statistics {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToStatistics">
           <view class="action-icon-wrapper">
-            <text class="action-icon">📖</text>
+            <text class="action-icon">📊</text>
           </view>
-          <text class="action-label">护理指南</text>
+          <text class="action-label">数据统计</text>
         </view>
       </view>
     </view>
@@ -199,14 +199,12 @@
 
 <!-- 添加鹦鹉弹窗（严格参考参考APP设计风格） -->
 <view wx:if="{{showAddParrotModal}}" class="modal-overlay" catchtouchmove="true" bindtap="closeAddParrotModal">
-  <view class="modal-content" catchtap="stopPropagation">
+  <view class="modal-content" catchtap="stopPropagation" style="margin-top: {{modalTopOffsetPx}}px; margin-bottom: {{modalBottomOffsetPx}}px;">
     <!-- 头部渐变区域 -->
     <view class="modal-header-gradient">
       <view class="modal-header-row">
         <text class="modal-title">添加新鹦鹉</text>
-        <view class="modal-close-btn" bindtap="closeAddParrotModal">
-          <text class="modal-close-icon">✕</text>
-        </view>
+        <view class="modal-close-btn" bindtap="closeAddParrotModal"><text class="modal-close-icon">✕</text></view>
       </view>
     </view>
 
@@ -232,6 +230,18 @@
           </view>
         </view>
 
+        <!-- 编号 与 脚环号 -->
+        <view class="form-grid">
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">#</text>鹦鹉编号</text>
+            <input class="text-input" placeholder="例如：PK-2025-001" value="{{newParrot.parrot_number}}" bindinput="onParrotNumberInput" />
+          </view>
+          <view class="form-item">
+            <text class="form-label"><text class="label-icon">🪙</text>脚环号</text>
+            <input class="text-input" placeholder="例如：R-88921" value="{{newParrot.ring_number}}" bindinput="onRingNumberInput" />
+          </view>
+        </view>
+
         <!-- 年龄 与 体重 -->
         <view class="form-grid">
           <view class="form-item">
@@ -239,8 +249,8 @@
             <input class="text-input" placeholder="如: 2岁" value="{{newParrot.age}}" bindinput="onParrotAgeInput" />
           </view>
           <view class="form-item">
-            <text class="form-label"><text class="label-icon">⚖</text>体重</text>
-            <input class="text-input" placeholder="如: 35g" value="{{newParrot.weight}}" bindinput="onParrotWeightInput" />
+            <text class="form-label"><text class="label-icon">⚖</text>体重(g)</text>
+            <input class="text-input" placeholder="如: 35" value="{{newParrot.weight}}" bindinput="onParrotWeightInput" />
           </view>
         </view>
 
@@ -270,6 +280,34 @@
           </picker>
         </view>
 
+        <!-- 入住日期 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">🏠</text>入住日期</text>
+          <picker mode="date" value="{{newParrot.acquisition_date}}" bindchange="onAcquisitionDateChange">
+            <view class="picker-display">
+              <text>{{newParrot.acquisition_date ? newParrot.acquisition_date : '请选择日期'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+
+        <!-- 鹦鹉照片 -->
+        <view class="form-item">
+          <text class="form-label"><text class="label-icon">📷</text>鹦鹉照片</text>
+          <view class="photo-upload">
+            <view class="photo-preview" wx:if="{{newParrot.photo_url}}">
+              <image class="preview-image" src="{{newParrot.photo_url}}" mode="aspectFill" bindtap="previewParrotPhoto" />
+              <view class="photo-actions">
+                <view class="action-btn" bindtap="deleteParrotPhoto"><text class="action-icon">🗑️</text></view>
+              </view>
+            </view>
+            <view class="upload-area" wx:else bindtap="chooseParrotPhoto">
+              <view class="upload-icon">📷</view>
+              <text class="upload-text">点击上传照片</text>
+            </view>
+          </view>
+        </view>
+
         <!-- 备注信息 -->
         <view class="form-item">
           <text class="form-label"><text class="label-icon">📝</text>备注信息</text>
@@ -286,18 +324,20 @@
   </view>
 </view>
 
-<!-- 添加收支记录弹窗（严格参考参考APP设计） -->
+<!-- 添加收支记录弹窗（同步通用弹窗结构与避让） -->
 <view wx:if="{{showAddExpenseModal}}" class="modal-overlay" catchtouchmove="true" bindtap="closeAddExpenseModal">
-  <view class="expense-modal-card" catchtap="stopPropagation">
-    <!-- 弹窗头部：标题与关闭按钮 -->
-    <view class="expense-modal-header">
-      <text class="expense-modal-title">添加收支记录</text>
-      <view class="expense-modal-close" bindtap="closeAddExpenseModal">✕</view>
+  <view class="modal-content" catchtap="stopPropagation" style="margin-top: {{modalTopOffsetPx}}px; margin-bottom: {{modalBottomOffsetPx}}px;">
+    <!-- 渐变头部与关闭按钮 -->
+    <view class="modal-header-gradient">
+      <view class="modal-header-row">
+        <text class="modal-title">添加收支记录</text>
+        <view class="modal-close-btn" bindtap="closeAddExpenseModal"><text class="modal-close-icon">✕</text></view>
+      </view>
     </view>
 
     <!-- 弹窗主体内容 -->
-    <scroll-view scroll-y="true" class="expense-modal-scroll">
-      <view class="expense-form-section">
+    <scroll-view scroll-y="true" class="modal-scroll">
+      <view class="form-section">
         <!-- 类型切换：收入 / 支出 -->
         <view class="form-item">
           <text class="form-label">记录类型</text>
@@ -306,19 +346,8 @@
             <view class="type-btn {{expenseForm.type==='支出' ? 'type-expense active' : 'type-expense'}}" bindtap="setExpenseType" data-type="支出">支出</view>
           </view>
         </view>
-
-        <!-- 选择鹦鹉 -->
-        <view class="form-item">
-          <text class="form-label">选择鹦鹉</text>
-          <view class="picker-wrapper">
-            <picker mode="selector" range="{{parrotOptions}}" value="{{expenseForm.parrotIndex}}" bindchange="onExpenseParrotChange">
-              <view class="picker-display">
-                <text>{{parrotOptions[expenseForm.parrotIndex] || '请选择鹦鹉'}}</text>
-                <text class="picker-arrow">▾</text>
-              </view>
-            </picker>
-          </view>
-        </view>
+        
+        <!-- 已移除：选择鹦鹉 -->
 
         <!-- 选择类别 -->
         <view class="form-item">
@@ -359,7 +388,7 @@
     </scroll-view>
 
     <!-- 底部按钮 -->
-    <view class="expense-modal-footer">
+    <view class="modal-footer">
       <button class="btn-secondary" bindtap="closeAddExpenseModal">取消</button>
       <button class="btn-add {{expenseForm.type==='收入' ? 'btn-add-income' : 'btn-add-expense'}}" bindtap="submitExpenseRecord" disabled="{{!canSubmitExpense}}">添加</button>
     </view>

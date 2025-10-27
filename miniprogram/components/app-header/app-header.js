@@ -7,7 +7,7 @@ Component({
     title: { type: String, value: '鹦鹉管家' },
     subtitle: { type: String, value: '' },
     showBack: { type: Boolean, value: false },
-    theme: { type: String, value: '' } // 主题：''(默认绿色)、'orange'
+    theme: { type: String, value: '' } // 主题：''(默认绿色)、'orange'、'blue'、'purple'、'pink'
   },
   data: {
     statusBarPadding: 20,
@@ -27,10 +27,34 @@ Component({
             menuRightPadding = rightGap + rect.width + 8 // 额外留一点间距
           }
         } catch (e) { /* 胶囊获取失败则不留白 */ }
-        const themeClass = this.properties.theme === 'orange' ? 'ah-theme-orange' : ''
+        let themeClass = ''
+        switch (this.properties.theme) {
+          case 'orange':
+            themeClass = 'ah-theme-orange'; break;
+          case 'blue':
+            themeClass = 'ah-theme-blue'; break;
+          case 'purple':
+            themeClass = 'ah-theme-purple'; break;
+          case 'pink':
+            themeClass = 'ah-theme-pink'; break;
+          default:
+            themeClass = '';
+        }
         this.setData({ statusBarPadding: padding, menuRightPadding, themeClass })
       } catch (e) {
-        const themeClass = this.properties.theme === 'orange' ? 'ah-theme-orange' : ''
+        let themeClass = ''
+        switch (this.properties.theme) {
+          case 'orange':
+            themeClass = 'ah-theme-orange'; break;
+          case 'blue':
+            themeClass = 'ah-theme-blue'; break;
+          case 'purple':
+            themeClass = 'ah-theme-purple'; break;
+          case 'pink':
+            themeClass = 'ah-theme-pink'; break;
+          default:
+            themeClass = '';
+        }
         this.setData({ statusBarPadding: 20, menuRightPadding: 0, themeClass })
       }
     }

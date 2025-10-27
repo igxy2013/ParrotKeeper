@@ -268,17 +268,19 @@
 .modal-content {
   width: 100%;
   max-width: 700rpx;
-  max-height: 90vh;
+  max-height: 82vh;
   background: #ffffff;
   border-radius: 48rpx;
   overflow: hidden;
   box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.18);
+  font-family: 'Microsoft YaHei','PingFang SC','Hiragino Sans GB','Heiti SC','SimHei',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans',sans-serif;
 }
 
 /* 渐变头部 */
 .modal-header-gradient {
   background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
   padding: 24rpx 32rpx;
+  position: relative; /* 使关闭按钮可绝对定位到右上角 */
 }
 
 .modal-header-row {
@@ -301,6 +303,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
 }
 
 .modal-close-icon {
@@ -310,7 +315,7 @@
 
 /* 滚动内容区 */
 .modal-scroll {
-  max-height: calc(90vh - 240rpx);
+  max-height: calc(82vh - 240rpx);
 }
 
 .form-section {
@@ -327,15 +332,30 @@
   margin-bottom: 12rpx;
 }
 
+/* 统一弹窗表单字段字体为中文黑体（无衬线） */
+.modal-content .form-label,
+.modal-content .text-input,
+.modal-content .picker-display,
+.modal-content .textarea-input,
+.modal-content .picker-display text {
+  font-family: 'Microsoft YaHei','PingFang SC','Hiragino Sans GB','Heiti SC','SimHei',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans',sans-serif;
+}
+
 .label-icon { color: #10B981; margin-right: 12rpx; }
 
 .text-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 24rpx;
+  padding: 0 24rpx; /* 仅水平内边距，配合固定高度 */
   border: 2rpx solid #e5e7eb;
   border-radius: 32rpx;
   font-size: 26rpx;
+  height: 88rpx; /* 提高输入框高度，避免文字被压缩 */
+}
+/* 输入框聚焦态优化 */
+.text-input:focus {
+  border-color: #26A69A;
+  background: #ffffff;
 }
 
 .textarea-input {
@@ -345,7 +365,7 @@
   border: 2rpx solid #e5e7eb;
   border-radius: 32rpx;
   font-size: 26rpx;
-  min-height: 140rpx;
+  min-height: 160rpx; /* 文本域更高，便于输入与显示 */
 }
 
 .form-grid {
@@ -365,6 +385,10 @@
   border-radius: 32rpx;
   font-size: 26rpx;
   background: #ffffff;
+}
+/* 选择器按压反馈 */
+.picker-display:active {
+  border-color: #26A69A;
 }
 
 .picker-arrow { color: #9CA3AF; }
@@ -390,8 +414,8 @@
 
 .modal-footer {
   display: flex;
-  gap: 16rpx;
-  padding: 24rpx 32rpx;
+  gap: 12rpx; /* 按钮间距更紧凑 */
+  padding: 20rpx 28rpx; /* 底部整体内边距略减 */
   border-top: 2rpx solid #f3f4f6;
   background: #f9fafb;
 }
@@ -399,9 +423,9 @@
 .btn-secondary,
 .btn-primary {
   flex: 1;
-  padding: 24rpx;
-  border-radius: 32rpx;
-  font-size: 28rpx;
+  padding: 18rpx 24rpx; /* 按钮高度更薄 */
+  border-radius: 28rpx; /* 圆角略收窄 */
+  font-size: 26rpx; /* 字体稍微减小 */
 }
 
 .btn-secondary { background: #e5e7eb; color: #374151; }
@@ -958,3 +982,43 @@
 .btn-add-income { background: linear-gradient(135deg, #22c55e, #10b981); color: #ffffff; }
 .btn-add-expense { background: linear-gradient(135deg, #fb923c, #ef4444); color: #ffffff; }
 .btn-add[disabled] { opacity: 0.5; }
+/* 首页添加鹦鹉弹窗：照片上传区样式 */
+.photo-upload { padding: 16rpx 0; }
+.photo-preview {
+  position: relative;
+  width: 220rpx;
+  height: 220rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+.preview-image { width: 100%; height: 100%; }
+.photo-actions {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  display: flex;
+  gap: 12rpx;
+}
+.action-btn {
+  width: 60rpx;
+  height: 60rpx;
+  background: rgba(0,0,0,0.55);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-icon { color: #fff; font-size: 28rpx; }
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 220rpx;
+  height: 220rpx;
+  border: 2rpx dashed #d1d5db;
+  border-radius: 24rpx;
+  background: #f9fafb;
+}
+.upload-icon { font-size: 48rpx; }
+.upload-text { margin-top: 12rpx; color: #6b7280; font-size: 24rpx; }

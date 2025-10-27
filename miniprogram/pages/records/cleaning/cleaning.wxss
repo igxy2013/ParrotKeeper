@@ -1,7 +1,8 @@
 /* Cleaning page styles inspired by reference UI */
 .cleaning-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #ecfdf5 100%);
+  /* 粉色主题背景，与头部一致 */
+  background: linear-gradient(135deg, #fff1f5 0%, #fff7fb 50%, #fdf2f8 100%);
 }
 
 .header {
@@ -39,44 +40,35 @@
 
 .content { padding: 48rpx 24rpx; }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24rpx;
+.summary-card {
+  background: linear-gradient(90deg, #f472b6, #ec4899, #db2777);
+  color: #ffffff;
+  border-radius: 32rpx;
+  padding: 32rpx;
+  box-shadow: 0 12rpx 32rpx rgba(236, 72, 153, 0.35);
   margin-bottom: 24rpx;
 }
-.stat-card {
-  background: rgba(255,255,255,0.8);
-  backdrop-filter: blur(6rpx);
-  border-radius: 24rpx;
-  padding: 24rpx;
-  text-align: center;
-  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08);
-  border: 2rpx solid rgba(255,255,255,0.5);
-}
-.stat-icon { width: 96rpx; height: 96rpx; border-radius: 24rpx; margin: 0 auto 16rpx; display:flex; align-items:center; justify-content:center; font-size: 42rpx; }
-.stat-blue { background: #e0f2fe; color: #3b82f6; }
-.stat-green { background: #dcfce7; color: #22c55e; }
-.stat-purple { background: #ede9fe; color: #a78bfa; }
-.stat-value { font-size: 36rpx; font-weight: 700; color: #334155; }
-.stat-label { font-size: 24rpx; color: #64748b; }
+.summary-title { font-size: 32rpx; font-weight: 800; margin-bottom: 24rpx; }
+.summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24rpx; }
+.summary-metric { text-align: center; }
+.summary-value { font-size: 40rpx; font-weight: 900; }
+.summary-label { margin-top: 8rpx; font-size: 24rpx; color: rgba(255,255,255,0.85); }
 
-.filter-tabs { background: rgba(255,255,255,0.8); border-radius: 24rpx; padding: 16rpx; box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08); border: 2rpx solid rgba(255,255,255,0.5); }
-.filter-scroll { white-space: nowrap; }
-.filter-row { display: flex; gap: 12rpx; }
-.filter-chip { padding: 16rpx 24rpx; border-radius: 20rpx; font-size: 26rpx; color: #475569; background: #f1f5f9; }
-.filter-chip.active { background: #10b981; color: #fff; box-shadow: 0 4rpx 12rpx rgba(16,185,129,0.35); }
+.filter-section { background: rgba(255,255,255,0.8); border-radius: 24rpx; padding: 16rpx; box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08); border: 2rpx solid rgba(255,255,255,0.5); }
+.chip-scroll { white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; padding: 16rpx 24rpx; border-radius: 20rpx; font-size: 26rpx; color: #475569; background: #f1f5f9; margin-right: 12rpx; }
+.chip.active { background: #ec4899; color: #fff; box-shadow: 0 4rpx 12rpx rgba(236, 72, 153, 0.35); }
 .chip-text { }
 
 .list { margin-top: 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
-.card { display: flex; gap: 24rpx; padding: 24rpx; border-radius: 32rpx; background: rgba(255,255,255,0.85); border: 2rpx solid rgba(255,255,255,0.5); box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08); }
+.card { display: flex; gap: 24rpx; padding: 24rpx; border-radius: 32rpx; background: rgba(255,255,255,0.96); backdrop-filter: blur(8rpx); border: 1rpx solid rgba(17,24,39,0.06); box-shadow: 0 20rpx 50rpx -24rpx rgba(0,0,0,0.25); }
 .card-left { width: 120rpx; height: 120rpx; border-radius: 24rpx; overflow: hidden; background: #f1f5f9; box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.06); }
 .avatar { width: 120rpx; height: 120rpx; }
 .card-right { flex: 1; }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12rpx; }
 .info { display: flex; align-items: center; gap: 12rpx; }
 .name { font-size: 30rpx; font-weight: 700; color: #1f2937; }
-.type-badge { font-size: 24rpx; padding: 8rpx 16rpx; border-radius: 20rpx; background: #eef2ff; color: #4f46e5; }
+.type-badge { font-size: 24rpx; padding: 8rpx 16rpx; border-radius: 20rpx; background: #fce7f3; color: #ec4899; }
 .time { font-size: 24rpx; color: #64748b; }
 .card-body { display: flex; flex-direction: column; gap: 8rpx; }
 .detail { display: flex; gap: 8rpx; }
@@ -87,5 +79,6 @@
 .empty-icon { width: 160rpx; height: 160rpx; border-radius: 80rpx; background: #f1f5f9; display:flex; align-items:center; justify-content:center; margin: 0 auto 24rpx; font-size: 56rpx; color: #94a3b8; }
 .empty-text { color: #64748b; font-size: 28rpx; margin-bottom: 16rpx; }
 .btn.btn-primary { margin-top: 24rpx; }
+.btn-primary { background: #ec4899; color: #ffffff; }
 
 .loading { text-align: center; color: #64748b; font-size: 26rpx; padding: 24rpx; }

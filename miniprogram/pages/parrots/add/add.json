@@ -3,7 +3,7 @@
     "app-header": "/components/app-header/app-header"
   },
   "navigationStyle": "custom",
-  "navigationBarTitleText": "收支管理",
+  "navigationBarTitleText": "添加鹦鹉",
   "backgroundColor": "#f8f9fa",
   "backgroundTextStyle": "dark"
 }
