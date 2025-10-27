@@ -213,39 +213,125 @@
 
 .record-list {
   margin-top: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
 }
 
 .record-item {
   display: flex;
   align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 32rpx;
+  border-radius: 20rpx;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 
-.record-item:last-child {
-  border-bottom: none;
+/* 根据记录类型设置背景色 */
+.record-item[data-type="feeding"] {
+  background: linear-gradient(135deg, #fff4e6 0%, #ffe8cc 100%);
+}
+
+.record-item[data-type="health"] {
+  background: linear-gradient(135deg, #e8f5e8 0%, #d4f1d4 100%);
+}
+
+.record-item[data-type="cleaning"] {
+  background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+}
+
+.record-item[data-type="breeding"] {
+  background: linear-gradient(135deg, #ffe6f0 0%, #ffcce6 100%);
+}
+
+.record-item:active {
+  transform: scale(0.98);
+  box-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.12);
 }
 
 .record-icon {
-  font-size: 32rpx;
-  margin-right: 20rpx;
-  width: 60rpx;
-  text-align: center;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  margin-right: 28rpx;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* 根据记录类型设置图标颜色 */
+.record-item[data-type="feeding"] .record-icon {
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  box-shadow: 0 4rpx 16rpx rgba(255, 152, 0, 0.25);
+}
+
+.record-item[data-type="health"] .record-icon {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  box-shadow: 0 4rpx 16rpx rgba(76, 175, 80, 0.25);
+}
+
+.record-item[data-type="cleaning"] .record-icon {
+  background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
+  box-shadow: 0 4rpx 16rpx rgba(156, 39, 176, 0.25);
+}
+
+.record-item[data-type="breeding"] .record-icon {
+  background: linear-gradient(135deg, #e91e63 0%, #f06292 100%);
+  box-shadow: 0 4rpx 16rpx rgba(233, 30, 99, 0.25);
 }
 
 .record-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
 }
 
 .record-title {
-  font-size: 28rpx;
+  font-size: 32rpx;
   color: #333333;
-  margin-bottom: 6rpx;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .record-subtitle {
-  font-size: 24rpx;
+  font-size: 28rpx;
   color: #666666;
+  opacity: 0.8;
+  line-height: 1.2;
+}
+
+.record-dot {
+  position: absolute;
+  top: 24rpx;
+  right: 24rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+/* 根据记录类型设置小圆点颜色 */
+.record-item[data-type="feeding"] .record-dot {
+  background: #ff9800;
+}
+
+.record-item[data-type="health"] .record-dot {
+  background: #4caf50;
+}
+
+.record-item[data-type="cleaning"] .record-dot {
+  background: #9c27b0;
+}
+
+.record-item[data-type="breeding"] .record-dot {
+  background: #e91e63;
 }
 
 .health-alerts {

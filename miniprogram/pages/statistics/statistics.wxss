@@ -94,9 +94,10 @@
 
 .overview-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15rpx;
   padding: 0 30rpx;
+  box-sizing: border-box;
 }
 
 .overview-card {
@@ -106,10 +107,11 @@
   padding: 24rpx;
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
   box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.12);
   border: 1rpx solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .overview-card:active {
@@ -128,6 +130,7 @@
   border-radius: 50%;
   color: white;
   box-shadow: 0 3rpx 8rpx rgba(102, 126, 234, 0.25);
+  flex-shrink: 0;
 }
 
 .card-content {

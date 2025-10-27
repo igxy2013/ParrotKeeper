@@ -653,12 +653,15 @@ Page({
         
         const color = colorPalette[idx % colorPalette.length]
         ctx.strokeStyle = color
-        ctx.lineWidth = 2
+        ctx.lineWidth = 3 // 增加线条宽度，让曲线更明显
+        ctx.lineCap = 'round' // 设置线条端点为圆形
+        ctx.lineJoin = 'round' // 设置线条连接点为圆形
         
         // 只有一个点时不绘制线条，只绘制点
         if (validPoints.length > 1) {
-          ctx.beginPath()
-          validPoints.forEach((p, i) => {
+          // 计算所有点的坐标
+          const points = []
+          validPoints.forEach(p => {
             const xIndex = dates.indexOf(p.date)
             if (xIndex === -1) return // 跳过无效日期
             
@@ -675,11 +678,115 @@ Page({
             if (!isFinite(norm) || isNaN(norm)) return
             
             const y = paddingTop + (1 - norm) * chartH
-            
-            if (i === 0) ctx.moveTo(x, y)
-            else ctx.lineTo(x, y)
+            points.push({ x, y })
           })
-          ctx.stroke()
+          
+          if (points.length > 1) {
+            // 先绘制填充区域
+            ctx.save() // 保存当前状态
+            
+            // 创建填充路径
+            ctx.beginPath()
+            ctx.moveTo(points[0].x, points[0].y)
+            
+            // 绘制曲线路径（与线条相同）
+            for (let i = 1; i < points.length; i++) {
+              const prevPoint = points[i - 1]
+              const currentPoint = points[i]
+              
+              if (i === 1) {
+                // 第一段曲线，使用二次贝塞尔曲线
+                const controlX = prevPoint.x + (currentPoint.x - prevPoint.x) * 0.5
+                const controlY = prevPoint.y
+                ctx.quadraticCurveTo(controlX, controlY, currentPoint.x, currentPoint.y)
+              } else {
+                // 后续曲线，使用三次贝塞尔曲线创建更平滑的效果
+                const prevPrevPoint = points[i - 2]
+                const nextPoint = i < points.length - 1 ? points[i + 1] : currentPoint
+                
+                // 计算控制点，创建平滑的曲线
+                const tension = 0.3 // 曲线张力，控制弯曲程度
+                
+                // 前一个控制点
+                const cp1x = prevPoint.x + (currentPoint.x - prevPrevPoint.x) * tension
+                const cp1y = prevPoint.y + (currentPoint.y - prevPrevPoint.y) * tension
+                
+                // 当前控制点
+                const cp2x = currentPoint.x - (nextPoint.x - prevPoint.x) * tension
+                const cp2y = currentPoint.y - (nextPoint.y - prevPoint.y) * tension
+                
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, currentPoint.x, currentPoint.y)
+              }
+            }
+            
+            // 连接到底部形成封闭区域
+            const lastPoint = points[points.length - 1]
+            const firstPoint = points[0]
+            const bottomY = height - paddingBottom
+            
+            ctx.lineTo(lastPoint.x, bottomY)
+            ctx.lineTo(firstPoint.x, bottomY)
+            ctx.closePath()
+            
+            // 创建渐变填充
+            const gradient = ctx.createLinearGradient(0, paddingTop, 0, bottomY)
+            const baseColor = color
+            // 提取RGB值并创建半透明版本
+            const rgbMatch = baseColor.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i)
+            if (rgbMatch) {
+              const r = parseInt(rgbMatch[1], 16)
+              const g = parseInt(rgbMatch[2], 16)
+              const b = parseInt(rgbMatch[3], 16)
+              gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.25)`) // 顶部25%透明度
+              gradient.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, 0.1)`) // 中部10%透明度
+              gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.02)`) // 底部2%透明度
+            } else {
+              // 备用方案，使用预设的半透明颜色
+              gradient.addColorStop(0, color + '40') // 25% 透明度
+              gradient.addColorStop(0.7, color + '1A') // 10% 透明度
+              gradient.addColorStop(1, color + '05') // 2% 透明度
+            }
+            
+            ctx.fillStyle = gradient
+            ctx.fill()
+            
+            ctx.restore() // 恢复状态
+            
+            // 然后绘制曲线
+            ctx.beginPath()
+            ctx.moveTo(points[0].x, points[0].y)
+            
+            // 使用贝塞尔曲线绘制平滑曲线
+            for (let i = 1; i < points.length; i++) {
+              const prevPoint = points[i - 1]
+              const currentPoint = points[i]
+              
+              if (i === 1) {
+                // 第一段曲线，使用二次贝塞尔曲线
+                const controlX = prevPoint.x + (currentPoint.x - prevPoint.x) * 0.5
+                const controlY = prevPoint.y
+                ctx.quadraticCurveTo(controlX, controlY, currentPoint.x, currentPoint.y)
+              } else {
+                // 后续曲线，使用三次贝塞尔曲线创建更平滑的效果
+                const prevPrevPoint = points[i - 2]
+                const nextPoint = i < points.length - 1 ? points[i + 1] : currentPoint
+                
+                // 计算控制点，创建平滑的曲线
+                const tension = 0.3 // 曲线张力，控制弯曲程度
+                
+                // 前一个控制点
+                const cp1x = prevPoint.x + (currentPoint.x - prevPrevPoint.x) * tension
+                const cp1y = prevPoint.y + (currentPoint.y - prevPrevPoint.y) * tension
+                
+                // 当前控制点
+                const cp2x = currentPoint.x - (nextPoint.x - prevPoint.x) * tension
+                const cp2y = currentPoint.y - (nextPoint.y - prevPoint.y) * tension
+                
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, currentPoint.x, currentPoint.y)
+              }
+            }
+            ctx.stroke()
+          }
         }
   
         // 绘制点
@@ -701,9 +808,22 @@ Page({
           if (!isFinite(norm) || isNaN(norm)) return
           
           const y = paddingTop + (1 - norm) * chartH
+          
+          // 绘制带阴影的数据点
+          ctx.shadowColor = color
+          ctx.shadowBlur = 8
+          ctx.shadowOffsetX = 0
+          ctx.shadowOffsetY = 2
+          
           ctx.beginPath()
-          ctx.arc(x, y, 3, 0, Math.PI * 2)
+          ctx.arc(x, y, 4, 0, Math.PI * 2) // 增大数据点半径
           ctx.fill()
+          
+          // 清除阴影设置，避免影响后续绘制
+          ctx.shadowColor = 'transparent'
+          ctx.shadowBlur = 0
+          ctx.shadowOffsetX = 0
+          ctx.shadowOffsetY = 0
         })
       })
     })

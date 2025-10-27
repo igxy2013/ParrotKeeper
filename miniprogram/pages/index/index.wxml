@@ -85,12 +85,12 @@
   <view class="recent-records" wx:if="{{recentRecords.length > 0}}">
     <view class="card">
       <view class="card-header">
-        <text class="card-title">最近记录</text>
+        <text class="card-title">最近活动</text>
         <text class="more-link" bindtap="viewAllRecords">查看全部</text>
       </view>
       <view class="card-content">
         <view class="record-list">
-          <view class="record-item" wx:for="{{recentRecords}}" wx:key="id">
+          <view class="record-item" data-type="{{item.type}}" wx:for="{{recentRecords}}" wx:key="id">
             <view class="record-icon">
               <text wx:if="{{item.type === 'feeding'}}">🍎</text>
               <text wx:elif="{{item.type === 'health'}}">🏥</text>
@@ -101,6 +101,7 @@
               <view class="record-title">{{item.title}}</view>
               <view class="record-subtitle">{{item.parrot_name}} · {{item.time}}</view>
             </view>
+            <view class="record-dot"></view>
           </view>
         </view>
       </view>
