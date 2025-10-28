@@ -187,12 +187,35 @@ Page({
       })
       
       if (res.success) {
+        const overview = res.data
+        const overviewStatusText = this.getHealthStatusText(overview)
         this.setData({
-          overview: res.data
+          overview,
+          overview_status_text: overviewStatusText
         })
       }
     } catch (error) {
       console.error('加载概览数据失败:', error)
+    }
+  },
+
+  // 生成首页健康状态文案，保证单/多行均对齐
+  getHealthStatusText(overview = {}) {
+    try {
+      const hs = overview.health_status || null
+      if (hs) {
+        const parts = []
+        if (hs.healthy > 0) parts.push(`${hs.healthy}只鹦鹉状态良好`)
+        if (hs.sick > 0) parts.push(`${hs.sick}只鹦鹉生病`)
+        if (hs.recovering > 0) parts.push(`${hs.recovering}只鹦鹉恢复中`)
+        if (parts.length > 0) return parts.join('，')
+      }
+      // 回退：仅显示总数良好
+      const total = (overview && overview.total_parrots) || 0
+      return `${total}只鹦鹉状态良好`
+    } catch (e) {
+      const total = (overview && overview.total_parrots) || 0
+      return `${total}只鹦鹉状态良好`
     }
   },
 
@@ -243,12 +266,14 @@ Page({
         // 处理健康记录（保持非聚合）
         if (res.data.health && Array.isArray(res.data.health)) {
           res.data.health.forEach(record => {
+            const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
+            const recordType = record.record_type || '健康检查'
             allRecords.push({
               id: `health_${record.id}`,
-              title: record.record_type || '健康检查',
+              title: `进行了${recordType}`,
               type: 'health',
-              parrot_name: record.parrot_name || (record.parrot && record.parrot.name) || '',
-              time: app.formatDate(record.record_date)
+              parrot_name: parrotName,
+              time: app.formatRelativeTime(record.record_date)
             })
           })
         }
@@ -260,12 +285,14 @@ Page({
         // 处理繁殖记录（保持非聚合）
         if (res.data.breeding && Array.isArray(res.data.breeding)) {
           res.data.breeding.forEach(record => {
+            const maleName = record.male_parrot_name || (record.male_parrot && record.male_parrot.name) || ''
+            const femaleName = record.female_parrot_name || (record.female_parrot && record.female_parrot.name) || ''
             allRecords.push({
               id: `breeding_${record.id}`,
-              title: '繁殖记录',
+              title: '进行了配对',
               type: 'breeding',
-              parrot_name: `${record.male_parrot_name || (record.male_parrot && record.male_parrot.name) || ''} × ${record.female_parrot_name || (record.female_parrot && record.female_parrot.name) || ''}`,
-              time: app.formatDate(record.mating_date || record.created_at)
+              parrot_name: `${maleName} × ${femaleName}`,
+              time: app.formatRelativeTime(record.mating_date || record.created_at)
             })
           })
         }
@@ -295,7 +322,7 @@ Page({
         grouped[key] = {
           id: `feeding_group_${record.id || key}`,
           type: 'feeding',
-          time: app.formatDate(time),
+          time: app.formatRelativeTime(time),
           parrot_names: [],
           feed_type_names: []
         }
@@ -311,7 +338,7 @@ Page({
     })
     const result = Object.values(grouped).map(item => ({
       id: item.id,
-      title: `喂食 ${item.feed_type_names.join('、')}`,
+      title: `喂食了${item.feed_type_names.join('、')}`,
       type: 'feeding',
       parrot_name: item.parrot_names.join('、'),
       time: item.time
@@ -331,7 +358,7 @@ Page({
         grouped[key] = {
           id: `cleaning_group_${record.id || key}`,
           type: 'cleaning',
-          time: app.formatDate(time),
+          time: app.formatRelativeTime(time),
           parrot_names: [],
           cleaning_type: record.cleaning_type || '',
           cleaning_type_text: record.cleaning_type_text || record.cleaning_type || ''
@@ -349,7 +376,7 @@ Page({
     })
     const result = Object.values(grouped).map(item => ({
       id: item.id,
-      title: item.cleaning_type_text || `${item.cleaning_type || ''}清洁`,
+      title: `进行了${item.cleaning_type_text || item.cleaning_type || '清洁'}`,
       type: 'cleaning',
       parrot_name: item.parrot_names.join('、'),
       time: item.time
@@ -493,7 +520,7 @@ Page({
   // 导航到鹦鹉页面
   navigateToParrots() {
     // 游客模式也可以浏览鹦鹉页面
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/parrots/parrots'
     })
   },
@@ -521,7 +548,8 @@ Page({
 
   // 导航到记录页面
   navigateToStatistics() {
-    wx.switchTab({
+    // 与底部导航一致使用 reLaunch，避免非TabBar页面 switchTab 无效
+    wx.reLaunch({
       url: '/pages/statistics/statistics'
     })
   },

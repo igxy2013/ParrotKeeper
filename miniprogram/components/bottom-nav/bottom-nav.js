@@ -1,8 +1,8 @@
 Component({
   properties: {
     active: { type: String, value: '' },
-    selectedColor: { type: String, value: '#4CAF50' },
-    defaultColor: { type: String, value: '#6b7280' }
+    selectedColor: { type: String, value: '#10B981' },
+    defaultColor: { type: String, value: '#9CA3AF' }
   },
   data: {
     items: [

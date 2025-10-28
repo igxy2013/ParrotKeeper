@@ -3,6 +3,8 @@
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   min-height: 100vh;
   padding: 0;
+  /* 为固定底部导航预留空间（含安全区） */
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
 }
 
 .page-content {

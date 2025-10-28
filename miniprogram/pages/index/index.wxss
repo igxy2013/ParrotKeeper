@@ -3,7 +3,8 @@
 .page-container {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   min-height: 100vh;
-  padding-bottom: 160rpx;
+  /* 为固定底部导航预留空间（含安全区） */
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
 /* 固定头部样式 */
@@ -88,6 +89,19 @@
   font-size: 32rpx;
 }
 
+/* Image-based icons sizing */
+.icon-notification-img { width: 32rpx; height: 32rpx; }
+.stat-icon-img { width: 40rpx; height: 40rpx; }
+.inline-title-icon { width: 28rpx; height: 28rpx; margin-right: 12rpx; vertical-align: -4rpx; }
+.action-icon-img { width: 44rpx; height: 44rpx; }
+.activity-icon-img { width: 40rpx; height: 40rpx; }
+.alert-icon-img { width: 40rpx; height: 40rpx; }
+.modal-close-icon-img { width: 32rpx; height: 32rpx; }
+.label-icon-img { width: 28rpx; height: 28rpx; margin-right: 12rpx; vertical-align: -4rpx; }
+.upload-icon-img { width: 48rpx; height: 48rpx; }
+.photo-action-icon-img { width: 28rpx; height: 28rpx; }
+.login-icon-img { width: 120rpx; height: 120rpx; }
+
 /* 主要内容区域 */
 .main-content {
   padding-top: 32rpx;
@@ -159,6 +173,24 @@
   border-radius: 50%;
   margin-right: 16rpx;
   animation: pulse 2s infinite;
+  flex-shrink: 0;
+}
+
+.status-dot-healthy {
+  background: #4CAF50;
+  box-shadow: 0 0 8rpx rgba(76, 175, 80, 0.5);
+}
+
+.status-dot-warning {
+  background: #FF9800;
+  box-shadow: 0 0 8rpx rgba(255, 152, 0, 0.5);
+  animation: pulse-warning 1.5s infinite;
+}
+
+.status-dot-recovering {
+  background: #2196F3;
+  box-shadow: 0 0 8rpx rgba(33, 150, 243, 0.5);
+  animation: pulse-recovering 2s infinite;
 }
 
 @keyframes pulse {
@@ -166,9 +198,36 @@
   50% { opacity: 0.5; }
 }
 
+@keyframes pulse-warning {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-recovering {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  33% { 
+    opacity: 0.8; 
+    transform: scale(1.05);
+  }
+  66% { 
+    opacity: 0.6; 
+    transform: scale(1.1);
+  }
+}
+
 .status-text {
   font-size: 28rpx;
   color: rgba(255, 255, 255, 0.8);
+  line-height: 30rpx;
 }
 
 /* 统计数据网格样式（严格按APP） */
@@ -220,6 +279,10 @@
   background: rgba(33, 150, 243, 0.1);
 }
 
+.stat-icon-container.purple {
+  background: rgba(156, 39, 176, 0.1);
+}
+
 .stat-icon {
   font-size: 40rpx;
 }
@@ -246,6 +309,10 @@
 
 .blue-text {
   color: #2196F3;
+}
+
+.purple-text {
+  color: #9C27B0;
 }
 
 /* 弹窗覆盖层 */
@@ -512,10 +579,10 @@
   background: linear-gradient(135deg, #FFF4DF, #FEE8BF);
 }
 .action-item.health {
-  background: linear-gradient(135deg, #F3E8FF, #E9D5FF);
+  background: linear-gradient(135deg, #E9FFF4, #D7F8E7);
 }
 .action-item.training {
-  background: linear-gradient(135deg, #FDECF3, #FAD6E7);
+  background: linear-gradient(135deg, #E6F6FF, #D6EEFF);
 }
 .action-item.photo {
   background: linear-gradient(135deg, #E6F6FF, #D6EEFF);
@@ -527,8 +594,11 @@
 .action-item.expenses {
   background: linear-gradient(135deg, #EAF7FF, #D9EEFF);
 }
-.action-item.statistics {
+.action-item.management {
   background: linear-gradient(135deg, #FFF2E6, #FDE2CC);
+}
+.action-item.statistics {
+  background: linear-gradient(135deg, #F3E8FF, #E9D5FF);
 }
 .action-item.cleaning,
 .action-item.guide {

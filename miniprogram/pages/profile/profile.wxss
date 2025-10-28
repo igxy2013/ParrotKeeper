@@ -6,14 +6,14 @@
   min-height: 100vh;
   /* 统一字体家族，增强中英文显示一致性 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  /* 兼容内容模块可能溢出 page-content 的情况，整体底部预留空间 */
-  padding-bottom: 160rpx;
+  /* 兼容内容模块可能溢出 page-content 的情况，整体底部预留空间（缩小留白，含安全区） */
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
 
 .page-content {
   padding: 20rpx;
-  /* 为底部固定导航预留空间，避免底部卡片被遮挡 */
-  padding-bottom: 160rpx;
+  /* 为底部固定导航预留空间，避免底部卡片被遮挡（缩小留白，含安全区） */
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
 
 /* 用户信息卡片 */

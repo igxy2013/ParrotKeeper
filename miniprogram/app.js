@@ -5,8 +5,8 @@ App({
   globalData: {
     userInfo: null,
     openid: null,
-    baseUrl: 'https://acbim.cn', // 后端API地址（固定使用正式地址）
-    //baseUrl: 'http://192.168.0.80:5075', // 后端API地址（固定使用正式地址）
+    //baseUrl: 'https://acbim.cn', // 后端API地址（固定使用正式地址）
+    baseUrl: 'http://192.168.0.80:5075', // 后端API地址（固定使用正式地址）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
     needRefresh: false, // 页面数据刷新标志（模式变更时触发）
@@ -307,6 +307,31 @@ App({
       .replace('HH', hour)
       .replace('mm', minute)
       .replace('ss', second)
+  },
+
+  // 格式化相对时间（精确到分钟）
+  formatRelativeTime(date) {
+    if (!date) return ''
+    
+    const now = new Date()
+    const target = new Date(date)
+    const diffMs = now - target
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    
+    if (diffMinutes < 1) {
+      return '刚刚'
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes}分钟前`
+    } else if (diffHours < 24) {
+      return `${diffHours}小时前`
+    } else if (diffDays < 7) {
+      return `${diffDays}天前`
+    } else {
+      // 超过一周显示具体日期
+      return this.formatDateTime(date, 'MM-DD HH:mm')
+    }
   },
 
   // 计算年龄

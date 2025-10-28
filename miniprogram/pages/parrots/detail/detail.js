@@ -46,7 +46,15 @@ Page({
     trainingRecords: [],
     
     // 最后喂食时间信息
-    lastFeedingInfo: ''
+    lastFeedingInfo: '',
+
+    // 复用弹窗组件（编辑）
+    showParrotModal: false,
+    parrotFormMode: 'edit',
+    parrotFormTitle: '编辑鹦鹉',
+    currentParrotForm: null,
+    parrotTypes: [],
+    speciesList: []
   },
 
   onLoad(options) {
@@ -328,12 +336,32 @@ Page({
     })
   },
 
-  // 编辑鹦鹉
+  // 编辑鹦鹉（打开弹窗）
   editParrot() {
-    this.setData({ showMenu: false }) // 关闭菜单
-    wx.navigateTo({
-      url: `/pages/parrots/add-parrot/add-parrot?id=${this.data.parrotId}`
+    this.setData({ showMenu: false })
+    const p = this.data.parrot || {}
+    const form = {
+      id: p.id,
+      name: p.name || '',
+      type: p.species_name || '',
+      weight: p.weight || '',
+      gender: p.gender || '',
+      gender_display: p.gender === 'male' ? '雄性' : (p.gender === 'female' ? '雌性' : ''),
+      color: p.color || '',
+      birth_date: p.birth_date || '',
+      notes: p.notes || '',
+      parrot_number: p.parrot_number || '',
+      ring_number: p.ring_number || '',
+      acquisition_date: p.acquisition_date || '',
+      photo_url: p.photo_url || p.avatar_url || ''
+    }
+    this.setData({ 
+      currentParrotForm: form, 
+      showParrotModal: true,
+      parrotFormMode: 'edit',
+      parrotFormTitle: '编辑鹦鹉'
     })
+    this.loadSpeciesListForModal()
   },
 
   // 查看记录
@@ -346,6 +374,50 @@ Page({
   // 查看所有记录
   viewAllRecords() {
     this.viewRecords()
+  },
+
+  // 加载品种列表供弹窗组件使用
+  async loadSpeciesListForModal() {
+    try {
+      const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
+      if (res.success) {
+        const species = res.data || []
+        const names = species.map(s => s.name)
+        this.setData({ speciesList: species, parrotTypes: names })
+      }
+    } catch (e) {
+      // 静默失败
+    }
+  },
+
+  // 组件事件：取消
+  onParrotModalCancel() {
+    this.setData({ showParrotModal: false, currentParrotForm: null })
+  },
+
+  // 组件事件：提交编辑
+  async onParrotModalSubmit(e) {
+    const { id, data } = e.detail || {}
+    if (!id) {
+      app.showError('缺少鹦鹉ID，无法提交')
+      return
+    }
+    try {
+      app.showLoading('保存中...')
+      const res = await app.request({ url: `/api/parrots/${id}`, method: 'PUT', data })
+      if (res.success) {
+        app.showSuccess('编辑成功')
+        this.setData({ showParrotModal: false, currentParrotForm: null })
+        // 刷新详情
+        this.loadParrotDetail()
+      } else {
+        app.showError(res.message || '编辑失败')
+      }
+    } catch (error) {
+      app.showError('网络错误，请稍后重试')
+    } finally {
+      app.hideLoading()
+    }
   },
 
   // 删除鹦鹉

@@ -238,3 +238,15 @@
     </view>
   </view>
 </view>
+
+<!-- 复用组件：添加/编辑鹦鹉弹窗（编辑用） -->
+<parrot-modal 
+  visible="{{showParrotModal}}"
+  mode="{{parrotFormMode}}"
+  title="{{parrotFormTitle}}"
+  parrot="{{currentParrotForm}}"
+  parrotTypes="{{parrotTypes}}"
+  speciesList="{{speciesList}}"
+  bind:cancel="onParrotModalCancel"
+  bind:submit="onParrotModalSubmit"
+/>

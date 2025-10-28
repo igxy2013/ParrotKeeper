@@ -33,25 +33,12 @@ Page({
     hasMore: true,
     menuRightPadding: 0,
 
-    // 添加鹦鹉弹窗&表单
-    showAddParrotModal: false,
-    newParrot: {
-      name: '',
-      type: '',
-      weight: '',
-      gender: '',
-      color: '',
-      birthDate: '',
-      notes: '',
-      parrot_number: '',
-      ring_number: '',
-      acquisition_date: '',
-      photo_url: ''
-    },
-    parrotTypes: [],
-    typeIndex: 0,
-    modalTopOffsetPx: 0,
-    modalBottomOffsetPx: 0
+    // 弹窗组件状态
+    showParrotModal: false,
+    parrotFormMode: 'add',
+    parrotFormTitle: '',
+    currentParrotForm: null,
+    parrotTypes: []
   },
 
   onLoad() {
@@ -355,22 +342,47 @@ Page({
 
   // 添加鹦鹉
   addParrot() {
-    // 直接在本页面打开添加鹦鹉弹窗
+    // 使用复用组件打开添加弹窗
+    const emptyForm = {
+      id: '', name: '', type: '', weight: '', gender: '', gender_display: '', color: '', birth_date: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: ''
+    }
     this.setData({
-      showAddParrotModal: true
+      showParrotModal: true,
+      parrotFormMode: 'add',
+      parrotFormTitle: '添加新鹦鹉',
+      currentParrotForm: emptyForm
     })
     this.loadSpeciesListForModal()
   },
 
-  // 编辑鹦鹉
+  // 编辑鹦鹉（如在列表页需要）
   editParrot(e) {
-    if (e && e.stopPropagation) {
-      e.stopPropagation()
-    }
+    if (e && e.stopPropagation) { e.stopPropagation() }
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({
-      url: `/pages/parrots/add-parrot/add-parrot?id=${id}`
+    const parrot = (this.data.parrots || []).find(p => p.id === id)
+    if (!parrot) return
+    const form = {
+      id: parrot.id,
+      name: parrot.name || '',
+      type: parrot.species_name || '',
+      weight: parrot.weight || '',
+      gender: parrot.gender || '',
+      gender_display: parrot.gender === 'male' ? '雄性' : (parrot.gender === 'female' ? '雌性' : ''),
+      color: parrot.color || '',
+      birth_date: parrot.birth_date || '',
+      notes: parrot.notes || '',
+      parrot_number: parrot.parrot_number || '',
+      ring_number: parrot.ring_number || '',
+      acquisition_date: parrot.acquisition_date || '',
+      photo_url: parrot.photo_url || parrot.avatar_url || ''
+    }
+    this.setData({
+      showParrotModal: true,
+      parrotFormMode: 'edit',
+      parrotFormTitle: '编辑鹦鹉',
+      currentParrotForm: form
     })
+    this.loadSpeciesListForModal()
   },
 
   // 处理图片加载错误
@@ -498,139 +510,26 @@ Page({
       // 静默失败，不影响弹窗使用
     }
   },
-
-  // 关闭弹窗并重置
-  closeAddParrotModal() {
-    this.setData({
-      showAddParrotModal: false,
-      newParrot: { name: '', type: '', weight: '', gender: '', color: '', birthDate: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' },
-      typeIndex: 0
-    })
+  // 组件事件：取消
+  onParrotModalCancel() {
+    this.setData({ showParrotModal: false, currentParrotForm: null })
   },
 
-  // 阻止事件冒泡（避免点击内容区关闭弹窗）
-  stopPropagation() {},
-
-  // 输入绑定
-  onParrotNameInput(e) { this.setData({ 'newParrot.name': e.detail.value }) },
-  onParrotWeightInput(e) { this.setData({ 'newParrot.weight': e.detail.value }) },
-  onParrotColorInput(e) { this.setData({ 'newParrot.color': e.detail.value }) },
-  onParrotNotesInput(e) { this.setData({ 'newParrot.notes': e.detail.value }) },
-  onBirthDateChange(e) { this.setData({ 'newParrot.birthDate': e.detail.value }) },
-  onParrotNumberInput(e) { this.setData({ 'newParrot.parrot_number': e.detail.value }) },
-  onRingNumberInput(e) { this.setData({ 'newParrot.ring_number': e.detail.value }) },
-  onAcquisitionDateChange(e) { this.setData({ 'newParrot.acquisition_date': e.detail.value }) },
-  onTypePickerChange(e) {
-    const idx = Number(e.detail.value)
-    const type = this.data.parrotTypes[idx]
-    this.setData({ typeIndex: idx, 'newParrot.type': type })
-  },
-  setParrotGender(e) {
-    const gender = e.currentTarget.dataset.gender
-    this.setData({ 'newParrot.gender': gender })
-  },
-
-  // 选择/上传/预览/删除照片（与 add-parrot 逻辑保持一致）
-  chooseParrotPhoto() {
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      success: (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath
-        this.uploadParrotPhoto(tempFilePath)
-      }
-    })
-  },
-  async uploadParrotPhoto(filePath) {
+  // 组件事件：提交（添加或编辑）
+  async onParrotModalSubmit(e) {
+    if (!this.data.isLogin) { app.showError('请先登录后使用此功能'); return }
+    const { id, data, mode } = e.detail
     try {
-      app.showLoading('上传中...')
-      const uploadRes = await new Promise((resolve, reject) => {
-        wx.uploadFile({
-          url: app.globalData.baseUrl + '/api/upload/image',
-          filePath: filePath,
-          name: 'file',
-          header: { 'X-OpenID': app.globalData.openid },
-          success: resolve,
-          fail: reject
-        })
-      })
-      const result = JSON.parse(uploadRes.data)
-      if (result.success) {
-        const fullUrl = app.globalData.baseUrl + '/uploads/' + result.data.url
-        this.setData({ 'newParrot.photo_url': fullUrl })
-        app.showSuccess('上传成功')
-      } else {
-        throw new Error(result.message)
-      }
-    } catch (error) {
-      console.error('上传照片失败:', error)
-      app.showError('上传照片失败')
-    } finally {
-      app.hideLoading()
-    }
-  },
-  previewParrotPhoto() {
-    if (!this.data.newParrot.photo_url) return
-    wx.previewImage({ urls: [this.data.newParrot.photo_url] })
-  },
-  deleteParrotPhoto() {
-    wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这张照片吗？',
-      success: (res) => {
-        if (res.confirm) {
-          this.setData({ 'newParrot.photo_url': '' })
-        }
-      }
-    })
-  },
-
-  // 提交添加鹦鹉
-  async submitNewParrot() {
-    if (!this.data.isLogin) {
-      app.showError('请先登录后使用此功能')
-      return
-    }
-    const np = this.data.newParrot
-    if (!np.name || !np.type) {
-      app.showError('请填写必填项：名字与品种')
-      return
-    }
-    let gender = 'unknown'
-    if (np.gender === '雄性') gender = 'male'
-    else if (np.gender === '雌性') gender = 'female'
-    let species_id = ''
-    try {
-      const match = (this.data.speciesList || []).find(s => s.name === np.type)
-      if (match) species_id = match.id
-    } catch (_) { species_id = '' }
-    let notes = np.notes || ''
-    const payload = {
-      name: np.name,
-      species_id,
-      gender,
-      birth_date: np.birthDate || '',
-      color: np.color || '',
-      weight: np.weight || '',
-      notes,
-      parrot_number: np.parrot_number || '',
-      ring_number: np.ring_number || '',
-      acquisition_date: np.acquisition_date || '',
-      photo_url: np.photo_url || ''
-    }
-    try {
-      const res = await app.request({ url: '/api/parrots', method: 'POST', data: payload })
+      const res = await app.request({ url: mode === 'edit' ? `/api/parrots/${id}` : '/api/parrots', method: mode === 'edit' ? 'PUT' : 'POST', data })
       if (res.success) {
-        app.showSuccess('添加成功')
-        this.closeAddParrotModal()
-        // 刷新鹦鹉列表
+        app.showSuccess(mode === 'edit' ? '编辑成功' : '添加成功')
+        this.setData({ showParrotModal: false, currentParrotForm: null })
         this.loadParrots(true)
       } else {
-        app.showError(res.message || '添加失败')
+        app.showError(res.message || (mode === 'edit' ? '编辑失败' : '添加失败'))
       }
-    } catch (e) {
-      app.showError('网络错误，添加失败')
+    } catch (error) {
+      app.showError('网络错误，请稍后重试')
     }
   }
 })
