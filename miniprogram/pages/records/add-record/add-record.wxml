@@ -143,7 +143,7 @@
       <view class="form-item">
         <text class="form-label required">清洁类型</text>
         <view class="form-picker" bindtap="showCleaningTypePicker">
-          <text class="picker-text {{formData.cleaning_type ? '' : 'placeholder'}}">
+          <text class="picker-text {{selectedCleaningTypeNames ? '' : 'placeholder'}}">
             {{selectedCleaningTypeNames || '请选择清洁类型'}}
           </text>
           <text class="picker-arrow">▼</text>

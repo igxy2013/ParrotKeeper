@@ -25,6 +25,44 @@ Page({
     menuRightPadding: 0
   },
 
+  // 解析服务端时间字符串，兼容无时区/ISO/空格分隔格式
+  parseServerTime(value) {
+    if (!value) return null
+    try {
+      if (value instanceof Date) return value
+      if (typeof value === 'number') {
+        const dNum = new Date(value)
+        return isNaN(dNum.getTime()) ? null : dNum
+      }
+      if (typeof value === 'string') {
+        const s = value.trim()
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+          return new Date(`${s}T00:00:00`)
+        }
+        if (s.includes('T')) {
+          if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s)) {
+            const d = new Date(s)
+            return isNaN(d.getTime()) ? null : d
+          }
+          const dUtc = new Date(s + 'Z')
+          if (!isNaN(dUtc.getTime())) return dUtc
+          const dLocal = new Date(s)
+          return isNaN(dLocal.getTime()) ? null : dLocal
+        }
+        const isoLocal = s.replace(' ', 'T')
+        let d = new Date(isoLocal + 'Z')
+        if (!isNaN(d.getTime())) return d
+        d = new Date(isoLocal)
+        if (!isNaN(d.getTime())) return d
+        d = new Date(s.replace(/-/g, '/'))
+        return isNaN(d.getTime()) ? null : d
+      }
+      return null
+    } catch (e) {
+      return null
+    }
+  },
+
   onShow() {
     this.computeMenuRightPadding()
     this.checkLoginAndLoad()
@@ -90,10 +128,12 @@ Page({
     const grouped = {}
     records.forEach(record => {
       const key = `${record.cleaning_time}_${record.notes || ''}_${record.description || ''}`
+      const dt = this.parseServerTime(record.cleaning_time)
       if (!grouped[key]) {
         grouped[key] = {
           ...record,
-          cleaning_time_formatted: app.formatDateTime(record.cleaning_time),
+          timeValue: dt ? dt.toISOString() : record.cleaning_time,
+          cleaning_time_formatted: dt ? app.formatDateTime(dt) : app.formatDateTime(record.cleaning_time),
           parrot_names: [],
           cleaning_type_names: [],
           parrot_ids: [],
@@ -145,7 +185,13 @@ Page({
         parrot_count: item.parrot_ids.length
       }
     })
-    result.sort((a, b) => new Date(b.cleaning_time) - new Date(a.cleaning_time))
+    result.sort((a, b) => {
+      const da = this.parseServerTime(b.timeValue || b.cleaning_time)
+      const db = this.parseServerTime(a.timeValue || a.cleaning_time)
+      const ma = da ? da.getTime() : 0
+      const mb = db ? db.getTime() : 0
+      return ma - mb
+    })
     return result
   },
 
@@ -161,9 +207,15 @@ Page({
   computeStats(records) {
     const now = new Date()
     const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
-    const weeklyCount = records.filter(r => new Date(r.cleaning_time) >= weekAgo).length
+    const weeklyCount = records.filter(r => {
+      const d = this.parseServerTime(r.timeValue || r.cleaning_time)
+      return d && d >= weekAgo
+    }).length
     const uniqueTypes = this.buildFilterOptions(records).length - 1
-    const lastTimeText = records[0] ? app.formatRelativeTime(records[0].cleaning_time) : ''
+    const lastTimeText = records[0] ? (() => {
+      const d = this.parseServerTime(records[0].timeValue || records[0].cleaning_time)
+      return d ? app.formatRelativeTime(d) : app.formatRelativeTime(records[0].cleaning_time)
+    })() : ''
     return { weeklyCount, uniqueTypes, lastTimeText }
   },
 

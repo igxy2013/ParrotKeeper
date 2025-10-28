@@ -250,6 +250,53 @@ Page({
     }
   },
 
+  // 解析服务端时间字符串，处理缺失时区的情况
+  parseServerTime(value) {
+    if (!value) return null
+    try {
+      if (value instanceof Date) return value
+      if (typeof value === 'number') {
+        const dNum = new Date(value)
+        return isNaN(dNum.getTime()) ? null : dNum
+      }
+      if (typeof value === 'string') {
+        const s = value.trim()
+        // 仅日期：YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+          return new Date(`${s}T00:00:00`)
+        }
+        // 含有 T 的 ISO 日期时间
+        if (s.includes('T')) {
+          // 已包含 Z 或时区偏移，直接解析
+          if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s)) {
+            const d = new Date(s)
+            return isNaN(d.getTime()) ? null : d
+          }
+          // 无时区信息，按 UTC 处理以纠正服务器以 UTC 存储的时间
+          const dUtc = new Date(s + 'Z')
+          if (!isNaN(dUtc.getTime())) return dUtc
+          // 兜底：按本地解析
+          const dLocal = new Date(s)
+          return isNaN(dLocal.getTime()) ? null : dLocal
+        }
+        // 空格分隔的日期时间
+        const isoLocal = s.replace(' ', 'T')
+        // 优先按 UTC 解析
+        let d = new Date(isoLocal + 'Z')
+        if (!isNaN(d.getTime())) return d
+        // 兜底：本地解析
+        d = new Date(isoLocal)
+        if (!isNaN(d.getTime())) return d
+        // iOS 兜底
+        d = new Date(s.replace(/-/g, '/'))
+        return isNaN(d.getTime()) ? null : d
+      }
+      return null
+    } catch (e) {
+      return null
+    }
+  },
+
   // 加载最近记录
   async loadRecentRecords() {
     try {
@@ -271,12 +318,15 @@ Page({
           res.data.health.forEach(record => {
             const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
             const recordType = record.record_type || '健康检查'
+            const rawTime = record.record_date
+            const dt = this.parseServerTime(rawTime)
             allRecords.push({
               id: `health_${record.id}`,
               title: `进行了${recordType}`,
               type: 'health',
               parrot_name: parrotName,
-              time: app.formatRelativeTime(record.record_date)
+              timeValue: dt ? dt.toISOString() : rawTime,
+              timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(rawTime)
             })
           })
         }
@@ -290,18 +340,26 @@ Page({
           res.data.breeding.forEach(record => {
             const maleName = record.male_parrot_name || (record.male_parrot && record.male_parrot.name) || ''
             const femaleName = record.female_parrot_name || (record.female_parrot && record.female_parrot.name) || ''
+            const rawTime = record.mating_date || record.created_at
             allRecords.push({
               id: `breeding_${record.id}`,
               title: '进行了配对',
               type: 'breeding',
               parrot_name: `${maleName} × ${femaleName}`,
-              time: app.formatRelativeTime(record.mating_date || record.created_at)
+              timeValue: rawTime,
+              timeText: app.formatRelativeTime(rawTime)
             })
           })
         }
         
-        // 按时间排序，最新的在前
-        allRecords.sort((a, b) => new Date(b.time) - new Date(a.time))
+        // 按时间排序，最新的在前（使用解析后的时间）
+        allRecords.sort((a, b) => {
+          const da = this.parseServerTime(a.timeValue || a.time)
+          const db = this.parseServerTime(b.timeValue || b.time)
+          const ma = da ? da.getTime() : 0
+          const mb = db ? db.getTime() : 0
+          return mb - ma
+        })
         
         // 只取前5条
         const recentRecords = allRecords.slice(0, 5)
@@ -320,12 +378,14 @@ Page({
     const grouped = {}
     records.forEach(record => {
       const time = record.feeding_time
+      const dt = this.parseServerTime(time)
       const key = `${time}_${record.notes || ''}_${record.amount || ''}`
       if (!grouped[key]) {
         grouped[key] = {
           id: `feeding_group_${record.id || key}`,
           type: 'feeding',
-          time: app.formatRelativeTime(time),
+          timeValue: dt ? dt.toISOString() : time,
+          timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(time),
           parrot_names: [],
           feed_type_names: []
         }
@@ -344,10 +404,17 @@ Page({
       title: `喂食了${item.feed_type_names.join('、')}`,
       type: 'feeding',
       parrot_name: item.parrot_names.join('、'),
-      time: item.time
+      timeValue: item.timeValue,
+      timeText: item.timeText
     }))
     // 按时间倒序
-    result.sort((a, b) => new Date(b.time) - new Date(a.time))
+    result.sort((a, b) => {
+      const da = this.parseServerTime(b.timeValue || b.time)
+      const db = this.parseServerTime(a.timeValue || a.time)
+      const ma = da ? da.getTime() : 0
+      const mb = db ? db.getTime() : 0
+      return ma - mb
+    })
     return result
   },
 
@@ -356,36 +423,56 @@ Page({
     const grouped = {}
     records.forEach(record => {
       const time = record.cleaning_time
-      const key = `${time}_${record.cleaning_type || ''}_${record.notes || ''}`
+      const dt = this.parseServerTime(time)
+      // 与清洁列表页保持一致：按时间 + 备注 + 描述分组
+      // 这样可将同一时间的多清洁类型合并为一组
+      const key = `${time}_${record.notes || ''}_${record.description || ''}`
       if (!grouped[key]) {
         grouped[key] = {
           id: `cleaning_group_${record.id || key}`,
           type: 'cleaning',
-          time: app.formatRelativeTime(time),
+          timeValue: dt ? dt.toISOString() : time,
+          timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(time),
           parrot_names: [],
-          cleaning_type: record.cleaning_type || '',
-          cleaning_type_text: record.cleaning_type_text || record.cleaning_type || ''
+          cleaning_type_names: [],
+          cleaning_type_ids: []
         }
       }
       const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
       if (parrotName && !grouped[key].parrot_names.includes(parrotName)) {
         grouped[key].parrot_names.push(parrotName)
       }
-      // 如果同一组记录的清洁类型不同，合并为"综合清洁"
-      if (grouped[key].cleaning_type && record.cleaning_type && grouped[key].cleaning_type !== record.cleaning_type) {
-        grouped[key].cleaning_type = '综合'
-        grouped[key].cleaning_type_text = '综合'
+      // 收集合并清洁类型名称与ID
+      const name = record.cleaning_type_text || record.cleaning_type || '清洁'
+      if (name && !grouped[key].cleaning_type_names.includes(name)) {
+        grouped[key].cleaning_type_names.push(name)
+      }
+      if (record.cleaning_type && !grouped[key].cleaning_type_ids.includes(record.cleaning_type)) {
+        grouped[key].cleaning_type_ids.push(record.cleaning_type)
       }
     })
-    const result = Object.values(grouped).map(item => ({
-      id: item.id,
-      title: `进行了${item.cleaning_type_text || item.cleaning_type || '清洁'}`,
-      type: 'cleaning',
-      parrot_name: item.parrot_names.join('、'),
-      time: item.time
-    }))
+    const result = Object.values(grouped).map(item => {
+      const typeNames = item.cleaning_type_names
+      const display = typeNames.length <= 1
+        ? (typeNames[0] || '清洁')
+        : '综合清洁'
+      return {
+        id: item.id,
+        title: `进行了${display}`,
+        type: 'cleaning',
+        parrot_name: item.parrot_names.join('、'),
+        timeValue: item.timeValue,
+        timeText: item.timeText
+      }
+    })
     // 按时间倒序
-    result.sort((a, b) => new Date(b.time) - new Date(a.time))
+    result.sort((a, b) => {
+      const da = this.parseServerTime(b.timeValue || b.time)
+      const db = this.parseServerTime(a.timeValue || a.time)
+      const ma = da ? da.getTime() : 0
+      const mb = db ? db.getTime() : 0
+      return ma - mb
+    })
     return result
   },
 

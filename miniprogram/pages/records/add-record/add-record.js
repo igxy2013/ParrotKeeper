@@ -245,9 +245,7 @@ Page({
       { id: 'toys', name: '玩具清洁', selected: false },
       { id: 'perches', name: '栖木清洁', selected: false },
       { id: 'food_water', name: '食物和水清洁', selected: false },
-      { id: 'disinfection', name: '消毒', selected: false },
-      { id: 'water_change', name: '饮用水更换', selected: false },
-      { id: 'water_bowl_clean', name: '水碗清洁', selected: false }
+      { id: 'disinfection', name: '消毒', selected: false }
     ]
     this.setData({
       cleaningTypeList: cleaningTypes
@@ -946,7 +944,7 @@ Page({
             const payload = {
               ...baseCommon,
               type: 'cleaning',
-              record_time: timeStr,
+              cleaning_time: timeStr,
               parrot_ids: formData.parrot_ids,
               cleaning_types: formData.cleaning_types || [],
               description: formData.description
@@ -961,7 +959,7 @@ Page({
           const payload = {
             ...baseCommon,
             type: 'cleaning',
-            record_time: timeStr,
+            cleaning_time: timeStr,
             parrot_ids: formData.parrot_ids,
             cleaning_types: formData.cleaning_types || [],
             description: formData.description

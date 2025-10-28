@@ -153,7 +153,7 @@
           </view>
           <view class="activity-content">
             <text class="activity-title">给{{item.parrot_name}}{{item.title}}</text>
-            <text class="activity-subtitle">{{item.time}}</text>
+            <text class="activity-subtitle">{{item.timeText || item.time}}</text>
           </view>
           <view class="activity-dot {{item.type === 'feeding' ? 'orange' : (item.type === 'health' ? 'green' : (item.type === 'cleaning' ? 'blue' : 'purple'))}}"></view>
         </view>

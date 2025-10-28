@@ -414,6 +414,28 @@ Page({
     this.loadStats();
   },
 
+  // 为弹窗头部计算胶囊避让内边距（与首页实现保持一致）
+  computeModalCapsulePadding() {
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+      const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+      if (win && rect && typeof win.windowWidth === 'number') {
+        const rightGap = win.windowWidth - rect.right
+        const modalRightPaddingPx = rightGap + rect.width + 16
+        const modalTopPaddingPx = Math.max(0, rect.top - 4)
+        const modalTopOffsetPx = Math.max(0, rect.bottom + 12)
+        let modalBottomOffsetPx = 24
+        if (win && win.safeArea && typeof win.windowHeight === 'number') {
+          const bottomInset = win.windowHeight - win.safeArea.bottom
+          modalBottomOffsetPx = Math.max(24, bottomInset + 12)
+        }
+        this.setData({ modalRightPaddingPx, modalTopPaddingPx, modalTopOffsetPx, modalBottomOffsetPx })
+      }
+    } catch (e) {
+      this.setData({ modalRightPaddingPx: 0, modalTopPaddingPx: 0, modalTopOffsetPx: 24, modalBottomOffsetPx: 24 })
+    }
+  },
+
   onSetNewType(e) {
     const type = e.currentTarget.dataset.type
     const category = type === '收入' ? '繁殖销售' : '食物'
@@ -671,25 +693,4 @@ showEditRecord: false
   }
 })
 
-// 为弹窗头部计算胶囊避让内边距（与首页实现保持一致）
-Page.prototype.computeModalCapsulePadding = function () {
-  try {
-    const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
-    const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
-    if (win && rect && typeof win.windowWidth === 'number') {
-      const rightGap = win.windowWidth - rect.right
-      const modalRightPaddingPx = rightGap + rect.width + 16
-      const modalTopPaddingPx = Math.max(0, rect.top - 4)
-      const modalTopOffsetPx = Math.max(0, rect.bottom + 12)
-      let modalBottomOffsetPx = 24
-      if (win && win.safeArea && typeof win.windowHeight === 'number') {
-        const bottomInset = win.windowHeight - win.safeArea.bottom
-        modalBottomOffsetPx = Math.max(24, bottomInset + 12)
-      }
-      this.setData({ modalRightPaddingPx, modalTopPaddingPx, modalTopOffsetPx, modalBottomOffsetPx })
-    }
-  } catch (e) {
-    this.setData({ modalRightPaddingPx: 0, modalTopPaddingPx: 0, modalTopOffsetPx: 24, modalBottomOffsetPx: 24 })
-  }
-}
 
