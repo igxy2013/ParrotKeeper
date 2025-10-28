@@ -125,9 +125,13 @@
               <view class="grid-label">性别</view>
               <view class="grid-value">{{parrot.gender === 'male' ? '雄性' : parrot.gender === 'female' ? '雌性' : '未知'}}</view>
             </view>
+            <view class="info-grid-item color-info">
+              <view class="grid-label">主要颜色</view>
+              <view class="grid-value">{{parrot.color || '未设置'}}</view>
+            </view>
             <view class="info-grid-item weight-info">
               <view class="grid-label">体重</view>
-              <view class="grid-value">{{parrot.weight || '未记录'}}</view>
+              <view class="grid-value">{{parrot.weight ? (parrot.weight % 1 === 0 ? parrot.weight : parrot.weight.toFixed(1)) + 'g' : '未记录'}}</view>
             </view>
             <view class="info-grid-item number-info">
               <view class="grid-label">鹦鹉编号</view>

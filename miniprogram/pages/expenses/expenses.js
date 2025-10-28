@@ -4,6 +4,7 @@ Page({
   data: {
     loading: false,
     showAddRecord: false,
+    showEditRecord: false, // 新增：编辑记录弹窗显示状态
     selectedParrot: '全部',
     selectedCategory: '全部',
     selectedType: '全部',
@@ -71,9 +72,21 @@ Page({
       description: '',
       date: new Date().toISOString().split('T')[0]
     },
+    // 新增：编辑记录数据
+    editRecord: {
+      id: null,
+      type: '支出',
+      parrot: '小彩',
+      category: '食物',
+      amount: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0]
+    },
     parrotIndex: 1,
     categoryIndex: 0,
+    editCategoryIndex: 0, // 新增：编辑时的类别索引
     modalCategories: [],
+    editModalCategories: [], // 新增：编辑弹窗的类别选项
     // 弹窗避让参数
     modalTopOffsetPx: 24,
     modalBottomOffsetPx: 24,
@@ -493,7 +506,7 @@ Page({
 
   onSetNewType(e) {
     const type = e.currentTarget.dataset.type
-    const category = type === '收入' ? '繁殖收入' : '食物'
+    const category = type === '收入' ? '繁殖销售' : '食物'
     
     this.setData({
       'newRecord.type': type,
@@ -559,7 +572,7 @@ Page({
       if (newRecord.type === '收入') {
         // 收入类别映射到后端值
         const incomeMap = {
-          '繁殖收入': 'breeding_sale',
+          '繁殖销售': 'breeding_sale',
           '出售用品': 'bird_sale',
           '培训服务': 'service',
           '其他收入': 'other'
@@ -659,6 +672,302 @@ Page({
     const selectedType = this.data.types[e.detail.value]
     this.setData({ selectedType })
     this.updateFilteredRecords()
+  },
+
+  // 编辑记录相关方法
+  onEditRecord(e) {
+    const record = e.currentTarget.dataset.record;
+    console.log('编辑记录:', record);
+    
+    // 设置编辑记录数据
+    this.setData({
+      editRecord: {
+        id: record.id,
+        type: record.type,
+        parrot: record.parrot || '小彩',
+        category: record.category,
+        amount: record.amount.toString(),
+        description: record.description || '',
+        date: record.date
+      },
+      showEditRecord: true
+    });
+    
+    // 更新编辑弹窗的类别选项
+    this.updateEditModalCategories();
+    
+    // 设置类别索引
+    this.setEditCategoryIndex();
+    
+    // 计算弹窗避让参数
+    this.computeModalCapsulePadding();
+  },
+
+onHideEditRecord() {
+this.setData({
+showEditRecord: false
+});
+},
+
+updateEditModalCategories() {
+const editType = this.data.editRecord.type;
+let categories = [];
+
+if (editType === '收入') {
+categories = this.data.incomeCategories.filter(cat => cat !== '全部').map(cat => ({
+label: cat,
+value: cat
+}));
+} else {
+categories = this.data.expenseCategories.filter(cat => cat !== '全部').map(cat => ({
+label: cat,
+value: cat
+}));
+}
+
+this.setData({
+editModalCategories: categories
+});
+},
+
+setEditCategoryIndex() {
+const categories = this.data.editModalCategories;
+const currentCategory = this.data.editRecord.category;
+const index = categories.findIndex(cat => cat.label === currentCategory);
+
+this.setData({
+editCategoryIndex: index >= 0 ? index : 0
+});
+},
+
+onSetEditType(e) {
+const type = e.currentTarget.dataset.type;
+const editRecord = { ...this.data.editRecord };
+editRecord.type = type;
+
+// 切换类型时重置类别为第一个
+if (type === '收入') {
+editRecord.category = this.data.incomeCategories[1]; // 跳过'全部'
+} else {
+editRecord.category = this.data.expenseCategories[1]; // 跳过'全部'
+}
+
+this.setData({
+editRecord: editRecord,
+editCategoryIndex: 0
+});
+
+this.updateEditModalCategories();
+},
+
+onEditCategoryChange(e) {
+const index = e.detail.value;
+const category = this.data.editModalCategories[index];
+const editRecord = { ...this.data.editRecord };
+editRecord.category = category.label;
+
+this.setData({
+editRecord: editRecord,
+editCategoryIndex: index
+});
+},
+
+onEditAmountChange(e) {
+const editRecord = { ...this.data.editRecord };
+editRecord.amount = e.detail.value;
+this.setData({
+editRecord: editRecord
+});
+},
+
+onEditDescriptionChange(e) {
+const editRecord = { ...this.data.editRecord };
+editRecord.description = e.detail.value;
+this.setData({
+editRecord: editRecord
+});
+},
+
+onEditDateChange(e) {
+const editRecord = { ...this.data.editRecord };
+editRecord.date = e.detail.value;
+this.setData({
+editRecord: editRecord
+});
+},
+
+onUpdateRecord: async function() {
+const { editRecord } = this.data;
+
+// 验证必填字段
+if (!editRecord.amount || parseFloat(editRecord.amount) <= 0) {
+wx.showToast({
+title: '请输入有效金额',
+icon: 'none'
+});
+return;
+}
+
+if (!editRecord.category) {
+wx.showToast({
+title: '请选择类别',
+icon: 'none'
+});
+return;
+}
+
+try {
+wx.showLoading({
+title: '保存中...'
+});
+
+const openid = wx.getStorageSync('openid');
+const userMode = wx.getStorageSync('userMode') || 'personal';
+
+// 构建请求数据
+const requestData = {
+type: editRecord.type === '收入' ? 'income' : 'expense',
+category: editRecord.category,
+amount: parseFloat(editRecord.amount),
+description: editRecord.description,
+date: editRecord.date,
+parrot: editRecord.parrot
+};
+
+console.log('更新记录请求数据:', requestData);
+
+// 根据记录类型选择API端点
+const apiUrl = editRecord.type === '收入' 
+? `${app.globalData.baseUrl}/api/expenses/incomes/${editRecord.id}`
+: `${app.globalData.baseUrl}/api/expenses/${editRecord.id}`;
+
+const response = await new Promise((resolve, reject) => {
+wx.request({
+url: apiUrl,
+method: 'PUT',
+data: requestData,
+header: {
+'Content-Type': 'application/json',
+'X-OpenID': openid,
+'X-User-Mode': userMode
+},
+success: resolve,
+fail: reject
+});
+});
+
+console.log('更新记录响应:', response);
+
+if (response.statusCode === 200 && response.data.success) {
+wx.showToast({
+title: '保存成功',
+icon: 'success'
+});
+
+// 隐藏弹窗
+this.setData({
+showEditRecord: false
+});
+
+// 重新加载数据
+await this.loadExpenses();
+await this.loadStats();
+
+} else {
+throw new Error(response.data.message || '保存失败');
+}
+
+} catch (error) {
+console.error('更新记录失败:', error);
+wx.showToast({
+title: error.message || '保存失败',
+icon: 'none'
+});
+} finally {
+wx.hideLoading();
+}
+},
+
+  // 删除记录功能
+  onDeleteRecord(e) {
+    const record = e.currentTarget.dataset.record;
+    console.log('删除记录:', record);
+    
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除这条${record.type}记录吗？\n\n类别：${record.category}\n金额：¥${record.amount}\n描述：${record.description || '无描述'}`,
+      confirmText: '删除',
+      confirmColor: '#dc2626',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          this.deleteRecord(record);
+        }
+      }
+    });
+  },
+
+  async deleteRecord(record) {
+    try {
+      wx.showLoading({
+        title: '删除中...'
+      });
+      
+      const openid = wx.getStorageSync('openid');
+      const userMode = wx.getStorageSync('userMode') || 'personal';
+      
+      // 根据记录类型选择API端点
+      // 从record.id中提取实际的ID（去掉前缀）
+      const actualId = record.id.replace(/^(expense_|income_)/, '');
+      const apiUrl = record.type === '收入' 
+        ? `${app.globalData.baseUrl}/api/expenses/incomes/${actualId}`
+        : `${app.globalData.baseUrl}/api/expenses/${actualId}`;
+      
+      console.log('删除记录API URL:', apiUrl);
+      
+      const response = await new Promise((resolve, reject) => {
+        wx.request({
+          url: apiUrl,
+          method: 'DELETE',
+          header: {
+            'Content-Type': 'application/json',
+            'X-OpenID': openid,
+            'X-User-Mode': userMode
+          },
+          success: resolve,
+          fail: reject
+        });
+      });
+      
+      console.log('删除记录响应:', response);
+      
+      if (response.statusCode === 200 && response.data.success) {
+        wx.showToast({
+          title: '删除成功',
+          icon: 'success'
+        });
+        
+        // 重置页码并重新加载数据
+        this.setData({
+          page: 1,
+          records: [],
+          hasMore: true
+        });
+        await this.loadExpenses();
+        await this.loadStats();
+        
+      } else {
+        throw new Error(response.data.message || '删除失败');
+      }
+      
+    } catch (error) {
+      console.error('删除记录失败:', error);
+      wx.showToast({
+        title: error.message || '删除失败',
+        icon: 'none'
+      });
+    } finally {
+      wx.hideLoading();
+    }
   }
 })
-

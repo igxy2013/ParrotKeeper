@@ -369,6 +369,24 @@
   background: linear-gradient(135deg, #dcfce7, #bbf7d0);
 }
 
+.cleaning-btn {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: #2563eb;
+}
+
+.cleaning-btn:hover {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.breeding-btn {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  color: #059669;
+}
+
+.breeding-btn:hover {
+  background: linear-gradient(135deg, #dcfce7, #a7f3d0);
+}
+
 .training-btn {
   background: linear-gradient(135deg, #faf5ff, #e9d5ff);
   color: #9333ea;
@@ -481,6 +499,10 @@
   background: linear-gradient(135deg, #fce7f3, #fbcfe8);
 }
 
+.info-grid-item.color-info {
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+}
+
 .info-grid-item.weight-info {
   background: linear-gradient(135deg, #dcfce7, #bbf7d0);
 }
@@ -525,6 +547,10 @@
 
 .gender-info .grid-label {
   color: #ec4899;
+}
+
+.color-info .grid-label {
+  color: #8b5cf6;
 }
 
 .weight-info .grid-label {

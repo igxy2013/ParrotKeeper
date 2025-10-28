@@ -654,6 +654,46 @@ def create_income():
         db.session.rollback()
         return error_response(f'创建收入记录失败: {str(e)}')
 
+@expenses_bp.route('/incomes/<int:income_id>', methods=['DELETE'])
+@login_required
+def delete_income(income_id):
+    """删除收入记录"""
+    try:
+        from team_models import TeamMember
+        
+        user = request.current_user
+        
+        # 在团队模式下，检查用户是否为管理员
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id,
+                user_id=user.id,
+                is_active=True
+            ).first()
+            
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能删除收入记录', 403)
+        
+        # 根据用户模式获取可访问的收入ID
+        income_ids = get_accessible_income_ids_by_mode(user)
+        
+        # 检查收入是否可访问
+        if income_id not in income_ids:
+            return error_response('收入记录不存在', 404)
+        
+        income = Income.query.get(income_id)
+        if not income:
+            return error_response('收入记录不存在', 404)
+        
+        db.session.delete(income)
+        db.session.commit()
+        
+        return success_response(None, '收入记录删除成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'删除收入记录失败: {str(e)}')
+
 @expenses_bp.route('/incomes/categories', methods=['GET'])
 @login_required
 def get_income_categories():

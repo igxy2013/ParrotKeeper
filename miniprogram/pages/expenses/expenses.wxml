@@ -97,7 +97,17 @@
                 <text class="parrot-tag" wx:if="{{item.parrot}}">{{item.parrot}}</text>
               </view>
             </view>
-            <view class="list-item-value {{item.type === '收入' ? 'income' : 'expense'}}">¥{{item.amount}}</view>
+            <view class="list-item-right">
+              <view class="list-item-value {{item.type === '收入' ? 'income' : 'expense'}}">¥{{item.amount}}</view>
+              <view class="list-item-actions">
+                <button class="action-btn edit-btn" bindtap="onEditRecord" data-record="{{item}}">
+                  <text class="action-icon">✏️</text>
+                </button>
+                <button class="action-btn delete-btn" bindtap="onDeleteRecord" data-record="{{item}}">
+                  <text class="action-icon">🗑️</text>
+                </button>
+              </view>
+            </view>
           </view>
         </view>
       </block>
@@ -169,6 +179,64 @@
         <view class="modal-actions">
           <button class="btn btn-secondary" bindtap="onHideAddRecord">取消</button>
           <button class="btn {{newRecord.type === '收入' ? 'btn-success' : 'btn-primary'}}" bindtap="onAddRecord">添加</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 编辑记录弹窗 -->
+    <view class="modal-overlay" wx:if="{{showEditRecord}}">
+      <view class="modal-content" style="margin-top: {{modalTopOffsetPx}}px; margin-bottom: {{modalBottomOffsetPx}}px;">
+        <view class="modal-header">
+          <text class="modal-title">编辑收支记录</text>
+          <button class="modal-close" bindtap="onHideEditRecord">✖</button>
+        </view>
+        <view class="modal-body">
+          <view class="form-item">
+            <text class="form-label">记录类型</text>
+            <view class="toggle-group">
+              <button class="toggle {{editRecord.type === '收入' ? 'active income' : ''}}" bindtap="onSetEditType" data-type="收入">收入</button>
+              <button class="toggle {{editRecord.type === '支出' ? 'active expense' : ''}}" bindtap="onSetEditType" data-type="支出">支出</button>
+            </view>
+          </view>
+
+          <view class="form-item">
+            <!-- 已移除选择鹦鹉字段 -->
+          </view>
+
+          <view class="form-item">
+            <text class="form-label">{{editRecord.type}}类别</text>
+            <picker range="{{editModalCategories}}" range-key="label" value="{{editCategoryIndex}}" bindchange="onEditCategoryChange">
+              <view class="picker-view">
+                <text class="picker-text">{{editRecord.category || editModalCategories[0].label}}</text>
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+
+          <view class="form-item">
+            <text class="form-label">{{editRecord.type}}金额</text>
+            <input type="number" value="{{editRecord.amount}}" bindinput="onEditAmountChange" placeholder="请输入金额" class="form-input" />
+          </view>
+
+          <view class="form-item">
+            <text class="form-label">{{editRecord.type}}描述</text>
+            <input type="text" value="{{editRecord.description}}" bindinput="onEditDescriptionChange" placeholder="请输入{{editRecord.type}}描述" class="form-input" />
+          </view>
+
+          <view class="form-item">
+            <text class="form-label">{{editRecord.type}}日期</text>
+            <picker mode="date" value="{{editRecord.date}}" bindchange="onEditDateChange">
+              <view class="picker-view">
+                <text class="picker-text">{{editRecord.date}}</text>
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <view class="modal-actions">
+          <button class="btn btn-secondary" bindtap="onHideEditRecord">取消</button>
+          <button class="btn {{editRecord.type === '收入' ? 'btn-success' : 'btn-primary'}}" bindtap="onUpdateRecord">保存</button>
         </view>
       </view>
     </view>

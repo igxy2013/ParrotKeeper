@@ -198,6 +198,7 @@ Page({
         
         const newParrots = parrots.map(parrot => ({
           ...parrot,
+          weight: parrot.weight ? parseFloat(parrot.weight) : null,
           acquisition_date_formatted: app.formatDate(parrot.acquisition_date)
         }))
         
