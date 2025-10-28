@@ -432,7 +432,7 @@ Page({
             if (loginRes.code) {
               // 调用后端登录接口
               wx.request({
-                url: 'https://bimai.xyz/api/auth/login',
+                url: `${getApp().globalData.baseUrl}/api/auth/login`,
                 method: 'POST',
                 data: {
                   code: loginRes.code,
