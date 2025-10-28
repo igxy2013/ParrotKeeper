@@ -23,6 +23,7 @@ class User(db.Model):
     # 关系
     parrots = db.relationship('Parrot', backref='owner', lazy=True, cascade='all, delete-orphan')
     expenses = db.relationship('Expense', backref='user', lazy=True, cascade='all, delete-orphan')
+    incomes = db.relationship('Income', backref='user', lazy=True, cascade='all, delete-orphan')
     reminders = db.relationship('Reminder', backref='user', lazy=True, cascade='all, delete-orphan')
 
 class ParrotSpecies(db.Model):
@@ -67,6 +68,7 @@ class Parrot(db.Model):
     health_records = db.relationship('HealthRecord', backref='parrot', lazy=True, cascade='all, delete-orphan')
     cleaning_records = db.relationship('CleaningRecord', backref='parrot', lazy=True, cascade='all, delete-orphan')
     expenses = db.relationship('Expense', backref='parrot', lazy=True)
+    incomes = db.relationship('Income', backref='parrot', lazy=True)
     reminders = db.relationship('Reminder', backref='parrot', lazy=True, cascade='all, delete-orphan')
 
 class FeedType(db.Model):
@@ -172,6 +174,19 @@ class Expense(db.Model):
     amount = db.Column(db.Numeric(8, 2), nullable=False)
     description = db.Column(db.String(255))
     expense_date = db.Column(db.Date, default=date.today)
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Income(db.Model):
+    __tablename__ = 'incomes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
+    category = db.Column(db.Enum('breeding_sale', 'bird_sale', 'service', 'competition', 'other'))
+    amount = db.Column(db.Numeric(8, 2), nullable=False)
+    description = db.Column(db.String(255))
+    income_date = db.Column(db.Date, default=date.today)
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

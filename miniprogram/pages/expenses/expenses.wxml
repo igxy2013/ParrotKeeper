@@ -27,8 +27,8 @@
       </view>
       <view class="stat-card expense">
         <view class="stat-icon">⬇️</view>
-        <view class="stat-value">¥{{stats.totalExpense}}</view>
-        <view class="stat-label">当前筛选支出（汇总）</view>
+        <view class="stat-value">¥{{stats.localTotalExpense || 0}}</view>
+        <view class="stat-label">当前筛选支出</view>
       </view>
     </view>
 
@@ -38,10 +38,10 @@
         <view class="stat-value">¥{{stats.netIncome}}</view>
         <view class="stat-label">净收入（汇总）</view>
       </view>
-      <view class="stat-card monthly">
-        <view class="stat-icon">⬇️</view>
-        <view class="stat-value">¥{{stats.totalExpense}}</view>
-        <view class="stat-label">支出（汇总）</view>
+      <view class="stat-card income">
+        <view class="stat-icon">⬆️</view>
+        <view class="stat-value">¥{{stats.totalIncome || 0}}</view>
+        <view class="stat-label">收入（汇总）</view>
       </view>
     </view>
 

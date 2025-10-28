@@ -27,9 +27,9 @@ Page({
 
     // 类别集合
     expenseCategories: ['全部', '食物', '医疗', '玩具', '笼具', '幼鸟', '种鸟', '其他'],
-    incomeCategories: ['全部', '繁殖收入', '出售用品', '培训服务', '其他收入'],
+    incomeCategories: ['全部', '繁殖销售', '鸟类销售', '服务收入', '比赛奖金', '其他收入'],
 
-    filterCategories: ['全部', '食物', '医疗', '玩具', '笼具', '幼鸟', '种鸟', '其他', '繁殖收入', '出售用品', '培训服务', '其他收入'],
+    filterCategories: ['全部', '食物', '医疗', '玩具', '笼具', '幼鸟', '种鸟', '其他', '繁殖销售', '鸟类销售', '服务收入', '比赛奖金', '其他收入'],
 
     // 展示用类别网格
     recordCategories: [
@@ -40,9 +40,10 @@ Page({
       { name: '幼鸟', iconText: '🐣', type: '支出' },
       { name: '种鸟', iconText: '🦜', type: '支出' },
       { name: '其他', iconText: '➕', type: '支出' },
-      { name: '繁殖收入', iconText: '🐣', type: '收入' },
-      { name: '出售用品', iconText: '🏪', type: '收入' },
-      { name: '培训服务', iconText: '🎓', type: '收入' },
+      { name: '繁殖销售', iconText: '🐣', type: '收入' },
+      { name: '鸟类销售', iconText: '🦜', type: '收入' },
+      { name: '服务收入', iconText: '🎓', type: '收入' },
+      { name: '比赛奖金', iconText: '🏆', type: '收入' },
       { name: '其他收入', iconText: '💵', type: '收入' },
     ],
 
@@ -250,38 +251,88 @@ Page({
           params.category = categoryKey
         }
       }
+
+      // 同时获取支出和收入记录
+      const [expenseRes, incomeRes] = await Promise.all([
+        app.request({
+          url: '/api/expenses',
+          method: 'GET',
+          data: params
+        }),
+        app.request({
+          url: '/api/expenses/incomes',
+          method: 'GET',
+          data: params
+        })
+      ])
       
-      const res = await app.request({
-        url: '/api/expenses',
-        method: 'GET',
-        data: params
-      })
+      let newRecords = []
       
-      if (res.success && res.data) {
-        const newRecords = res.data.items.map(item => ({
-          id: item.id,
+      // 处理支出记录
+      if (expenseRes.success && expenseRes.data) {
+        const expenseRecords = expenseRes.data.items.map(item => ({
+          id: `expense_${item.id}`,
           type: '支出',
           parrot: item.parrot_name || '未指定',
           category: this.data.categoryMap[item.category] || item.category,
           amount: item.amount,
           description: item.description || '',
           date: item.expense_date,
-          time: this.formatTimeForIOS(item.created_at)
+          time: this.formatTimeForIOS(item.created_at),
+          originalType: 'expense'
         }))
-        
-        const records = this.data.page === 1 ? newRecords : [...this.data.records, ...newRecords]
-        
-        this.setData({
-          records,
-          page: this.data.page + 1,
-          hasMore: res.data.has_next || false,
-          totalCount: typeof res.data.total === 'number' ? res.data.total : records.length
-        })
-        
-        this.updateFilteredRecords()
+        newRecords = [...newRecords, ...expenseRecords]
       }
+      
+      // 处理收入记录
+      if (incomeRes.success && incomeRes.data) {
+        // 收入类别映射
+        const incomeMap = {
+          'breeding_sale': '繁殖销售',
+          'bird_sale': '鸟类销售',
+          'service': '服务收入',
+          'competition': '比赛奖金',
+          'other': '其他收入'
+        }
+        
+        const incomeRecords = incomeRes.data.items.map(item => ({
+          id: `income_${item.id}`,
+          type: '收入',
+          parrot: item.parrot_name || '未指定',
+          category: incomeMap[item.category] || item.category,
+          amount: item.amount,
+          description: item.description || '',
+          date: item.income_date,
+          time: this.formatTimeForIOS(item.created_at),
+          originalType: 'income'
+        }))
+        newRecords = [...newRecords, ...incomeRecords]
+      }
+      
+      // 按日期排序（最新的在前）
+      newRecords.sort((a, b) => new Date(b.date) - new Date(a.date))
+      
+      const records = this.data.page === 1 ? newRecords : [...this.data.records, ...newRecords]
+      
+      // 计算总数和是否有更多数据
+      const expenseTotal = expenseRes.success ? (expenseRes.data.total || 0) : 0
+      const incomeTotal = incomeRes.success ? (incomeRes.data.total || 0) : 0
+      const totalCount = expenseTotal + incomeTotal
+      
+      const expenseHasNext = expenseRes.success ? (expenseRes.data.has_next || false) : false
+      const incomeHasNext = incomeRes.success ? (incomeRes.data.has_next || false) : false
+      const hasMore = expenseHasNext || incomeHasNext
+      
+      this.setData({
+        records,
+        page: this.data.page + 1,
+        hasMore,
+        totalCount
+      })
+      
+      this.updateFilteredRecords()
     } catch (error) {
-      console.error('加载支出记录失败:', error)
+      console.error('加载记录失败:', error)
       wx.showToast({
         title: '加载失败',
         icon: 'none'
@@ -304,7 +355,8 @@ Page({
       if (res.success && res.data) {
         this.setData({
           'stats.totalExpense': res.data.totalExpense || 0,
-          'stats.netIncome': (typeof res.data.netIncome === 'number') ? res.data.netIncome : -(res.data.totalExpense || 0)
+          'stats.totalIncome': res.data.totalIncome || 0,
+          'stats.netIncome': res.data.netIncome || 0
         })
       }
     } catch (error) {
@@ -501,17 +553,50 @@ Page({
     }
 
     try {
-      const formData = {
-        category: Object.keys(this.data.categoryMap).find(
+      let formData = {}
+      let apiUrl = ''
+      
+      if (newRecord.type === '收入') {
+        // 收入类别映射到后端值
+        const incomeMap = {
+          '繁殖收入': 'breeding_sale',
+          '出售用品': 'bird_sale',
+          '培训服务': 'service',
+          '其他收入': 'other'
+        }
+        const categoryValue = incomeMap[newRecord.category]
+        if (!categoryValue) {
+          wx.showToast({
+            title: '不支持的收入类别',
+            icon: 'none'
+          })
+          return
+        }
+        
+        formData = {
+          category: categoryValue,
+          amount: parseFloat(newRecord.amount),
+          description: newRecord.description,
+          income_date: newRecord.date
+        }
+        apiUrl = '/api/expenses/incomes'
+      } else {
+        // 支出类别映射到后端值
+        const categoryValue = Object.keys(this.data.categoryMap).find(
           key => this.data.categoryMap[key] === newRecord.category
-        ) || 'other',
-        amount: parseFloat(newRecord.amount),
-        description: newRecord.description,
-        expense_date: newRecord.date
+        ) || 'other'
+        
+        formData = {
+          category: categoryValue,
+          amount: parseFloat(newRecord.amount),
+          description: newRecord.description,
+          expense_date: newRecord.date
+        }
+        apiUrl = '/api/expenses'
       }
 
       const res = await app.request({
-        url: '/api/expenses',
+        url: apiUrl,
         method: 'POST',
         data: formData
       })
@@ -576,3 +661,4 @@ Page({
     this.updateFilteredRecords()
   }
 })
+

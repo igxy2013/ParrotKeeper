@@ -988,7 +988,7 @@ Page({
     })
   },
 
-  // 提交收支记录（支出走后端，收入暂不支持后端）
+  // 提交收支记录（支出走后端，收入现在也支持后端）
   async submitExpenseRecord() {
     const f = this.data.expenseForm
     if (!f || !f.amount || Number(f.amount) <= 0) {
@@ -1008,40 +1008,65 @@ Page({
       parrot_id = parrots[f.parrotIndex].id
     }
 
+    let payload = {}
+    let apiUrl = ''
+    
     if (f.type === '收入') {
-      // 暂无收入后端接口，遵循UI设计仅展示交互
-      app.showError('收入记录暂未支持后端提交')
-      return
-    }
+      // 收入类别映射到后端值
+      const incomeMap = {
+        '销售幼鸟': 'bird_sale',
+        '配种服务': 'service',
+        '繁殖销售': 'breeding_sale',
+        '比赛奖金': 'competition',
+        '其他收入': 'other',
+        '其他': 'other'
+      }
+      const categoryValue = incomeMap[categoryLabel]
+      if (!categoryValue) {
+        app.showError('不支持的收入类别')
+        return
+      }
+      
+      // 组装收入payload
+      payload = {
+        category: categoryValue,
+        amount: Number(f.amount),
+        description: f.description || '',
+        income_date: f.date || ''
+      }
+      if (parrot_id) payload.parrot_id = parrot_id
+      apiUrl = '/api/expenses/incomes'
+    } else {
+      // 支出类别映射到后端值
+      const expenseMap = {
+        '食物': 'food',
+        '医疗': 'medical',
+        '玩具': 'toys',
+        '笼具': 'cage',
+        '幼鸟': 'baby_bird',
+        '种鸟': 'breeding_bird',
+        '其他': 'other'
+      }
+      const categoryValue = expenseMap[categoryLabel]
+      if (!categoryValue) {
+        app.showError('不支持的支出类别')
+        return
+      }
 
-    // 支出类别映射到后端值
-    const expenseMap = {
-      '食物': 'food',
-      '医疗': 'medical',
-      '玩具': 'toys',
-      '笼具': 'cage',
-      '幼鸟': 'baby_bird',
-      '种鸟': 'breeding_bird',
-      '其他': 'other'
+      // 组装支出payload
+      payload = {
+        category: categoryValue,
+        amount: Number(f.amount),
+        description: f.description || '',
+        expense_date: f.date || ''
+      }
+      if (parrot_id) payload.parrot_id = parrot_id
+      apiUrl = '/api/expenses'
     }
-    const categoryValue = expenseMap[categoryLabel]
-    if (!categoryValue) {
-      app.showError('不支持的支出类别')
-      return
-    }
-
-    // 组装payload
-    const payload = {
-      category: categoryValue,
-      amount: Number(f.amount),
-      description: f.description || '',
-      expense_date: f.date || ''
-    }
-    if (parrot_id) payload.parrot_id = parrot_id
 
     try {
       const res = await app.request({
-        url: '/api/expenses',
+        url: apiUrl,
         method: 'POST',
         data: payload
       })
