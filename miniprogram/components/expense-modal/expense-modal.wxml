@@ -4,7 +4,7 @@
     <!-- 渐变头部与关闭按钮 -->
     <view class="modal-header-gradient">
       <view class="modal-header-row">
-        <text class="modal-title">添加收支记录</text>
+        <text class="modal-title">{{isEdit ? '编辑收支记录' : '添加收支记录'}}</text>
         <view class="modal-close-btn" bindtap="onClose"><image class="modal-close-icon-img" src="/images/icons/close-white.svg" mode="widthFix"/></view>
       </view>
     </view>
@@ -62,7 +62,7 @@
     <!-- 底部按钮 -->
     <view class="modal-footer">
       <button class="btn-secondary" bindtap="onClose">取消</button>
-      <button class="btn-add {{formData.type==='收入' ? 'btn-add-income' : 'btn-add-expense'}}" bindtap="onSubmit" disabled="{{!canSubmit}}">添加</button>
+      <button class="btn-add {{formData.type==='收入' ? 'btn-add-income' : 'btn-add-expense'}}" bindtap="onSubmit" disabled="{{!canSubmit}}">{{isEdit ? '保存' : '添加'}}</button>
     </view>
   </view>
 </view>

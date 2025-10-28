@@ -19,61 +19,20 @@
     </view>
 
     <!-- 统计卡片 -->
-    <view class="stats-grid">
+    <view class="stats-grid two-columns">
       <view class="stat-card income">
         <view class="stat-icon">⬆️</view>
         <view class="stat-value">¥{{stats.localTotalIncome || 0}}</view>
-        <view class="stat-label">当前筛选收入</view>
+        <view class="stat-label">收入</view>
       </view>
       <view class="stat-card expense">
         <view class="stat-icon">⬇️</view>
         <view class="stat-value">¥{{stats.localTotalExpense || 0}}</view>
-        <view class="stat-label">当前筛选支出</view>
+        <view class="stat-label">支出</view>
       </view>
     </view>
 
-    <view class="stats-grid">
-      <view class="stat-card net {{stats.netIncome >= 0 ? 'positive' : 'negative'}}">
-        <view class="stat-icon">💼</view>
-        <view class="stat-value">¥{{stats.netIncome}}</view>
-        <view class="stat-label">净收入（汇总）</view>
-      </view>
-      <view class="stat-card income">
-        <view class="stat-icon">⬆️</view>
-        <view class="stat-value">¥{{stats.totalIncome || 0}}</view>
-        <view class="stat-label">收入（汇总）</view>
-      </view>
-    </view>
 
-    <!-- 筛选条件 -->
-    <view class="card">
-      <view class="card-header">
-        <text class="card-title">筛选条件</text>
-      </view>
-      <view class="card-content">
-        <view class="filter-section">
-          <text class="filter-label">记录类型</text>
-          <view class="chip-group chip-group-tight">
-            <block wx:for="{{types}}" wx:key="*this">
-              <button class="chip {{selectedType === item ? 'active ' + (item === '收入' ? 'income' : item === '支出' ? 'expense' : 'all') : ''}}" bindtap="onSelectType" data-type="{{item}}">{{item}}</button>
-            </block>
-          </view>
-        </view>
-
-        
-
-        <view class="filter-section">
-          <text class="filter-label">记录类别</text>
-          <view class="chip-group">
-            <block wx:for="{{filterCategories}}" wx:key="*this">
-              <button class="chip {{selectedCategory === item ? 'active category' : ''}}" bindtap="onSelectCategory" data-category="{{item}}">{{item}}</button>
-            </block>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    
 
     <!-- 记录列表 -->
     <view class="card">
@@ -119,7 +78,6 @@
       <view class="empty-state" wx:if="{{!loading && filteredRecords.length === 0}}">
         <view class="empty-icon">💰</view>
         <text class="empty-text">暂无记录</text>
-        <button class="btn btn-primary btn-small" bindtap="onShowAddRecord">添加第一条收支</button>
       </view>
         </view>
       </view>
@@ -134,62 +92,15 @@
       bind:success="onExpenseSuccess"
     />
 
-    <!-- 编辑记录弹窗 -->
-    <view class="modal-overlay" wx:if="{{showEditRecord}}">
-      <view class="modal-content" style="margin-top: {{modalTopOffsetPx}}px; margin-bottom: {{modalBottomOffsetPx}}px;">
-        <view class="modal-header">
-          <text class="modal-title">编辑收支记录</text>
-          <button class="modal-close" bindtap="onHideEditRecord">✖</button>
-        </view>
-        <view class="modal-body">
-          <view class="form-item">
-            <text class="form-label">记录类型</text>
-            <view class="toggle-group">
-              <button class="toggle {{editRecord.type === '收入' ? 'active income' : ''}}" bindtap="onSetEditType" data-type="收入">收入</button>
-              <button class="toggle {{editRecord.type === '支出' ? 'active expense' : ''}}" bindtap="onSetEditType" data-type="支出">支出</button>
-            </view>
-          </view>
-
-          <view class="form-item">
-            <!-- 已移除选择鹦鹉字段 -->
-          </view>
-
-          <view class="form-item">
-            <text class="form-label">{{editRecord.type}}类别</text>
-            <picker range="{{editModalCategories}}" range-key="label" value="{{editCategoryIndex}}" bindchange="onEditCategoryChange">
-              <view class="picker-view">
-                <text class="picker-text">{{editRecord.category || editModalCategories[0].label}}</text>
-                <text class="picker-arrow">▼</text>
-              </view>
-            </picker>
-          </view>
-
-          <view class="form-item">
-            <text class="form-label">{{editRecord.type}}金额</text>
-            <input type="number" value="{{editRecord.amount}}" bindinput="onEditAmountChange" placeholder="请输入金额" class="form-input" />
-          </view>
-
-          <view class="form-item">
-            <text class="form-label">{{editRecord.type}}描述</text>
-            <input type="text" value="{{editRecord.description}}" bindinput="onEditDescriptionChange" placeholder="请输入{{editRecord.type}}描述" class="form-input" />
-          </view>
-
-          <view class="form-item">
-            <text class="form-label">{{editRecord.type}}日期</text>
-            <picker mode="date" value="{{editRecord.date}}" bindchange="onEditDateChange">
-              <view class="picker-view">
-                <text class="picker-text">{{editRecord.date}}</text>
-                <text class="picker-arrow">▼</text>
-              </view>
-            </picker>
-          </view>
-        </view>
-
-        <view class="modal-actions">
-          <button class="btn btn-secondary" bindtap="onHideEditRecord">取消</button>
-          <button class="btn {{editRecord.type === '收入' ? 'btn-success' : 'btn-primary'}}" bindtap="onUpdateRecord">保存</button>
-        </view>
-      </view>
-    </view>
+    <!-- 编辑收支记录弹窗组件 -->
+    <expense-modal 
+      visible="{{showEditRecord}}" 
+      modalTopOffsetPx="{{modalTopOffsetPx}}"
+      modalBottomOffsetPx="{{modalBottomOffsetPx}}"
+      isEdit="{{true}}"
+      editRecord="{{editRecord}}"
+      bind:close="onHideEditRecord"
+      bind:success="onExpenseSuccess"
+    />
   </view>
 </view>

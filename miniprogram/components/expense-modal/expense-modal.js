@@ -14,6 +14,16 @@ Component({
     modalBottomOffsetPx: {
       type: Number,
       value: 24
+    },
+    // 编辑模式
+    isEdit: {
+      type: Boolean,
+      value: false
+    },
+    // 编辑的记录数据
+    editRecord: {
+      type: Object,
+      value: null
     }
   },
 
@@ -37,12 +47,26 @@ Component({
       if (visible) {
         this.initForm()
       }
+    },
+    'editRecord': function(editRecord) {
+      if (editRecord && this.data.visible) {
+        this.initFormWithEditData(editRecord)
+      }
     }
   },
 
   methods: {
     // 初始化表单
     initForm() {
+      if (this.data.isEdit && this.data.editRecord) {
+        this.initFormWithEditData(this.data.editRecord)
+      } else {
+        this.initFormForAdd()
+      }
+    },
+
+    // 初始化添加表单
+    initFormForAdd() {
       // 默认日期：今天
       const today = new Date()
       const yyyy = today.getFullYear()
@@ -63,6 +87,54 @@ Component({
         },
         categoryOptions,
         canSubmit: false
+      })
+    },
+
+    // 初始化编辑表单
+    initFormWithEditData(editRecord) {
+      let categoryOptions = []
+      let categoryIndex = 0
+      
+      if (editRecord.type === '收入') {
+        categoryOptions = this.data.incomeCategoryLabels || ['销售幼鸟','配种服务','其他收入']
+        // 根据category找到对应的index
+        const categoryMap = {
+          'bird_sale': '销售幼鸟',
+          'service': '配种服务',
+          'breeding_sale': '繁殖销售',
+          'competition': '比赛奖金',
+          'other': '其他收入'
+        }
+        const categoryLabel = categoryMap[editRecord.category] || editRecord.category
+        categoryIndex = categoryOptions.indexOf(categoryLabel)
+        if (categoryIndex === -1) categoryIndex = 0
+      } else {
+        categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
+        // 根据category找到对应的index
+        const categoryMap = {
+          'food': '食物',
+          'medical': '医疗',
+          'toys': '玩具',
+          'cage': '笼具',
+          'baby_bird': '幼鸟',
+          'breeding_bird': '种鸟',
+          'other': '其他'
+        }
+        const categoryLabel = categoryMap[editRecord.category] || editRecord.category
+        categoryIndex = categoryOptions.indexOf(categoryLabel)
+        if (categoryIndex === -1) categoryIndex = 0
+      }
+
+      this.setData({
+        formData: {
+          type: editRecord.type || '支出',
+          categoryIndex: categoryIndex,
+          amount: editRecord.amount ? editRecord.amount.toString() : '',
+          description: editRecord.description || '',
+          date: editRecord.date || ''
+        },
+        categoryOptions,
+        canSubmit: true
       })
     },
 
@@ -144,6 +216,7 @@ Component({
 
       let payload = {}
       let apiUrl = ''
+      let method = 'POST'
       
       if (f.type === '收入') {
         // 收入类别映射到后端值
@@ -168,7 +241,14 @@ Component({
           description: f.description || '',
           income_date: f.date || ''
         }
-        apiUrl = '/api/expenses/incomes'
+        
+        if (this.data.isEdit && this.data.editRecord) {
+          apiUrl = `/api/expenses/incomes/${this.data.editRecord.id}`
+          method = 'PUT'
+        } else {
+          apiUrl = '/api/expenses/incomes'
+          method = 'POST'
+        }
       } else {
         // 支出类别映射到后端值
         const expenseMap = {
@@ -193,25 +273,35 @@ Component({
           description: f.description || '',
           expense_date: f.date || ''
         }
-        apiUrl = '/api/expenses'
+        
+        if (this.data.isEdit && this.data.editRecord) {
+          apiUrl = `/api/expenses/${this.data.editRecord.id}`
+          method = 'PUT'
+        } else {
+          apiUrl = '/api/expenses'
+          method = 'POST'
+        }
       }
 
       try {
         const res = await app.request({
           url: apiUrl,
-          method: 'POST',
+          method: method,
           data: payload
         })
         if (res && res.success) {
-          wx.showToast({ title: '添加成功', icon: 'success' })
-          this.triggerEvent('success', { type: f.type, data: res.data })
+          const successMessage = this.data.isEdit ? '更新成功' : '添加成功'
+          wx.showToast({ title: successMessage, icon: 'success' })
+          this.triggerEvent('success', { type: f.type, data: res.data, isEdit: this.data.isEdit })
           this.onClose()
         } else {
-          app.showError((res && res.message) || '添加失败')
+          const errorMessage = this.data.isEdit ? '更新失败' : '添加失败'
+          app.showError((res && res.message) || errorMessage)
         }
       } catch (err) {
         console.error('提交收支记录失败:', err)
-        app.showError('网络错误，添加失败')
+        const errorMessage = this.data.isEdit ? '网络错误，更新失败' : '网络错误，添加失败'
+        app.showError(errorMessage)
       }
     }
   }
