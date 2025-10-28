@@ -365,16 +365,30 @@
   </view>
   <view class="menu-list">
     <block wx:for="{{menuItems}}" wx:key="index">
-      <view class="menu-item" bindtap="onMenuItemTap" data-title="{{item.title}}">
-        <view class="menu-item-icon {{item.bgClass}}">
-          <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" />
+      <block wx:if="{{item.isContact}}">
+        <button class="menu-item" open-type="contact" session-from="{{contactSessionFrom}}" bindcontact="onContact">
+          <view class="menu-item-icon {{item.bgClass}}">
+            <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" />
+          </view>
+          <view class="menu-item-content">
+            <view class="menu-item-title">{{item.title}}</view>
+            <view class="menu-item-desc">{{item.desc}}</view>
+          </view>
+          <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+        </button>
+      </block>
+      <block wx:else>
+        <view class="menu-item" bindtap="onMenuItemTap" data-title="{{item.title}}">
+          <view class="menu-item-icon {{item.bgClass}}">
+            <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" />
+          </view>
+          <view class="menu-item-content">
+            <view class="menu-item-title">{{item.title}}</view>
+            <view class="menu-item-desc">{{item.desc}}</view>
+          </view>
+          <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
         </view>
-        <view class="menu-item-content">
-          <view class="menu-item-title">{{item.title}}</view>
-          <view class="menu-item-desc">{{item.desc}}</view>
-        </view>
-        <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
-      </view>
+      </block>
     </block>
   </view>
 </view>

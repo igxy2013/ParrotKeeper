@@ -38,26 +38,26 @@
 }
 .add-icon { color: #fff; font-size: 36rpx; }
 
-.content { padding: 48rpx 24rpx; }
+.content { padding: 48rpx 24rpx; box-sizing: border-box; }
 
 .summary-card {
+  /* 参考喂食页统计卡片风格：更大圆角、更宽留白、更柔和阴影 */
   background: linear-gradient(90deg, #f472b6, #ec4899, #db2777);
   color: #ffffff;
-  border-radius: 32rpx;
-  padding: 32rpx;
-  box-shadow: 0 12rpx 32rpx rgba(236, 72, 153, 0.35);
   margin-bottom: 24rpx;
+  width: 100%;
+  box-sizing: border-box;
 }
-.summary-title { font-size: 32rpx; font-weight: 800; margin-bottom: 24rpx; }
+.summary-title { margin-bottom: 24rpx; }
 .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24rpx; }
 .summary-metric { text-align: center; }
-.summary-value { font-size: 40rpx; font-weight: 900; }
-.summary-label { margin-top: 8rpx; font-size: 24rpx; color: rgba(255,255,255,0.85); }
+.summary-value { }
+.summary-label { margin-top: 8rpx; color: rgba(255,255,255,0.8); }
 
-.filter-section { background: rgba(255,255,255,0.8); border-radius: 24rpx; padding: 16rpx; box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08); border: 2rpx solid rgba(255,255,255,0.5); }
+.filter-section { margin: 24rpx 0 16rpx; }
 .chip-scroll { white-space: nowrap; }
-.chip { display: inline-flex; align-items: center; padding: 16rpx 24rpx; border-radius: 20rpx; font-size: 26rpx; color: #475569; background: #f1f5f9; margin-right: 12rpx; }
-.chip.active { background: #ec4899; color: #fff; box-shadow: 0 4rpx 12rpx rgba(236, 72, 153, 0.35); }
+.chip { display: inline-flex; align-items: center; padding: 12rpx 24rpx; margin-right: 12rpx; border-radius: 9999rpx; background: #f3f4f6; color: #4b5563; }
+.chip.active { background: #ec4899; color: #fff; box-shadow: 0 4rpx 10rpx rgba(236, 72, 153, 0.35); }
 .chip-text { }
 
 .list { margin-top: 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
@@ -71,7 +71,7 @@
 .type-badge { font-size: 24rpx; padding: 8rpx 16rpx; border-radius: 20rpx; background: #fce7f3; color: #ec4899; }
 .time { font-size: 24rpx; color: #64748b; }
 .card-body { display: flex; flex-direction: column; gap: 8rpx; }
-.detail { display: flex; gap: 8rpx; }
+.detail { display: flex; flex-direction: column; align-items: flex-start; gap: 6rpx; }
 .label { font-size: 24rpx; color: #64748b; }
 .value { font-size: 24rpx; color: #334155; }
 

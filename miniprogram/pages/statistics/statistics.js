@@ -30,6 +30,12 @@ Page({
     weightDays: 7, // 本周对应7天
     weightColors: ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22'],
     weightLegend: [],
+    // 体重趋势自定义时间范围（滑块）
+    weightRangeDates: [],
+    weightStartIndex: 0,
+    weightEndIndex: 0,
+    weightStartDate: '',
+    weightEndDate: '',
     
     // 加载状态
     loading: false
@@ -803,6 +809,25 @@ Page({
         const seriesArr = Array.isArray(res.data.series) ? res.data.series : []
         this.setData({ weightSeries: seriesArr })
         this.updateWeightLegend()
+        // 计算可选日期范围（用于滑块）
+        const dateSet = new Set()
+        for (let i = 0; i < seriesArr.length; i++) {
+          const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
+          for (let j = 0; j < pts.length; j++) {
+            const d = pts[j] && pts[j].date
+            if (d) dateSet.add(d)
+          }
+        }
+        const rangeDates = Array.from(dateSet).sort()
+        const startIdx = 0
+        const endIdx = Math.max(0, rangeDates.length - 1)
+        this.setData({
+          weightRangeDates: rangeDates,
+          weightStartIndex: startIdx,
+          weightEndIndex: endIdx,
+          weightStartDate: rangeDates[startIdx] || '',
+          weightEndDate: rangeDates[endIdx] || ''
+        })
         // 计算平均体重用于概览卡（避免链式调用导致的编译异常）
         const allPoints = []
         for (let i = 0; i < seriesArr.length; i++) {
@@ -869,11 +894,46 @@ Page({
     this.setData({ weightLegend: legend })
   },
 
+  // 起始时间滑块变化
+  onWeightRangeStartChange(e) {
+    const idx = (e && e.detail && typeof e.detail.value !== 'undefined') ? Number(e.detail.value) : 0
+    const dates = this.data.weightRangeDates || []
+    let startIdx = Math.max(0, Math.min(idx, Math.max(0, dates.length - 1)))
+    let endIdx = this.data.weightEndIndex
+    if (startIdx > endIdx) endIdx = startIdx
+    this.setData({
+      weightStartIndex: startIdx,
+      weightEndIndex: endIdx,
+      weightStartDate: dates[startIdx] || '',
+      weightEndDate: dates[endIdx] || ''
+    })
+    this.drawWeightChart()
+  },
+
+  // 结束时间滑块变化
+  onWeightRangeEndChange(e) {
+    const idx = (e && e.detail && typeof e.detail.value !== 'undefined') ? Number(e.detail.value) : 0
+    const dates = this.data.weightRangeDates || []
+    let endIdx = Math.max(0, Math.min(idx, Math.max(0, dates.length - 1)))
+    let startIdx = this.data.weightStartIndex
+    if (endIdx < startIdx) startIdx = endIdx
+    this.setData({
+      weightStartIndex: startIdx,
+      weightEndIndex: endIdx,
+      weightStartDate: dates[startIdx] || '',
+      weightEndDate: dates[endIdx] || ''
+    })
+    this.drawWeightChart()
+  },
+
   // 绘制体重折线图（canvas 2D）
   drawWeightChart() {
     const series = this.data.weightSeries || []
     const selectedId = this.data.selectedParrotId
     const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series
+    const hasRange = !!(this.data.weightStartDate && this.data.weightEndDate)
+    const rangeStart = this.data.weightStartDate
+    const rangeEnd = this.data.weightEndDate
   
     const query = wx.createSelectorQuery()
     query.select('#weightCanvas').node()
@@ -904,13 +964,20 @@ Page({
         return
       }
   
-      // 收集所有日期与体重范围
+      // 收集所有日期与体重范围（根据滑块选择过滤）
       const allPoints = []
       displaySeries.forEach(s => {
         (s.points || []).forEach(p => {
           // 验证体重数据的有效性
           if (p && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) {
-            allPoints.push(p)
+            if (hasRange) {
+              const d = p.date
+              if (d && d >= rangeStart && d <= rangeEnd) {
+                allPoints.push(p)
+              }
+            } else {
+              allPoints.push(p)
+            }
           }
         })
       })

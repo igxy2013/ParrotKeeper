@@ -24,20 +24,20 @@
       </view>
 
       <!-- 健康概览卡片（对齐参考APP：三项指标） -->
-      <view class="overview-card">
-        <text class="overview-title">健康概览</text>
+      <view class="overview-card rounded-3xl p-6 shadow-xl">
+        <text class="overview-title text-lg font-bold">健康概览</text>
         <view class="overview-grid">
           <view class="metric">
-            <text class="metric-value">{{overview.healthyCount}}</text>
-            <text class="metric-label">健康鹦鹉</text>
+            <text class="metric-value text-2xl font-bold">{{overview.healthyCount}}</text>
+            <text class="metric-label text-sm text-white-80">健康鹦鹉</text>
           </view>
           <view class="metric">
-            <text class="metric-value">{{overview.attentionCount}}</text>
-            <text class="metric-label">需关注</text>
+            <text class="metric-value text-2xl font-bold">{{overview.attentionCount}}</text>
+            <text class="metric-label text-sm text-white-80">需关注</text>
           </view>
           <view class="metric">
-            <text class="metric-value">{{overview.checkCount}}</text>
-            <text class="metric-label">检查次数</text>
+            <text class="metric-value text-2xl font-bold">{{overview.checkCount}}</text>
+            <text class="metric-label text-sm text-white-80">检查次数</text>
           </view>
         </view>
       </view>

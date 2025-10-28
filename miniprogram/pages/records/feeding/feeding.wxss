@@ -85,9 +85,7 @@
 }
 
 /* 额外阴影等级，供统计卡片等使用 */
-.shadow-xl {
-  box-shadow: 0 28rpx 70rpx -24rpx rgba(0, 0, 0, 0.28);
-}
+/* 使用全局 .shadow-xl */
 
 /* Flex 布局 */
 .flex {
@@ -163,25 +161,7 @@
 }
 
 /* 文字样式 */
-.text-white {
-  color: #ffffff;
-}
-
-.text-lg {
-  font-size: 36rpx;
-}
-
-.font-bold {
-  font-weight: bold;
-}
-
-.text-xs {
-  font-size: 24rpx;
-}
-
-.text-white-80 {
-  color: rgba(255, 255, 255, 0.8);
-}
+/* 使用全局字体与权重工具类：.text-white, .text-lg, .font-bold, .text-xs, .text-white-80 */
 
 .block {
   display: block;
@@ -204,10 +184,7 @@
 .rounded-2xl {
   border-radius: 32rpx;
 }
-
-.rounded-3xl {
-  border-radius: 48rpx;
-}
+/* 使用全局 .rounded-3xl */
 
 .p-4 {
   padding: 32rpx;
@@ -216,10 +193,7 @@
 .p-5 {
   padding: 40rpx;
 }
-
-.p-6 {
-  padding: 48rpx;
-}
+/* 使用全局 .p-6 */
 
 .p-3 {
   padding: 24rpx;
@@ -275,9 +249,7 @@
   padding-bottom: 16rpx;
 }
 
-.text-sm {
-  font-size: 28rpx;
-}
+/* 使用全局 .text-sm */
 
 .font-medium {
   font-weight: 500;
@@ -332,9 +304,7 @@
   text-align: center;
 }
 
-.text-2xl {
-  font-size: 48rpx;
-}
+/* 使用全局 .text-2xl */
 
 /* 渐变样式 */
 .bg-gradient-soft {
@@ -689,14 +659,6 @@
   
   .pt-28 {
     padding-top: 200rpx;
-  }
-  
-  .text-lg {
-    font-size: 32rpx;
-  }
-  
-  .text-2xl {
-    font-size: 40rpx;
   }
 }
 /* 弹窗主体限制高度并启用滚动 */

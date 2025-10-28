@@ -2,9 +2,44 @@
 
 /* 页面容器 */
 .page-container {
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   min-height: 100vh;
-  padding-bottom: 120rpx;
+  padding: 0;
+  /* 为固定底部导航预留空间（含安全区） */
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
+}
+
+.page-content {
+  padding: 32rpx; /* 与APP一致的页面左右内边距基线 */
+}
+
+/* 顶部时间段选择器 */
+.period-selector-card {
+  display: flex;
+  gap: 16rpx;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.08);
+  border-radius: 32rpx;
+  padding: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.period-btn {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 26rpx;
+  color: #606266;
+  background: #f5f7fa; 
+}
+
+.period-btn.active {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 6rpx 18rpx rgba(16, 185, 129, 0.35);
 }
 
 /* 筛选器样式 */

@@ -9,26 +9,7 @@
 
   <!-- Content -->
   <scroll-view class="content" scroll-y="true">
-    <!-- Summary Card (aligned with feeding stats design) -->
-    <view class="summary-card">
-      <text class="summary-title">清洁统计</text>
-      <view class="summary-grid">
-        <view class="summary-metric">
-          <text class="summary-value">{{stats.weeklyCount}}</text>
-          <text class="summary-label">本周清洁</text>
-        </view>
-        <view class="summary-metric">
-          <text class="summary-value">{{stats.uniqueTypes}}</text>
-          <text class="summary-label">清洁类型</text>
-        </view>
-        <view class="summary-metric">
-          <text class="summary-value">{{stats.lastTimeText || '—'}}</text>
-          <text class="summary-label">最近一次</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- Filter Chips (aligned with health page design) -->
+    <!-- Filter Chips (aligned with feeding page design) -->
     <view class="filter-section">
       <scroll-view scroll-x="true" class="chip-scroll">
         <block wx:for="{{filterOptions}}" wx:key="*this">
@@ -37,6 +18,24 @@
           </view>
         </block>
       </scroll-view>
+    </view>
+    <!-- Summary Card (aligned with feeding stats design) -->
+    <view class="summary-card rounded-3xl p-6 shadow-xl">
+      <text class="summary-title text-lg font-bold">清洁统计</text>
+      <view class="summary-grid">
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.weeklyCount}}</text>
+          <text class="summary-label text-sm text-white-80">本周清洁</text>
+        </view>
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.uniqueTypes}}</text>
+          <text class="summary-label text-sm text-white-80">清洁类型</text>
+        </view>
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.lastTimeText || '—'}}</text>
+          <text class="summary-label text-sm text-white-80">最近一次</text>
+        </view>
+      </view>
     </view>
 
     <!-- Cleaning Records -->
@@ -56,18 +55,18 @@
             </view>
 
             <view class="card-body">
-              <view class="detail" wx:if="{{item.description}}">
-                <text class="label">描述：</text>
-                <text class="value">{{item.description}}</text>
-              </view>
-              <view class="detail" wx:if="{{item.notes}}">
-                <text class="label">备注：</text>
-                <text class="value">{{item.notes}}</text>
-              </view>
-              <view class="detail" wx:if="{{isTeamMode && item.created_by_username}}">
-                <text class="label">记录者：</text>
-                <text class="value">{{item.created_by_username}}</text>
-              </view>
+        <view class="detail" wx:if="{{item.description}}">
+          <text class="value">{{item.description}}</text>
+          <text class="label">描述：</text>
+        </view>
+        <view class="detail" wx:if="{{item.notes}}">
+          <text class="value">{{item.notes}}</text>
+          <text class="label">备注：</text>
+        </view>
+        <view class="detail" wx:if="{{isTeamMode && item.created_by_username}}">
+          <text class="value">{{item.created_by_username}}</text>
+          <text class="label">记录者：</text>
+        </view>
             </view>
           </view>
         </view>

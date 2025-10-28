@@ -520,6 +520,29 @@
   font-weight: bold;
 }
 
+/* 体重趋势自定义时间范围滑块样式 */
+.weight-range-control {
+  margin-top: 16rpx;
+  padding: 8rpx 4rpx 0;
+}
+.weight-range-control .range-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24rpx;
+  color: #6b7280;
+  margin-bottom: 8rpx;
+}
+.weight-range-control .range-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+.weight-range-control .range-slider {
+  width: 100%;
+  margin: 0;
+}
+
 /* 支出和品种分析 */
 .expense-list,
 .species-list {

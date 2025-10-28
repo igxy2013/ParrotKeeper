@@ -9,16 +9,25 @@
   </app-header>
 
   <view class="page-content">
+    <!-- 顶部时间段选择器 -->
+    <view class="period-selector-card">
+      <view class="period-btn {{selectedPeriod === '今天' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="今天">今天</view>
+      <view class="period-btn {{selectedPeriod === '本周' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本周">本周</view>
+      <view class="period-btn {{selectedPeriod === '本月' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本月">本月</view>
+      <view class="period-btn {{selectedPeriod === '本年' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本年">本年</view>
+      <view class="period-btn {{selectedPeriod === '全部' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="全部">全部</view>
+    </view>
+
     <!-- 统计卡片 -->
     <view class="stats-grid">
       <view class="stat-card income">
         <view class="stat-icon">⬆️</view>
-        <view class="stat-value">¥{{stats.totalIncome}}</view>
+        <view class="stat-value">¥{{stats.localTotalIncome || 0}}</view>
         <view class="stat-label">当前筛选收入</view>
       </view>
       <view class="stat-card expense">
         <view class="stat-icon">⬇️</view>
-        <view class="stat-value">¥{{stats.totalExpense}}</view>
+        <view class="stat-value">¥{{stats.localTotalExpense || 0}}</view>
         <view class="stat-label">当前筛选支出</view>
       </view>
     </view>
@@ -27,12 +36,12 @@
       <view class="stat-card net {{stats.netIncome >= 0 ? 'positive' : 'negative'}}">
         <view class="stat-icon">💼</view>
         <view class="stat-value">¥{{stats.netIncome}}</view>
-        <view class="stat-label">净收入</view>
+        <view class="stat-label">净收入（汇总）</view>
       </view>
       <view class="stat-card monthly">
-        <view class="stat-icon">📅</view>
-        <view class="stat-value">¥{{stats.monthlyNet}}</view>
-        <view class="stat-label">本月净收入</view>
+        <view class="stat-icon">⬇️</view>
+        <view class="stat-value">¥{{stats.totalExpense}}</view>
+        <view class="stat-label">支出（汇总）</view>
       </view>
     </view>
 
@@ -70,7 +79,7 @@
     <view class="card">
       <view class="card-header">
         <text class="card-title">记录列表</text>
-        <text class="total-text">共 {{filteredRecords.length}} 条</text>
+ <text class="total-text">共 {{totalCount || filteredRecords.length}} 条</text>
       </view>
       <view class="card-content">
         <view class="list-container">

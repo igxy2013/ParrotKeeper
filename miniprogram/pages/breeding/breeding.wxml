@@ -19,16 +19,16 @@
     </view>
 
     <!-- 概览统计（与喂食页面统计卡片设计对齐） -->
-    <view wx:if="{{isLogin}}" class="summary-card">
-      <text class="summary-title">繁殖统计</text>
+    <view wx:if="{{isLogin}}" class="summary-card rounded-3xl p-6 shadow-xl">
+      <text class="summary-title text-lg font-bold">繁殖统计</text>
       <view class="summary-grid summary-grid-2">
         <view class="summary-metric">
-          <text class="summary-value">{{stats.totalPairs}}</text>
-          <text class="summary-label">总繁殖对数</text>
+          <text class="summary-value text-2xl font-bold">{{stats.totalPairs}}</text>
+          <text class="summary-label text-sm text-white-80">总繁殖对数</text>
         </view>
         <view class="summary-metric">
-          <text class="summary-value">{{stats.successfulHatching}}</text>
-          <text class="summary-label">成功孵化</text>
+          <text class="summary-value text-2xl font-bold">{{stats.successfulHatching}}</text>
+          <text class="summary-label text-sm text-white-80">成功孵化</text>
         </view>
       </view>
     </view>

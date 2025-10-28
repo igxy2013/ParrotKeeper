@@ -51,15 +51,17 @@ Page({
     theme: 'system',
     themeDisplay: '跟随系统',
     stats: { parrotCount: 0, totalFeedings: 0, totalCheckups: 0, statsViews: 0 },
+    // 客服会话上下文
+    contactSessionFrom: '',
     // 团队功能暂不开放，列表置空以隐藏入口
     teamItems: [],
     menuItems: [
       { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.svg' },
       { icon: '🔔', title: '通知', desc: '消息提醒设置', bgClass: 'bg-blue', iconSrc: '/images/remix/ri-notification-3-line.svg' },
       { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.svg' },
-      { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.svg' },
+      { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.svg', isContact: true },
       { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.svg' },
-  { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink', iconSrc: '/images/remix/share-forward-line.svg' }
+      { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink', iconSrc: '/images/remix/share-forward-line.svg' }
     ]
   },
 
@@ -67,6 +69,18 @@ Page({
     this.initUser();
     this.loadPreferences();
     this.loadOverviewStats();
+    // 设置客服会话上下文，便于客服识别来源与用户
+    try {
+      const uid = app.globalData.openid || '';
+      const mode = app.globalData.userMode || this.data.userMode || 'personal';
+      this.setData({
+        contactSessionFrom: JSON.stringify({
+          page: 'profile',
+          userId: uid,
+          userMode: mode
+        })
+      });
+    } catch (_) {}
   },
 
   // 加载统计概览用于展示统计网格（改用统一请求封装）
@@ -181,12 +195,19 @@ Page({
     } else if (title === '护理指南') {
       wx.showToast({ title: '护理指南功能即将上线', icon: 'none' });
     } else if (title === '客服支持') {
-      wx.showToast({ title: '请通过关于页面或客服渠道联系我们', icon: 'none' });
+      // 备选处理：若未通过内置按钮触发，可给出提示
+      wx.showToast({ title: '请点击该项以打开客服会话', icon: 'none' });
     } else if (title === '关于我们') {
       this.showAbout && this.showAbout();
     } else if (title === '分享应用') {
       wx.showShareMenu({ withShareTicket: true });
     }
+  },
+
+  // 内置客服回调（open-type="contact"）
+  onContact(e) {
+    // 可记录 e.detail 会话来源或做统计
+    wx.showToast({ title: '已打开客服会话', icon: 'none' });
   },
 
   // 初始化用户信息

@@ -56,7 +56,8 @@ def get_expenses():
             query = query.filter(Expense.expense_date >= datetime.strptime(start_date, '%Y-%m-%d').date())
         
         if end_date:
-            query = query.filter(Expense.expense_date <= datetime.strptime(end_date, '%Y-%m-%d').date())
+            # 与汇总接口保持一致，结束日期使用“严格小于”实现半开区间 [start_date, end_date)
+            query = query.filter(Expense.expense_date < datetime.strptime(end_date, '%Y-%m-%d').date())
         
         # 按日期倒序排列
         query = query.order_by(desc(Expense.expense_date), desc(Expense.created_at))
@@ -373,33 +374,57 @@ def get_expense_summary():
     """获取支出汇总"""
     try:
         user = request.current_user
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
         
         # 根据用户模式获取可访问的支出ID
         expense_ids = get_accessible_expense_ids_by_mode(user)
         
-        # 本月支出
-        current_month = date.today().replace(day=1)
-        monthly_total = db.session.query(func.sum(Expense.amount)).filter(
-            Expense.id.in_(expense_ids),
-            Expense.expense_date >= current_month
-        ).scalar() or 0
+        # 构建基础查询
+        base_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.id.in_(expense_ids)
+        )
         
-        # 本年支出
-        current_year = date.today().replace(month=1, day=1)
-        yearly_total = db.session.query(func.sum(Expense.amount)).filter(
-            Expense.id.in_(expense_ids),
-            Expense.expense_date >= current_year
-        ).scalar() or 0
-        
-        # 按类别统计本月支出
-        category_stats = db.session.query(
-            Expense.category,
-            func.sum(Expense.amount).label('total'),
-            func.count(Expense.id).label('count')
-        ).filter(
-            Expense.id.in_(expense_ids),
-            Expense.expense_date >= current_month
-        ).group_by(Expense.category).all()
+        # 如果有时间范围参数，使用指定的时间范围
+        if start_date and end_date:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            
+            # 总支出（指定时间范围）
+            total_expense = base_query.filter(
+                Expense.expense_date >= start_date_obj,
+                Expense.expense_date < end_date_obj
+            ).scalar() or 0
+            
+            # 按类别统计（指定时间范围）
+            category_stats = db.session.query(
+                Expense.category,
+                func.sum(Expense.amount).label('total'),
+                func.count(Expense.id).label('count')
+            ).filter(
+                Expense.id.in_(expense_ids),
+                Expense.expense_date >= start_date_obj,
+                Expense.expense_date < end_date_obj
+            ).group_by(Expense.category).all()
+            
+        else:
+            # 默认使用本月数据
+            current_month = date.today().replace(day=1)
+            
+            # 本月支出
+            total_expense = base_query.filter(
+                Expense.expense_date >= current_month
+            ).scalar() or 0
+            
+            # 按类别统计本月支出
+            category_stats = db.session.query(
+                Expense.category,
+                func.sum(Expense.amount).label('total'),
+                func.count(Expense.id).label('count')
+            ).filter(
+                Expense.id.in_(expense_ids),
+                Expense.expense_date >= current_month
+            ).group_by(Expense.category).all()
         
         categories = []
         for stat in category_stats:
@@ -410,8 +435,8 @@ def get_expense_summary():
             })
         
         return success_response({
-            'monthly_total': float(monthly_total),
-            'yearly_total': float(yearly_total),
+            'totalExpense': float(total_expense),
+            'netIncome': 0 - float(total_expense),  # 暂时简化，净收入 = -支出
             'categories': categories
         })
         

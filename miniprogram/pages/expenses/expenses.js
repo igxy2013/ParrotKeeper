@@ -7,22 +7,38 @@ Page({
     selectedParrot: '全部',
     selectedCategory: '全部',
     selectedType: '全部',
+    
+    // 时间过滤器
+    selectedPeriod: '本月', // 默认选择本月
 
-    parrots: ['全部', '小彩', '阿福', '小绿'],
+    parrots: ['全部'],
     types: ['全部', '收入', '支出'],
 
+    // 类别映射
+    categoryMap: {
+      'food': '食物',
+      'medical': '医疗', 
+      'toys': '玩具',
+      'cage': '笼具',
+      'baby_bird': '幼鸟',
+      'breeding_bird': '种鸟',
+      'other': '其他'
+    },
+
     // 类别集合
-    expenseCategories: ['全部', '食物', '玩具', '医疗', '用品', '其他'],
+    expenseCategories: ['全部', '食物', '医疗', '玩具', '笼具', '幼鸟', '种鸟', '其他'],
     incomeCategories: ['全部', '繁殖收入', '出售用品', '培训服务', '其他收入'],
 
-    filterCategories: ['全部', '食物', '玩具', '医疗', '用品', '其他', '繁殖收入', '出售用品', '培训服务', '其他收入'],
+    filterCategories: ['全部', '食物', '医疗', '玩具', '笼具', '幼鸟', '种鸟', '其他', '繁殖收入', '出售用品', '培训服务', '其他收入'],
 
     // 展示用类别网格
     recordCategories: [
       { name: '食物', iconText: '🍚', type: '支出' },
-      { name: '玩具', iconText: '🧸', type: '支出' },
       { name: '医疗', iconText: '❤️', type: '支出' },
-      { name: '用品', iconText: '🛍️', type: '支出' },
+      { name: '玩具', iconText: '🧸', type: '支出' },
+      { name: '笼具', iconText: '🏠', type: '支出' },
+      { name: '幼鸟', iconText: '🐣', type: '支出' },
+      { name: '种鸟', iconText: '🦜', type: '支出' },
       { name: '其他', iconText: '➕', type: '支出' },
       { name: '繁殖收入', iconText: '🐣', type: '收入' },
       { name: '出售用品', iconText: '🏪', type: '收入' },
@@ -30,17 +46,7 @@ Page({
       { name: '其他收入', iconText: '💵', type: '收入' },
     ],
 
-    // 示例记录数据（参考APP UI）
-    records: [
-      { id: 1, type: '支出', parrot: '小彩', category: '食物', amount: 45, description: '优质小米和谷子', date: '2024-01-15', time: '14:30' },
-      { id: 2, type: '支出', parrot: '阿福', category: '医疗', amount: 180, description: '定期健康检查', date: '2024-01-14', time: '10:15' },
-      { id: 3, type: '支出', parrot: '小绿', category: '玩具', amount: 68, description: '智力训练玩具套装', date: '2024-01-13', time: '16:45' },
-      { id: 4, type: '支出', parrot: '小彩', category: '用品', amount: 120, description: '新款鸟笼垫料', date: '2024-01-12', time: '11:20' },
-      { id: 5, type: '收入', parrot: '阿福', category: '繁殖收入', amount: 800, description: '出售幼鸟2只', date: '2024-01-11', time: '09:30' },
-      { id: 6, type: '收入', parrot: '小绿', category: '培训服务', amount: 300, description: '鹦鹉训练指导服务', date: '2024-01-10', time: '15:10' },
-      { id: 7, type: '收入', parrot: '小彩', category: '出售用品', amount: 150, description: '出售闲置鸟笼', date: '2024-01-09', time: '16:20' },
-    ],
-
+    records: [],
     filteredRecords: [],
     stats: {
       totalIncome: 0,
@@ -50,6 +56,10 @@ Page({
       monthlyExpense: 0,
       monthlyNet: 0,
     },
+
+    // 分页参数
+    page: 1,
+    hasMore: true,
 
     // 添加记录表单
     newRecord: {
@@ -69,18 +79,241 @@ Page({
   },
 
   onLoad() {
-    this.initData()
+    this.loadParrots()
+    this.loadExpenses()
+    this.loadStats()
   },
 
   onShow() {
-    this.updateFilteredRecords()
-    this.updateStats()
+    // 检查是否需要刷新数据
+    if (app.globalData.needRefresh) {
+      app.globalData.needRefresh = false
+      this.loadExpenses()
+      this.loadStats()
+    }
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    this.setData({
+      page: 1,
+      records: [],
+      filteredRecords: [],
+      hasMore: true,
+      totalCount: 0
+    })
+    this.loadExpenses().then(() => {
+      wx.stopPullDownRefresh()
+    })
+    this.loadStats()
+  },
+
+  // 上拉加载更多
+  onReachBottom() {
+    if (this.data.hasMore && !this.data.loading) {
+      this.loadExpenses()
+    }
+  },
+
+  // 加载鹦鹉列表
+  async loadParrots() {
+    try {
+      const res = await app.request({
+        url: '/api/parrots',
+        method: 'GET'
+      })
+      
+      if (res.success && res.data) {
+        const list = Array.isArray(res.data.parrots) ? res.data.parrots : []
+        const parrotNames = ['全部', ...list.map(p => p.name)]
+        this.setData({ parrots: parrotNames })
+      }
+    } catch (error) {
+      console.error('加载鹦鹉列表失败:', error)
+    }
+  },
+
+  // 时间过滤器事件处理
+  setSelectedPeriod(e) {
+    const period = e.currentTarget.dataset.period
+    this.setData({ 
+      selectedPeriod: period,
+      page: 1,
+      hasMore: true,
+      records: [],
+      filteredRecords: [],
+      totalCount: 0
+    }, () => {
+      // 在setData完成后再调用，确保selectedPeriod已更新
+      this.loadExpenses()
+      this.loadStats()
+    })
+  },
+
+  // 获取时间范围参数
+  // iOS兼容的时间格式化函数
+  formatTimeForIOS(dateString) {
+    if (!dateString) return ''
+    
+    try {
+      // 将 "2025-10-23 10:53:43" 格式转换为 iOS 兼容的格式
+      const isoString = dateString.replace(' ', 'T')
+      const date = new Date(isoString)
+      
+      // 检查日期是否有效
+      if (isNaN(date.getTime())) {
+        // 如果转换失败，尝试手动解析
+        const parts = dateString.split(' ')
+        if (parts.length === 2) {
+          const datePart = parts[0].replace(/-/g, '/')
+          const timePart = parts[1]
+          const date = new Date(`${datePart} ${timePart}`)
+          if (!isNaN(date.getTime())) {
+            return date.toTimeString().slice(0, 5)
+          }
+        }
+        return ''
+      }
+      
+      return date.toTimeString().slice(0, 5)
+    } catch (error) {
+      console.error('时间格式化失败:', error, dateString)
+      return ''
+    }
+  },
+
+  getDateRange() {
+    const now = new Date()
+    let startDate, endDate
+    
+    // 辅助函数：将日期转换为本地日期字符串 (YYYY-MM-DD)
+    const formatLocalDate = (date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+    
+    switch (this.data.selectedPeriod) {
+      case '今天':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+        break
+      case '本周':
+        const dayOfWeek = now.getDay()
+        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) // 周一开始
+        startDate = new Date(now.getFullYear(), now.getMonth(), diff)
+        endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000)
+        break
+      case '本月':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        break
+      case '本年':
+        startDate = new Date(now.getFullYear(), 0, 1)
+        endDate = new Date(now.getFullYear() + 1, 0, 1)
+        break
+      case '全部':
+        // 覆盖全量数据：使用足够宽的时间范围
+        startDate = new Date(1970, 0, 1)
+        endDate = new Date(2100, 0, 1)
+        break
+      default:
+        return {}
+    }
+    
+    return {
+      start_date: formatLocalDate(startDate),
+      end_date: formatLocalDate(endDate)
+    }
+  },
+
+  // 加载支出记录
+  async loadExpenses() {
+    if (this.data.loading) return
+    
+    this.setData({ loading: true })
+    
+    try {
+      const params = {
+        page: this.data.page,
+        per_page: 20,
+        ...this.getDateRange()
+      }
+      
+      // 添加筛选条件
+      if (this.data.selectedCategory !== '全部') {
+        const categoryKey = Object.keys(this.data.categoryMap).find(
+          key => this.data.categoryMap[key] === this.data.selectedCategory
+        )
+        if (categoryKey) {
+          params.category = categoryKey
+        }
+      }
+      
+      const res = await app.request({
+        url: '/api/expenses',
+        method: 'GET',
+        data: params
+      })
+      
+      if (res.success && res.data) {
+        const newRecords = res.data.items.map(item => ({
+          id: item.id,
+          type: '支出',
+          parrot: item.parrot_name || '未指定',
+          category: this.data.categoryMap[item.category] || item.category,
+          amount: item.amount,
+          description: item.description || '',
+          date: item.expense_date,
+          time: this.formatTimeForIOS(item.created_at)
+        }))
+        
+        const records = this.data.page === 1 ? newRecords : [...this.data.records, ...newRecords]
+        
+        this.setData({
+          records,
+          page: this.data.page + 1,
+          hasMore: res.data.has_next || false,
+          totalCount: typeof res.data.total === 'number' ? res.data.total : records.length
+        })
+        
+        this.updateFilteredRecords()
+      }
+    } catch (error) {
+      console.error('加载支出记录失败:', error)
+      wx.showToast({
+        title: '加载失败',
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
+  // 加载统计数据
+  async loadStats() {
+    try {
+      const params = this.getDateRange()
+      const res = await app.request({
+        url: '/api/expenses/summary',
+        method: 'GET',
+        data: params
+      })
+      
+      if (res.success && res.data) {
+        this.setData({
+          'stats.totalExpense': res.data.totalExpense || 0,
+          'stats.netIncome': (typeof res.data.netIncome === 'number') ? res.data.netIncome : -(res.data.totalExpense || 0)
+        })
+      }
+    } catch (error) {
+      console.error('加载统计数据失败:', error)
+    }
   },
 
   initData() {
-    // 初始化筛选后的记录
-    this.updateFilteredRecords()
-    this.updateStats()
+    // 移除原有的初始化逻辑，改为在onLoad中调用API
     this.updateModalCategories()
   },
 
@@ -96,31 +329,23 @@ Page({
     })
 
     this.setData({ filteredRecords })
+    this.updateStats()
   },
 
   // 更新统计数据
   updateStats() {
-    const { filteredRecords, records } = this.data
+    const { filteredRecords } = this.data
     
     // 当前筛选的收入和支出
     const totalIncome = filteredRecords.filter(r => r.type === '收入').reduce((sum, record) => sum + record.amount, 0)
     const totalExpense = filteredRecords.filter(r => r.type === '支出').reduce((sum, record) => sum + record.amount, 0)
     const netIncome = totalIncome - totalExpense
-    
-    // 本月总收入和支出
-    const monthlyIncome = records.filter(r => r.type === '收入').reduce((sum, record) => sum + record.amount, 0)
-    const monthlyExpense = records.filter(r => r.type === '支出').reduce((sum, record) => sum + record.amount, 0)
-    const monthlyNet = monthlyIncome - monthlyExpense
 
     this.setData({
-      stats: {
-        totalIncome,
-        totalExpense,
-        netIncome,
-        monthlyIncome,
-        monthlyExpense,
-        monthlyNet
-      }
+      // 将当前列表的统计写入局部字段，避免覆盖后端汇总的统计
+      'stats.localTotalIncome': totalIncome,
+      'stats.localTotalExpense': totalExpense,
+      'stats.localNetIncome': netIncome
     })
   },
 
@@ -263,10 +488,11 @@ Page({
     })
   },
 
-  onAddRecord() {
+  // 添加记录
+  async onAddRecord() {
     const { newRecord } = this.data
     
-    if (!newRecord.amount || !newRecord.description) {
+    if (!newRecord.amount || !newRecord.category) {
       wx.showToast({
         title: '请填写完整的记录信息',
         icon: 'none'
@@ -274,35 +500,79 @@ Page({
       return
     }
 
-    // 生成新记录
-    const newId = Math.max(...this.data.records.map(r => r.id)) + 1
-    const record = {
-      id: newId,
-      type: newRecord.type,
-      parrot: newRecord.parrot,
-      category: newRecord.category,
-      amount: parseFloat(newRecord.amount),
-      description: newRecord.description,
-      date: newRecord.date,
-      time: new Date().toTimeString().slice(0, 5)
-    }
+    try {
+      const formData = {
+        category: Object.keys(this.data.categoryMap).find(
+          key => this.data.categoryMap[key] === newRecord.category
+        ) || 'other',
+        amount: parseFloat(newRecord.amount),
+        description: newRecord.description,
+        expense_date: newRecord.date
+      }
 
-    // 添加到记录列表
-    const records = [record, ...this.data.records]
-    
-    this.setData({
-      records,
-      showAddRecord: false,
-      'newRecord.amount': '',
-      'newRecord.description': '',
-      'newRecord.date': new Date().toISOString().split('T')[0]
-    }, () => {
-      this.updateFilteredRecords()
-      this.updateStats()
-      wx.showToast({
-        title: `${newRecord.type}记录添加成功！`,
-        icon: 'success'
+      const res = await app.request({
+        url: '/api/expenses',
+        method: 'POST',
+        data: formData
       })
+
+      if (res.success) {
+        this.setData({
+          showAddRecord: false,
+          'newRecord.amount': '',
+          'newRecord.description': '',
+          'newRecord.date': new Date().toISOString().split('T')[0],
+          page: 1,
+          records: [],
+          hasMore: true
+        })
+        
+        // 重新加载数据
+        this.loadExpenses()
+        this.loadStats()
+        
+        wx.showToast({
+          title: '添加成功！',
+          icon: 'success'
+        })
+      } else {
+        wx.showToast({
+          title: res.message || '添加失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('添加记录失败:', error)
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 筛选类别变化
+  onCategoryChange(e) {
+    const selectedCategory = this.data.filterCategories[e.detail.value]
+    this.setData({ 
+      selectedCategory,
+      page: 1,
+      records: [],
+      hasMore: true
     })
+    this.loadExpenses()
+  },
+
+  // 筛选鹦鹉变化
+  onParrotChange(e) {
+    const selectedParrot = this.data.parrots[e.detail.value]
+    this.setData({ selectedParrot })
+    this.updateFilteredRecords()
+  },
+
+  // 筛选类型变化
+  onTypeChange(e) {
+    const selectedType = this.data.types[e.detail.value]
+    this.setData({ selectedType })
+    this.updateFilteredRecords()
   }
 })

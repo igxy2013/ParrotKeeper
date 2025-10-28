@@ -108,6 +108,17 @@
         <view class="weight-chart-container">
           <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;"></canvas>
         </view>
+        <!-- 自定义时间范围滑块 -->
+        <view class="weight-range-control" wx:if="{{weightRangeDates.length > 1}}">
+          <view class="range-labels">
+            <text class="range-start">{{weightStartDate}}</text>
+            <text class="range-end">{{weightEndDate}}</text>
+          </view>
+          <view class="range-sliders">
+            <slider min="0" max="{{weightRangeDates.length - 1}}" step="1" value="{{weightStartIndex}}" show-value="{{false}}" bindchange="onWeightRangeStartChange" bindchanging="onWeightRangeStartChange" class="range-slider"/>
+            <slider min="0" max="{{weightRangeDates.length - 1}}" step="1" value="{{weightEndIndex}}" show-value="{{false}}" bindchange="onWeightRangeEndChange" bindchanging="onWeightRangeEndChange" class="range-slider"/>
+          </view>
+        </view>
       </view>
     </view>
   </view>

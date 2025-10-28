@@ -35,18 +35,24 @@
 .chip.active { background: #8b5cf6; color: #ffffff; box-shadow: 0 4rpx 10rpx rgba(139, 92, 246, 0.35); }
 
 .overview-card {
-  /* 紫色主题渐变，与头部 theme=purple 保持一致 */
+  /* 参考喂食页统计卡片：圆角更大、留白更宽、阴影更柔和 */
   background: linear-gradient(90deg, #a78bfa, #c084fc, #d946ef);
   color: #ffffff;
-  border-radius: 32rpx;
-  padding: 32rpx;
-  box-shadow: 0 12rpx 32rpx rgba(167, 139, 250, 0.35);
+  border-radius: 48rpx; /* rounded-3xl */
+  padding: 48rpx;      /* p-6 */
+  box-shadow: 0 28rpx 70rpx -24rpx rgba(0, 0, 0, 0.28); /* shadow-xl */
 }
-.overview-title { font-size: 32rpx; font-weight: 800; margin-bottom: 24rpx; }
+.overview-title { margin-bottom: 24rpx; }
 .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24rpx; }
-.metric { text-align: center; }
-.metric-value { font-size: 40rpx; font-weight: 900; }
-.metric-label { margin-top: 8rpx; font-size: 24rpx; color: rgba(255,255,255,0.85); }
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  text-align: center;
+}
+.metric-value { line-height: 1.1; }
+.metric-label { color: rgba(255,255,255,0.9); }
 
 .record-list { margin-top: 24rpx; }
 .record-card {
