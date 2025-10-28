@@ -1,7 +1,8 @@
 {
   "usingComponents": { 
     "app-header": "/components/app-header/app-header",
-    "notification-center": "/components/notification-center/notification-center"
+    "notification-center": "/components/notification-center/notification-center",
+    "bottom-nav": "/components/bottom-nav/bottom-nav"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "鹦鹉管家AI",

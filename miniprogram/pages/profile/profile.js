@@ -1,4 +1,5 @@
 // pages/profile/profile.js
+const app = getApp()
 Page({
   data: {
     isLogin: false,
@@ -62,77 +63,48 @@ Page({
     this.loadAchievements(); // 加载成就列表
   },
 
-  // 加载统计概览用于展示统计网格
-  loadOverviewStats() {
-    wx.request({
-      url: `${this.data.baseUrl}/api/statistics/overview`,
-      method: 'GET',
-      header: {
-        'X-OpenID': wx.getStorageSync('openid')
-      },
-      success: (res) => {
-        if (res.data.success) {
-          this.setData({
-            stats: {
-              ...this.data.stats,
-              ...res.data.data,
-              statsViews: res.data.data.stats_views || 0
-            }
-          });
-          // 检查成就解锁
-          this.checkAchievements();
-        }
-      },
-      fail: (err) => {
-        console.error('获取统计数据失败:', err);
+  // 加载统计概览用于展示统计网格（改用统一请求封装）
+  async loadOverviewStats() {
+    try {
+      const res = await app.request({ url: '/api/statistics/overview', method: 'GET' })
+      if (res.success) {
+        this.setData({
+          stats: {
+            ...this.data.stats,
+            ...res.data,
+            statsViews: res.data.stats_views || 0
+          }
+        })
+        this.checkAchievements()
       }
-    });
+    } catch (err) {
+      console.error('获取统计数据失败:', err)
+    }
   },
 
-  // 检查成就解锁
-  checkAchievements() {
-    wx.request({
-      url: `${this.data.baseUrl}/api/achievements/check`,
-      method: 'POST',
-      header: {
-        'X-OpenID': wx.getStorageSync('openid'),
-        'Content-Type': 'application/json'
-      },
-      success: (res) => {
-        if (res.data.success && res.data.data.newly_unlocked.length > 0) {
-          // 显示新解锁的成就
-          res.data.data.newly_unlocked.forEach(achievement => {
-            this.showAchievementUnlock(achievement);
-          });
-          // 重新加载成就列表
-          this.loadAchievements();
-        }
-      },
-      fail: (err) => {
-        console.error('检查成就失败:', err);
+  // 检查成就解锁（改用统一请求封装）
+  async checkAchievements() {
+    try {
+      const res = await app.request({ url: '/api/achievements/check', method: 'POST', data: {} })
+      if (res.success && res.data && Array.isArray(res.data.newly_unlocked) && res.data.newly_unlocked.length > 0) {
+        res.data.newly_unlocked.forEach(achievement => this.showAchievementUnlock(achievement))
+        await this.loadAchievements()
       }
-    });
+    } catch (err) {
+      console.error('检查成就失败:', err)
+    }
   },
 
-  // 加载成就列表
-  loadAchievements() {
-    wx.request({
-      url: `${this.data.baseUrl}/api/achievements`,
-      method: 'GET',
-      header: {
-        'X-OpenID': wx.getStorageSync('openid')
-      },
-      success: (res) => {
-        if (res.data.success) {
-          this.setData({
-            achievements: res.data.data
-          });
-        }
-      },
-      fail: (err) => {
-        console.error('获取成就列表失败:', err);
+  // 加载成就列表（改用统一请求封装）
+  async loadAchievements() {
+    try {
+      const res = await app.request({ url: '/api/achievements', method: 'GET' })
+      if (res.success) {
+        this.setData({ achievements: res.data })
       }
-    });
+    } catch (err) {
+      console.error('获取成就列表失败:', err)
+    }
   },
 
   // 显示成就解锁提示

@@ -33,102 +33,119 @@ graph TD
 
 ## 2. 技术描述
 
-- **前端**: React@19 + TypeScript + Vite + Tailwind CSS + React Router + i18next
-- **后端**: 现有Python Flask API (https://bimai.xyz)
-- **数据库**: MySQL (现有数据库结构)
-- **图标库**: Remix Icon
-- **状态管理**: React Hooks (useState, useEffect)
-- **HTTP客户端**: Fetch API
+* **前端**: React\@19 + TypeScript + Vite + Tailwind CSS + React Router + i18next
+
+* **后端**: 现有Python Flask API (<https://bimai.xyz>)
+
+* **数据库**: MySQL (现有数据库结构)
+
+* **图标库**: Remix Icon
+
+* **状态管理**: React Hooks (useState, useEffect)
+
+* **HTTP客户端**: Fetch API
 
 ## 3. 路由定义
 
-| 路由 | 用途 |
-|------|------|
-| / | 首页，显示欢迎卡片、统计概览、快速操作和我的鹦鹉 |
-| /parrots | 鹦鹉列表页，显示所有鹦鹉的详细信息卡片 |
-| /parrot/:id | 鹦鹉详情页，显示单个鹦鹉的完整信息和护理记录 |
-| /statistics | 数据统计页，提供图表分析和趋势展示 |
-| /profile | 个人中心页，用户信息管理和应用设置 |
-| /login | 登录页面，支持账号密码和第三方登录 |
-| /register | 注册页面，新用户账号创建 |
+| 路由          | 用途                       |
+| ----------- | ------------------------ |
+| /           | 首页，显示欢迎卡片、统计概览、快速操作和我的鹦鹉 |
+| /parrots    | 鹦鹉列表页，显示所有鹦鹉的详细信息卡片      |
+| /parrot/:id | 鹦鹉详情页，显示单个鹦鹉的完整信息和护理记录   |
+| /statistics | 数据统计页，提供图表分析和趋势展示        |
+| /profile    | 个人中心页，用户信息管理和应用设置        |
+| /login      | 登录页面，支持账号密码和第三方登录        |
+| /register   | 注册页面，新用户账号创建             |
 
 ## 4. API定义
 
 ### 4.1 核心API
 
 **用户认证相关**
+
 ```
 POST /api/auth/login
 ```
 
 请求参数:
-| 参数名 | 参数类型 | 是否必需 | 描述 |
-|--------|----------|----------|------|
+
+| 参数名      | 参数类型   | 是否必需 | 描述      |
+| -------- | ------ | ---- | ------- |
 | username | string | true | 用户名或手机号 |
-| password | string | true | 密码 |
+| password | string | true | 密码      |
 
 响应参数:
-| 参数名 | 参数类型 | 描述 |
-|--------|----------|------|
-| success | boolean | 请求是否成功 |
-| data | object | 用户信息和token |
-| message | string | 响应消息 |
+
+| 参数名     | 参数类型    | 描述         |
+| ------- | ------- | ---------- |
+| success | boolean | 请求是否成功     |
+| data    | object  | 用户信息和token |
+| message | string  | 响应消息       |
 
 **鹦鹉管理相关**
+
 ```
 GET /api/parrots
 ```
 
 请求参数:
-| 参数名 | 参数类型 | 是否必需 | 描述 |
-|--------|----------|----------|------|
-| page | number | false | 页码，默认1 |
-| per_page | number | false | 每页数量，默认20 |
+
+| 参数名       | 参数类型   | 是否必需  | 描述        |
+| --------- | ------ | ----- | --------- |
+| page      | number | false | 页码，默认1    |
+| per\_page | number | false | 每页数量，默认20 |
 
 响应参数:
-| 参数名 | 参数类型 | 描述 |
-|--------|----------|------|
-| success | boolean | 请求是否成功 |
-| data | array | 鹦鹉列表数据 |
-| pagination | object | 分页信息 |
+
+| 参数名        | 参数类型    | 描述     |
+| ---------- | ------- | ------ |
+| success    | boolean | 请求是否成功 |
+| data       | array   | 鹦鹉列表数据 |
+| pagination | object  | 分页信息   |
 
 ```
 GET /api/parrots/{id}
 ```
 
 请求参数:
-| 参数名 | 参数类型 | 是否必需 | 描述 |
-|--------|----------|----------|------|
-| id | number | true | 鹦鹉ID |
+
+| 参数名 | 参数类型   | 是否必需 | 描述   |
+| --- | ------ | ---- | ---- |
+| id  | number | true | 鹦鹉ID |
 
 响应参数:
-| 参数名 | 参数类型 | 描述 |
-|--------|----------|------|
+
+| 参数名     | 参数类型    | 描述     |
+| ------- | ------- | ------ |
 | success | boolean | 请求是否成功 |
-| data | object | 鹦鹉详细信息 |
+| data    | object  | 鹦鹉详细信息 |
 
 **护理记录相关**
+
 ```
 GET /api/records/feeding
 ```
 
 请求参数:
-| 参数名 | 参数类型 | 是否必需 | 描述 |
-|--------|----------|----------|------|
-| parrot_id | number | false | 鹦鹉ID筛选 |
-| page | number | false | 页码 |
-| per_page | number | false | 每页数量 |
+
+| 参数名        | 参数类型   | 是否必需  | 描述     |
+| ---------- | ------ | ----- | ------ |
+| parrot\_id | number | false | 鹦鹉ID筛选 |
+| page       | number | false | 页码     |
+| per\_page  | number | false | 每页数量   |
 
 **统计数据相关**
+
 ```
 GET /api/statistics/feeding-trends
 ```
 
 请求参数:
-| 参数名 | 参数类型 | 是否必需 | 描述 |
-|--------|----------|----------|------|
-| days | number | false | 统计天数，默认30 |
-| parrot_id | number | false | 特定鹦鹉ID |
+
+| 参数名        | 参数类型   | 是否必需  | 描述        |
+| ---------- | ------ | ----- | --------- |
+| days       | number | false | 统计天数，默认30 |
+| parrot\_id | number | false | 特定鹦鹉ID    |
 
 ## 5. 服务器架构图
 
@@ -288,6 +305,7 @@ erDiagram
 ### 6.2 数据定义语言
 
 **用户表 (users)**
+
 ```sql
 -- 用户表已存在，包含个人模式和团队模式支持
 CREATE TABLE users (
@@ -307,6 +325,7 @@ CREATE TABLE users (
 ```
 
 **鹦鹉表 (parrots)**
+
 ```sql
 -- 鹦鹉表已存在，支持团队共享
 CREATE TABLE parrots (
@@ -334,7 +353,8 @@ CREATE TABLE parrots (
 );
 ```
 
-**鹦鹉品种表 (parrot_species)**
+**鹦鹉品种表 (parrot\_species)**
+
 ```sql
 -- 鹦鹉品种参考表
 CREATE TABLE parrot_species (
@@ -356,7 +376,8 @@ INSERT INTO parrot_species (name, description, avg_lifespan, avg_size, care_leve
 ('红腹鹦鹉', '中型鹦鹉，色彩鲜艳，需要专业护理', 25, '23cm', 'hard');
 ```
 
-**喂食记录表 (feeding_records)**
+**喂食记录表 (feeding\_records)**
+
 ```sql
 -- 喂食记录表已存在，支持团队协作
 CREATE TABLE feeding_records (
@@ -376,6 +397,7 @@ CREATE TABLE feeding_records (
 ```
 
 **团队表 (teams)**
+
 ```sql
 -- 团队管理表
 CREATE TABLE teams (
@@ -388,3 +410,4 @@ CREATE TABLE teams (
     FOREIGN KEY (creator_id) REFERENCES users(id)
 );
 ```
+

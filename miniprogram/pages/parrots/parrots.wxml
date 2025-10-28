@@ -27,8 +27,10 @@
         <view class="stat-overview-item">
           <text class="stat-overview-value">{{femaleCount}}</text>
           <text class="stat-overview-label">雌性鹦鹉</text>
-        </view>
-      </view>
+</view>
+</view>
+<!-- 自定义底部导航 -->
+<bottom-nav active="parrots" />
     </view>
   </view>
 

@@ -29,8 +29,10 @@
         <view class="status-indicator">
           <view class="status-dot"></view>
           <text class="status-text">{{overview.total_parrots || 0}}只鹦鹉状态良好</text>
-        </view>
-      </view>
+</view>
+</view>
+<!-- 自定义底部导航 -->
+<bottom-nav active="index" />
     </view>
 
     <!-- 统计数据网格 -->

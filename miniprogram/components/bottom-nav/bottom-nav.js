@@ -7,7 +7,7 @@ Component({
   data: {
     items: [
       {
-        key: 'home',
+        key: 'index',
         text: '首页',
         pagePath: '/pages/index/index',
         iconPath: '/images/home.png',
@@ -40,7 +40,7 @@ Component({
     onTap(e) {
       const page = e.currentTarget.dataset.page
       if (page) {
-        wx.switchTab({ url: page })
+        wx.reLaunch({ url: page })
       }
     }
   }

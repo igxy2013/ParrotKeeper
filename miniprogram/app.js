@@ -4,7 +4,7 @@ App({
     userInfo: null,
     openid: null,
     //baseUrl: 'https://bimai.xyz', // 后端API地址（固定使用正式地址）
-    baseUrl: 'http://127.0.0.1:5085', // 后端API地址（固定使用正式地址）
+    baseUrl: 'http://192.168.0.80:5085', // 后端API地址（固定使用测试地址）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
     appVersion: '1.0.0' // 小程序版本号（通过微信API动态获取）
@@ -154,8 +154,9 @@ App({
         header['X-User-Mode'] = this.globalData.userMode
       }
       
+      const apiBase = this.globalData.baseUrl || 'https://bimai.xyz'
       wx.request({
-        url: this.globalData.baseUrl + url,
+        url: apiBase + url,
         method,
         data,
         header: {
