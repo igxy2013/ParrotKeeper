@@ -27,8 +27,8 @@
       </view>
       <view class="stat-card expense">
         <view class="stat-icon">⬇️</view>
-        <view class="stat-value">¥{{stats.localTotalExpense || 0}}</view>
-        <view class="stat-label">当前筛选支出</view>
+        <view class="stat-value">¥{{stats.totalExpense}}</view>
+        <view class="stat-label">当前筛选支出（汇总）</view>
       </view>
     </view>
 

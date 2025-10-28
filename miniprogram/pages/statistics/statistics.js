@@ -792,6 +792,7 @@ Page({
     else if (period === '本周') weightDays = 7
     else if (period === '本月') weightDays = 30
     else if (period === '本年') weightDays = 365
+    else if (period === '全部') weightDays = 36500 // 约100年，等效于“全部”
     this.setData({ selectedPeriod: period, weightDays })
     // 刷新体重趋势（概览平均体重依赖该数据）
     this.loadWeightTrends()

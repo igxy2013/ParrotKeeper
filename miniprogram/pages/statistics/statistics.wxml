@@ -16,6 +16,7 @@
     <view class="period-btn {{selectedPeriod === '本周' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本周">本周</view>
     <view class="period-btn {{selectedPeriod === '本月' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本月">本月</view>
     <view class="period-btn {{selectedPeriod === '本年' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="本年">本年</view>
+    <view class="period-btn {{selectedPeriod === '全部' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="全部">全部</view>
   </view>
 
   <!-- 概览统计（APP风格2×2渐变卡） -->
