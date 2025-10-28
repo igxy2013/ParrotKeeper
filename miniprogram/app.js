@@ -6,8 +6,6 @@ App({
     userInfo: null,
     openid: null,
     baseUrl: 'https://bimai.xyz', // 后端API地址（固定使用正式地址）
-    baseUrl: 'http://192.168.0.60:5075', // 后端API地址（固定使用测试地址）
-    //baseUrl: 'https://acbim.cn:5075', // 后端API地址（固定使用正式地址）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
     needRefresh: false, // 页面数据刷新标志（模式变更时触发）

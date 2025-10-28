@@ -114,6 +114,7 @@
         <view class="setting-arrow">></view>
       </view>
 
+      <!-- 通知功能测试菜单已隐藏
       <view class="setting-action-item" bindtap="goToTestNotification">
         <view class="setting-icon-wrapper">
           <view class="setting-icon test-icon">🧪</view>
@@ -124,6 +125,7 @@
         </view>
         <view class="setting-arrow">></view>
       </view>
+      -->
 
       <view class="setting-action-item logout-item" bindtap="handleLogout">
         <view class="setting-icon-wrapper">
