@@ -101,5 +101,5 @@ if __name__ == '__main__':
     
     # 使用Flask开发服务器进行测试
     print("启动开发服务器...")
-    print("服务器地址: http://0.0.0.0:5085")
-    app.run(host='0.0.0.0', port=5085, debug=True)
+    print("服务器地址: http://0.0.0.0:5075")
+    app.run(host='0.0.0.0', port=5075, debug=True)
