@@ -29,6 +29,9 @@ class Config:
 
     # 应用版本（用于对外展示，通过环境变量注入）
     APP_VERSION = os.environ.get('APP_VERSION') or '1.0.0'
+    
+    # 基础URL配置
+    BASE_URL = os.environ.get('BASE_URL') or 'https://acbim.cn'
 
 class DevelopmentConfig(Config):
     DEBUG = True

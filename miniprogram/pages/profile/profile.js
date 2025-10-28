@@ -113,7 +113,7 @@ Page({
       return
     }
     try {
-      const res = await app.request({ url: '/api/achievements', method: 'GET' })
+      const res = await app.request({ url: '/api/achievements/', method: 'GET' })
       if (res.success) {
         this.setData({ achievements: res.data })
       }

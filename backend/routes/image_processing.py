@@ -21,13 +21,14 @@ def remove_image_background():
         if not original_path:
             return jsonify({'error': '文件格式不支持'}), 400
         
+        base_url = current_app.config.get('BASE_URL', 'https://bimai.xyz')
         response_data = {
-            'original_url': f"https://bimai.xyz/uploads/{original_path}",
+            'original_url': f"{base_url}/uploads/{original_path}",
             'message': '图片上传成功'
         }
         
         if processed_path:
-            response_data['processed_url'] = f"https://bimai.xyz/uploads/{processed_path}"
+            response_data['processed_url'] = f"{base_url}/uploads/{processed_path}"
             response_data['message'] = '抠图处理成功'
         else:
             response_data['message'] = '图片上传成功，但抠图处理失败'
@@ -45,8 +46,9 @@ def process_existing_image():
         if not data or 'image_path' not in data:
             return jsonify({'error': '缺少图片路径参数'}), 400
         
+        base_url = current_app.config.get('BASE_URL', 'https://bimai.xyz')
         # 获取相对路径并转换为绝对路径
-        relative_path = data['image_path'].replace('https://bimai.xyz/uploads/', '')
+        relative_path = data['image_path'].replace(f'{base_url}/uploads/', '')
         absolute_path = os.path.join(current_app.config['UPLOAD_FOLDER'], relative_path)
         
         if not os.path.exists(absolute_path):
@@ -63,7 +65,7 @@ def process_existing_image():
             
             return jsonify({
                 'original_url': data['image_path'],
-                'processed_url': f"https://bimai.xyz/uploads/{processed_relative_path}",
+                'processed_url': f"{base_url}/uploads/{processed_relative_path}",
                 'message': '抠图处理成功'
             }), 200
         else:
