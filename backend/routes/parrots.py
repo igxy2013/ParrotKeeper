@@ -266,7 +266,8 @@ def update_parrot(parrot_id):
         if 'health_status' in data:
             parrot.health_status = data['health_status']
         if 'photo_url' in data:
-            parrot.photo_url = data['photo_url']
+            # 空字符串表示清空照片
+            parrot.photo_url = None if (data['photo_url'] == '' or data['photo_url'] is None) else data['photo_url']
         if 'avatar_url' in data:
             parrot.avatar_url = data['avatar_url']
         if 'notes' in data:

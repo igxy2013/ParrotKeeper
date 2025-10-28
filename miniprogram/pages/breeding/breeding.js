@@ -87,56 +87,59 @@ Page({
   },
 
   // 加载鹦鹉选项
-  loadParrotOptions() {
-    wx.request({
-      url: `${app.globalData.apiUrl}/api/parrots`,
-      method: 'GET',
-      header: {
-        'Authorization': `Bearer ${wx.getStorageSync('token')}`
-      },
-      success: (res) => {
-        if (res.data.success) {
-          this.setData({
-            parrotOptions: res.data.data || []
-          })
-        }
-      },
-      fail: (err) => {
-        console.error('加载鹦鹉列表失败:', err)
+  async loadParrotOptions() {
+    try {
+      const res = await app.request({
+        url: '/api/parrots',
+        method: 'GET',
+        data: { limit: 100 }
+      })
+      if (res && res.success) {
+        const parrots = Array.isArray(res.data)
+          ? res.data
+          : (res.data && Array.isArray(res.data.parrots))
+            ? res.data.parrots
+            : (res.data && Array.isArray(res.data.items))
+              ? res.data.items
+              : []
+        this.setData({ parrotOptions: parrots })
       }
-    })
+    } catch (err) {
+      console.error('加载鹦鹉列表失败:', err)
+      app.showError('加载鹦鹉列表失败')
+    }
   },
 
   // 加载繁殖记录
-  loadBreedingRecords() {
+  async loadBreedingRecords() {
     this.setData({ loading: true })
-    
-    wx.request({
-      url: `${app.globalData.apiUrl}/api/records/breeding`,
-      method: 'GET',
-      header: {
-        'Authorization': `Bearer ${wx.getStorageSync('token')}`
-      },
-      success: (res) => {
-        if (res.data.success) {
-          const records = this.processBreedingRecords(res.data.data.items || [])
-          this.setData({
-            breedingRecords: records,
-            loading: false
-          })
-          this.filterRecords()
-          this.updateStats()
-        } else {
-          app.showError(res.data.message || '加载繁殖记录失败')
-          this.setData({ loading: false })
-        }
-      },
-      fail: (err) => {
-        console.error('加载繁殖记录失败:', err)
-        app.showError('网络错误，请稍后重试')
+    try {
+      const res = await app.request({
+        url: '/api/records/breeding',
+        method: 'GET'
+      })
+      if (res && res.success) {
+        const items = Array.isArray(res.data)
+          ? res.data
+          : (res.data && Array.isArray(res.data.items))
+            ? res.data.items
+            : []
+        const records = this.processBreedingRecords(items)
+        this.setData({
+          breedingRecords: records,
+          loading: false
+        })
+        this.filterRecords()
+        this.updateStats()
+      } else {
+        app.showError((res && res.message) || '加载繁殖记录失败')
         this.setData({ loading: false })
       }
-    })
+    } catch (err) {
+      console.error('加载繁殖记录失败:', err)
+      app.showError('网络错误，请稍后重试')
+      this.setData({ loading: false })
+    }
   },
 
   // 处理繁殖记录数据
@@ -366,27 +369,21 @@ Page({
     }
     
     // 提交数据
-    wx.request({
-      url: `${app.globalData.apiUrl}/api/records/breeding`,
+    app.request({
+      url: '/api/records/breeding',
       method: 'POST',
-      header: {
-        'Authorization': `Bearer ${wx.getStorageSync('token')}`,
-        'Content-Type': 'application/json'
-      },
-      data: submitData,
-      success: (res) => {
-        if (res.data.success) {
-          app.showSuccess('繁殖记录添加成功')
-          this.hideAddForm()
-          this.loadBreedingRecords()
-        } else {
-          app.showError(res.data.message || '添加繁殖记录失败')
-        }
-      },
-      fail: (err) => {
-        console.error('添加繁殖记录失败:', err)
-        app.showError('网络错误，请稍后重试')
+      data: submitData
+    }).then((res) => {
+      if (res && res.success) {
+        app.showSuccess('繁殖记录添加成功')
+        this.hideAddForm()
+        this.loadBreedingRecords()
+      } else {
+        app.showError((res && res.message) || '添加繁殖记录失败')
       }
+    }).catch((err) => {
+      console.error('添加繁殖记录失败:', err)
+      app.showError('网络错误，请稍后重试')
     })
   },
 

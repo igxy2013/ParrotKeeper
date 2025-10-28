@@ -13,7 +13,10 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 def save_uploaded_file(file, folder='parrots'):
-    """保存上传的文件"""
+    """保存上传的文件
+    folder为空或空字符串时，直接保存到上传根目录，并返回仅文件名的相对路径。
+    非空时保存到对应子目录，并返回`{folder}/{filename}`。
+    """
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         # 添加时间戳避免文件名冲突
@@ -21,15 +24,19 @@ def save_uploaded_file(file, folder='parrots'):
         timestamp = str(int(time.time()))
         name, ext = os.path.splitext(filename)
         filename = f"{name}_{timestamp}{ext}"
-        
-        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], folder)
+
+        # 规范化子目录参数
+        subfolder = (folder or '').strip()
+
+        upload_base = current_app.config['UPLOAD_FOLDER']
+        upload_path = os.path.join(upload_base, subfolder) if subfolder else upload_base
         os.makedirs(upload_path, exist_ok=True)
-        
+
         file_path = os.path.join(upload_path, filename)
         file.save(file_path)
-        
-        # 返回相对路径用于存储在数据库中
-        return f"{folder}/{filename}"
+
+        # 返回相对路径用于前端拼接 /uploads/
+        return f"{subfolder}/{filename}" if subfolder else filename
     return None
 
 def remove_background(image_path):

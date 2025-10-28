@@ -1895,3 +1895,51 @@
 .theme-dark .menu-item-desc,
 .theme-dark .version-info { color: #9ca3af; }
 .theme-dark .section-title { color: #e5e7eb; }
+/* —— 下面新增：团队管理弹窗卡片化现代风格 —— */
+
+/* 统一弹窗容器（修复 modal-container 未定义导致样式不生效） */
+.modal-container {
+  background: #ffffff;
+  border-radius: 20rpx;
+  width: 90%;
+  max-width: 640rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+/* 团队管理弹窗尺寸与滚动 */
+.manage-team-modal { max-height: 80vh; overflow-y: auto; }
+.manage-team-modal .modal-header { padding: 30rpx 30rpx 10rpx; }
+.manage-team-modal .modal-title { font-size: 34rpx; font-weight: 700; }
+.manage-team-modal .modal-body { padding: 20rpx 24rpx 30rpx; }
+.manage-team-modal .modal-footer { justify-content: flex-end; }
+.manage-team-modal .btn { flex: initial; }
+.manage-team-modal .member-actions .btn,
+.manage-team-modal .invite-row .btn { flex: initial; min-width: 160rpx; }
+
+/* 卡片网格与卡片样式 */
+.cards-grid { display: flex; flex-direction: column; gap: 20rpx; }
+.card { background: #fff; border-radius: 16rpx; box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08); border: 1rpx solid #eef2f7; }
+.card-header { padding: 22rpx 24rpx 10rpx; display: flex; align-items: center; justify-content: space-between; }
+.card-title { font-size: 30rpx; font-weight: 600; color: #1f2937; }
+.card-content { padding: 10rpx 24rpx 24rpx; }
+.card .form-row { margin-bottom: 18rpx; }
+
+/* 邀请码行 */
+.invite-row { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.invite-row text { font-size: 28rpx; color: #374151; }
+
+/* 成员列表行卡片 */
+.member-row { display: flex; align-items: center; gap: 16rpx; padding: 16rpx; border-radius: 12rpx; background: #f8fafc; margin-bottom: 14rpx; }
+.member-avatar { width: 64rpx; height: 64rpx; border-radius: 50%; box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.08); }
+.member-info { flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
+.member-name { font-size: 28rpx; color: #111827; font-weight: 600; }
+.member-role { display: inline-block; padding: 6rpx 12rpx; border-radius: 999rpx; font-size: 24rpx; color: #0f172a; background: #e2e8f0; }
+.member-actions { display: flex; align-items: center; gap: 10rpx; }
+
+/* 暗色主题适配（管理弹窗） */
+.theme-dark .card { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+.theme-dark .card-title { color: #e5e7eb; }
+.theme-dark .member-row { background: rgba(255,255,255,0.06); }
+.theme-dark .member-name { color: #e5e7eb; }
+.theme-dark .member-role { background: rgba(255,255,255,0.12); color: #e5e7eb; }

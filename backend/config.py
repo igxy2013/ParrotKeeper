@@ -21,7 +21,9 @@ class Config:
     WECHAT_APP_SECRET = os.environ.get('WECHAT_APP_SECRET')
     
     # 文件上传配置
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or 'uploads'
+    # 统一将用户上传的图片存储到网络共享目录（可被环境变量覆盖）
+    # 注意：Windows UNC 路径需要使用原始字符串以保留反斜杠
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or r"\\192.168.0.60\服务器与开发\ParrotKeeper\backend\uploads\images"
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH') or 16 * 1024 * 1024)  # 16MB
     
     # 允许的文件扩展名

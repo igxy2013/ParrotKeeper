@@ -474,9 +474,14 @@ Page({
         submitData.weight = parseFloat(submitData.weight)
       }
       
-      // 移除空字段（但保留parrot_number和ring_number，允许它们为空字符串）
+      // 移除空字段：保留可为空字符串的字段（包括 photo_url 用于清空照片）
       Object.keys(submitData).forEach(key => {
-        if (submitData[key] === '' && key !== 'parrot_number' && key !== 'ring_number') {
+        if (
+          submitData[key] === '' &&
+          key !== 'parrot_number' &&
+          key !== 'ring_number' &&
+          key !== 'photo_url'
+        ) {
           delete submitData[key]
         }
       })

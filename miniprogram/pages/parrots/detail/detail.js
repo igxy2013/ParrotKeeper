@@ -14,7 +14,7 @@ Page({
     showMenu: false,
     // 选项卡
     activeTab: '基本信息',
-    tabs: ['基本信息', '喂食记录', '健康档案', '训练记录'],
+    tabs: ['基本信息', '喂食记录', '健康档案', '繁殖记录'],
     
     // 健康状态映射
     healthStatusText: '',
@@ -28,22 +28,24 @@ Page({
       'feeding': '喂食记录',
       'cleaning': '清洁记录',
       'health_check': '健康检查',
-      'training': '训练记录'
+      'training': '训练记录',
+      'breeding': '繁殖记录'
     },
     
     typeIcons: {
       'feeding': '🍽️',
       'cleaning': '🧹',
       'health_check': '🏥',
-      'training': '🎯'
+      'training': '🎯',
+      'breeding': '🐣'
     },
 
     // 喂食记录数据
     feedingRecords: [],
     // 健康档案数据
     healthRecords: [],
-    // 训练记录数据
-    trainingRecords: [],
+    // 繁殖记录数据
+    breedingRecords: [],
     
     // 最后喂食时间信息
     lastFeedingInfo: '',
@@ -157,8 +159,8 @@ Page({
         
         // 按类型分类记录
         const feedingRecords = recentRecords.filter(r => r.type === 'feeding')
-        const healthRecords = recentRecords.filter(r => r.type === 'health_check')
-        const trainingRecords = recentRecords.filter(r => r.type === 'training')
+        const healthRecords = recentRecords.filter(r => r.type === 'health')
+        const breedingRecords = recentRecords.filter(r => r.type === 'breeding')
         
         // 计算最后喂食时间信息
         let lastFeedingInfo = '暂无喂食记录'
@@ -184,7 +186,7 @@ Page({
           hasFeedingRecords,
           feedingRecords,
           healthRecords,
-          trainingRecords,
+          breedingRecords,
           lastFeedingInfo
         })
       }
@@ -264,7 +266,7 @@ Page({
       return
     }
     wx.navigateTo({
-      url: `/pages/records/add-record/add-record?type=feeding&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
+      url: `/pages/records/feeding/feeding${this.data.parrotId ? `?parrot_id=${this.data.parrotId}` : ''}`
     })
   },
 
@@ -275,7 +277,7 @@ Page({
       return
     }
     wx.navigateTo({
-      url: `/pages/records/add-record/add-record?type=health_check&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
+      url: `/pages/records/health/health${this.data.parrotId ? `?parrot_id=${this.data.parrotId}` : ''}`
     })
   },
 
@@ -317,8 +319,22 @@ Page({
       app.showError('您没有操作权限')
       return
     }
+    const pid = encodeURIComponent(String(this.data.parrotId || ''))
     wx.navigateTo({
-      url: `/pages/records/add-record/add-record?type=cleaning&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
+      url: `/pages/records/cleaning/cleaning${pid ? `?parrot_id=${pid}` : ''}`
+    })
+  },
+
+  // 快速繁殖记录
+  quickBreeding() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
+    // 跳转到繁殖记录新页面
+    const pid = encodeURIComponent(String(this.data.parrotId || ''))
+    wx.navigateTo({
+      url: `/pages/breeding/breeding${pid ? `?parrot_id=${pid}` : ''}`
     })
   },
 

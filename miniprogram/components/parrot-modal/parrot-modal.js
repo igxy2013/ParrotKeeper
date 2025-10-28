@@ -183,9 +183,14 @@ Component({
         photo_url: f.photo_url || ''
       }
 
-      // 空值清理，保留可为空字符串的字段
+      // 空值清理：保留可为空字符串的字段（包括 photo_url 用于清空照片）
       Object.keys(submitData).forEach(key => {
-        if (submitData[key] === '' && key !== 'parrot_number' && key !== 'ring_number') {
+        if (
+          submitData[key] === '' &&
+          key !== 'parrot_number' &&
+          key !== 'ring_number' &&
+          key !== 'photo_url'
+        ) {
           delete submitData[key]
         }
       })

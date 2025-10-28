@@ -122,7 +122,7 @@ Page({
     const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
     const weeklyCount = records.filter(r => new Date(r.cleaning_time) >= weekAgo).length
     const uniqueTypes = this.buildFilterOptions(records).length - 1
-    const lastTimeText = records[0] ? records[0].cleaning_time_formatted : ''
+    const lastTimeText = records[0] ? app.formatRelativeTime(records[0].cleaning_time) : ''
     return { weeklyCount, uniqueTypes, lastTimeText }
   },
 

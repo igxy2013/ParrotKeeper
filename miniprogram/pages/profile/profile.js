@@ -20,6 +20,13 @@ Page({
     teamInfo: {},
     showJoinTeamModal: false,
     showCreateTeamModal: false,
+    inviteCode: '',
+    newTeamName: '',
+    newTeamDesc: '',
+    // 团队管理弹窗
+    showTeamManageModal: false,
+    editTeamName: '',
+    editTeamDesc: '',
 
     // 编辑昵称
     isEditingNickname: false,
@@ -148,8 +155,19 @@ Page({
   },
 
   // 团队协作点击处理（功能未开放，禁止跳转）
-  onTeamItemTap() {
-    wx.showToast({ title: '团队功能暂未开放', icon: 'none' })
+  onTeamItemTap(e) {
+    const action = e.currentTarget.dataset.action;
+    if (action === 'current') {
+      this.showTeamInfoModal();
+    } else if (action === 'join') {
+      this.goToJoinTeam();
+    } else if (action === 'create') {
+      this.goToCreateTeam();
+    } else if (action === 'manage') {
+      this.showTeamManageModal();
+    } else {
+      wx.showToast({ title: '暂不支持的操作', icon: 'none' });
+    }
   },
 
   // 功能菜单点击处理
@@ -347,14 +365,132 @@ Page({
   },
 
   // 团队相关占位
-  showTeamInfoModal() { this.setData({ showTeamInfoModal: true }); },
+  showTeamInfoModal() {
+    // 打开弹窗
+    this.setData({ showTeamInfoModal: true });
+    // 拉取当前团队基本信息
+    const app = getApp();
+    app.request({ url: '/api/teams/current', method: 'GET' })
+      .then(res => {
+        if (res && res.success && res.data) {
+          const info = res.data;
+          const role = info.user_role || info.role;
+          this.setData({
+            currentTeamName: info.name || '',
+            teamInfo: info,
+            isTeamAdmin: role === 'owner' || role === 'admin'
+          });
+          // 继续拉取详细信息（包含邀请码、成员等）
+          if (info.id) {
+            return app.request({ url: `/api/teams/${info.id}`, method: 'GET' });
+          }
+        }
+        return null;
+      })
+      .then(detail => {
+        if (detail && detail.success && detail.data) {
+          const d = detail.data;
+          const role = d.user_role || d.role;
+          this.setData({
+            teamInfo: d,
+            currentTeamName: d.name || this.data.currentTeamName,
+            isTeamAdmin: role === 'owner' || role === 'admin'
+          });
+        }
+      })
+      .catch(err => {
+        console.warn('获取团队信息失败:', err);
+      });
+  },
   hideTeamInfoModal() { this.setData({ showTeamInfoModal: false }); },
-  goToJoinTeam() { this.setData({ showJoinTeamModal: true }); },
+  // 团队管理弹窗
+  async showTeamManageModal() {
+    // 打开弹窗
+    this.setData({ showTeamManageModal: true });
+    const app = getApp();
+    try {
+      // 若当前信息为空，先拉取当前团队基础信息
+      if (!this.data.teamInfo || !this.data.teamInfo.id) {
+        const cur = await app.request({ url: '/api/teams/current', method: 'GET' });
+        if (cur && cur.success && cur.data) {
+          const role = cur.data.user_role || cur.data.role;
+          this.setData({
+            teamInfo: cur.data,
+            currentTeamName: cur.data.name || '',
+            isTeamAdmin: role === 'owner' || role === 'admin'
+          });
+        }
+      }
+      // 继续拉取详细信息（包含成员与邀请码）
+      const teamId = this.data.teamInfo && this.data.teamInfo.id;
+      if (teamId) {
+        const detail = await app.request({ url: `/api/teams/${teamId}`, method: 'GET' });
+        if (detail && detail.success && detail.data) {
+          const d = detail.data;
+          const role = d.user_role || d.role;
+          this.setData({
+            teamInfo: d,
+            currentTeamName: d.name || this.data.currentTeamName,
+            isTeamAdmin: role === 'owner' || role === 'admin',
+            // 预填编辑字段
+            editTeamName: d.name || '',
+            editTeamDesc: d.description || ''
+          });
+        } else {
+          // 兜底预填
+          this.setData({
+            editTeamName: this.data.currentTeamName || '',
+            editTeamDesc: (this.data.teamInfo && this.data.teamInfo.description) || ''
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('打开团队管理弹窗失败:', err);
+    }
+  },
+  hideTeamManageModal() { this.setData({ showTeamManageModal: false }); },
+  onEditTeamNameInput(e) { this.setData({ editTeamName: (e.detail.value || '').trim() }); },
+  onEditTeamDescInput(e) { this.setData({ editTeamDesc: e.detail.value || '' }); },
+  async confirmUpdateTeam() {
+    const app = getApp();
+    const teamId = this.data.teamInfo && this.data.teamInfo.id;
+    if (!teamId) {
+      return wx.showToast({ title: '无法识别当前团队', icon: 'none' });
+    }
+    if (!this.data.isTeamAdmin) {
+      return wx.showToast({ title: '仅管理员可修改团队信息', icon: 'none' });
+    }
+    const name = (this.data.editTeamName || '').trim();
+    const description = (this.data.editTeamDesc || '').trim();
+    if (!name) {
+      return wx.showToast({ title: '请输入团队名称', icon: 'none' });
+    }
+    app.showLoading('正在更新团队信息...');
+    try {
+      const res = await app.request({ url: `/api/teams/${teamId}`, method: 'PUT', data: { name, description } });
+      app.hideLoading();
+      if (res && res.success) {
+        // 更新本地状态
+        const teamInfo = Object.assign({}, this.data.teamInfo, { name, description });
+        this.setData({ teamInfo, currentTeamName: name });
+        wx.showToast({ title: '已保存团队信息', icon: 'none' });
+      } else {
+        wx.showToast({ title: (res && res.message) || '更新失败', icon: 'none' });
+      }
+    } catch (e) {
+      app.hideLoading();
+      console.error('更新团队信息失败:', e);
+      wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+    }
+  },
+  goToJoinTeam() { this.setData({ showJoinTeamModal: true, inviteCode: '' }); },
   hideJoinTeamModal() { this.setData({ showJoinTeamModal: false }); },
-  goToCreateTeam() { this.setData({ showCreateTeamModal: true }); },
+  goToCreateTeam() { this.setData({ showCreateTeamModal: true, newTeamName: '', newTeamDesc: '' }); },
   hideCreateTeamModal() { this.setData({ showCreateTeamModal: false }); },
   confirmJoinTeam() {},
   confirmCreateTeam() {},
+  // 阻止弹窗容器点击冒泡导致关闭
+  preventClose() {},
 
   // 昵称与头像
   toggleNicknameEdit() {
@@ -411,6 +547,246 @@ Page({
       }
     } catch (err) {
       console.warn('更新头像失败:', err);
+      wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+    }
+  },
+
+  // 通用：阻止弹窗冒泡关闭
+  preventClose() {},
+
+  // 加入/创建团队交互占位：输入与确认
+  onInviteCodeInput(e) { this.setData({ inviteCode: (e.detail.value || '').trim() }); },
+  async confirmJoinTeam() {
+    const app = getApp();
+    const code = (this.data.inviteCode || '').trim();
+    if (!code) {
+      return wx.showToast({ title: '请输入邀请码', icon: 'none' });
+    }
+
+    app.showLoading('正在加入团队...');
+    try {
+      const res = await app.request({ url: '/api/teams/join', method: 'POST', data: { invite_code: code } });
+      app.hideLoading();
+      if (res && res.success) {
+        // 成功加入：更新模式与团队信息
+        this.setData({
+          showJoinTeamModal: false,
+          inviteCode: '',
+          currentTeamName: (res.data && res.data.team_name) || this.data.currentTeamName,
+          isTeamAdmin: res.data && (res.data.role === 'owner' || res.data.role === 'admin')
+        });
+
+        // 切换到团队模式
+        this.setData({ userMode: 'team' });
+        app.setUserMode && app.setUserMode('team');
+
+        // 进一步刷新当前团队详情
+        try {
+          const cur = await app.request({ url: '/api/teams/current', method: 'GET' });
+          if (cur && cur.success && cur.data) {
+            this.setData({ teamInfo: cur.data, currentTeamName: cur.data.name });
+          }
+        } catch (_) {}
+
+        wx.showToast({ title: '加入团队成功', icon: 'none' });
+      } else {
+        wx.showToast({ title: (res && res.message) || '加入团队失败', icon: 'none' });
+      }
+    } catch (err) {
+      app.hideLoading();
+      console.error('加入团队失败:', err);
+      wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+    }
+  },
+
+  // 复制邀请码
+  copyInviteCode() {
+    const code = (this.data.teamInfo && this.data.teamInfo.invite_code) || '';
+    if (!code) {
+      return wx.showToast({ title: '暂无邀请码', icon: 'none' });
+    }
+    wx.setClipboardData({
+      data: code,
+      success: () => wx.showToast({ title: '邀请码已复制', icon: 'none' })
+    });
+  },
+
+  // 退出团队（非创建者）
+  async confirmLeaveTeam() {
+    const app = getApp();
+    const teamId = this.data.teamInfo && this.data.teamInfo.id;
+    if (!teamId) {
+      return wx.showToast({ title: '无法识别当前团队', icon: 'none' });
+    }
+
+    wx.showModal({
+      title: '确认退出团队',
+      content: '退出后将无法访问团队数据，确定要退出吗？',
+      confirmText: '退出',
+      cancelText: '取消',
+      success: async (res) => {
+        if (!res.confirm) return;
+        app.showLoading('正在退出团队...');
+        try {
+          const resp = await app.request({ url: `/api/teams/${teamId}/leave`, method: 'POST' });
+          app.hideLoading();
+          if (resp && resp.success) {
+            // 切回个人模式，清理团队信息
+            this.setData({
+              showTeamInfoModal: false,
+              userMode: 'personal',
+              currentTeamName: '',
+              teamInfo: {}
+            });
+            app.setUserMode && app.setUserMode('personal');
+            wx.showToast({ title: '已退出团队', icon: 'none' });
+          } else {
+            wx.showToast({ title: (resp && resp.message) || '退出团队失败', icon: 'none' });
+          }
+        } catch (e) {
+          app.hideLoading();
+          console.error('退出团队失败:', e);
+          wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+        }
+      }
+    });
+  },
+
+  // 切换成员角色：admin <-> member（仅管理员/所有者可操作）
+  async changeMemberRole(e) {
+    const app = getApp();
+    const teamId = this.data.teamInfo && this.data.teamInfo.id;
+    const userId = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.userId;
+    if (!teamId || !userId) {
+      return wx.showToast({ title: '参数缺失，无法操作', icon: 'none' });
+    }
+
+    const members = (this.data.teamInfo && this.data.teamInfo.members) || [];
+    const target = members.find(m => String(m.id) === String(userId));
+    if (!target) {
+      return wx.showToast({ title: '成员不存在', icon: 'none' });
+    }
+    if (target.role === 'owner') {
+      return wx.showToast({ title: '不能修改创建者角色', icon: 'none' });
+    }
+
+    const newRole = target.role === 'admin' ? 'member' : 'admin';
+    app.showLoading('正在更新角色...');
+    try {
+      const resp = await app.request({ url: `/api/teams/${teamId}/members/${userId}/role`, method: 'PUT', data: { role: newRole } });
+      app.hideLoading();
+      if (resp && resp.success) {
+        // 本地更新角色
+        const updatedMembers = members.map(m => {
+          if (String(m.id) === String(userId)) { return { ...m, role: newRole }; }
+          return m;
+        });
+        this.setData({ teamInfo: { ...this.data.teamInfo, members: updatedMembers } });
+        wx.showToast({ title: '角色更新成功', icon: 'none' });
+      } else {
+        wx.showToast({ title: (resp && resp.message) || '角色更新失败', icon: 'none' });
+      }
+    } catch (e) {
+      app.hideLoading();
+      console.error('更新角色失败:', e);
+      wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+    }
+  },
+
+  // 移除团队成员（仅管理员/所有者可操作）
+  async removeMember(e) {
+    const app = getApp();
+    const teamId = this.data.teamInfo && this.data.teamInfo.id;
+    const userId = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.userId;
+    if (!teamId || !userId) {
+      return wx.showToast({ title: '参数缺失，无法操作', icon: 'none' });
+    }
+
+    const members = (this.data.teamInfo && this.data.teamInfo.members) || [];
+    const target = members.find(m => String(m.id) === String(userId));
+    if (!target) {
+      return wx.showToast({ title: '成员不存在', icon: 'none' });
+    }
+    if (target.role === 'owner') {
+      return wx.showToast({ title: '不能移除创建者', icon: 'none' });
+    }
+
+    wx.showModal({
+      title: '移除成员',
+      content: `确定要移除成员“${target.nickname || ''}”吗？`,
+      confirmText: '移除',
+      cancelText: '取消',
+      success: async (res) => {
+        if (!res.confirm) return;
+        app.showLoading('正在移除成员...');
+        try {
+          const resp = await app.request({ url: `/api/teams/${teamId}/members/${userId}`, method: 'DELETE' });
+          app.hideLoading();
+          if (resp && resp.success) {
+            const updatedMembers = members.filter(m => String(m.id) !== String(userId));
+            const newCount = Math.max(0, (this.data.teamInfo.member_count || updatedMembers.length));
+            this.setData({ teamInfo: { ...this.data.teamInfo, members: updatedMembers, member_count: newCount } });
+            wx.showToast({ title: '已移除成员', icon: 'none' });
+          } else {
+            wx.showToast({ title: (resp && resp.message) || '移除成员失败', icon: 'none' });
+          }
+        } catch (e) {
+          app.hideLoading();
+          console.error('移除成员失败:', e);
+          wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+        }
+      }
+    });
+  },
+  onNewTeamNameInput(e) { this.setData({ newTeamName: (e.detail.value || '').trim() }); },
+  onNewTeamDescInput(e) { this.setData({ newTeamDesc: e.detail.value || '' }); },
+  async confirmCreateTeam() {
+    const app = getApp();
+    const name = (this.data.newTeamName || '').trim();
+    const description = (this.data.newTeamDesc || '').trim();
+    if (!name) {
+      return wx.showToast({ title: '请输入团队名称', icon: 'none' });
+    }
+
+    app.showLoading('正在创建团队...');
+    try {
+      const res = await app.request({ url: '/api/teams', method: 'POST', data: { name, description } });
+      app.hideLoading();
+      if (res && res.success) {
+        // 更新页面状态与团队信息
+        this.setData({
+          showCreateTeamModal: false,
+          currentTeamName: res.data && res.data.name || name,
+          teamInfo: {
+            id: res.data && res.data.id,
+            description: (res.data && res.data.description) || description,
+            invite_code: res.data && res.data.invite_code
+          },
+          isTeamAdmin: true
+        });
+
+        // 切换为团队模式并持久化到后端
+        this.setData({ userMode: 'team' });
+        app.setUserMode && app.setUserMode('team');
+
+        // 尝试刷新当前团队详情（补充成员数量等）
+        try {
+          const cur = await app.request({ url: '/api/teams/current', method: 'GET' });
+          if (cur && cur.success && cur.data) {
+            this.setData({
+              currentTeamName: cur.data.name,
+              teamInfo: cur.data,
+            });
+          }
+        } catch (_) {}
+
+        wx.showToast({ title: '团队创建成功', icon: 'none' });
+      } else {
+        wx.showToast({ title: (res && res.message) || '创建团队失败', icon: 'none' });
+      }
+    } catch (err) {
+      app.hideLoading();
+      console.error('创建团队失败:', err);
       wx.showToast({ title: '网络或服务器错误', icon: 'none' });
     }
   },
