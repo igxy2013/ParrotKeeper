@@ -27,6 +27,9 @@ class Config:
     # 允许的文件扩展名
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
+    # 应用版本（用于对外展示，通过环境变量注入）
+    APP_VERSION = os.environ.get('APP_VERSION') or '1.0.0'
+
 class DevelopmentConfig(Config):
     DEBUG = True
 

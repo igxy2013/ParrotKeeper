@@ -695,6 +695,17 @@ Page({
         icon: 'success'
       });
 
+      // 添加喂食通知
+      const notificationManager = app.globalData.notificationManager;
+      if (notificationManager) {
+        const parrotNames = this.data.parrots
+          .filter(p => newRecord.parrotIds.includes(p.id))
+          .map(p => p.name)
+          .join('、');
+        
+        notificationManager.addFeedingNotification(parrotNames, feedingTime);
+      }
+
       this.hideAddForm();
       this.loadFeedingRecords();
       

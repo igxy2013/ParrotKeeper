@@ -1,13 +1,19 @@
 // app.js
+const { notificationManager } = require('./utils/notification.js')
+
 App({
   globalData: {
     userInfo: null,
     openid: null,
-    //baseUrl: 'https://bimai.xyz', // 后端API地址（固定使用正式地址）
-    baseUrl: 'http://192.168.0.80:5085', // 后端API地址（固定使用测试地址）
+    baseUrl: 'https://bimai.xyz', // 后端API地址（固定使用正式地址）
+    baseUrl: 'http://192.168.0.60:5075', // 后端API地址（固定使用测试地址）
+    //baseUrl: 'https://acbim.cn:5075', // 后端API地址（固定使用正式地址）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
-    appVersion: '1.0.0' // 小程序版本号（通过微信API动态获取）
+    needRefresh: false, // 页面数据刷新标志（模式变更时触发）
+    appVersion: '1.0.0', // 小程序版本号（通过微信API动态获取）
+    notificationManager, // 全局通知管理器
+    notificationUpdateCallback: null // 通知更新回调
   },
 
   // 初始化小程序版本号
@@ -25,10 +31,54 @@ App({
     }
   },
 
+  // 通过后端API获取版本号
+  fetchServerVersion() {
+    this.request({ url: '/api/health' })
+      .then(res => {
+        if (res && res.success && res.version) {
+          this.globalData.appVersion = res.version
+          console.log('从后端API获取版本号:', res.version)
+        }
+      })
+      .catch(err => {
+        console.warn('获取后端版本号失败:', err)
+      })
+  },
+
+  // 设置用户模式（个人/团队），持久化并通知页面刷新
+  setUserMode(mode) {
+    if (mode !== 'personal' && mode !== 'team') {
+      console.warn('无效的用户模式:', mode)
+      return
+    }
+    const prev = this.globalData.userMode
+    if (prev === mode) {
+      // 模式未变化，但仍确保持久化
+      try { wx.setStorageSync('userMode', mode) } catch(_) {}
+      return
+    }
+
+    this.globalData.userMode = mode
+    this.globalData.needRefresh = true
+    try { wx.setStorageSync('userMode', mode) } catch(_) {}
+
+    // 登录状态下通知后端更新用户模式（便于持久化）
+    if (this.globalData.openid) {
+      this.request({
+        url: '/api/auth/profile',
+        method: 'PUT',
+        data: { user_mode: mode }
+      }).catch(err => {
+        console.warn('更新后端用户模式失败:', err)
+      })
+    }
+  },
+
   onLaunch() {
     console.log('小程序启动')
     
-    // 获取小程序真实版本号
+    // 获取版本号：优先后端API，其次微信API
+    this.fetchServerVersion()
     this.initAppVersion()
     
     // 检查登录状态

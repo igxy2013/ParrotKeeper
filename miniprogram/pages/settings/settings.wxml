@@ -1,7 +1,6 @@
 <!--pages/settings/settings.wxml-->
 <view class="page-container">
   <app-header title="设置" subtitle="个人偏好与系统设置" showBack="true">
-    <view slot="actions" class="header-save-btn" bindtap="savePreferences">保存</view>
   </app-header>
   <view class="page-content">
 
@@ -35,6 +34,64 @@
         <switch checked="{{notificationsEnabled}}" bindchange="toggleNotifications" />
       </view>
 
+      <!-- 通知详细设置 -->
+      <view wx:if="{{notificationsEnabled}}" class="notification-details">
+        <view class="setting-action-item">
+          <view class="setting-icon-wrapper">
+            <view class="setting-icon">🍽️</view>
+          </view>
+          <view class="setting-content">
+            <view class="setting-name">喂食提醒</view>
+            <view class="setting-desc">定时提醒喂食时间</view>
+          </view>
+          <switch checked="{{feedingReminder}}" bindchange="toggleFeedingReminder" />
+        </view>
+
+        <view class="setting-action-item">
+          <view class="setting-icon-wrapper">
+            <view class="setting-icon">🏥</view>
+          </view>
+          <view class="setting-content">
+            <view class="setting-name">健康提醒</view>
+            <view class="setting-desc">体检和健康检查提醒</view>
+          </view>
+          <switch checked="{{healthReminder}}" bindchange="toggleHealthReminder" />
+        </view>
+
+        <view class="setting-action-item">
+          <view class="setting-icon-wrapper">
+            <view class="setting-icon">🧹</view>
+          </view>
+          <view class="setting-content">
+            <view class="setting-name">清洁提醒</view>
+            <view class="setting-desc">笼子清洁和卫生提醒</view>
+          </view>
+          <switch checked="{{cleaningReminder}}" bindchange="toggleCleaningReminder" />
+        </view>
+
+        <view class="setting-action-item">
+          <view class="setting-icon-wrapper">
+            <view class="setting-icon">💊</view>
+          </view>
+          <view class="setting-content">
+            <view class="setting-name">用药提醒</view>
+            <view class="setting-desc">药物和保健品提醒</view>
+          </view>
+          <switch checked="{{medicationReminder}}" bindchange="toggleMedicationReminder" />
+        </view>
+
+        <view class="setting-action-item">
+          <view class="setting-icon-wrapper">
+            <view class="setting-icon">🥚</view>
+          </view>
+          <view class="setting-content">
+            <view class="setting-name">繁殖提醒</view>
+            <view class="setting-desc">繁殖期和孵化提醒</view>
+          </view>
+          <switch checked="{{breedingReminder}}" bindchange="toggleBreedingReminder" />
+        </view>
+      </view>
+
       <view class="setting-action-item" bindtap="showAbout">
         <view class="setting-icon-wrapper">
           <view class="setting-icon about-icon">ℹ️</view>
@@ -53,6 +110,17 @@
         <view class="setting-content">
           <view class="setting-name">帮助反馈</view>
           <view class="setting-desc">获取帮助或提交反馈</view>
+        </view>
+        <view class="setting-arrow">></view>
+      </view>
+
+      <view class="setting-action-item" bindtap="goToTestNotification">
+        <view class="setting-icon-wrapper">
+          <view class="setting-icon test-icon">🧪</view>
+        </view>
+        <view class="setting-content">
+          <view class="setting-name">通知功能测试</view>
+          <view class="setting-desc">测试通知管理器功能</view>
         </view>
         <view class="setting-arrow">></view>
       </view>

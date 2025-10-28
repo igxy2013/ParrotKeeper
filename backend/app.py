@@ -11,6 +11,7 @@ from routes.expenses import expenses_bp
 from routes.teams import teams_bp
 from routes.achievements import achievements_bp
 from routes.image_processing import image_processing_bp
+from routes.notifications import notifications_bp
 import os
 
 def create_app(config_name=None):
@@ -38,6 +39,7 @@ def create_app(config_name=None):
     app.register_blueprint(teams_bp)
     app.register_blueprint(achievements_bp)
     app.register_blueprint(image_processing_bp)
+    app.register_blueprint(notifications_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
@@ -64,7 +66,7 @@ def create_app(config_name=None):
         return jsonify({
             'success': True,
             'message': '服务正常',
-            'version': 'dynamic' # 版本号由前端动态获取
+            'version': app.config.get('APP_VERSION', 'unknown')
         })
     
     # 静态文件服务

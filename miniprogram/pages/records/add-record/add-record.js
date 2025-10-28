@@ -1014,6 +1014,29 @@ Page({
         if (!res.success) throw new Error(res.message || '保存失败')
       }
       wx.showToast({ title: '保存成功', icon: 'success' })
+      
+      // 添加通知
+      const notificationManager = app.globalData.notificationManager;
+      if (notificationManager && !recordId) { // 只在新增记录时添加通知
+        const parrotNames = this.data.parrotList
+          .filter(p => formData.parrot_ids.includes(p.id))
+          .map(p => p.name)
+          .join('、');
+        
+        if (recordType === 'feeding') {
+          notificationManager.addFeedingNotification(parrotNames, timeStr);
+        } else if (recordType === 'health') {
+          notificationManager.addHealthNotification(parrotNames, timeStr);
+        } else if (recordType === 'cleaning') {
+          notificationManager.addCleaningNotification(parrotNames, timeStr);
+        } else if (recordType === 'breeding') {
+          const maleParrotName = this.data.maleParrotList.find(p => p.id === formData.male_parrot_id)?.name || '';
+          const femaleParrotName = this.data.femaleParrotList.find(p => p.id === formData.female_parrot_id)?.name || '';
+          const breedingParrotNames = [maleParrotName, femaleParrotName].filter(name => name).join(' × ');
+          notificationManager.addBreedingNotification(breedingParrotNames, timeStr);
+        }
+      }
+      
       const pages = getCurrentPages()
       const prevPage = pages[pages.length - 2]
       if (prevPage && typeof prevPage.refreshData === 'function') {

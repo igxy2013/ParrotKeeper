@@ -6,10 +6,14 @@
   min-height: 100vh;
   /* 统一字体家族，增强中英文显示一致性 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  /* 兼容内容模块可能溢出 page-content 的情况，整体底部预留空间 */
+  padding-bottom: 160rpx;
 }
 
 .page-content {
   padding: 20rpx;
+  /* 为底部固定导航预留空间，避免底部卡片被遮挡 */
+  padding-bottom: 160rpx;
 }
 
 /* 用户信息卡片 */
@@ -373,7 +377,7 @@
   backdrop-filter: blur(20rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.2);
   border-radius: 32rpx;
-  padding: 32rpx;
+  padding: 24rpx;
   margin: 24rpx 20rpx; /* 与菜单、团队、成就等卡片左右对齐 */
   box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
@@ -543,8 +547,8 @@
 .mode-display .mode-title { font-size: 32rpx; font-weight: 700; color: #111827; line-height: 1.2; }
 .mode-display .current-mode { font-weight: 700; color: #111827; font-size: 28rpx; }
 .mode-display .mode-desc { font-size: 24rpx; color: #6b7280; font-weight: 500; }
-.mode-toggle { display: flex; gap: 16rpx; margin-left: 72rpx; }
-.mode-pill { min-width: 160rpx; height: 64rpx; padding: 0 28rpx; border-radius: 999rpx; display: flex; align-items: center; justify-content: center; background: #eef2f7; color: #1f2937; font-weight: 700; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); }
+.mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx; margin-left: 0; }
+.mode-pill { width: 100%; height: 80rpx; padding: 0 24rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; background: #eef2f7; color: #1f2937; font-weight: 700; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); box-sizing: border-box; }
 .mode-pill.active { background: #10b981; color: #ffffff; box-shadow: 0 10rpx 24rpx rgba(16,185,129,0.35); }
 
 /* 暗色主题适配 */
@@ -555,7 +559,7 @@
 
 /* 覆盖旧的横向布局，确保按钮位于下方 */
 .mode-card .card-content { align-items: stretch; }
-.mode-toggle { display: flex; gap: 16rpx; margin-left: 72rpx; }
+.mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx; margin-left: 0; }
 .theme-dark .mode-pill { background: rgba(255,255,255,0.12); color: #e5e7eb; }
 .theme-dark .mode-pill.active { background: #10b981; color: #ffffff; box-shadow: 0 10rpx 24rpx rgba(16,185,129,0.45); }
 

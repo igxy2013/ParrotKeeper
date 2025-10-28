@@ -50,7 +50,6 @@ Page({
     menuItems: [
       { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray' },
       { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green' },
-      { icon: '📞', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange' },
       { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo' },
       { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink' }
     ]
@@ -60,7 +59,13 @@ Page({
     this.initUser();
     this.loadPreferences();
     this.loadOverviewStats();
-    this.loadAchievements(); // 加载成就列表
+    // 团队模式下不加载成就内容
+    if ((app.globalData.userMode || this.data.userMode) !== 'team') {
+      this.loadAchievements();
+    } else {
+      // 确保成就列表为空
+      this.setData({ achievements: [] });
+    }
   },
 
   // 加载统计概览用于展示统计网格（改用统一请求封装）
@@ -75,7 +80,10 @@ Page({
             statsViews: res.data.stats_views || 0
           }
         })
-        this.checkAchievements()
+        // 团队模式下不检查成就
+        if ((app.globalData.userMode || this.data.userMode) !== 'team') {
+          this.checkAchievements()
+        }
       }
     } catch (err) {
       console.error('获取统计数据失败:', err)
@@ -84,6 +92,8 @@ Page({
 
   // 检查成就解锁（改用统一请求封装）
   async checkAchievements() {
+    // 团队模式下不提示、不检查解锁
+    if ((app.globalData.userMode || this.data.userMode) === 'team') return
     try {
       const res = await app.request({ url: '/api/achievements/check', method: 'POST', data: {} })
       if (res.success && res.data && Array.isArray(res.data.newly_unlocked) && res.data.newly_unlocked.length > 0) {
@@ -97,6 +107,11 @@ Page({
 
   // 加载成就列表（改用统一请求封装）
   async loadAchievements() {
+    // 团队模式下不加载成就列表
+    if ((app.globalData.userMode || this.data.userMode) === 'team') {
+      this.setData({ achievements: [] })
+      return
+    }
     try {
       const res = await app.request({ url: '/api/achievements', method: 'GET' })
       if (res.success) {
@@ -109,6 +124,8 @@ Page({
 
   // 显示成就解锁提示
   showAchievementUnlock(achievement) {
+    // 团队模式下不提示成就解锁
+    if ((app.globalData.userMode || this.data.userMode) === 'team') return
     wx.showToast({
       title: `🎉 解锁成就：${achievement.title}`,
       icon: 'none',
@@ -138,8 +155,6 @@ Page({
       wx.navigateTo({ url: '/pages/settings/settings' });
     } else if (title === '护理指南') {
       wx.showToast({ title: '护理指南功能即将上线', icon: 'none' });
-    } else if (title === '客服支持') {
-      this.showHelp && this.showHelp();
     } else if (title === '关于我们') {
       this.showAbout && this.showAbout();
     } else if (title === '分享应用') {
@@ -171,8 +186,9 @@ Page({
     try {
       const notificationsEnabled = wx.getStorageSync('pref_notifications') || false;
       const theme = wx.getStorageSync('pref_theme') || 'system';
-      const storedMode = wx.getStorageSync('pref_user_mode');
-      const userMode = storedMode ? storedMode : this.data.userMode;
+      // 优先使用全局 userMode，其次从统一键 userMode 读取，最后回退当前值
+      const storedMode = wx.getStorageSync('userMode');
+      const userMode = app.globalData.userMode || storedMode || this.data.userMode;
       // 清理遗留的语言偏好存储键
       try { wx.removeStorageSync('pref_language'); } catch (_) {}
       this.setData({
@@ -308,7 +324,6 @@ Page({
     const mode = this.data.selectedMode;
     this.setData({ userMode: mode, showModeDialog: false });
     app.setUserMode && app.setUserMode(mode);
-    try { wx.setStorageSync('pref_user_mode', mode); } catch(_) {}
     wx.showToast({ title: `已切换为${mode === 'personal' ? '个人模式' : '团队模式'}`, icon: 'none' });
   },
 
@@ -319,7 +334,6 @@ Page({
     const app = getApp();
     this.setData({ userMode: mode });
     app.setUserMode && app.setUserMode(mode);
-    try { wx.setStorageSync('pref_user_mode', mode); } catch(_) {}
     wx.showToast({ title: `已切换为${mode === 'personal' ? '个人模式' : '团队模式'}`, icon: 'none' });
   },
 

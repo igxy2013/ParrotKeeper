@@ -688,13 +688,24 @@ Page({
 
   // 通知中心：初始化与交互
   initNotifications() {
-    const notifications = [
-      { id: 1, type: 'health', title: '小彩体检提醒', description: '今天 14:00 到期', time: '今天 14:00', unread: true },
-      { id: 2, type: 'feeding', title: '喂食提醒', description: '上午 9:00 喂食', time: '上午 9:00', unread: true },
-      { id: 3, type: 'system', title: '欢迎使用鹦鹉管家', description: '新手指引已更新', time: '昨天', unread: false }
-    ]
-    const unreadCount = notifications.filter(n => n.unread).length
+    const app = getApp()
+    const notificationManager = app.globalData.notificationManager
+    
+    // 从本地存储加载通知
+    const notifications = notificationManager.getLocalNotifications()
+    const unreadCount = notificationManager.getUnreadCount()
+    
     this.setData({ notifications, unreadCount })
+    
+    // 设置通知更新回调
+    app.globalData.notificationUpdateCallback = () => {
+      const updatedNotifications = notificationManager.getLocalNotifications()
+      const updatedUnreadCount = notificationManager.getUnreadCount()
+      this.setData({ 
+        notifications: updatedNotifications, 
+        unreadCount: updatedUnreadCount 
+      })
+    }
   },
 
   openNotifications() {
@@ -706,22 +717,22 @@ Page({
   },
 
   markAllNotificationsRead() {
-    const notifications = (this.data.notifications || []).map(n => ({ ...n, unread: false }))
-    this.setData({ notifications, unreadCount: 0 })
+    const app = getApp()
+    const notificationManager = app.globalData.notificationManager
+    notificationManager.markAllNotificationsRead()
   },
 
   clearAllNotifications() {
-    this.setData({ notifications: [], unreadCount: 0 })
+    const app = getApp()
+    const notificationManager = app.globalData.notificationManager
+    notificationManager.clearAllNotifications()
   },
 
   handleNotificationTap(e) {
     const { id } = e.detail || {}
-    const notifications = (this.data.notifications || []).map(n => {
-      if (n.id === id) return { ...n, unread: false }
-      return n
-    })
-    const unreadCount = notifications.filter(n => n.unread).length
-    this.setData({ notifications, unreadCount })
+    const app = getApp()
+    const notificationManager = app.globalData.notificationManager
+    notificationManager.markNotificationRead(id)
   },
 
 

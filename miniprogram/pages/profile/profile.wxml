@@ -72,52 +72,14 @@
   <view class="function-cards" wx:if="{{isLogin}}">
     <!-- 模式设置卡片 -->
       <view class="function-card mode-card">
-      <view class="card-content">
-        <view class="mode-header">
-          <view class="mode-icon">⚙️</view>
-          <view class="mode-text">
-            <text class="card-title mode-title">模式设置</text>
-            <text class="mode-desc">选择应用使用模式</text>
-          </view>
+        <view class="section-title">
+          <text class="title-icon">⚙️</text>
+          <text>模式设置</text>
         </view>
         <view class="mode-toggle">
           <view class="mode-pill {{userMode === 'personal' ? 'active' : ''}}" data-mode="personal" bindtap="chooseUserMode">个人模式</view>
           <view class="mode-pill {{userMode === 'team' ? 'active' : ''}}" data-mode="team" bindtap="chooseUserMode">团队模式</view>
         </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 模式切换弹窗 -->
-  <view class="modal-overlay" wx:if="{{showModeDialog}}" bindtap="hideModeDialog">
-    <view class="modal-content" catchtap="preventClose">
-      <view class="modal-header">
-        <text class="modal-title">选择使用模式</text>
-      </view>
-      <view class="modal-body">
-        <view class="mode-options">
-          <view class="mode-option {{selectedMode === 'personal' ? 'active' : ''}}" 
-                data-mode="personal" bindtap="selectMode">
-            <view class="mode-icon">👤</view>
-            <view class="mode-info">
-              <text class="mode-name">个人模式</text>
-              <text class="mode-desc">管理个人的鹦鹉数据</text>
-            </view>
-          </view>
-          <view class="mode-option {{selectedMode === 'team' ? 'active' : ''}}" 
-                data-mode="team" bindtap="selectMode">
-            <view class="mode-icon">👥</view>
-            <view class="mode-info">
-              <text class="mode-name">团队模式</text>
-              <text class="mode-desc">查看团队管理员的鹦鹉数据</text>
-            </view>
-          </view>
-        </view>
-      </view>
-      <view class="modal-footer">
-        <button class="btn btn-secondary" bindtap="hideModeDialog">取消</button>
-        <button class="btn btn-primary" bindtap="confirmModeSwitch">确认</button>
-      </view>
     </view>
   </view>
 

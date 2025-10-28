@@ -22,7 +22,8 @@
                   "pages/teams/teams",
                   "pages/teams/settings/settings",
                   "pages/teams/join/join",
-                  "pages/teams/create/create"
+                  "pages/teams/create/create",
+                  "pages/test-notification/test-notification"
               ],
     "window":  {
                    "backgroundTextStyle":  "light",
