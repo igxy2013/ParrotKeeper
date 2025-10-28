@@ -1,6 +1,10 @@
 <!--pages/records/records.wxml-->
 <view class="page-container">
-  <app-header title="养殖记录" subtitle="专业鹦鹉护理助手"></app-header>
+  <app-header title="养殖记录" subtitle="专业鹦鹉护理助手">
+    <view slot="actions" wx:if="{{isLogin && hasOperationPermission}}" class="header-btn" bindtap="addRecord">
+      <text class="header-btn-icon">+</text>
+    </view>
+  </app-header>
   <view class="page-content">
     <!-- 游客模式提示 -->
     <view wx:if="{{!isLogin}}" class="guest-tip">
@@ -276,6 +280,54 @@
       <view class="filter-option {{selectedParrot === item.name ? 'selected' : ''}}" wx:for="{{parrots}}" wx:key="id" bindtap="selectParrot" data-parrot="{{item.name}}">
         <text class="option-text">{{item.name}}</text>
         <text class="option-check" wx:if="{{selectedParrot === item.name}}">✓</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 添加记录模态弹窗 -->
+<view class="modal-overlay" wx:if="{{showAddRecordModal}}" bindtap="hideAddRecordModal">
+  <view class="modal-content add-record-modal" catchtap="stopModalPropagation">
+    <view class="modal-header">
+      <text class="modal-title">添加{{modalRecordType === 'feeding' ? '喂食' : modalRecordType === 'health' ? '健康' : modalRecordType === 'cleaning' ? '清洁' : '繁殖'}}记录</text>
+      <view class="modal-close" bindtap="hideAddRecordModal">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="quick-add-options">
+        <view class="quick-option" bindtap="quickAddRecord">
+          <view class="option-icon">⚡</view>
+          <view class="option-content">
+            <text class="option-title">快速记录</text>
+            <text class="option-desc">使用默认设置快速添加记录</text>
+          </view>
+        </view>
+        <view class="quick-option" bindtap="navigateToAddRecord">
+          <view class="option-icon">📝</view>
+          <view class="option-content">
+            <text class="option-title">详细记录</text>
+            <text class="option-desc">填写完整的记录信息</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 鹦鹉筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showParrotModal}}" bindtap="hideParrotFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择鹦鹉</text>
+      <view class="modal-close" bindtap="hideParrotFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option {{!selectedParrotId ? 'selected' : ''}}" bindtap="selectParrot" data-id="" data-name="">
+        <text class="option-text">全部鹦鹉</text>
+        <text class="option-check" wx:if="{{!selectedParrotId}}">✓</text>
+      </view>
+      <view class="filter-option {{selectedParrotId === item.id ? 'selected' : ''}}" wx:for="{{parrotsList}}" wx:key="id" bindtap="selectParrot" data-id="{{item.id}}" data-name="{{item.name}}">
+        <text class="option-text">{{item.name}}</text>
+        <text class="option-check" wx:if="{{selectedParrotId === item.id}}">✓</text>
       </view>
     </view>
   </view>

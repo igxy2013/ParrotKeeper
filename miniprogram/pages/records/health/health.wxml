@@ -1,6 +1,10 @@
 <!--pages/records/health/health.wxml-->
 <view class="page-container">
-  <app-header title="健康检查" subtitle="记录鹦鹉健康状况" showBack="true" theme="purple"></app-header>
+  <app-header title="健康检查" subtitle="记录鹦鹉健康状况" showBack="true" theme="purple">
+    <view slot="actions" class="header-btn" bindtap="addHealthRecord">
+      <text class="header-btn-icon">+</text>
+    </view>
+  </app-header>
 
   <view class="page-content">
     <!-- 游客模式提示 -->

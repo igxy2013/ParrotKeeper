@@ -426,49 +426,40 @@ Page({
 
   // 筛选事件处理
   onSelectType(e) {
-    const type = e.currentTarget.dataset.type
-    this.setData({ selectedType: type }, () => {
-      this.updateFilteredRecords()
-      this.updateStats()
-      this.updateFilterCategories()
-    })
+    const selectedType = this.data.types[e.detail.value]
+    this.setData({ selectedType })
+    this.updateFilteredRecords()
   },
 
   onSelectParrot(e) {
-    const parrot = e.currentTarget.dataset.parrot
-    this.setData({ selectedParrot: parrot }, () => {
-      this.updateFilteredRecords()
-      this.updateStats()
-    })
+    const selectedParrot = this.data.parrots[e.detail.value]
+    this.setData({ selectedParrot })
+    this.updateFilteredRecords()
   },
 
   onSelectCategory(e) {
-    const category = e.currentTarget.dataset.category
-    this.setData({ selectedCategory: category }, () => {
-      this.updateFilteredRecords()
-      this.updateStats()
-    })
+    const selectedCategory = this.data.filterCategories[e.detail.value]
+    this.setData({ selectedCategory })
+    this.updateFilteredRecords()
   },
 
   onQuickSelectCategory(e) {
     const category = e.currentTarget.dataset.category
-    this.setData({ selectedCategory: category }, () => {
-      this.updateFilteredRecords()
-      this.updateStats()
-    })
+    this.setData({ selectedCategory: category })
+    this.updateFilteredRecords()
   },
 
   // 更新筛选类别
   updateFilterCategories() {
     const { selectedType } = this.data
-    let filterCategories = []
+    let filterCategories = ['全部']
     
     if (selectedType === '收入') {
-      filterCategories = this.data.incomeCategories
+      filterCategories = filterCategories.concat(this.data.incomeCategories.slice(1))
     } else if (selectedType === '支出') {
-      filterCategories = this.data.expenseCategories
+      filterCategories = filterCategories.concat(this.data.expenseCategories.slice(1))
     } else {
-      filterCategories = ['全部', '食物', '玩具', '医疗', '用品', '其他', '繁殖收入', '出售用品', '培训服务', '其他收入']
+      filterCategories = this.data.filterCategories
     }
     
     this.setData({ filterCategories })
@@ -477,31 +468,18 @@ Page({
   // 添加记录相关方法
   onShowAddRecord() {
     this.setData({ showAddRecord: true })
-    this.computeModalCapsulePadding()
-    this.updateModalCategories()
   },
 
   onHideAddRecord() {
     this.setData({ showAddRecord: false })
   },
 
-  // 计算弹窗的顶部胶囊与底部安全区避让
-  computeModalCapsulePadding() {
-    try {
-      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
-      const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
-      if (win && rect && typeof win.windowWidth === 'number') {
-        const modalTopOffsetPx = Math.max(0, rect.bottom + 12)
-        let modalBottomOffsetPx = 24
-        if (win && win.safeArea && typeof win.windowHeight === 'number') {
-          const bottomInset = win.windowHeight - win.safeArea.bottom
-          modalBottomOffsetPx = Math.max(24, bottomInset + 12)
-        }
-        this.setData({ modalTopOffsetPx, modalBottomOffsetPx })
-      }
-    } catch (e) {
-      this.setData({ modalTopOffsetPx: 24, modalBottomOffsetPx: 24 })
-    }
+  // 收支记录添加成功回调
+  onExpenseSuccess() {
+    this.setData({ showAddRecord: false });
+    // 刷新页面数据
+    this.loadExpenses();
+    this.loadStats();
   },
 
   onSetNewType(e) {
@@ -971,3 +949,4 @@ wx.hideLoading();
     }
   }
 })
+

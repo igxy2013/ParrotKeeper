@@ -668,38 +668,27 @@ Page({
     this.loadSpeciesList()
   },
 
-  // 快速添加收支：直接弹窗
+  // 快速添加收支记录
   quickExpense() {
-    if (!this.data.isLogin) {
-      app.showError('请先登录后使用此功能')
-      return
-    }
-    // 预备鹦鹉选项
-    const parrotOptions = (this.data.myParrots || []).map(p => p.name)
-    // 默认日期：今天
-    const today = new Date()
-    const yyyy = today.getFullYear()
-    const mm = String(today.getMonth() + 1).padStart(2, '0')
-    const dd = String(today.getDate()).padStart(2, '0')
-    const dateStr = `${yyyy}-${mm}-${dd}`
-
-    // 初始化类别选项为支出类别
-    const categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
-
     this.setData({
-      showAddExpenseModal: true,
-      parrotOptions,
-      categoryOptions,
-      canSubmitExpense: false,
-      expenseForm: {
-        type: '支出',
-        parrotIndex: -1,
-        categoryIndex: 0,
-        amount: '',
-        description: '',
-        date: dateStr
-      }
-    })
+      showAddExpenseModal: true
+    });
+  },
+
+  // 关闭添加收支记录弹窗
+  closeAddExpenseModal() {
+    this.setData({
+      showAddExpenseModal: false
+    });
+  },
+
+  // 收支记录添加成功回调
+  onExpenseSuccess() {
+    this.setData({
+      showAddExpenseModal: false
+    });
+    // 刷新页面数据
+    this.loadData();
   },
 
   // 进入用品购买页
@@ -917,168 +906,5 @@ Page({
   },
 
   /* ===== 收支弹窗逻辑 ===== */
-  // 切换记录类型
-  setExpenseType(e) {
-    const type = e.currentTarget.dataset.type
-    let categoryOptions = []
-    if (type === '收入') {
-      categoryOptions = this.data.incomeCategoryLabels || ['销售幼鸟','配种服务','其他收入']
-    } else {
-      categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
-    }
-    this.setData({
-      'expenseForm.type': type,
-      categoryOptions,
-      'expenseForm.categoryIndex': 0
-    })
-    this.updateCanSubmitExpense()
-  },
-
-  // 选择鹦鹉
-  onExpenseParrotChange(e) {
-    const idx = Number(e.detail.value)
-    this.setData({ 'expenseForm.parrotIndex': idx })
-  },
-
-  // 选择类别
-  onExpenseCategoryChange(e) {
-    const idx = Number(e.detail.value)
-    this.setData({ 'expenseForm.categoryIndex': idx })
-    this.updateCanSubmitExpense()
-  },
-
-  // 金额输入
-  onExpenseAmountInput(e) {
-    this.setData({ 'expenseForm.amount': e.detail.value })
-    this.updateCanSubmitExpense()
-  },
-
-  // 描述输入
-  onExpenseDescInput(e) {
-    this.setData({ 'expenseForm.description': e.detail.value })
-  },
-
-  // 日期选择
-  onExpenseDateChange(e) {
-    this.setData({ 'expenseForm.date': e.detail.value })
-    this.updateCanSubmitExpense()
-  },
-
-  // 更新提交可用态
-  updateCanSubmitExpense() {
-    const f = this.data.expenseForm || {}
-    const ok = !!(f.amount && Number(f.amount) > 0 && this.data.categoryOptions && this.data.categoryOptions.length > 0)
-    this.setData({ canSubmitExpense: ok })
-  },
-
-  // 关闭弹窗
-  closeAddExpenseModal() {
-    this.setData({
-      showAddExpenseModal: false,
-      expenseForm: {
-        type: '支出',
-        parrotIndex: 0,
-        categoryIndex: 0,
-        amount: '',
-        description: '',
-        date: ''
-      },
-      categoryOptions: [],
-      canSubmitExpense: false
-    })
-  },
-
-  // 提交收支记录（支出走后端，收入现在也支持后端）
-  async submitExpenseRecord() {
-    const f = this.data.expenseForm
-    if (!f || !f.amount || Number(f.amount) <= 0) {
-      app.showError('请输入有效金额')
-      return
-    }
-    const categoryLabel = (this.data.categoryOptions || [])[f.categoryIndex] || ''
-    if (!categoryLabel) {
-      app.showError('请选择类别')
-      return
-    }
-
-    // 映射鹦鹉ID（可选）
-    let parrot_id = null
-    const parrots = this.data.myParrots || []
-    if (parrots.length > 0 && f.parrotIndex >= 0 && f.parrotIndex < parrots.length) {
-      parrot_id = parrots[f.parrotIndex].id
-    }
-
-    let payload = {}
-    let apiUrl = ''
-    
-    if (f.type === '收入') {
-      // 收入类别映射到后端值
-      const incomeMap = {
-        '销售幼鸟': 'bird_sale',
-        '配种服务': 'service',
-        '繁殖销售': 'breeding_sale',
-        '比赛奖金': 'competition',
-        '其他收入': 'other',
-        '其他': 'other'
-      }
-      const categoryValue = incomeMap[categoryLabel]
-      if (!categoryValue) {
-        app.showError('不支持的收入类别')
-        return
-      }
-      
-      // 组装收入payload
-      payload = {
-        category: categoryValue,
-        amount: Number(f.amount),
-        description: f.description || '',
-        income_date: f.date || ''
-      }
-      if (parrot_id) payload.parrot_id = parrot_id
-      apiUrl = '/api/expenses/incomes'
-    } else {
-      // 支出类别映射到后端值
-      const expenseMap = {
-        '食物': 'food',
-        '医疗': 'medical',
-        '玩具': 'toys',
-        '笼具': 'cage',
-        '幼鸟': 'baby_bird',
-        '种鸟': 'breeding_bird',
-        '其他': 'other'
-      }
-      const categoryValue = expenseMap[categoryLabel]
-      if (!categoryValue) {
-        app.showError('不支持的支出类别')
-        return
-      }
-
-      // 组装支出payload
-      payload = {
-        category: categoryValue,
-        amount: Number(f.amount),
-        description: f.description || '',
-        expense_date: f.date || ''
-      }
-      if (parrot_id) payload.parrot_id = parrot_id
-      apiUrl = '/api/expenses'
-    }
-
-    try {
-      const res = await app.request({
-        url: apiUrl,
-        method: 'POST',
-        data: payload
-      })
-      if (res && res.success) {
-        wx.showToast({ title: '添加成功', icon: 'success' })
-        this.closeAddExpenseModal()
-      } else {
-        app.showError((res && res.message) || '添加失败')
-      }
-    } catch (err) {
-      console.error('提交支出记录失败:', err)
-      app.showError('网络错误，添加失败')
-    }
-  }
 })
+

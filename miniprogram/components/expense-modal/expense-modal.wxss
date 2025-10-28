@@ -1,0 +1,201 @@
+/* expense-modal组件样式 */
+
+/* 弹窗遮罩层 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8rpx);
+}
+
+/* 弹窗内容容器 */
+.modal-content {
+  width: 90%;
+  max-width: 640rpx;
+  max-height: 80vh;
+  background: #ffffff;
+  border-radius: 32rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 弹窗头部渐变区域 */
+.modal-header-gradient {
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  padding: 32rpx;
+  position: relative;
+}
+
+.modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.modal-close-btn {
+  width: 56rpx;
+  height: 56rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10rpx);
+}
+
+.modal-close-icon-img { 
+  width: 32rpx; 
+  height: 32rpx; 
+}
+
+/* 弹窗滚动区域 */
+.modal-scroll {
+  flex: 1;
+  max-height: 60vh;
+}
+
+/* 表单区域 */
+.form-section {
+  padding: 32rpx;
+}
+
+.form-item {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  display: block;
+  color: #374151;
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.text-input {
+  width: 100%;
+  padding: 24rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  background: #ffffff;
+  box-sizing: border-box;
+  min-height: 80rpx;
+}
+
+/* 描述输入框特殊样式 */
+.text-input.description-input {
+  min-height: 120rpx;
+  line-height: 1.5;
+}
+
+.text-input:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+.picker-wrapper {
+  width: 100%;
+}
+
+.picker-display {
+  width: 100%;
+  padding: 24rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.picker-arrow {
+  color: #9ca3af;
+  font-size: 24rpx;
+}
+
+/* 类型切换按钮 */
+.type-switch-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.type-btn {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  border-radius: 9999rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.type-income.active {
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  color: #ffffff;
+  box-shadow: 0 8rpx 20rpx rgba(16, 185, 129, 0.35);
+}
+
+.type-expense.active {
+  background: linear-gradient(135deg, #fb923c, #ef4444);
+  color: #ffffff;
+  box-shadow: 0 8rpx 20rpx rgba(239, 68, 68, 0.35);
+}
+
+/* 弹窗底部 */
+.modal-footer {
+  display: flex;
+  gap: 16rpx;
+  padding: 24rpx 32rpx;
+  border-top: 2rpx solid #f3f4f6;
+  background: #f9fafb;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 24rpx;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none;
+}
+
+.btn-add {
+  flex: 1;
+  padding: 24rpx;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+  border: none;
+}
+
+.btn-add-income { 
+  background: linear-gradient(135deg, #22c55e, #10b981); 
+  color: #ffffff; 
+}
+
+.btn-add-expense { 
+  background: linear-gradient(135deg, #fb923c, #ef4444); 
+  color: #ffffff; 
+}
+
+.btn-add[disabled] { 
+  opacity: 0.5; 
+}

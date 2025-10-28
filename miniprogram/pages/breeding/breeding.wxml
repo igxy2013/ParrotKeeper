@@ -18,21 +18,6 @@
       <text class="tip-subtitle">登录后可以记录和管理您的鹦鹉繁殖信息</text>
     </view>
 
-    <!-- 概览统计（与喂食页面统计卡片设计对齐） -->
-    <view wx:if="{{isLogin}}" class="summary-card rounded-3xl p-6 shadow-xl">
-      <text class="summary-title text-lg font-bold">繁殖统计</text>
-      <view class="summary-grid summary-grid-2">
-        <view class="summary-metric">
-          <text class="summary-value text-2xl font-bold">{{stats.totalPairs}}</text>
-          <text class="summary-label text-sm text-white-80">总繁殖对数</text>
-        </view>
-        <view class="summary-metric">
-          <text class="summary-value text-2xl font-bold">{{stats.successfulHatching}}</text>
-          <text class="summary-label text-sm text-white-80">成功孵化</text>
-        </view>
-      </view>
-    </view>
-
     <!-- 状态筛选（与健康页面的过滤器保持一致） -->
     <view wx:if="{{isLogin}}" class="filter-section">
       <scroll-view class="chip-scroll" scroll-x="true">
@@ -46,6 +31,21 @@
           <text class="option-text">{{item}}</text>
         </view>
       </scroll-view>
+    </view>
+
+    <!-- 概览统计（与喂食页面统计卡片设计对齐） -->
+    <view wx:if="{{isLogin}}" class="summary-card rounded-3xl p-6 shadow-xl">
+      <text class="summary-title text-lg font-bold">繁殖统计</text>
+      <view class="summary-grid summary-grid-2">
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.totalPairs}}</text>
+          <text class="summary-label text-sm text-white-80">总繁殖对数</text>
+        </view>
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.successfulHatching}}</text>
+          <text class="summary-label text-sm text-white-80">成功孵化</text>
+        </view>
+      </view>
     </view>
 
     <!-- 繁殖记录列表 -->
@@ -113,168 +113,5 @@
     </view>
   </view>
 
-  <!-- 添加记录弹窗 -->
-  <view class="modal-overlay" wx:if="{{showAddModal}}" bindtap="hideAddForm">
-    <view class="modal-content" catchtap="stopPropagation">
-      <view class="modal-header">
-        <text class="modal-title">添加繁殖记录</text>
-        <view class="modal-close" bindtap="hideAddForm">×</view>
-      </view>
 
-      <scroll-view class="modal-body" scroll-y="true">
-        <view class="form-container">
-          <view class="form-section">
-            <view class="form-row">
-              <view class="form-group">
-                <text class="form-label">雄鸟</text>
-                <picker 
-                  mode="selector" 
-                  range="{{parrotOptions}}" 
-                  range-key="name"
-                  value="{{formData.maleParrotIndex}}"
-                  bindchange="onMaleParrotChange"
-                >
-                  <view class="picker-input">
-                    <text class="{{formData.maleParrot ? 'selected' : 'placeholder'}}">
-                      {{formData.maleParrot || '选择雄鸟'}}
-                    </text>
-                    <text class="picker-arrow">></text>
-                  </view>
-                </picker>
-              </view>
-              <view class="form-group">
-                <text class="form-label">雌鸟</text>
-                <picker 
-                  mode="selector" 
-                  range="{{parrotOptions}}" 
-                  range-key="name"
-                  value="{{formData.femaleParrotIndex}}"
-                  bindchange="onFemaleParrotChange"
-                >
-                  <view class="picker-input">
-                    <text class="{{formData.femaleParrot ? 'selected' : 'placeholder'}}">
-                      {{formData.femaleParrot || '选择雌鸟'}}
-                    </text>
-                    <text class="picker-arrow">></text>
-                  </view>
-                </picker>
-              </view>
-            </view>
-          </view>
-
-          <view class="form-section">
-            <view class="form-group">
-              <text class="form-label">筑巢日期</text>
-              <picker 
-                mode="date" 
-                value="{{formData.nestingDate}}"
-                bindchange="onNestingDateChange"
-              >
-                <view class="picker-input">
-                  <text class="{{formData.nestingDate ? 'selected' : 'placeholder'}}">
-                    {{formData.nestingDate || '选择筑巢日期'}}
-                  </text>
-                  <text class="picker-arrow">></text>
-                </view>
-              </picker>
-            </view>
-
-            <view class="form-group">
-              <text class="form-label">产蛋日期</text>
-              <picker 
-                mode="date" 
-                value="{{formData.layingDate}}"
-                bindchange="onLayingDateChange"
-              >
-                <view class="picker-input">
-                  <text class="{{formData.layingDate ? 'selected' : 'placeholder'}}">
-                    {{formData.layingDate || '选择产蛋日期'}}
-                  </text>
-                  <text class="picker-arrow">></text>
-                </view>
-              </picker>
-            </view>
-
-            <view class="form-group">
-              <text class="form-label">孵化日期</text>
-              <picker 
-                mode="date" 
-                value="{{formData.hatchingDate}}"
-                bindchange="onHatchingDateChange"
-              >
-                <view class="picker-input">
-                  <text class="{{formData.hatchingDate ? 'selected' : 'placeholder'}}">
-                    {{formData.hatchingDate || '选择孵化日期'}}
-                  </text>
-                  <text class="picker-arrow">></text>
-                </view>
-              </picker>
-            </view>
-          </view>
-
-          <view class="form-section">
-            <view class="form-row">
-              <view class="form-group">
-                <text class="form-label">蛋数</text>
-                <input 
-                  class="form-input" 
-                  type="number" 
-                  placeholder="输入蛋数"
-                  value="{{formData.eggCount}}"
-                  bindinput="onEggCountInput"
-                />
-              </view>
-              <view class="form-group">
-                <text class="form-label">孵化数</text>
-                <input 
-                  class="form-input" 
-                  type="number" 
-                  placeholder="输入孵化数"
-                  value="{{formData.hatchedCount}}"
-                  bindinput="onHatchedCountInput"
-                />
-              </view>
-            </view>
-          </view>
-
-          <view class="form-section">
-            <view class="form-group">
-              <text class="form-label">状态</text>
-              <picker 
-                mode="selector" 
-                range="{{breedingStatusOptions}}" 
-                value="{{formData.statusIndex}}"
-                bindchange="onStatusChange"
-              >
-                <view class="picker-input">
-                  <text class="{{formData.status ? 'selected' : 'placeholder'}}">
-                    {{formData.status || '选择状态'}}
-                  </text>
-                  <text class="picker-arrow">></text>
-                </view>
-              </picker>
-            </view>
-          </view>
-
-          <view class="form-section">
-            <view class="form-group">
-              <text class="form-label">备注</text>
-              <textarea 
-                class="form-textarea" 
-                placeholder="记录繁殖过程中的重要信息..."
-                value="{{formData.notes}}"
-                bindinput="onNotesInput"
-                maxlength="500"
-              />
-            </view>
-          </view>
-
-          <view class="form-actions">
-              <view class="btn-cancel" bindtap="hideAddForm">取消</view>
-              <view class="btn-submit" bindtap="submitForm">添加记录</view>
-            </view>
-          </view>
-      </scroll-view>
-    </view>
-  </view>
 </view>

@@ -688,7 +688,7 @@
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: flex-end;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .modal-content {
@@ -768,4 +768,83 @@
   float: right;
   color: #4CAF50;
   font-size: 28rpx;
+}
+
+/* 添加记录模态弹窗特定样式 */
+.add-record-modal {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.add-record-modal .modal-header {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  color: white;
+  border-bottom: none;
+}
+
+.add-record-modal .modal-title {
+  color: white;
+  font-size: 34rpx;
+  font-weight: bold;
+}
+
+.add-record-modal .modal-close {
+  color: white;
+  font-size: 44rpx;
+  font-weight: bold;
+}
+
+.quick-add-options {
+  padding: 20rpx;
+}
+
+.quick-option {
+  display: flex;
+  align-items: center;
+  padding: 30rpx 24rpx;
+  margin-bottom: 16rpx;
+  background: white;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.quick-option:last-child {
+  margin-bottom: 0;
+}
+
+.quick-option:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
+}
+
+.option-icon {
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.option-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.option-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 8rpx;
+}
+
+.option-desc {
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 1.4;
 }

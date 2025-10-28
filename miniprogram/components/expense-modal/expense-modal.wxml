@@ -1,0 +1,68 @@
+<!-- 添加收支记录弹窗组件 -->
+<view wx:if="{{visible}}" class="modal-overlay" catchtouchmove="true" bindtap="onOverlayTap">
+  <view class="modal-content" catchtap="stopPropagation" style="margin-top: {{modalTopOffsetPx}}px; margin-bottom: {{modalBottomOffsetPx}}px;">
+    <!-- 渐变头部与关闭按钮 -->
+    <view class="modal-header-gradient">
+      <view class="modal-header-row">
+        <text class="modal-title">添加收支记录</text>
+        <view class="modal-close-btn" bindtap="onClose"><image class="modal-close-icon-img" src="/images/icons/close-white.svg" mode="widthFix"/></view>
+      </view>
+    </view>
+
+    <!-- 弹窗主体内容 -->
+    <scroll-view scroll-y="true" class="modal-scroll">
+      <view class="form-section">
+        <!-- 类型切换：收入 / 支出 -->
+        <view class="form-item">
+          <text class="form-label">记录类型</text>
+          <view class="type-switch-row">
+            <view class="type-btn {{formData.type==='收入' ? 'type-income active' : 'type-income'}}" bindtap="setExpenseType" data-type="收入">收入</view>
+            <view class="type-btn {{formData.type==='支出' ? 'type-expense active' : 'type-expense'}}" bindtap="setExpenseType" data-type="支出">支出</view>
+          </view>
+        </view>
+
+        <!-- 选择类别 -->
+        <view class="form-item">
+          <text class="form-label">{{formData.type}}类别</text>
+          <view class="picker-wrapper">
+            <picker mode="selector" range="{{categoryOptions}}" value="{{formData.categoryIndex}}" bindchange="onCategoryChange">
+              <view class="picker-display">
+                <text>{{categoryOptions[formData.categoryIndex] || '请选择类别'}}</text>
+                <text class="picker-arrow">▾</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
+        <!-- 金额 -->
+        <view class="form-item">
+          <text class="form-label">{{formData.type}}金额</text>
+          <input class="text-input" type="number" placeholder="请输入金额" value="{{formData.amount}}" bindinput="onAmountInput" />
+        </view>
+
+        <!-- 描述 -->
+        <view class="form-item">
+          <text class="form-label">{{formData.type}}描述</text>
+          <input class="text-input description-input" placeholder="请输入描述" value="{{formData.description}}" bindinput="onDescInput" />
+        </view>
+
+        <!-- 日期 -->
+        <view class="form-item">
+          <text class="form-label">{{formData.type}}日期</text>
+          <picker mode="date" value="{{formData.date}}" bindchange="onDateChange">
+            <view class="picker-display">
+              <text>{{formData.date || '请选择日期'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 底部按钮 -->
+    <view class="modal-footer">
+      <button class="btn-secondary" bindtap="onClose">取消</button>
+      <button class="btn-add {{formData.type==='收入' ? 'btn-add-income' : 'btn-add-expense'}}" bindtap="onSubmit" disabled="{{!canSubmit}}">添加</button>
+    </view>
+  </view>
+</view>

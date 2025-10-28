@@ -24,6 +24,8 @@ Page({
     // 弹窗状态
     showParrotModal: false,
     showDateModal: false,
+    showAddRecordModal: false, // 添加记录模态弹窗
+    modalRecordType: 'feeding', // 模态弹窗中的记录类型
     
     // 加载状态
     loading: false,
@@ -389,15 +391,9 @@ Page({
 
   // 添加记录
   addRecord() {
-    const urlMap = {
-      'feeding': '/pages/records/add-record/add-record?type=feeding',
-      'health': '/pages/records/add-record/add-record?type=health',
-      'cleaning': '/pages/records/add-record/add-record?type=cleaning',
-      'breeding': '/pages/records/add-record/add-record?type=breeding'
-    }
-    
-    wx.navigateTo({
-      url: urlMap[this.data.activeTab]
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: this.data.activeTab
     })
   },
 
@@ -417,29 +413,33 @@ Page({
 
   // 添加喂食记录
   addFeedingRecord() {
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=feeding'
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: 'feeding'
     })
   },
 
   // 添加健康记录
   addHealthRecord() {
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=health'
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: 'health'
     })
   },
 
   // 添加清洁记录
   addCleaningRecord() {
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=cleaning'
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: 'cleaning'
     })
   },
 
   // 添加繁殖记录
   addBreedingRecord() {
-    wx.navigateTo({
-      url: '/pages/breeding/breeding'
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: 'breeding'
     })
   },
 
@@ -525,6 +525,98 @@ Page({
     this.loadRecords(true)
       .finally(() => wx.stopPullDownRefresh())
   },
+
+  // 关闭添加记录模态弹窗
+  hideAddRecordModal() {
+    this.setData({
+      showAddRecordModal: false,
+      modalRecordType: ''
+    });
+  },
+
+  // 阻止模态弹窗内容区域的点击事件冒泡
+  stopModalPropagation() {
+    // 阻止点击模态框内容时关闭模态框
+  },
+
+  // 从模态弹窗导航到添加记录页面
+  navigateToAddRecord() {
+    const type = this.data.modalRecordType;
+    this.hideAddRecordModal();
+    wx.navigateTo({
+      url: `/pages/records/add-record/add-record?type=${type}`
+    });
+  },
+
+  // 快速添加记录
+  async quickAddRecord() {
+    const type = this.data.modalRecordType;
+    const currentTime = new Date();
+    const dateStr = currentTime.toISOString().split('T')[0];
+    const timeStr = currentTime.toTimeString().split(' ')[0].substring(0, 5);
+    
+    try {
+      wx.showLoading({
+        title: '添加中...',
+        mask: true
+      });
+
+      // 构建快速记录数据
+      const recordData = {
+        record_type: type,
+        record_date: dateStr,
+        record_time: timeStr,
+        parrot_ids: this.data.selectedParrotId ? [this.data.selectedParrotId] : [],
+        notes: `快速${type === 'feeding' ? '喂食' : type === 'health' ? '健康检查' : type === 'cleaning' ? '清洁' : '繁殖'}记录`
+      };
+
+      // 根据记录类型添加默认字段
+      if (type === 'feeding') {
+        recordData.food_types = [];
+        recordData.amount = '';
+      } else if (type === 'cleaning') {
+        recordData.cleaning_type = '';
+        recordData.description = '常规清洁';
+      } else if (type === 'health') {
+        recordData.weight = '';
+        recordData.temperature = '';
+        recordData.health_status = 'normal';
+      } else if (type === 'breeding') {
+        recordData.breeding_stage = '';
+        recordData.egg_count = '';
+      }
+
+      const response = await wx.request({
+        url: `${getApp().globalData.apiUrl}/api/records`,
+        method: 'POST',
+        header: {
+          'Authorization': `Bearer ${wx.getStorageSync('token')}`,
+          'Content-Type': 'application/json'
+        },
+        data: recordData
+      });
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        wx.hideLoading();
+        wx.showToast({
+          title: '添加成功',
+          icon: 'success'
+        });
+        this.hideAddRecordModal();
+        this.loadRecords(); // 刷新记录列表
+      } else {
+        throw new Error('添加失败');
+      }
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({
+        title: '添加失败',
+        icon: 'error'
+      });
+      console.error('快速添加记录失败:', error);
+    }
+  },
+
   computeMenuRightPadding() {
     try {
       const win = wx.getWindowInfo ? wx.getWindowInfo() : {}

@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "app-header": "/components/app-header/app-header"
+    "app-header": "/components/app-header/app-header",
+    "expense-modal": "/components/expense-modal/expense-modal"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "收支管理",

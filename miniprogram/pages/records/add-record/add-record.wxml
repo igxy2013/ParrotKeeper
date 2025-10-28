@@ -1,99 +1,104 @@
 <!--pages/records/add-record/add-record.wxml-->
 <view class="page-container">
-  <form bindsubmit="submitForm">
-    <!-- 记录类型 -->
-    <view class="form-section">
-      <view class="section-title">记录类型</view>
-      
-      <view class="type-selector">
-        <view 
-          class="type-item {{recordType === 'feeding' ? 'active' : ''}}"
-          bindtap="selectType"
-          data-type="feeding"
-        >
-          <view class="type-icon">🍽️</view>
-          <text class="type-text">喂食记录</text>
-        </view>
-        <view 
-          class="type-item {{recordType === 'cleaning' ? 'active' : ''}}"
-          bindtap="selectType"
-          data-type="cleaning"
-        >
-          <view class="type-icon">🧹</view>
-          <text class="type-text">清洁记录</text>
-        </view>
-        <view 
-          class="type-item {{recordType === 'health' ? 'active' : ''}}"
-          bindtap="selectType"
-          data-type="health"
-        >
-          <view class="type-icon">🏥</view>
-          <text class="type-text">健康检查</text>
-        </view>
-        <view 
-          class="type-item {{recordType === 'breeding' ? 'active' : ''}}"
-          bindtap="selectType"
-          data-type="breeding"
-        >
-          <view class="type-icon">🥚</view>
-          <text class="type-text">繁殖记录</text>
-        </view>
-      </view>
-    </view>
+  <!-- 使用项目通用顶部导航组件 -->
+  <app-header title="添加记录" subtitle="记录鹦鹉的日常护理" showBack="{{true}}" theme="blue">
+  </app-header>
 
-    <!-- 基本信息 -->
-    <view class="form-section">
-      <view class="section-title">基本信息</view>
-      
-      <view class="form-item">
-        <text class="form-label required">选择鹦鹉</text>
-        <view class="form-picker" bindtap="showParrotPicker">
-          <text class="picker-text {{formData.parrot_ids.length > 0 ? '' : 'placeholder'}}">
-            {{selectedParrotNames || (recordType === 'health' ? '请选择鹦鹉（单选）' : '请选择鹦鹉（可多选）')}}
-          </text>
-          <text class="picker-arrow">▼</text>
+  <view class="form-content">
+    <form bindsubmit="submitForm">
+      <!-- 记录类型 -->
+      <view class="form-section">
+        <view class="section-title">记录类型</view>
+        
+        <view class="type-selector">
+          <view 
+            class="type-item {{recordType === 'feeding' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type="feeding"
+          >
+            <view class="type-icon">🍽️</view>
+            <text class="type-text">喂食记录</text>
+          </view>
+          <view 
+            class="type-item {{recordType === 'cleaning' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type="cleaning"
+          >
+            <view class="type-icon">🧹</view>
+            <text class="type-text">清洁记录</text>
+          </view>
+          <view 
+            class="type-item {{recordType === 'health' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type="health"
+          >
+            <view class="type-icon">🏥</view>
+            <text class="type-text">健康检查</text>
+          </view>
+          <view 
+            class="type-item {{recordType === 'breeding' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type="breeding"
+          >
+            <view class="type-icon">🥚</view>
+            <text class="type-text">繁殖记录</text>
+          </view>
         </view>
       </view>
-      
-      <view class="form-item">
-        <text class="form-label required">记录时间</text>
-        <view class="datetime-picker">
-          <picker 
-            mode="date" 
-            value="{{formData.record_date}}" 
-            bindchange="onDateChange"
-            end="{{today}}"
-          >
-            <view class="picker-item">
-              <text class="picker-text {{formData.record_date ? '' : 'placeholder'}}">
-                {{formData.record_date || '选择日期'}}
-              </text>
-            </view>
-          </picker>
-          <picker 
-            mode="time" 
-            value="{{formData.record_time}}" 
-            bindchange="onTimeChange"
-          >
-            <view class="picker-item">
-              <text class="picker-text {{formData.record_time ? '' : 'placeholder'}}">
-                {{formData.record_time || '选择时间'}}
-              </text>
-            </view>
-          </picker>
-        </view>
-      </view>
-    </view>
 
-    <!-- 喂食记录特有字段 -->
-    <view class="form-section" wx:if="{{recordType === 'feeding'}}">
-      <view class="section-title">喂食详情</view>
-      
-      <view class="form-item">
-        <text class="form-label">食物类型</text>
-        <view class="form-picker" bindtap="showFeedTypePicker">
-          <text class="picker-text {{formData.food_types.length > 0 ? '' : 'placeholder'}}">
-            {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
+      <!-- 基本信息 -->
+      <view class="form-section">
+        <view class="section-title">基本信息</view>
+        
+        <view class="form-item">
+          <text class="form-label required">选择鹦鹉</text>
+          <view class="form-picker" bindtap="showParrotPicker">
+            <text class="picker-text {{formData.parrot_ids.length > 0 ? '' : 'placeholder'}}">
+              {{selectedParrotNames || (recordType === 'health' ? '请选择鹦鹉（单选）' : '请选择鹦鹉（可多选）')}}
+            </text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label required">记录时间</text>
+          <view class="datetime-picker">
+            <picker 
+              mode="date" 
+              value="{{formData.record_date}}" 
+              bindchange="onDateChange"
+              end="{{today}}"
+            >
+              <view class="picker-item">
+                <text class="picker-text {{formData.record_date ? '' : 'placeholder'}}">
+                  {{formData.record_date || '选择日期'}}
+                </text>
+              </view>
+            </picker>
+            <picker 
+              mode="time" 
+              value="{{formData.record_time}}" 
+              bindchange="onTimeChange"
+            >
+              <view class="picker-item">
+                <text class="picker-text {{formData.record_time ? '' : 'placeholder'}}">
+                  {{formData.record_time || '选择时间'}}
+                </text>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </view>
+
+      <!-- 喂食记录特有字段 -->
+      <view class="form-section" wx:if="{{recordType === 'feeding'}}">
+        <view class="section-title">喂食详情</view>
+        
+        <view class="form-item">
+          <text class="form-label">食物类型</text>
+          <view class="form-picker" bindtap="showFeedTypePicker">
+            <text class="picker-text {{formData.food_types.length > 0 ? '' : 'placeholder'}}">
+              {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
           </text>
           <text class="picker-arrow">▼</text>
         </view>
@@ -571,6 +576,7 @@
       </view>
     </view>
   </view>
+</view>
 </view>
 
 <!-- 雌性鹦鹉选择弹窗 -->

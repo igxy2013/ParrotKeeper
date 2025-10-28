@@ -76,6 +76,23 @@
 .empty-icon { font-size: 56rpx; }
 .empty-text { margin-top: 12rpx; font-size: 26rpx; }
 
+/* 统一头部按钮样式（与其他页面一致） */
+.header-btn {
+  width: 72rpx;
+  height: 72rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10rpx);
+}
+
+.header-btn-icon {
+  color: #ffffff;
+  font-size: 32rpx;
+}
+
 .btn { border-radius: 9999rpx; }
 .btn-primary { background: #8b5cf6; color: #ffffff; }
 .btn-large { padding: 20rpx 28rpx; font-size: 28rpx; }

@@ -125,63 +125,14 @@
       </view>
     </view>
 
-    <!-- 添加记录弹窗 -->
-    <view class="modal-overlay" wx:if="{{showAddRecord}}">
-      <view class="modal-content" style="margin-top: {{modalTopOffsetPx}}px; margin-bottom: {{modalBottomOffsetPx}}px;">
-        <view class="modal-header">
-          <text class="modal-title">添加收支记录</text>
-          <button class="modal-close" bindtap="onHideAddRecord">✖</button>
-        </view>
-        <view class="modal-body">
-          <view class="form-item">
-            <text class="form-label">记录类型</text>
-            <view class="toggle-group">
-              <button class="toggle {{newRecord.type === '收入' ? 'active income' : ''}}" bindtap="onSetNewType" data-type="收入">收入</button>
-              <button class="toggle {{newRecord.type === '支出' ? 'active expense' : ''}}" bindtap="onSetNewType" data-type="支出">支出</button>
-            </view>
-          </view>
-
-          <view class="form-item">
-            <!-- 已移除选择鹦鹉字段 -->
-          </view>
-
-          <view class="form-item">
-            <text class="form-label">{{newRecord.type}}类别</text>
-            <picker range="{{modalCategories}}" range-key="label" value="{{categoryIndex}}" bindchange="onNewCategoryChange">
-              <view class="picker-view">
-                <text class="picker-text">{{newRecord.category || modalCategories[0].label}}</text>
-                <text class="picker-arrow">▼</text>
-              </view>
-            </picker>
-          </view>
-
-          <view class="form-item">
-            <text class="form-label">{{newRecord.type}}金额</text>
-            <input type="number" value="{{newRecord.amount}}" bindinput="onNewAmountChange" placeholder="请输入金额" class="form-input" />
-          </view>
-
-          <view class="form-item">
-            <text class="form-label">{{newRecord.type}}描述</text>
-            <input type="text" value="{{newRecord.description}}" bindinput="onNewDescriptionChange" placeholder="请输入{{newRecord.type}}描述" class="form-input" />
-          </view>
-
-          <view class="form-item">
-            <text class="form-label">{{newRecord.type}}日期</text>
-            <picker mode="date" value="{{newRecord.date}}" bindchange="onNewDateChange">
-              <view class="picker-view">
-                <text class="picker-text">{{newRecord.date}}</text>
-                <text class="picker-arrow">▼</text>
-              </view>
-            </picker>
-          </view>
-        </view>
-
-        <view class="modal-actions">
-          <button class="btn btn-secondary" bindtap="onHideAddRecord">取消</button>
-          <button class="btn {{newRecord.type === '收入' ? 'btn-success' : 'btn-primary'}}" bindtap="onAddRecord">添加</button>
-        </view>
-      </view>
-    </view>
+    <!-- 添加收支记录弹窗组件 -->
+    <expense-modal 
+      visible="{{showAddRecord}}" 
+      modalTopOffsetPx="{{modalTopOffsetPx}}"
+      modalBottomOffsetPx="{{modalBottomOffsetPx}}"
+      bind:close="onHideAddRecord"
+      bind:success="onExpenseSuccess"
+    />
 
     <!-- 编辑记录弹窗 -->
     <view class="modal-overlay" wx:if="{{showEditRecord}}">
