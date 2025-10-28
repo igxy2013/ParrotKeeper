@@ -54,16 +54,39 @@
     <view class="space-y-4">
       <view 
         wx:for="{{filteredRecords}}" 
-        wx:key="id" 
+        wx:key="key" 
         class="bg-white-80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-white-50"
       >
         <view class="flex items-start space-x-4">
-          <view class="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
-            <image 
-              src="{{item.parrot_avatar || '/images/default-parrot.png'}}" 
-              class="w-full h-full object-cover"
-              mode="aspectFill"
-            />
+          <view class="flex items-center flex-shrink-0">
+            <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
+              <!-- 合并头像为单个圆形，最多显示3个 -->
+              <view class="avatar-cluster">
+                <block wx:for="{{item.parrot_avatars}}" wx:for-index="idx" wx:for-item="avatar" wx:key="*this">
+                  <view wx:if="{{idx < 3}}" class="cluster-item pos-{{idx}} count-{{item.parrot_avatars.length >= 3 ? 3 : item.parrot_avatars.length}}">
+                    <image src="{{avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+                  </view>
+                </block>
+              </view>
+            </block>
+            <block wx:elif="{{item.parrot_avatars && item.parrot_avatars.length === 1}}">
+              <view class="single-avatar">
+                <image 
+                  src="{{item.parrot_avatar || '/images/default-parrot.png'}}" 
+                  class="w-full h-full object-cover"
+                  mode="aspectFill"
+                />
+              </view>
+            </block>
+            <block wx:else>
+              <view class="single-avatar">
+                <image 
+                  src="/images/default-parrot.png" 
+                  class="w-full h-full object-cover"
+                  mode="aspectFill"
+                />
+              </view>
+            </block>
           </view>
           <view class="flex-1">
             <view class="flex items-center justify-between mb-2">
@@ -71,9 +94,20 @@
                 <text class="font-semibold text-gray-800 block">{{item.parrot_names_display}}</text>
                 <text class="text-xs text-gray-500">共{{item.parrot_count}}只鹦鹉</text>
               </view>
-              <view class="text-right">
-                <view class="text-sm font-medium text-gray-800">{{item.formatted_time}}</view>
-                <view class="text-xs text-gray-500">{{item.formatted_date}}</view>
+              <view class="flex items-center space-x-2">
+                <view class="text-right mr-3">
+                  <view class="text-sm font-medium text-gray-800">{{item.formatted_time}}</view>
+                  <view class="text-xs text-gray-500">{{item.formatted_date}}</view>
+                </view>
+                <!-- 编辑和删除按钮 -->
+                <view class="flex items-center space-x-1">
+                  <view class="action-btn edit-btn" bindtap="editRecord" data-id="{{item.id}}" data-record-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-feed-type-ids="{{item.feed_type_ids}}">
+                    <text class="action-icon">✏️</text>
+                  </view>
+                  <view class="action-btn delete-btn" bindtap="deleteRecord" data-id="{{item.id}}">
+                    <text class="action-icon">🗑️</text>
+                  </view>
+                </view>
               </view>
             </view>
             <view class="bg-gradient-soft rounded-xl p-3 mb-3">

@@ -579,8 +579,7 @@ Page({
         recordData.description = '常规清洁';
       } else if (type === 'health') {
         recordData.weight = '';
-        recordData.temperature = '';
-        recordData.health_status = 'normal';
+        recordData.health_status = 'healthy';
       } else if (type === 'breeding') {
         recordData.breeding_stage = '';
         recordData.egg_count = '';

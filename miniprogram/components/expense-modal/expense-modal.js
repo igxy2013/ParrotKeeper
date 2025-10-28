@@ -164,7 +164,20 @@ Component({
 
     // 金额输入
     onAmountInput(e) {
-      this.setData({ 'formData.amount': e.detail.value })
+      let value = e.detail.value
+      // 只允许数字和小数点
+      value = value.replace(/[^\d.]/g, '')
+      // 只允许一个小数点
+      const parts = value.split('.')
+      if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('')
+      }
+      // 限制小数位数为2位
+      if (parts[1] && parts[1].length > 2) {
+        value = parts[0] + '.' + parts[1].substring(0, 2)
+      }
+      
+      this.setData({ 'formData.amount': value })
       this.updateCanSubmit()
     },
 

@@ -62,7 +62,7 @@
         <view class="stat-icon-container blue">
           <image class="stat-icon-img" src="/images/remix/ri-shopping-bag-fill-blue.svg" mode="widthFix"/>
         </view>
-        <view class="stat-value blue-text">¥{{overview.monthly_expense || 1265}}</view>
+        <view class="stat-value blue-text">¥{{overview.monthly_expense || 0}}</view>
         <view class="stat-label">本月支出</view>
       </view>
     </view>

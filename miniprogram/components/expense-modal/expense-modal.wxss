@@ -196,6 +196,6 @@
   color: #ffffff; 
 }
 
-.btn-add[disabled] { 
-  opacity: 0.5; 
+.btn-disabled {
+  opacity: 0.5;
 }

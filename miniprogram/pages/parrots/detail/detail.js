@@ -277,7 +277,7 @@ Page({
       return
     }
     wx.navigateTo({
-      url: `/pages/records/health/health${this.data.parrotId ? `?parrot_id=${this.data.parrotId}` : ''}`
+      url: `/pages/health-check/health-check${this.data.parrotId ? `?parrot_id=${this.data.parrotId}` : ''}`
     })
   },
 

@@ -25,7 +25,6 @@ Page({
       
       // 健康检查字段
       weight: '',
-      temperature: '',
       health_status: 'healthy',
       
       // 繁殖记录字段
@@ -336,7 +335,6 @@ Page({
           
           // 健康检查字段
           weight: record.weight ? String(record.weight) : '',
-          temperature: record.temperature ? String(record.temperature) : '',
           health_status: record.health_status || 'healthy',
           
           // 清洁记录字段
@@ -988,7 +986,6 @@ Page({
           record_date: timeStr,
           parrot_id: (formData.parrot_ids && formData.parrot_ids[0]) || '',
           weight: toNumberOrNull(formData.weight),
-          temperature: toNumberOrNull(formData.temperature),
           health_status: formData.health_status
         }
         const res = await app.request({ url, method, data: payload })

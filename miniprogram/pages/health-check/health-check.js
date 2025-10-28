@@ -1,4 +1,4 @@
-// pages/records/health/health.js
+// pages/health-check/health-check.js
 const app = getApp()
 
 Page({
@@ -15,7 +15,7 @@ Page({
     healthRecords: [],
     loading: false,
 
-    // 概览统计（对齐APP：健康鹦鹉、需关注、检查次数）
+    // 概览统计
     overview: {
       healthyCount: 0,
       attentionCount: 0,
@@ -23,25 +23,29 @@ Page({
     }
   },
 
+  onLoad(options) {
+    this.checkLoginStatus()
+  },
+
   onShow() {
-    this.checkLoginAndLoad()
+    this.checkLoginStatus()
   },
 
   onPullDownRefresh() {
-    this.loadHealthRecords(true).finally(() => wx.stopPullDownRefresh())
+    this.loadHealthRecords(true).then(() => {
+      wx.stopPullDownRefresh()
+    })
   },
 
-  // 检查登录并加载数据
-  checkLoginAndLoad() {
+  // 检查登录状态
+  checkLoginStatus() {
     const isLogin = app.globalData.isLogin
-    const hasOperationPermission = app.hasOperationPermission()
+    const hasOperationPermission = app.globalData.hasOperationPermission
     this.setData({ isLogin, hasOperationPermission })
-
+    
     if (isLogin) {
       this.loadParrotsList()
-      this.loadHealthRecords(true)
-    } else {
-      this.setData({ parrotsList: [], healthRecords: [] })
+      this.loadHealthRecords()
     }
   },
 
@@ -50,12 +54,10 @@ Page({
     try {
       const res = await app.request({
         url: '/api/parrots',
-        method: 'GET',
-        data: { limit: 100 }
+        method: 'GET'
       })
       if (res.success) {
-        const list = Array.isArray(res.data?.parrots) ? res.data.parrots : (Array.isArray(res.data) ? res.data : [])
-        this.setData({ parrotsList: list })
+        this.setData({ parrotsList: res.data || [] })
       }
     } catch (e) {
       console.error('加载鹦鹉列表失败:', e)
@@ -89,7 +91,10 @@ Page({
           record_date_formatted: app.formatDate(r.record_date),
           weight: r.weight,
           notes: r.notes,
+          symptoms: r.symptoms,
+          treatment: r.treatment,
           health_status: r.health_status,
+          health_status_text: r.health_status_text,
           record_date_raw: r.record_date
         }))
         this.setData({ healthRecords: mapped })
@@ -103,45 +108,45 @@ Page({
     }
   },
 
-  // 切换鹦鹉筛选
-  switchParrot(e) {
-    const { id, name } = e.currentTarget.dataset
-    this.setData({
-      selectedParrotId: id || '',
-      selectedParrotName: name || '全部'
-    })
-    this.loadHealthRecords(true)
-  },
-
-  // 计算概览数据（健康鹦鹉、需关注、检查次数）
+  // 计算概览统计
   computeOverview(records) {
-    if (!Array.isArray(records) || records.length === 0) {
-      this.setData({ overview: { healthyCount: 0, attentionCount: 0, checkCount: 0 } })
-      return
-    }
-
     let healthyCount = 0
     let attentionCount = 0
     const checkCount = records.length
 
-    records.forEach(r => {
-      const status = r.health_status
-      if (status === 'healthy') {
-        healthyCount += 1
-      } else if (status === 'sick' || status === 'recovering' || status === 'observation') {
-        attentionCount += 1
+    // 统计不同健康状态的鹦鹉数量
+    const parrotHealthStatus = {}
+    records.forEach(record => {
+      if (record.parrot_name) {
+        parrotHealthStatus[record.parrot_name] = record.health_status
       }
     })
 
-    this.setData({ overview: { healthyCount, attentionCount, checkCount } })
+    Object.values(parrotHealthStatus).forEach(status => {
+      if (status === 'healthy') {
+        healthyCount++
+      } else if (status === 'sick' || status === 'observation') {
+        attentionCount++
+      }
+    })
+
+    this.setData({
+      overview: {
+        healthyCount,
+        attentionCount,
+        checkCount
+      }
+    })
   },
 
-  // 工具：格式化日期为 YYYY-MM-DD
-  formatDateYYYYMMDD(d) {
-    const y = d.getFullYear()
-    const m = `${d.getMonth()+1}`.padStart(2, '0')
-    const dd = `${d.getDate()}`.padStart(2, '0')
-    return `${y}-${m}-${dd}`
+  // 切换鹦鹉筛选
+  switchParrot(e) {
+    const { id, name } = e.currentTarget.dataset
+    this.setData({
+      selectedParrotId: id,
+      selectedParrotName: name
+    })
+    this.loadHealthRecords()
   },
 
   // 添加健康记录

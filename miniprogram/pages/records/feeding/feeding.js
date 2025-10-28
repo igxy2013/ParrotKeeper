@@ -151,6 +151,9 @@ Page({
           parrot_names: [],
           parrot_count: 0,
           parrot_avatar: null,
+          parrot_avatar_map: {},
+          // 聚合涉及的原始记录ID
+          record_ids: [],
           // 聚合食物类型（按 id 汇总 amount）
           food_types_map: {},
           food_types: []
@@ -158,9 +161,13 @@ Page({
       }
 
       const g = groups[key];
+      // 收集原始记录ID
+      if (r.id && !g.record_ids.includes(r.id)) {
+        g.record_ids.push(r.id);
+      }
       const pid = r.parrot_id || (r.parrot && r.parrot.id);
       const pname = r.parrot_name || (r.parrot && r.parrot.name);
-      const pavatar = r.parrot && r.parrot.avatar_url;
+      const pavatar = r.parrot && (r.parrot.photo_url || r.parrot.avatar_url);
       if (pid && !g.parrot_ids.includes(pid)) g.parrot_ids.push(pid);
       if (pname && !g.parrot_names.includes(pname)) g.parrot_names.push(pname);
       
@@ -168,33 +175,37 @@ Page({
       if (!g.parrot_avatar && pavatar) {
         g.parrot_avatar = pavatar;
       }
+      if (pid && pavatar && !g.parrot_avatar_map[pid]) {
+        g.parrot_avatar_map[pid] = pavatar;
+      }
 
       // 聚合食物类型
       if (Array.isArray(r.food_types) && r.food_types.length > 0) {
+        // 保留事件级别的分量（不按鹦鹉数量累加），展示用户输入的单次数值
         r.food_types.forEach(ft => {
           const id = ft.id || r.feed_type_id;
           const name = ft.name || r.feed_type_name || '食物';
           const amount = typeof ft.amount === 'number' ? ft.amount : parseFloat(ft.amount || 0);
           const keyId = id || name;
           if (!g.food_types_map[keyId]) {
-            g.food_types_map[keyId] = { id: id, name: name, amount: 0 };
+            g.food_types_map[keyId] = { id: id, name: name, amount: (amount || 0) };
           }
-          g.food_types_map[keyId].amount += (amount || 0);
+          // 若后续记录量不同，仍以首个记录为准，避免倍增显示
         });
       } else {
-        // 无食物类型时，聚合到一个总量项
+        // 无食物类型时，聚合到一个总量项，展示单次输入的数值，不累加
         const keyId = r.feed_type_id || 'none';
         const name = r.feed_type_name || '总用量';
         const amount = typeof r.amount === 'number' ? r.amount : parseFloat(r.amount || 0);
         if (!g.food_types_map[keyId]) {
-          g.food_types_map[keyId] = { id: r.feed_type_id, name, amount: 0 };
+          g.food_types_map[keyId] = { id: r.feed_type_id, name, amount: (amount || 0) };
         }
-        g.food_types_map[keyId].amount += (amount || 0);
       }
     });
 
     // 输出聚合结果
     const result = Object.values(groups).map(g => {
+      const allParrots = Array.isArray(this.data && this.data.parrots) ? this.data.parrots : [];
       const names = g.parrot_names;
       let display = '';
       if (names.length <= 2) {
@@ -202,22 +213,39 @@ Page({
       } else {
         display = `${names.slice(0,2).join('、')} 等${names.length}只`;
       }
+      // 生成头像数组（按 parrot_ids 顺序），优先使用记录内头像，其次从全量鹦鹉列表补齐
+      const parrot_avatars = (g.parrot_ids || []).map(pid => {
+        const fromGroup = g.parrot_avatar_map && g.parrot_avatar_map[pid];
+        if (fromGroup) return fromGroup;
+        const p = allParrots.find(x => x.id === pid);
+        return p ? (p.photo_url || p.avatar_url) : null;
+      }).filter(Boolean);
+
+      const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : g.parrot_avatar;
       return {
-        id: g.key,
+        // 用 key 作为渲染唯一键，单条操作使用首个原始记录ID
+        key: g.key,
+        id: (g.record_ids && g.record_ids.length ? g.record_ids[0] : g.key),
         feeding_time: g.feeding_time,
         formatted_date: g.formatted_date,
         formatted_time: g.formatted_time,
         notes: g.notes,
+        parrot_avatars: parrot_avatars,
+        record_ids: g.record_ids || [],
         parrot_ids: g.parrot_ids,
         parrot_names: g.parrot_names,
         parrot_names_display: display,
         parrot_count: g.parrot_ids.length,
-        parrot_avatar: g.parrot_avatar,
+        parrot_avatar: firstAvatar,
         food_types: Object.values(g.food_types_map).map(it => ({
           id: it.id,
           name: it.name,
           amount: Number((it.amount || 0).toFixed(1))
-        }))
+        })),
+        // 供编辑页预填使用的食物类型ID集合
+        feed_type_ids: Object.values(g.food_types_map)
+          .map(it => it.id)
+          .filter(id => id !== undefined && id !== null)
       };
     });
 
@@ -434,5 +462,79 @@ Page({
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
+  },
+
+  // 编辑记录
+  editRecord(e) {
+    const { id, recordIds, parrotIds, feedTypeIds } = e.currentTarget.dataset;
+    const parts = [
+      `mode=edit`,
+      `type=feeding`,
+      `id=${encodeURIComponent(id)}`
+    ];
+    if (Array.isArray(recordIds) && recordIds.length > 1) {
+      parts.push(`record_ids=${encodeURIComponent(recordIds.join(','))}`);
+    }
+    if (Array.isArray(parrotIds) && parrotIds.length) {
+      parts.push(`parrot_ids=${encodeURIComponent(parrotIds.join(','))}`);
+    }
+    if (Array.isArray(feedTypeIds) && feedTypeIds.length) {
+      parts.push(`food_type_ids=${encodeURIComponent(feedTypeIds.join(','))}`);
+    }
+    const url = `/pages/records/add-record/add-record?${parts.join('&')}`;
+    wx.navigateTo({ url });
+  },
+
+  // 删除记录
+  deleteRecord(e) {
+    const { id } = e.currentTarget.dataset;
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这条喂食记录吗？删除后无法恢复。',
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) {
+          this.performDelete(id);
+        }
+      }
+    });
+  },
+
+  // 执行删除操作
+  async performDelete(id) {
+    try {
+      wx.showLoading({ title: '删除中...' });
+      
+      const res = await app.request({
+        url: `/api/records/feeding/${id}`,
+        method: 'DELETE'
+      });
+      
+      wx.hideLoading();
+      
+      if (res.success) {
+        wx.showToast({
+          title: '删除成功',
+          icon: 'success'
+        });
+        
+        // 重新加载数据
+        this.loadFeedingRecords();
+      } else {
+        wx.showToast({
+          title: res.message || '删除失败',
+          icon: 'error'
+        });
+      }
+    } catch (error) {
+      wx.hideLoading();
+      console.error('删除记录失败:', error);
+      wx.showToast({
+        title: '删除失败',
+        icon: 'error'
+      });
+    }
   }
 });

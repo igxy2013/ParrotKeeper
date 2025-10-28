@@ -5,7 +5,7 @@ App({
   globalData: {
     userInfo: null,
     openid: null,
-    //baseUrl: 'http://192.168.0.80:5075', // 后端API地址（测试环境）
+    //baseUrl: 'http://localhost:5075', // 后端API地址（本地开发环境）
     baseUrl: 'https://acbim.cn', // 后端API地址（正式环境）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式

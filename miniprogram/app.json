@@ -10,7 +10,7 @@
                   "pages/records/cleaning/cleaning",
                   "pages/records/add-record/add-record",
                   "pages/records/feeding/feeding",
-                  "pages/records/health/health",
+                  "pages/health-check/health-check",
                   "pages/breeding/breeding",
                   "pages/statistics/statistics",
                   "pages/profile/profile",

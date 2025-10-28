@@ -46,6 +46,49 @@
   box-shadow: 0 20rpx 50rpx -24rpx rgba(251, 146, 60, 0.35);
 }
 
+/* 操作按钮样式 */
+.action-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+}
+
+.action-icon {
+  font-size: 32rpx;
+  color: white;
+}
+
+/* 间距样式 */
+.space-x-1 > view:not(:first-child) {
+  margin-left: 8rpx;
+}
+
+.space-x-2 > view:not(:first-child) {
+  margin-left: 16rpx;
+}
+
+.mr-3 {
+  margin-right: 24rpx;
+}
+
 /* 统一头部按钮样式（与其他页面一致） */
 .header-btn {
   width: 72rpx;
@@ -552,4 +595,69 @@
   .pt-28 {
     padding-top: 200rpx;
   }
+}
+
+/* 头像集群样式（合并多只鹦鹉头像为一个圆） */
+.avatar-cluster {
+  width: 128rpx;  /* 约 64px，与单头像一致 */
+  height: 128rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  background-color: #f3f4f6;
+  border: 2rpx solid #ffffff;
+}
+
+.cluster-item {
+  position: absolute;
+  overflow: hidden; /* 保持被外部圆裁剪；内部不再做圆角遮罩 */
+}
+
+.cluster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 两个头像时：左右各占一半高度全满 */
+.cluster-item.count-2.pos-0 {
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+}
+.cluster-item.count-2.pos-1 {
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+}
+
+/* 三个头像时：上方左右各一个，下方居中一个 */
+.cluster-item.count-3.pos-0 {
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 50%;
+}
+.cluster-item.count-3.pos-1 {
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 50%;
+}
+.cluster-item.count-3.pos-2 {
+  left: 25%;
+  bottom: 0;
+  width: 50%;
+  height: 50%;
+}
+
+/* 单头像尺寸（维持与之前单头像一致或稍大） */
+.single-avatar {
+  width: 128rpx; /* 约 64px */
+  height: 128rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f3f4f6;
 }

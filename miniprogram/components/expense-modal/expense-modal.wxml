@@ -37,7 +37,7 @@
         <!-- 金额 -->
         <view class="form-item">
           <text class="form-label">{{formData.type}}金额</text>
-          <input class="text-input" type="number" placeholder="请输入金额" value="{{formData.amount}}" bindinput="onAmountInput" />
+          <input class="text-input" type="digit" placeholder="请输入金额" value="{{formData.amount}}" bindinput="onAmountInput" />
         </view>
 
         <!-- 描述 -->
@@ -62,7 +62,7 @@
     <!-- 底部按钮 -->
     <view class="modal-footer">
       <button class="btn-secondary" bindtap="onClose">取消</button>
-      <button class="btn-add {{formData.type==='收入' ? 'btn-add-income' : 'btn-add-expense'}}" bindtap="onSubmit" disabled="{{!canSubmit}}">{{isEdit ? '保存' : '添加'}}</button>
+      <button class="btn-add {{formData.type==='收入' ? 'btn-add-income' : 'btn-add-expense'}} {{!canSubmit ? 'btn-disabled' : ''}}" bindtap="onSubmit" disabled="{{!canSubmit}}">{{isEdit ? '保存' : '添加'}}</button>
     </view>
   </view>
 </view>

@@ -1,6 +1,6 @@
-<!--pages/records/health/health.wxml-->
+<!--pages/health-check/health-check.wxml-->
 <view class="page-container">
-  <app-header title="健康检查" subtitle="记录鹦鹉健康状况" showBack="true" theme="purple">
+  <app-header title="健康检查记录" subtitle="记录鹦鹉健康状况" showBack="true" theme="purple">
     <view slot="actions" class="header-btn" bindtap="addHealthRecord">
       <text class="header-btn-icon">+</text>
     </view>
@@ -27,7 +27,7 @@
         </scroll-view>
       </view>
 
-      <!-- 健康概览卡片（对齐参考APP：三项指标） -->
+      <!-- 健康概览卡片 -->
       <view class="overview-card rounded-3xl p-6 shadow-xl">
         <text class="overview-title text-lg font-bold">健康概览</text>
         <view class="overview-grid">
@@ -54,16 +54,26 @@
               <text class="record-title">{{item.parrot_name}}</text>
               <text class="record-time">{{item.record_date_formatted}}</text>
             </view>
+            <view class="health-status-badge status-{{item.health_status}}">
+              {{item.health_status_text || '健康'}}
+            </view>
           </view>
           <view class="record-body">
             <view class="record-detail" wx:if="{{item.weight}}">
               <text class="detail-label">体重：</text>
               <text class="detail-value">{{item.weight}} g</text>
             </view>
-                  </view>
             <view class="record-detail" wx:if="{{item.notes}}">
               <text class="detail-label">备注：</text>
               <text class="detail-value">{{item.notes}}</text>
+            </view>
+            <view class="record-detail" wx:if="{{item.symptoms}}">
+              <text class="detail-label">症状：</text>
+              <text class="detail-value">{{item.symptoms}}</text>
+            </view>
+            <view class="record-detail" wx:if="{{item.treatment}}">
+              <text class="detail-label">治疗：</text>
+              <text class="detail-value">{{item.treatment}}</text>
             </view>
           </view>
         </view>

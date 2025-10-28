@@ -51,7 +51,10 @@ Page({
     },
     // 类别标签列表（UI使用）
     incomeCategoryLabels: ['销售幼鸟','配种服务','其他收入'],
-    expenseCategoryLabels: ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
+    expenseCategoryLabels: ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他'],
+    // 弹窗避让参数（默认数值，避免组件收到非数字）
+    modalTopOffsetPx: 24,
+    modalBottomOffsetPx: 24
   },
 
   onLoad() {
@@ -640,7 +643,7 @@ Page({
     }
     
     wx.navigateTo({
-      url: '/pages/records/health/health'
+      url: '/pages/health-check/health-check'
     })
   },
 
@@ -907,4 +910,4 @@ Page({
 
   /* ===== 收支弹窗逻辑 ===== */
 })
-
+
