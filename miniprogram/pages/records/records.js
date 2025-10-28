@@ -209,17 +209,52 @@ Page({
         return this.aggregateFeedingRecords(records)
       case 'cleaning':
         return this.aggregateCleaningRecords(records)
-      case 'health':
-      case 'breeding':
-        return records.map(r => ({
-          ...r,
-          feeding_time_formatted: r.feeding_time ? app.formatDateTime(r.feeding_time) : '',
-          record_date_formatted: r.record_date ? app.formatDateTime(r.record_date) : '',
-          cleaning_time_formatted: r.cleaning_time ? app.formatDateTime(r.cleaning_time) : '',
-          mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
-          egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
-          hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
-        }))
+      case 'health': {
+        const list = Array.isArray(records) ? records : []
+        const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
+        return list.map(r => {
+          const formatted = {
+            ...r,
+            feeding_time_formatted: r.feeding_time ? app.formatDateTime(r.feeding_time) : '',
+            record_date_formatted: r.record_date ? app.formatDateTime(r.record_date) : '',
+            cleaning_time_formatted: r.cleaning_time ? app.formatDateTime(r.cleaning_time) : '',
+            mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
+            egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
+            hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
+          }
+          const pid = r.parrot_id || (r.parrot && r.parrot.id)
+          const p = r.parrot || allParrots.find(x => (pid && x.id === pid) || (r.parrot_name && x.name === r.parrot_name))
+          const avatar = p ? (p.photo_url || p.avatar_url) : null
+          return {
+            ...formatted,
+            parrot_avatar: avatar,
+            parrot_avatars: avatar ? [avatar] : []
+          }
+        })
+      }
+      case 'breeding': {
+        const list = Array.isArray(records) ? records : []
+        const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
+        return list.map(r => {
+          const formatted = {
+            ...r,
+            mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
+            egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
+            hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
+          }
+          // 取公母两只鹦鹉头像
+          const male = r.male_parrot || allParrots.find(x => (r.male_parrot_id && x.id === r.male_parrot_id) || (r.male_parrot_name && x.name === r.male_parrot_name))
+          const female = r.female_parrot || allParrots.find(x => (r.female_parrot_id && x.id === r.female_parrot_id) || (r.female_parrot_name && x.name === r.female_parrot_name))
+          const maleAvatar = male ? (male.photo_url || male.avatar_url) : null
+          const femaleAvatar = female ? (female.photo_url || female.avatar_url) : null
+          const parrot_avatars = [maleAvatar, femaleAvatar].filter(Boolean)
+          return {
+            ...formatted,
+            parrot_avatars,
+            parrot_avatar: parrot_avatars[0] || null
+          }
+        })
+      }
       default:
         return records
     }
@@ -280,6 +315,7 @@ Page({
   // 聚合清洁记录以支持多选显示
   aggregateCleaningRecords(records) {
     const groupedRecords = {}
+    const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
     
     // 按时间、备注、描述分组
     records.forEach((record) => {
@@ -293,7 +329,8 @@ Page({
           cleaning_type_names: [],
           parrot_ids: [],
           cleaning_type_ids: [],
-          record_ids: []
+          record_ids: [],
+          parrot_avatar_map: {}
         }
       }
       
@@ -302,6 +339,15 @@ Page({
         if (!groupedRecords[key].parrot_names.includes(record.parrot.name)) {
           groupedRecords[key].parrot_names.push(record.parrot.name)
           groupedRecords[key].parrot_ids.push(record.parrot.id)
+        }
+        const pid = record.parrot.id
+        let pavatar = record.parrot.photo_url || record.parrot.avatar_url
+        if (!pavatar && pid) {
+          const p = allParrots.find(x => x.id === pid || (record.parrot.name && x.name === record.parrot.name))
+          pavatar = p ? (p.photo_url || p.avatar_url) : null
+        }
+        if (pid && pavatar && !groupedRecords[key].parrot_avatar_map[pid]) {
+          groupedRecords[key].parrot_avatar_map[pid] = pavatar
         }
       }
       
@@ -323,11 +369,22 @@ Page({
     })
     
     // 生成显示文本
-    const result = Object.values(groupedRecords).map(item => ({
-      ...item,
-      parrot_name: item.parrot_names.join('、'),
-      cleaning_type_text: item.cleaning_type_names.join('、')
-    }))
+    const result = Object.values(groupedRecords).map(item => {
+      const parrot_avatars = (item.parrot_ids || []).map(pid => {
+        if (item.parrot_avatar_map[pid]) return item.parrot_avatar_map[pid]
+        const p = allParrots.find(x => x.id === pid)
+        return p ? (p.photo_url || p.avatar_url) : null
+      }).filter(Boolean)
+      const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : null
+      return {
+        ...item,
+        parrot_name: item.parrot_names.join('、'),
+        cleaning_type_text: item.cleaning_type_names.join('、'),
+        parrot_avatars,
+        parrot_avatar: firstAvatar,
+        parrot_count: item.parrot_ids.length
+      }
+    })
     
     // 保持与后端排序一致（按时间倒序）
     result.sort((a, b) => new Date(b.cleaning_time) - new Date(a.cleaning_time))

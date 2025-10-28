@@ -654,6 +654,91 @@ def create_income():
         db.session.rollback()
         return error_response(f'创建收入记录失败: {str(e)}')
 
+@expenses_bp.route('/incomes/<int:income_id>', methods=['PUT'])
+@login_required
+def update_income(income_id):
+    """更新收入记录"""
+    try:
+        from team_models import TeamMember
+
+        user = request.current_user
+
+        # 在团队模式下，检查用户是否为管理员
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            member = TeamMember.query.filter_by(
+                team_id=user.current_team_id,
+                user_id=user.id,
+                is_active=True
+            ).first()
+
+            if not member or member.role not in ['owner', 'admin']:
+                return error_response('只有团队管理员才能修改收入记录', 403)
+
+        # 根据用户模式获取可访问的收入ID
+        income_ids = get_accessible_income_ids_by_mode(user)
+
+        # 检查收入是否可访问
+        if income_id not in income_ids:
+            return error_response('收入记录不存在', 404)
+
+        income = Income.query.get(income_id)
+        if not income:
+            return error_response('收入记录不存在', 404)
+
+        data = request.get_json()
+
+        # 验证金额
+        if 'amount' in data:
+            try:
+                amount = float(data['amount'])
+                if amount <= 0:
+                    return error_response('金额必须大于0')
+                income.amount = amount
+            except (ValueError, TypeError):
+                return error_response('金额格式不正确')
+
+        # 验证鹦鹉ID（可选）
+        if 'parrot_id' in data:
+            parrot_id = data['parrot_id']
+            if parrot_id:
+                # 检查鹦鹉是否可访问
+                parrot_ids = get_accessible_parrot_ids_by_mode(user)
+                if parrot_id not in parrot_ids:
+                    return error_response('鹦鹉不存在')
+            income.parrot_id = parrot_id
+
+        # 验证类别
+        if 'category' in data:
+            allowed_categories = ['breeding_sale', 'bird_sale', 'service', 'competition', 'other']
+            if data['category'] not in allowed_categories:
+                return error_response(f'不支持的收入类别: {data.get("category")}')
+            income.category = data['category']
+
+        if 'description' in data:
+            income.description = data['description']
+
+        if 'income_date' in data:
+            try:
+                income.income_date = datetime.strptime(data['income_date'], '%Y-%m-%d').date()
+            except ValueError:
+                return error_response('日期格式不正确')
+
+        db.session.commit()
+
+        return success_response({
+            'id': income.id,
+            'category': income.category,
+            'amount': float(income.amount),
+            'description': income.description,
+            'income_date': income.income_date.strftime('%Y-%m-%d'),
+            'created_at': income.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'parrot_name': income.parrot.name if income.parrot else None
+        }, '收入记录更新成功')
+
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新收入记录失败: {str(e)}')
+
 @expenses_bp.route('/incomes/<int:income_id>', methods=['DELETE'])
 @login_required
 def delete_income(income_id):

@@ -57,7 +57,14 @@ Page({
         method: 'GET'
       })
       if (res.success) {
-        this.setData({ parrotsList: res.data || [] })
+        const list = Array.isArray(res.data?.parrots)
+          ? res.data.parrots
+          : (Array.isArray(res.data) ? res.data : [])
+        this.setData({ parrotsList: list })
+        // 依赖鹦鹉列表来补全头像，列表就绪后再刷新健康记录以补齐头像
+        if (this.data.isLogin) {
+          this.loadHealthRecords(true)
+        }
       }
     } catch (e) {
       console.error('加载鹦鹉列表失败:', e)
@@ -85,9 +92,11 @@ Page({
 
       if (res.success) {
         const items = Array.isArray(res.data?.items) ? res.data.items : (Array.isArray(res.data) ? res.data : [])
-        const mapped = items.map(r => ({
+        const mappedBase = items.map(r => ({
           id: r.id,
+          parrot_id: r.parrot_id || (r.parrot && r.parrot.id),
           parrot_name: r.parrot_name || (r.parrot && r.parrot.name) || '',
+          parrot: r.parrot,
           record_date_formatted: app.formatDate(r.record_date),
           weight: r.weight,
           notes: r.notes,
@@ -97,6 +106,23 @@ Page({
           health_status_text: r.health_status_text,
           record_date_raw: r.record_date
         }))
+        // 生成头像字段：优先使用记录内头像，其次从 parrotsList 匹配
+        const list = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
+        const mapped = mappedBase.map(r => {
+          const fromRecord = r.parrot && (r.parrot.photo_url || r.parrot.avatar_url)
+          let avatar = fromRecord || null
+          if (!avatar) {
+            const pid = r.parrot_id
+            const pname = r.parrot_name
+            const p = list.find(x => (pid && x.id === pid) || (pname && x.name === pname))
+            avatar = p ? (p.photo_url || p.avatar_url) : null
+          }
+          return {
+            ...r,
+            parrot_avatar: avatar,
+            parrot_avatars: avatar ? [avatar] : []
+          }
+        })
         this.setData({ healthRecords: mapped })
         this.computeOverview(mapped)
       }

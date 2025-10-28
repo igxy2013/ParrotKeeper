@@ -97,3 +97,44 @@
 .btn-primary { background: #8b5cf6; color: #ffffff; }
 .btn-large { padding: 20rpx 28rpx; font-size: 28rpx; }
 .mt-20 { margin-top: 20rpx; }
+
+/* 头像容器与集群（对齐其它页风格） */
+.avatar-cell {
+  width: 128rpx;
+  height: 128rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-cluster {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  background-color: #f3f4f6;
+  border: 2rpx solid #ffffff;
+}
+
+.cluster-item { position: absolute; overflow: hidden; }
+.cluster-img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 两个头像：左右 */
+.cluster-item.count-2.pos-0 { left: 0; top: 0; width: 50%; height: 100%; }
+.cluster-item.count-2.pos-1 { right: 0; top: 0; width: 50%; height: 100%; }
+
+/* 三个头像：上左右 + 下中 */
+.cluster-item.count-3.pos-0 { left: 0; top: 0; width: 50%; height: 50%; }
+.cluster-item.count-3.pos-1 { right: 0; top: 0; width: 50%; height: 50%; }
+.cluster-item.count-3.pos-2 { left: 25%; bottom: 0; width: 50%; height: 50%; }
+
+.single-avatar {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f3f4f6;
+}

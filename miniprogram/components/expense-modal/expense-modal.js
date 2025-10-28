@@ -256,7 +256,9 @@ Component({
         }
         
         if (this.data.isEdit && this.data.editRecord) {
-          apiUrl = `/api/expenses/incomes/${this.data.editRecord.id}`
+          const rawId = String(this.data.editRecord.id || '')
+          const actualId = rawId.replace(/^(expense_|income_)/, '')
+          apiUrl = `/api/expenses/incomes/${actualId}`
           method = 'PUT'
         } else {
           apiUrl = '/api/expenses/incomes'
@@ -288,7 +290,9 @@ Component({
         }
         
         if (this.data.isEdit && this.data.editRecord) {
-          apiUrl = `/api/expenses/${this.data.editRecord.id}`
+          const rawId = String(this.data.editRecord.id || '')
+          const actualId = rawId.replace(/^(expense_|income_)/, '')
+          apiUrl = `/api/expenses/${actualId}`
           method = 'PUT'
         } else {
           apiUrl = '/api/expenses'

@@ -11,6 +11,8 @@ Page({
     cleaningRecords: [],
     displayRecords: [],
 
+    parrotsList: [],
+
     selectedFilter: '全部',
     filterOptions: ['全部'],
 
@@ -28,7 +30,7 @@ Page({
     this.checkLoginAndLoad()
   },
 
-  checkLoginAndLoad() {
+  async checkLoginAndLoad() {
     const isLogin = app.globalData.isLogin
     const userMode = app.globalData.userMode || 'personal'
     const isTeamMode = userMode === 'team'
@@ -37,9 +39,25 @@ Page({
     this.setData({ isLogin, isTeamMode, hasOperationPermission })
 
     if (isLogin) {
+      try {
+        await this.loadParrotsList()
+      } catch (e) {
+        console.warn('加载鹦鹉列表失败（忽略继续）:', e)
+      }
       this.loadCleaningRecords(true)
     } else {
       this.setData({ cleaningRecords: [], displayRecords: [], stats: { weeklyCount: 0, uniqueTypes: 0, lastTimeText: '' } })
+    }
+  },
+
+  async loadParrotsList() {
+    const res = await app.request({
+      url: '/api/parrots',
+      method: 'GET',
+      data: { limit: 100 }
+    })
+    if (res && res.success && res.data && Array.isArray(res.data.parrots)) {
+      this.setData({ parrotsList: res.data.parrots })
     }
   },
 
@@ -68,6 +86,7 @@ Page({
   },
 
   aggregateCleaningRecords(records) {
+    const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
     const grouped = {}
     records.forEach(record => {
       const key = `${record.cleaning_time}_${record.notes || ''}_${record.description || ''}`
@@ -79,13 +98,24 @@ Page({
           cleaning_type_names: [],
           parrot_ids: [],
           cleaning_type_ids: [],
-          record_ids: []
+          record_ids: [],
+          parrot_avatar_map: {}
         }
       }
       if (record.parrot && record.parrot.name) {
         if (!grouped[key].parrot_names.includes(record.parrot.name)) {
           grouped[key].parrot_names.push(record.parrot.name)
           grouped[key].parrot_ids.push(record.parrot.id)
+        }
+        // 收集头像
+        const pid = record.parrot.id
+        let pavatar = record.parrot.photo_url || record.parrot.avatar_url
+        if (!pavatar && pid) {
+          const p = allParrots.find(x => x.id === pid || (record.parrot.name && x.name === record.parrot.name))
+          pavatar = p ? (p.photo_url || p.avatar_url) : null
+        }
+        if (pid && pavatar && !grouped[key].parrot_avatar_map[pid]) {
+          grouped[key].parrot_avatar_map[pid] = pavatar
         }
       }
       if (record.cleaning_type_text || record.cleaning_type) {
@@ -99,11 +129,22 @@ Page({
         grouped[key].record_ids.push(record.id)
       }
     })
-    const result = Object.values(grouped).map(item => ({
-      ...item,
-      parrot_name: item.parrot_names.join('、'),
-      cleaning_type_text: item.cleaning_type_names.join('、')
-    }))
+    const result = Object.values(grouped).map(item => {
+      const parrot_avatars = (item.parrot_ids || []).map(pid => {
+        if (item.parrot_avatar_map[pid]) return item.parrot_avatar_map[pid]
+        const p = allParrots.find(x => x.id === pid)
+        return p ? (p.photo_url || p.avatar_url) : null
+      }).filter(Boolean)
+      const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : null
+      return {
+        ...item,
+        parrot_name: item.parrot_names.join('、'),
+        cleaning_type_text: item.cleaning_type_names.join('、'),
+        parrot_avatars,
+        parrot_avatar: firstAvatar,
+        parrot_count: item.parrot_ids.length
+      }
+    })
     result.sort((a, b) => new Date(b.cleaning_time) - new Date(a.cleaning_time))
     return result
   },

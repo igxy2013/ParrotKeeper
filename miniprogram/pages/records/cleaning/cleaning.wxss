@@ -77,8 +77,8 @@
 
 .list { margin-top: 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
 .card { display: flex; gap: 24rpx; padding: 24rpx; border-radius: 32rpx; background: rgba(255,255,255,0.96); backdrop-filter: blur(8rpx); border: 1rpx solid rgba(17,24,39,0.06); box-shadow: 0 20rpx 50rpx -24rpx rgba(0,0,0,0.25); }
-.card-left { width: 120rpx; height: 120rpx; border-radius: 24rpx; overflow: hidden; background: #f1f5f9; box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.06); }
-.avatar { width: 120rpx; height: 120rpx; }
+.card-left { width: 128rpx; height: 128rpx; border-radius: 50%; overflow: hidden; background: #f1f5f9; box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.06); }
+.avatar { width: 128rpx; height: 128rpx; }
 .card-right { flex: 1; }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12rpx; }
 .info { display: flex; align-items: center; gap: 12rpx; }
@@ -114,3 +114,42 @@
 }
 
 .loading { text-align: center; color: #64748b; font-size: 26rpx; padding: 24rpx; }
+
+/* 头像集群样式（与喂食页一致，去除子项圆角遮罩） */
+.avatar-cluster {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  background-color: #f3f4f6;
+  border: 2rpx solid #ffffff;
+}
+
+.cluster-item {
+  position: absolute;
+  overflow: hidden;
+}
+
+.cluster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 两个头像：左右各半 */
+.cluster-item.count-2.pos-0 { left: 0; top: 0; width: 50%; height: 100%; }
+.cluster-item.count-2.pos-1 { right: 0; top: 0; width: 50%; height: 100%; }
+
+/* 三个头像：上左右 + 下中 */
+.cluster-item.count-3.pos-0 { left: 0; top: 0; width: 50%; height: 50%; }
+.cluster-item.count-3.pos-1 { right: 0; top: 0; width: 50%; height: 50%; }
+.cluster-item.count-3.pos-2 { left: 25%; bottom: 0; width: 50%; height: 50%; }
+
+.single-avatar {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f3f4f6;
+}

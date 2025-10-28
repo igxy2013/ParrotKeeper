@@ -398,8 +398,18 @@ Page({
 
   // 收支记录添加成功回调
   onExpenseSuccess() {
-    this.setData({ showAddRecord: false });
-    // 刷新页面数据
+    // 关闭两个弹窗（添加/编辑）
+    this.setData({ 
+      showAddRecord: false,
+      showEditRecord: false,
+      // 重置分页，确保加载第一页最新数据
+      page: 1,
+      hasMore: true,
+      records: [],
+      filteredRecords: [],
+      totalCount: 0
+    });
+    // 刷新页面数据（重新拉取第一页）
     this.loadExpenses();
     this.loadStats();
   },
@@ -660,4 +670,26 @@ showEditRecord: false
     }
   }
 })
+
+// 为弹窗头部计算胶囊避让内边距（与首页实现保持一致）
+Page.prototype.computeModalCapsulePadding = function () {
+  try {
+    const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+    const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+    if (win && rect && typeof win.windowWidth === 'number') {
+      const rightGap = win.windowWidth - rect.right
+      const modalRightPaddingPx = rightGap + rect.width + 16
+      const modalTopPaddingPx = Math.max(0, rect.top - 4)
+      const modalTopOffsetPx = Math.max(0, rect.bottom + 12)
+      let modalBottomOffsetPx = 24
+      if (win && win.safeArea && typeof win.windowHeight === 'number') {
+        const bottomInset = win.windowHeight - win.safeArea.bottom
+        modalBottomOffsetPx = Math.max(24, bottomInset + 12)
+      }
+      this.setData({ modalRightPaddingPx, modalTopPaddingPx, modalTopOffsetPx, modalBottomOffsetPx })
+    }
+  } catch (e) {
+    this.setData({ modalRightPaddingPx: 0, modalTopPaddingPx: 0, modalTopOffsetPx: 24, modalBottomOffsetPx: 24 })
+  }
+}
 

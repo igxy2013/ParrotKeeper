@@ -83,15 +83,34 @@ Page({
 
       if (res.success) {
         const items = Array.isArray(res.data?.items) ? res.data.items : (Array.isArray(res.data) ? res.data : [])
-        const mapped = items.map(r => ({
+        const mappedBase = items.map(r => ({
           id: r.id,
+          parrot_id: r.parrot_id || (r.parrot && r.parrot.id),
           parrot_name: r.parrot_name || (r.parrot && r.parrot.name) || '',
+          parrot: r.parrot,
           record_date_formatted: app.formatDate(r.record_date),
           weight: r.weight,
           notes: r.notes,
           health_status: r.health_status,
           record_date_raw: r.record_date
         }))
+        // 生成头像字段：优先使用记录中的 parrot.avatar/photo，其次从 parrotsList 匹配
+        const list = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
+        const mapped = mappedBase.map(r => {
+          const fromRecord = r.parrot && (r.parrot.photo_url || r.parrot.avatar_url)
+          let avatar = fromRecord || null
+          if (!avatar) {
+            const pid = r.parrot_id
+            const pname = r.parrot_name
+            const p = list.find(x => (pid && x.id === pid) || (pname && x.name === pname))
+            avatar = p ? (p.photo_url || p.avatar_url) : null
+          }
+          return {
+            ...r,
+            parrot_avatar: avatar,
+            parrot_avatars: avatar ? [avatar] : []
+          }
+        })
         this.setData({ healthRecords: mapped })
         this.computeOverview(mapped)
       }
