@@ -1,6 +1,10 @@
 <!--pages/profile/profile.wxml-->
 <view class="page-container {{pageThemeClass}}">
-  <app-header title="个人中心" subtitle="管理您的账户信息"></app-header>
+  <app-header title="个人中心" subtitle="管理您的账户信息">
+    <view slot="actions" class="header-action-btn" bindtap="onMenuItemTap" data-title="设置">
+      <image class="header-action-icon" src="/images/remix/ri-notification-3-line-white.svg" mode="aspectFit" />
+    </view>
+  </app-header>
   <view class="page-content">
   <!-- 用户信息卡片 -->
   <view class="user-card" wx:if="{{isLogin}}">
@@ -13,7 +17,7 @@
           mode="aspectFill"
         />
         <view class="avatar-edit-overlay">
-          <view class="edit-icon">📷</view>
+<image class="edit-icon-img" src="/images/remix/ri-camera-line.svg" mode="aspectFit" />
           <text class="avatar-edit-text">点击选择</text>
         </view>
       </view>
@@ -28,7 +32,7 @@
       <view class="nickname-display">
         <text class="user-name">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
         <view class="edit-nickname-btn" bindtap="toggleNicknameEdit">
-          <view class="edit-icon">✏️</view>
+<image class="edit-icon-img" src="/images/remix/edit-line.svg" mode="aspectFit" />
         </view>
       </view>
       <text class="user-role">{{roleDisplay}}</text>
@@ -59,7 +63,7 @@
   <!-- 未登录状态 -->
   <view class="login-prompt" wx:if="{{!isLogin}}">
     <view class="login-card">
-      <view class="login-icon">🦜</view>
+<image class="login-icon-img" src="/images/parrot-avatar-green.svg" mode="aspectFit" />
       <text class="login-text">欢迎使用鹦鹉管家</text>
       <text class="login-subtitle">请先登录以查看个人信息</text>
       <button class="login-btn" bindtap="handleLogin">微信快速登录</button>
@@ -73,7 +77,7 @@
     <!-- 模式设置卡片 -->
       <view class="function-card mode-card">
         <view class="section-title">
-          <text class="title-icon">⚙️</text>
+<image class="section-icon-img" src="/images/remix/settings-3-line.svg" mode="aspectFit" />
           <text>模式设置</text>
         </view>
         <view class="mode-toggle">
@@ -88,7 +92,7 @@
   <view class="modal-container avatar-modal" catchtap="preventClose">
     <view class="modal-header">
       <text class="modal-title">选择头像</text>
-      <text class="modal-close" bindtap="hideAvatarModal">×</text>
+<view class="modal-close" bindtap="hideAvatarModal"><image class="modal-close-icon" src="/images/remix/close-line.svg" mode="aspectFit" /></view>
     </view>
     <view class="modal-body">
       <view class="avatar-options">
@@ -113,80 +117,98 @@
 <!-- 在用户信息卡片后新增统计网格 -->
 <view class="stats-grid" wx:if="{{isLogin}}">
   <view class="stat-card red">
-    <view class="stat-icon">❤️</view>
+    <view class="stat-icon stat-icon-red">
+      <image class="stat-icon-img" src="/images/remix/ri-heart-fill-red.svg" mode="aspectFit" />
+    </view>
     <view class="stat-value">{{stats.parrotCount}}</view>
     <view class="stat-label">我的鹦鹉</view>
   </view>
   <view class="stat-card orange">
-    <view class="stat-icon">🍽️</view>
+    <view class="stat-icon stat-icon-orange">
+      <image class="stat-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="aspectFit" />
+    </view>
     <view class="stat-value">{{stats.totalFeedings}}</view>
     <view class="stat-label">总喂食次数</view>
   </view>
   <view class="stat-card green">
-    <view class="stat-icon">🛡️</view>
+    <view class="stat-icon stat-icon-green">
+      <image class="stat-icon-img" src="/images/remix/ri-shield-check-fill-blue.svg" mode="aspectFit" />
+    </view>
     <view class="stat-value">{{stats.totalCheckups}}</view>
     <view class="stat-label">健康检查</view>
   </view>
 </view>
 
-<!-- 成就模块 -->
-<view class="achievements-card" wx:if="{{isLogin && userMode !== 'team'}}">
-  <view class="section-title">
-    <text class="title-icon">🏆</text>
-    <text>我的成就</text>
-  </view>
-  <view class="achievements-grid">
-    <block wx:for="{{achievements}}" wx:key="index">
-      <view class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}}">
-        <view class="achievement-icon {{item.bgClass}}">{{item.icon}}</view>
-        <view class="achievement-title">{{item.title}}</view>
-        <view class="achievement-desc">{{item.desc}}</view>
-        <view class="achievement-progress" wx:if="{{!item.unlocked}}">
-          <text class="progress-text">{{stats[item.condition] || 0}}/{{item.target}}</text>
-        </view>
-        <view class="achievement-badge" wx:if="{{item.unlocked}}">
-          <text class="badge-text">已解锁</text>
-        </view>
-      </view>
-    </block>
-  </view>
-</view>
+<!-- 成就模块已移除 -->
 
 <!-- 团队协作模块（仅团队模式显示） -->
 <view class="team-card" wx:if="{{isLogin && userMode === 'team'}}">
   <view class="section-title">
-    <text class="title-icon">👥</text>
+<image class="section-icon-img" src="/images/remix/user-line.svg" mode="aspectFit" />
     <text>团队协作</text>
   </view>
+  <!-- 改为图片式卡片列表，像素级对齐设计 -->
   <view class="team-list">
-    <block wx:for="{{teamItems}}" wx:key="index">
-      <view class="team-item" bindtap="onTeamItemTap" data-title="{{item.title}}">
-        <view class="team-item-icon {{item.bgClass}}">{{item.icon}}</view>
-        <view class="team-item-content">
-          <view class="team-item-title">{{item.title}}</view>
-          <view class="team-item-desc">{{item.desc}}</view>
-        </view>
-        <text class="arrow">></text>
+    <view class="team-item theme-blue" bindtap="onTeamItemTap" data-action="current">
+      <view class="team-item-icon">
+        <image class="team-item-icon-img" src="/images/remix/user-line.svg" mode="aspectFit" />
       </view>
-    </block>
+      <view class="team-item-content">
+        <view class="team-item-title">当前团队</view>
+        <view class="team-item-desc">查看团队成员</view>
+      </view>
+      <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+    </view>
+    <view class="team-item theme-green" bindtap="onTeamItemTap" data-action="join">
+      <view class="team-item-icon">
+        <image class="team-item-icon-img" src="/images/remix/ri-add-line.svg" mode="aspectFit" />
+      </view>
+      <view class="team-item-content">
+        <view class="team-item-title">加入团队</view>
+        <view class="team-item-desc">通过邀请码加入团队</view>
+      </view>
+      <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+    </view>
+    <view class="team-item theme-purple" bindtap="onTeamItemTap" data-action="create">
+      <view class="team-item-icon">
+        <image class="team-item-icon-img" src="/images/remix/ri-user-fill-purple.svg" mode="aspectFit" />
+      </view>
+      <view class="team-item-content">
+        <view class="team-item-title">创建团队</view>
+        <view class="team-item-desc">创建新的团队并邀请成员</view>
+      </view>
+      <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+    </view>
+    <view class="team-item theme-orange" bindtap="onTeamItemTap" data-action="manage">
+      <view class="team-item-icon">
+        <image class="team-item-icon-img" src="/images/remix/settings-3-line.svg" mode="aspectFit" />
+      </view>
+      <view class="team-item-content">
+        <view class="team-item-title">团队管理</view>
+        <view class="team-item-desc">管理团队成员和设置</view>
+      </view>
+      <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+    </view>
   </view>
 </view>
 
 <!-- 功能菜单模块 -->
 <view class="menu-card">
   <view class="section-title">
-    <text class="title-icon">📋</text>
+    <image class="section-icon-img" src="/images/remix/information-line.svg" mode="aspectFit" />
     <text>功能菜单</text>
   </view>
   <view class="menu-list">
     <block wx:for="{{menuItems}}" wx:key="index">
       <view class="menu-item" bindtap="onMenuItemTap" data-title="{{item.title}}">
-        <view class="menu-item-icon {{item.bgClass}}">{{item.icon}}</view>
+        <view class="menu-item-icon {{item.bgClass}}">
+          <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" />
+        </view>
         <view class="menu-item-content">
           <view class="menu-item-title">{{item.title}}</view>
           <view class="menu-item-desc">{{item.desc}}</view>
         </view>
-        <text class="arrow">></text>
+        <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
       </view>
     </block>
   </view>
@@ -194,7 +216,7 @@
 
 <!-- 版本信息模块 -->
 <view class="version-card">
-  <view class="version-logo">❤️</view>
+<image class="version-logo-img" src="/images/logo.png" mode="aspectFit" />
   <view class="version-title">鹦鹉管家</view>
   <view class="version-sub">专业的鹦鹉护理助手</view>
   <view class="version-info">版本 1.0.0 • 用心呵护每一只小鹦鹉</view>

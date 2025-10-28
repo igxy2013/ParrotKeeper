@@ -73,19 +73,27 @@
       <!-- 快速操作按钮 -->
       <view class="quick-actions">
         <view class="action-btn feeding-btn" bindtap="showFeedingModal">
-          <view class="action-icon">🍽️</view>
+          <view class="action-icon-wrapper">
+            <image class="action-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/>
+          </view>
           <text class="action-text">喂食</text>
         </view>
         <view class="action-btn health-btn" bindtap="showHealthModal">
-          <view class="action-icon">❤️</view>
+          <view class="action-icon-wrapper">
+            <image class="action-icon-img" src="/images/remix/ri-heart-fill-emerald.svg" mode="widthFix"/>
+          </view>
           <text class="action-text">健康</text>
         </view>
         <view class="action-btn training-btn" bindtap="showTrainingModal">
-          <view class="action-icon">🏆</view>
+          <view class="action-icon-wrapper">
+            <image class="action-icon-img" src="/images/remix/ri-trophy-fill-purple.svg" mode="widthFix"/>
+          </view>
           <text class="action-text">训练</text>
         </view>
         <view class="action-btn photo-btn" bindtap="showPhotoModal">
-          <view class="action-icon">📷</view>
+          <view class="action-icon-wrapper">
+            <image class="action-icon-img" src="/images/remix/ri-camera-fill-pink.svg" mode="widthFix"/>
+          </view>
           <text class="action-text">拍照</text>
         </view>
       </view>

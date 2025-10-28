@@ -29,9 +29,13 @@ Page({
     showAvatarModal: false,
     avatarOptions: [
       '/images/default-avatar.png',
-      '/images/avatar-1.png',
-      '/images/avatar-2.png',
-      '/images/avatar-3.png'
+      '/images/default-avatar.svg',
+      '/images/parrot-avatar-green.svg',
+      '/images/parrot-avatar-blue.svg',
+      '/images/parrot-avatar-orange.svg',
+      '/images/parrot-avatar-purple.svg',
+      '/images/parrot-avatar-red.svg',
+      '/images/parrot-avatar-yellow.svg'
     ],
     selectedAvatar: '',
 
@@ -40,18 +44,15 @@ Page({
     theme: 'system',
     themeDisplay: '跟随系统',
     stats: { parrotCount: 0, totalFeedings: 0, totalCheckups: 0, statsViews: 0 },
-    achievements: [], // 改为空数组，从后端加载
-    teamItems: [
-      { icon: '👥', title: '当前团队', desc: '查看团队成员', bgClass: 'bg-blue' },
-      { icon: '➕', title: '加入团队', desc: '通过邀请码加入团队', bgClass: 'bg-green' },
-      { icon: '👨‍👩‍👧‍👦', title: '创建团队', desc: '创建新的团队并邀请成员', bgClass: 'bg-purple' },
-      { icon: '⚙️', title: '团队管理', desc: '管理团队成员和设置', bgClass: 'bg-orange' }
-    ],
+    // 团队功能暂不开放，列表置空以隐藏入口
+    teamItems: [],
     menuItems: [
-      { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray' },
-      { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green' },
-      { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo' },
-      { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink' }
+      { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.svg' },
+      { icon: '🔔', title: '通知', desc: '消息提醒设置', bgClass: 'bg-blue', iconSrc: '/images/remix/ri-notification-3-line.svg' },
+      { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.svg' },
+      { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.svg' },
+      { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.svg' },
+  { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink', iconSrc: '/images/remix/share-forward-line.svg' }
     ]
   },
 
@@ -59,13 +60,6 @@ Page({
     this.initUser();
     this.loadPreferences();
     this.loadOverviewStats();
-    // 团队模式下不加载成就内容
-    if ((app.globalData.userMode || this.data.userMode) !== 'team') {
-      this.loadAchievements();
-    } else {
-      // 确保成就列表为空
-      this.setData({ achievements: [] });
-    }
   },
 
   // 加载统计概览用于展示统计网格（改用统一请求封装）
@@ -80,10 +74,6 @@ Page({
             statsViews: res.data.stats_views || 0
           }
         })
-        // 团队模式下不检查成就
-        if ((app.globalData.userMode || this.data.userMode) !== 'team') {
-          this.checkAchievements()
-        }
       }
     } catch (err) {
       console.error('获取统计数据失败:', err)
@@ -115,11 +105,35 @@ Page({
     try {
       const res = await app.request({ url: '/api/achievements/', method: 'GET' })
       if (res.success) {
-        this.setData({ achievements: res.data })
+        const mapped = Array.isArray(res.data) ? res.data.map(a => ({
+          ...a,
+          iconSrc: this.mapAchievementIcon(a)
+        })) : []
+        this.setData({ achievements: mapped })
       }
     } catch (err) {
       console.error('获取成就列表失败:', err)
     }
+  },
+
+  // 根据后端返回的成就信息映射图标
+  mapAchievementIcon(a) {
+    const t = (a.title || a.name || '').toLowerCase()
+    const i = (a.icon || '').toLowerCase()
+    if (i.includes('heart') || t.includes('heart') || t.includes('爱') || t.includes('心')) {
+      return '/images/remix/ri-heart-fill-red.svg'
+    }
+    if (i.includes('shield') || t.includes('shield') || t.includes('健康') || t.includes('护盾')) {
+      return '/images/remix/ri-shield-check-fill-blue.svg'
+    }
+    if (i.includes('trophy') || t.includes('trophy') || t.includes('奖杯') || t.includes('成就')) {
+      return '/images/remix/ri-trophy-fill.svg'
+    }
+    if (i.includes('star') || t.includes('star') || t.includes('星')) {
+      // 若无星形图标，复用奖杯以保证一致风格
+      return '/images/remix/ri-trophy-fill-purple.svg'
+    }
+    return '/images/remix/ri-trophy-fill.svg'
   },
 
   // 显示成就解锁提示
@@ -133,18 +147,9 @@ Page({
     });
   },
 
-  // 团队协作点击处理
-  onTeamItemTap(e) {
-    const title = e.currentTarget.dataset.title;
-    if (title === '当前团队') {
-      wx.navigateTo({ url: '/pages/teams/teams' });
-    } else if (title === '加入团队') {
-      wx.navigateTo({ url: '/pages/teams/join/join' });
-    } else if (title === '创建团队') {
-      wx.navigateTo({ url: '/pages/teams/create/create' });
-    } else if (title === '团队管理') {
-      wx.navigateTo({ url: '/pages/teams/settings/settings' });
-    }
+  // 团队协作点击处理（功能未开放，禁止跳转）
+  onTeamItemTap() {
+    wx.showToast({ title: '团队功能暂未开放', icon: 'none' })
   },
 
   // 功能菜单点击处理
@@ -153,8 +158,12 @@ Page({
     if (title === '设置') {
       // 跳转到独立的应用设置页面
       wx.navigateTo({ url: '/pages/settings/settings' });
+    } else if (title === '通知') {
+      wx.navigateTo({ url: '/pages/settings/settings' });
     } else if (title === '护理指南') {
       wx.showToast({ title: '护理指南功能即将上线', icon: 'none' });
+    } else if (title === '客服支持') {
+      wx.showToast({ title: '请通过关于页面或客服渠道联系我们', icon: 'none' });
     } else if (title === '关于我们') {
       this.showAbout && this.showAbout();
     } else if (title === '分享应用') {
@@ -353,30 +362,57 @@ Page({
     this.setData({ isEditingNickname: isEditing, editNickname: this.data.userInfo.nickname || '' });
   },
   onEditNicknameInput(e) { this.setData({ editNickname: e.detail.value }); },
-  saveNickname() {
+  async saveNickname() {
     const app = getApp();
     const nickname = (this.data.editNickname || '').trim();
     if (!nickname) return wx.showToast({ title: '请输入昵称', icon: 'none' });
-    app.request({ url: '/api/me', method: 'PUT', data: { nickname } }).then(() => {
-      const userInfo = { ...this.data.userInfo, nickname };
-      this.setData({ userInfo, isEditingNickname: false });
-      wx.showToast({ title: '已保存', icon: 'none' });
-    });
+    try {
+      const res = await app.request({ url: '/api/auth/profile', method: 'PUT', data: { nickname } });
+      if (res && res.success) {
+        const serverUser = res.data || {};
+        const userInfo = { ...this.data.userInfo, ...(serverUser || {}), nickname: (serverUser.nickname || nickname) };
+        // 更新本页与全局、持久化存储
+        this.setData({ userInfo, isEditingNickname: false });
+        try {
+          app.globalData.userInfo = userInfo;
+          wx.setStorageSync('userInfo', userInfo);
+        } catch (_) {}
+        wx.showToast({ title: '已保存', icon: 'none' });
+      } else {
+        wx.showToast({ title: (res && res.message) || '保存失败', icon: 'none' });
+      }
+    } catch (err) {
+      console.warn('保存昵称失败:', err);
+      wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+    }
   },
   cancelNicknameEdit() { this.setData({ isEditingNickname: false }); },
 
   toggleAvatarEdit() { this.setData({ showAvatarModal: true }); },
   hideAvatarModal() { this.setData({ showAvatarModal: false }); },
   selectAvatar(e) { this.setData({ selectedAvatar: e.currentTarget.dataset.avatar }); },
-  confirmAvatarChange() {
+  async confirmAvatarChange() {
     const app = getApp();
     const url = this.data.selectedAvatar;
     if (!url) return;
-    app.request({ url: '/api/me', method: 'PUT', data: { avatar_url: url } }).then(() => {
-      const userInfo = { ...this.data.userInfo, avatar_url: url };
-      this.setData({ userInfo, showAvatarModal: false });
-      wx.showToast({ title: '头像已更新', icon: 'none' });
-    });
+    try {
+      const res = await app.request({ url: '/api/auth/profile', method: 'PUT', data: { avatar_url: url } });
+      if (res && res.success) {
+        const serverUser = res.data || {};
+        const userInfo = { ...this.data.userInfo, ...(serverUser || {}), avatar_url: (serverUser.avatar_url || url) };
+        this.setData({ userInfo, showAvatarModal: false });
+        try {
+          app.globalData.userInfo = userInfo;
+          wx.setStorageSync('userInfo', userInfo);
+        } catch (_) {}
+        wx.showToast({ title: '头像已更新', icon: 'none' });
+      } else {
+        wx.showToast({ title: (res && res.message) || '头像更新失败', icon: 'none' });
+      }
+    } catch (err) {
+      console.warn('更新头像失败:', err);
+      wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+    }
   },
 
   // 登录

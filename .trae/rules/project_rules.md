@@ -1,2 +1,7 @@
-正式后端API地址，https://acbim.cn
 
+
+# 数据库配置
+DB_HOST=192.168.0.60
+DB_PORT=3306
+DB_USER=mysql
+DB_PASSWORD=12345678

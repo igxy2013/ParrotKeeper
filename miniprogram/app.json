@@ -19,12 +19,9 @@
                   "pages/expenses/add-expense/add-expense",
                   "pages/expenses/edit-expense/edit-expense",
                   "pages/expenses/transactions/transactions",
-                  "pages/teams/teams",
-                  "pages/teams/settings/settings",
-                  "pages/teams/join/join",
-                  "pages/teams/create/create",
                   "pages/test-notification/test-notification"
               ],
+    "entryPagePath": "pages/index/index",
     "window":  {
                    "backgroundTextStyle":  "light",
                    "navigationBarBackgroundColor":  "#10b981",

@@ -4,7 +4,8 @@
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "团队成员",
-  "enablePullDownRefresh": true,
+  "enablePullDownRefresh": false,
   "backgroundColor": "#f8f9fa",
   "backgroundTextStyle": "dark"
 }
+

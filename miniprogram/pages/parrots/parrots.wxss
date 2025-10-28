@@ -90,6 +90,9 @@
   font-weight: bold;
 }
 
+/* 图片化的头部按钮图标尺寸 */
+.header-btn-icon-img { width: 36rpx; height: 36rpx; }
+
 /* 统计概览卡片 */
 .stats-overview-card {
   background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
@@ -196,6 +199,9 @@
   margin-right: 24rpx;
 }
 
+/* 图片化的搜索图标尺寸与间距 */
+.search-icon-img { width: 32rpx; height: 32rpx; margin-right: 24rpx; }
+
 .search-input {
   flex: 1;
   font-size: 28rpx;
@@ -239,6 +245,9 @@
   font-size: 20rpx;
   opacity: 0.7;
 }
+
+/* 图片化的筛选箭头尺寸与透明度 */
+.filter-arrow-img { width: 20rpx; height: 20rpx; opacity: 0.7; }
 
 /* 鹦鹉列表 */
 .parrot-list {
@@ -348,6 +357,9 @@
   font-size: 24rpx;
 }
 
+/* 图片化的状态小图标（喂食等） */
+.status-icon-img { width: 28rpx; height: 28rpx; }
+
 .status-text {
   font-size: 24rpx;
   color: #666666;
@@ -389,6 +401,9 @@
   font-size: 32rpx;
   color: #cccccc;
 }
+
+/* 图片化的卡片右箭头图标 */
+.arrow-icon-img { width: 28rpx; height: 28rpx; }
 
 /* 空状态卡片 */
 .empty-state-card {

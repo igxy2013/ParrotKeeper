@@ -149,7 +149,7 @@
         <view class="activity-item {{item.type === 'feeding' ? 'orange-theme' : (item.type === 'health' ? 'green-theme' : (item.type === 'cleaning' ? 'blue-theme' : 'purple-theme'))}}" 
               wx:for="{{recentRecords}}" wx:key="id" wx:if="{{index < 3}}">
           <view class="activity-icon-container">
-            <image class="activity-icon-img" src="{{item.type === 'feeding' ? '/images/remix/ri-restaurant-fill-white.svg' : (item.type === 'health' ? '/images/remix/ri-heart-fill-white.svg' : (item.type === 'cleaning' ? '/images/remix/ri-calendar-fill-white.svg' : (item.type === 'breeding' ? '/images/remix/ri-calendar-fill-white.svg' : '/images/remix/ri-calendar-fill-white.svg')))}}" mode="widthFix"/>
+             <view class="activity-icon-bg" style="background-image: url({{item.type === 'feeding' ? '/images/remix/ri-restaurant-fill-white.svg' : (item.type === 'health' ? '/images/remix/ri-heart-fill-white.svg' : (item.type === 'cleaning' ? '/images/remix/ri-calendar-fill-white.svg' : (item.type === 'breeding' ? '/images/remix/ri-calendar-fill-white.svg' : '/images/remix/ri-calendar-fill-white.svg')))}});"></view>
           </view>
           <view class="activity-content">
             <text class="activity-title">给{{item.parrot_name}}{{item.title}}</text>

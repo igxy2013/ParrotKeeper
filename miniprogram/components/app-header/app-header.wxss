@@ -80,3 +80,14 @@
   align-items: center;
   gap: 16rpx;
 }
+
+/* 插槽内容样式 */
+.ah-header-right .header-action {
+  display: flex;
+  align-items: center;
+}
+
+.ah-header-right .header-icon {
+  width: 36rpx;
+  height: 36rpx;
+}

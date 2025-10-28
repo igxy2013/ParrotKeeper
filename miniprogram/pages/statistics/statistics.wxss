@@ -75,6 +75,11 @@
   flex-shrink: 0;
 }
 
+.tip-icon-img {
+  width: 40rpx;
+  height: 40rpx;
+}
+
 .tip-content {
   flex: 1;
   display: flex;
@@ -255,6 +260,11 @@
   flex-shrink: 0;
 }
 
+.card-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 .card-title {
   font-size: 34rpx;
   font-weight: 700;
@@ -312,6 +322,11 @@
 .arrow-icon {
   font-size: 20rpx;
   color: #6b7280;
+}
+
+.arrow-icon-img {
+  width: 26rpx;
+  height: 26rpx;
 }
 
 .card-content {
@@ -444,6 +459,11 @@
 .placeholder-icon {
   font-size: 48rpx;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.placeholder-icon-img {
+  width: 40rpx;
+  height: 40rpx;
 }
 
 .placeholder-text {
@@ -1040,6 +1060,34 @@
 .overview-icon {
   font-size: 36rpx;
   opacity: 0.85;
+}
+
+.overview-icon-img {
+  width: 48rpx;
+  height: 48rpx;
+  opacity: 1;
+}
+
+.overview-icon-container {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.selector-arrow-img {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.selector-arrow-img.rotate {
+  transform: rotate(180deg);
+  transition: transform 0.2s ease;
 }
 .label-chip {
   font-size: 22rpx;

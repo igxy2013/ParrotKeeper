@@ -326,6 +326,26 @@
   margin-bottom: 4rpx;
 }
 
+/* 统一为图片化图标样式，与首页保持一致的尺寸 */
+.action-icon-wrapper {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  background: #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.action-btn:active .action-icon-wrapper {
+  transform: scale(1.05);
+}
+
+.action-icon-img { width: 44rpx; height: 44rpx; }
+
 .action-text {
   font-size: 24rpx;
   font-weight: 500;

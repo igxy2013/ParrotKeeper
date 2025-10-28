@@ -1,7 +1,10 @@
 <!--pages/teams/members/members.wxml-->
 <view class="container">
-  <app-header title="团队成员" subtitle="管理团队成员" showBack="{{true}}"></app-header>
+  <app-header title="团队成员" subtitle="该页面已移除" showBack="{{true}}"></app-header>
   <view class="page-content">
-    <!-- 原文件内容损坏，保留最小结构 -->
+    <view class="empty-tip">
+      <text class="empty-text">该页面已废弃，请返回上一页</text>
+    </view>
   </view>
  </view>
+

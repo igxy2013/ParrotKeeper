@@ -1,9 +1,0 @@
-{
-  "usingComponents": {
-    "app-header": "/components/app-header/app-header"
-  },
-  "navigationStyle": "custom",
-  "navigationBarTitleText": "团队设置",
-  "backgroundColor": "#f8f9fa",
-  "backgroundTextStyle": "dark"
-}

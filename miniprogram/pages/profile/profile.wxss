@@ -1637,7 +1637,11 @@
   text-align: center;
   box-shadow: 0 12rpx 24rpx rgba(0,0,0,0.08); /* shadow-lg 接近 */
 }
-.stat-card .stat-icon { font-size: 40rpx; margin-bottom: 12rpx; }
+.stat-card .stat-icon { width: 48rpx; height: 48rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; margin: 0 auto 12rpx; }
+.stat-icon-img { width: 28rpx; height: 28rpx; }
+.stat-icon-red { background: #fee2e2; }
+.stat-icon-orange { background: #ffedd5; }
+.stat-icon-green { background: #dcfce7; }
 .stat-card .stat-value { font-size: 44rpx; font-weight: 700; margin-bottom: 10rpx; }
 .stat-card .stat-label { font-size: 20rpx; color: #6b7280; font-weight: 600; }
 .stat-card.red .stat-value { color: #ef4444; }
@@ -1709,6 +1713,7 @@
   margin-bottom: 12rpx; 
   transition: all 0.3s ease;
 }
+.achievement-icon-img { width: 40rpx; height: 40rpx; }
 
 .achievement-title { font-weight: 600; color: #111827; font-size: 26rpx; margin-bottom: 6rpx; }
 .achievement-desc { font-size: 22rpx; color: #6b7280; margin-bottom: 8rpx; }
@@ -1757,21 +1762,104 @@
 
 /* 新增：团队协作样式 */
 .team-card { background: rgba(255,255,255,0.9); border: 1rpx solid rgba(255,255,255,0.6); border-radius: 32rpx; margin: 24rpx 20rpx; padding: 24rpx; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); }
-.team-list { display: flex; flex-direction: column; gap: 16rpx; }
-.team-item { display: flex; align-items: center; gap: 20rpx; padding: 20rpx; background: linear-gradient(135deg, #fff, #f8fafc); border: 1rpx solid #eef2f7; border-radius: 24rpx; }
+.team-list { display: flex; flex-direction: column; gap: 24rpx; }
+.team-item { display: flex; align-items: center; gap: 20rpx; padding: 24rpx; background: linear-gradient(135deg, #fff, #f8fafc); border: 1rpx solid #eef2f7; border-radius: 24rpx; box-shadow: 0 8rpx 20rpx rgba(17, 24, 39, 0.04); }
 .team-item-icon { width: 64rpx; height: 64rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 36rpx; }
+.team-item-icon-img { width: 32rpx; height: 32rpx; }
 .team-item-title { font-weight: 700; color: #111827; font-size: 28rpx; }
 .team-item-desc { font-size: 24rpx; color: #6b7280; margin-top: 4rpx; font-weight: 500; }
 .team-item .arrow { color: #9ca3af; margin-left: auto; }
+.arrow-icon { width: 32rpx; height: 32rpx; margin-left: auto; }
+
+/* 主题化背景，匹配图片式卡片色板 */
+.team-item.theme-blue { background: #f1f6ff; border-color: #e5efff; }
+.team-item.theme-blue .team-item-icon { background: #e6f0ff; }
+
+.team-item.theme-green { background: #f1fff4; border-color: #d7f5df; }
+.team-item.theme-green .team-item-icon { background: #e6f9ea; }
+
+.team-item.theme-purple { background: #f6f0ff; border-color: #e7dbff; }
+.team-item.theme-purple .team-item-icon { background: #ece3ff; }
+
+.team-item.theme-orange { background: #fff7ef; border-color: #ffead6; }
+.team-item.theme-orange .team-item-icon { background: #ffeeda; }
+
+/* 深色主题下的卡片背景与图标容器 */
+.theme-dark .team-item.theme-blue,
+.theme-dark .team-item.theme-green,
+.theme-dark .team-item.theme-purple,
+.theme-dark .team-item.theme-orange { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+.theme-dark .team-item.theme-blue .team-item-icon,
+.theme-dark .team-item.theme-green .team-item-icon,
+.theme-dark .team-item.theme-purple .team-item-icon,
+.theme-dark .team-item.theme-orange .team-item-icon { background: rgba(255,255,255,0.08); }
+
+/* 团队占位样式 */
+.team-placeholder { padding: 20rpx; text-align: center; color: #6b7280; }
+.team-placeholder .placeholder-title { font-size: 28rpx; font-weight: 700; color: #111827; margin-bottom: 8rpx; }
+.team-placeholder .placeholder-desc { font-size: 24rpx; }
+
+/* 区块标题图标（与参考APP一致的尺寸与间距） */
+.section-icon-img {
+  width: 32rpx;
+  height: 32rpx;
+  margin-right: 12rpx;
+}
+
+/* 头像编辑与昵称编辑图标 */
+.edit-icon-img {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+/* 关闭弹窗按钮图标 */
+.modal-close-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+/* 登录卡片图标 */
+.login-icon-img {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+/* 版本徽标图标 */
+.version-logo-img {
+  width: 64rpx;
+  height: 64rpx;
+  background-color: transparent;
+}
+
+/* 头部右侧操作按钮（与APP风格一致：圆形半透明、白色线性图标）*/
+.header-action-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(12rpx);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.header-action-btn:active {
+  transform: scale(0.96);
+}
+.header-action-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
 
 /* 新增：功能菜单样式 */
 .menu-card { background: rgba(255,255,255,0.9); border: 1rpx solid rgba(255,255,255,0.6); border-radius: 32rpx; margin: 24rpx 20rpx; padding: 24rpx; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); }
 .menu-list { display: flex; flex-direction: column; gap: 16rpx; }
 .menu-item { display: flex; align-items: center; gap: 20rpx; padding: 20rpx; background: linear-gradient(135deg, #fff, #f8fafc); border: 1rpx solid #eef2f7; border-radius: 24rpx; }
 .menu-item-icon { width: 64rpx; height: 64rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 32rpx; }
+.menu-item-icon-img { width: 30rpx; height: 30rpx; }
 .menu-item-title { font-weight: 700; color: #111827; font-size: 28rpx; }
 .menu-item-desc { font-size: 24rpx; color: #6b7280; margin-top: 4rpx; font-weight: 500; }
 .menu-item .arrow { color: #9ca3af; margin-left: auto; }
+.arrow-icon { width: 32rpx; height: 32rpx; margin-left: auto; }
 
 /* 新增：版本信息样式 */
 .version-card { background: rgba(255,255,255,0.92); border: 1rpx solid rgba(255,255,255,0.6); border-radius: 32rpx; margin: 24rpx 20rpx 40rpx; padding: 24rpx; text-align: center; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); }
@@ -1795,6 +1883,8 @@
   background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.06));
   border-color: rgba(255,255,255,0.12);
 }
+.theme-dark .team-placeholder { color: #d1d5db; }
+.theme-dark .team-placeholder .placeholder-title { color: #f9fafb; }
 .theme-dark .stat-card .stat-value { color: #e5e7eb; }
 .theme-dark .stat-card .stat-label { color: #9ca3af; }
 .theme-dark .achievement-title,

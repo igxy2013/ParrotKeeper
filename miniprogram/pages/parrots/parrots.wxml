@@ -3,7 +3,7 @@
   <!-- 顶部导航统一为组件 -->
   <app-header title="我的鹦鹉" subtitle="管理您的鹦鹉宝贝们">
     <view slot="actions" class="header-btn" bindtap="addParrot">
-      <text class="header-btn-icon">+</text>
+      <image class="header-btn-icon-img" src="/images/remix/ri-add-fill-emerald.svg" mode="widthFix"/>
     </view>
   </app-header>
 
@@ -37,7 +37,7 @@
   <!-- 搜索和筛选 -->
   <view class="search-filter-card">
     <view class="search-bar">
-      <text class="search-icon">🔍</text>
+      <image class="search-icon-img" src="/images/remix/ri-search-fill-gray.svg" mode="widthFix"/>
       <input 
         class="search-input" 
         placeholder="搜索鹦鹉名称、编号或脚环号..." 
@@ -50,15 +50,15 @@
     <view class="filter-bar">
       <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}" bindtap="showSpeciesFilter">
         <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
-        <text class="filter-arrow">▼</text>
+        <image class="filter-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix"/>
       </view>
       <view class="filter-item {{selectedStatus ? 'active' : ''}}" bindtap="showStatusFilter">
         <text class="filter-text">{{selectedStatus ? selectedStatusText : '状态'}}</text>
-        <text class="filter-arrow">▼</text>
+        <image class="filter-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix"/>
       </view>
       <view class="filter-item {{sortText !== '默认排序' ? 'active' : ''}}" bindtap="showSortFilter">
         <text class="filter-text">{{sortText}}</text>
-        <text class="filter-arrow">▼</text>
+        <image class="filter-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix"/>
       </view>
     </view>
   </view>
@@ -92,7 +92,7 @@
           <text class="parrot-species">{{item.species_name}} • {{item.age_days ? item.age_days + '天' : '未知'}} • {{item.weight ? item.weight + 'g' : ''}}</text>
           <view class="parrot-status">
             <view class="status-item">
-              <text class="status-icon">🍽️</text>
+              <image class="status-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/>
               <text class="status-text">{{item.last_feed || '2小时前'}}</text>
             </view>
           </view>
@@ -100,7 +100,7 @@
         
         <!-- 箭头图标 -->
         <view class="parrot-arrow">
-          <text class="arrow-icon">→</text>
+          <image class="arrow-icon-img" src="/images/remix/ri-arrow-right-s-fill-gray.svg" mode="widthFix"/>
         </view>
       </view>
     </view>

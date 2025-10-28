@@ -4,7 +4,7 @@
   <view class="page-content">
   <!-- 游客模式提示 -->
   <view wx:if="{{!isLogin}}" class="guest-tip-card">
-    <view class="tip-icon">🎯</view>
+    <view class="tip-icon"><image class="tip-icon-img" src="/images/remix/ri-information-fill-blue.svg" mode="widthFix"/></view>
     <view class="tip-content">
       <text class="tip-text">您正在以游客身份浏览示例数据</text>
       <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
@@ -22,7 +22,9 @@
   <view class="overview-grid">
     <view class="overview-card emerald">
       <view class="overview-header">
-        <text class="overview-icon">❤️</text>
+        <view class="overview-icon-container">
+          <image class="overview-icon-img" src="/images/remix/ri-heart-fill-white.svg" mode="scaleToFill"/>
+        </view>
         <text class="label-chip">总数</text>
       </view>
       <text class="overview-value">{{overview.total_parrots || 0}}</text>
@@ -31,7 +33,9 @@
 
     <view class="overview-card blue">
       <view class="overview-header">
-        <text class="overview-icon">🛡️</text>
+        <view class="overview-icon-container">
+          <image class="overview-icon-img" src="/images/remix/ri-shield-check-fill-white.svg" mode="scaleToFill"/>
+        </view>
         <text class="label-chip">健康</text>
       </view>
       <text class="overview-value">{{overview.health_status.healthy || 0}}</text>
@@ -40,7 +44,9 @@
 
     <view class="overview-card orange">
       <view class="overview-header">
-        <text class="overview-icon">🍽️</text>
+        <view class="overview-icon-container">
+          <image class="overview-icon-img" src="/images/remix/ri-restaurant-fill-white.svg" mode="scaleToFill"/>
+        </view>
         <text class="label-chip">今日</text>
       </view>
       <text class="overview-value">{{overview.today_feeding || 0}}</text>
@@ -49,7 +55,9 @@
 
     <view class="overview-card purple">
       <view class="overview-header">
-        <text class="overview-icon">⚖️</text>
+        <view class="overview-icon-container">
+          <image class="overview-icon-img" src="/images/remix/ri-scales-fill-white.svg" mode="scaleToFill"/>
+        </view>
         <text class="label-chip">平均</text>
       </view>
       <text class="overview-value">{{avgWeight || '--'}}</text>
@@ -58,7 +66,7 @@
   </view>
   <!-- 游客模式提示 -->
   <view wx:if="{{!isLogin}}" class="guest-tip-card">
-    <view class="tip-icon">🎯</view>
+    <view class="tip-icon"><image class="tip-icon-img" src="/images/remix/ri-information-fill-blue.svg" mode="widthFix"/></view>
     <view class="tip-content">
       <text class="tip-text">您正在以游客身份浏览示例数据</text>
       <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
@@ -70,13 +78,13 @@
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
-          <view class="card-icon">⚖️</view>
+          <view class="card-icon"><image class="card-icon-img" src="/images/remix/ri-line-chart-fill-purple.svg" mode="widthFix"/></view>
           <text class="card-title">体重趋势曲线</text>
         </view>
         <view class="parrot-selector">
           <view class="selector-wrapper" bindtap="toggleParrotDropdown">
             <text class="selector-text">{{selectedParrotName || '全部鹦鹉'}}</text>
-            <text class="selector-arrow {{showParrotDropdown ? 'rotate' : ''}}">▼</text>
+            <image class="selector-arrow-img {{showParrotDropdown ? 'rotate' : ''}}" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix"/>
           </view>
           <view class="dropdown-menu {{showParrotDropdown ? 'show' : ''}}">
             <view class="dropdown-item" bindtap="selectWeightParrot" data-id="">
@@ -111,12 +119,12 @@
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
-          <view class="card-icon">💰</view>
+          <view class="card-icon"><image class="card-icon-img" src="/images/remix/ri-wallet-fill-purple.svg" mode="widthFix"/></view>
           <text class="card-title">支出分析</text>
         </view>
         <view class="view-all-btn" bindtap="navigateToExpenses">
           <text>查看全部</text>
-          <view class="arrow-icon">→</view>
+          <image class="arrow-icon-img" src="/images/remix/ri-arrow-right-s-fill-gray.svg" mode="widthFix"/>
         </view>
       </view>
       <view class="card-content">
@@ -135,7 +143,7 @@
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
-          <view class="placeholder-icon">💰</view>
+          <view class="placeholder-icon"><image class="placeholder-icon-img" src="/images/remix/ri-wallet-fill-purple.svg" mode="widthFix"/></view>
           <text class="placeholder-text">暂无支出记录</text>
         </view>
       </view>
@@ -149,7 +157,7 @@
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
-          <view class="card-icon">🍽️</view>
+          <view class="card-icon"><image class="card-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/></view>
           <text class="card-title">食物偏好分析</text>
         </view>
       </view>
@@ -167,7 +175,7 @@
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
-          <view class="placeholder-icon">🍽️</view>
+          <view class="placeholder-icon"><image class="placeholder-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/></view>
           <text class="placeholder-text">暂无数据</text>
         </view>
       </view>
@@ -179,7 +187,7 @@
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
-          <view class="card-icon">🦜</view>
+          <view class="card-icon"><image class="card-icon-img" src="/images/remix/ri-pie-chart-2-fill-blue.svg" mode="widthFix"/></view>
           <text class="card-title">品种分布</text>
         </view>
       </view>
@@ -195,7 +203,7 @@
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
-          <view class="placeholder-icon">🦜</view>
+          <view class="placeholder-icon"><image class="placeholder-icon-img" src="/images/remix/ri-pie-chart-2-fill-blue.svg" mode="widthFix"/></view>
           <text class="placeholder-text">暂无数据</text>
         </view>
       </view>
@@ -213,4 +221,3 @@
 
 <!-- 自定义底部导航 -->
 <bottom-nav active="statistics" />
-
