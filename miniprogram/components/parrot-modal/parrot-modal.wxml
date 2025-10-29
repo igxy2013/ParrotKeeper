@@ -13,18 +13,17 @@
       <view class="form-section">
         <!-- 名字 -->
         <view class="form-item">
-          <text class="form-label"><text class="label-icon">❤</text>鹦鹉名字 *</text>
+          <text class="form-label">鹦鹉名字 *</text>
           <input class="text-input" placeholder="给您的鹦鹉起个可爱的名字" value="{{form.name}}" bindinput="onInputChange" data-field="name" />
         </view>
 
         <!-- 品种 -->
         <view class="form-item">
-          <text class="form-label"><text class="label-icon">🍃</text>鹦鹉品种 *</text>
+          <text class="form-label">鹦鹉品种 *</text>
           <view class="picker-wrapper">
             <picker mode="selector" range="{{parrotTypes}}" value="{{typeIndex}}" bindchange="onTypePickerChange">
               <view class="picker-display">
                 <text>{{form.type ? form.type : '请选择品种'}}</text>
-                <text class="picker-arrow">▾</text>
               </view>
             </picker>
           </view>
@@ -33,70 +32,67 @@
         <!-- 编号 与 脚环号 -->
         <view class="form-grid">
           <view class="form-item">
-            <text class="form-label"><text class="label-icon">#</text>鹦鹉编号</text>
+            <text class="form-label">鹦鹉编号</text>
             <input class="text-input" placeholder="例如：PK-2025-001" value="{{form.parrot_number}}" bindinput="onInputChange" data-field="parrot_number" />
           </view>
           <view class="form-item">
-            <text class="form-label"><text class="label-icon">🪙</text>脚环号</text>
+            <text class="form-label">脚环号</text>
             <input class="text-input" placeholder="例如：R-88921" value="{{form.ring_number}}" bindinput="onInputChange" data-field="ring_number" />
           </view>
         </view>
 
         <!-- 体重 -->
         <view class="form-item">
-          <text class="form-label"><text class="label-icon">⚖</text>体重(g)</text>
+          <text class="form-label">体重(g)</text>
           <input class="text-input" placeholder="如: 35" value="{{form.weight}}" bindinput="onInputChange" data-field="weight" />
         </view>
 
         <!-- 性别 与 颜色 -->
         <view class="form-grid">
           <view class="form-item">
-            <text class="form-label"><text class="label-icon">👤</text>性别</text>
+            <text class="form-label">性别</text>
             <view class="gender-row">
               <view class="gender-btn {{form.gender_display === '雄性' ? 'gender-male active' : 'gender-male'}}" bindtap="setGenderDisplay" data-gender="雄性">雄性</view>
               <view class="gender-btn {{form.gender_display === '雌性' ? 'gender-female active' : 'gender-female'}}" bindtap="setGenderDisplay" data-gender="雌性">雌性</view>
             </view>
           </view>
           <view class="form-item">
-            <text class="form-label"><text class="label-icon">🎨</text>主要颜色</text>
+            <text class="form-label">主要颜色</text>
             <input class="text-input" placeholder="如: 绿色" value="{{form.color}}" bindinput="onInputChange" data-field="color" />
           </view>
         </view>
 
         <!-- 出生日期 -->
         <view class="form-item">
-          <text class="form-label"><text class="label-icon">📅</text>出生日期</text>
+          <text class="form-label">出生日期</text>
           <picker mode="date" value="{{form.birth_date}}" bindchange="onDateChange" data-field="birth_date">
             <view class="picker-display">
               <text>{{form.birth_date ? form.birth_date : '请选择日期'}}</text>
-              <text class="picker-arrow">▾</text>
             </view>
           </picker>
         </view>
 
         <!-- 入住日期 -->
         <view class="form-item">
-          <text class="form-label"><text class="label-icon">🏠</text>入住日期</text>
+          <text class="form-label">入住日期</text>
           <picker mode="date" value="{{form.acquisition_date}}" bindchange="onDateChange" data-field="acquisition_date">
             <view class="picker-display">
               <text>{{form.acquisition_date ? form.acquisition_date : '请选择日期'}}</text>
-              <text class="picker-arrow">▾</text>
             </view>
           </picker>
         </view>
 
         <!-- 鹦鹉照片 -->
         <view class="form-item">
-          <text class="form-label"><text class="label-icon">📷</text>鹦鹉照片</text>
+          <text class="form-label">鹦鹉照片</text>
           <view class="photo-upload">
             <view class="photo-preview" wx:if="{{form.photo_url}}">
               <image class="preview-image" src="{{form.photo_url}}" mode="aspectFill" bindtap="previewPhoto" />
               <view class="photo-actions">
-                <view class="action-btn" bindtap="deletePhoto"><text class="action-icon">🗑️</text></view>
+                <view class="action-btn" bindtap="deletePhoto"><text class="action-icon">删除</text></view>
               </view>
             </view>
             <view class="upload-area" wx:else bindtap="choosePhoto">
-              <view class="upload-icon">📷</view>
               <text class="upload-text">点击上传照片</text>
             </view>
           </view>
@@ -104,7 +100,7 @@
 
         <!-- 备注信息 -->
         <view class="form-item">
-          <text class="form-label"><text class="label-icon">📝</text>备注信息</text>
+          <text class="form-label">备注信息</text>
           <textarea class="textarea-input" placeholder="记录一些特殊信息，如性格特点、喜好等..." value="{{form.notes}}" bindinput="onInputChange" data-field="notes" />
         </view>
       </view>

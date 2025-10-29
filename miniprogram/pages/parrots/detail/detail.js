@@ -57,12 +57,14 @@ Page({
     currentParrotForm: null,
     parrotTypes: [],
     speciesList: [],
-    // 动态 PNG 图标（失败自动回退为 SVG）
+    // 与首页一致的 PNG 图标路径
     iconPaths: {
-      quickFeedingOrange: '/images/remix/ri-restaurant-fill-orange.png',
-      quickHealthEmerald: '/images/remix/ri-heart-fill-emerald.png',
-      quickCleaningBlue: '/images/remix/ri-calendar-fill-blue.png',
-      quickBreedingGreen: '/images/remix/ri-book-fill-green.png'
+      actions: {
+        quickFeeding: '/images/remix/ri-restaurant-fill-orange.png',
+        quickHealth: '/images/remix/ri-heart-fill-purple.png',
+        quickCleaning: '/images/remix/ri-calendar-fill-blue.png',
+        quickBreeding: '/images/remix/ri-book-fill-green.png'
+      }
     }
   },
 

@@ -7,7 +7,9 @@ Component({
     title: { type: String, value: '鹦鹉管家' },
     subtitle: { type: String, value: '' },
     showBack: { type: Boolean, value: false },
-    theme: { type: String, value: '' } // 主题：''(默认绿色)、'orange'、'blue'、'purple'、'pink'
+    theme: { type: String, value: '' }, // 主题：''(默认绿色)、'orange'、'blue'、'purple'、'pink'
+    // 是否由页面自定义返回逻辑；为 true 时仅派发 back 事件，不做默认导航
+    customBack: { type: Boolean, value: false }
   },
   data: {
     statusBarPadding: 20,
@@ -60,6 +62,12 @@ Component({
     }
   },
   methods: {
-    onBack() { wx.navigateBack({ delta: 1 }) }
+    onBack() {
+      if (this.properties.customBack) {
+        this.triggerEvent('back')
+      } else {
+        wx.navigateBack({ delta: 1 })
+      }
+    }
   }
 })

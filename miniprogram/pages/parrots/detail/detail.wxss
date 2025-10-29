@@ -109,7 +109,7 @@
 
 /* 主内容容器 - 调整间距匹配参考APP */
 .content-container {
-  padding: 224rpx 32rpx 48rpx;
+  padding: 48rpx 32rpx 48rpx;
   display: flex;
   flex-direction: column;
   gap: 48rpx;
@@ -183,6 +183,8 @@
   align-items: center;
   justify-content: center;
 }
+/* 图片版菜单图标尺寸 */
+.menu-icon-img { width: 28rpx; height: 28rpx; }
 
 /* 菜单遮罩层样式 */
 .menu-overlay {
@@ -358,7 +360,7 @@
 }
 
 .feeding-btn {
-  background: linear-gradient(135deg, #fff7ed, #fed7aa);
+  background: linear-gradient(135deg, #FFF4DF, #FEE8BF);
   color: #ea580c;
 }
 
@@ -367,8 +369,8 @@
 }
 
 .health-btn {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  color: #16a34a;
+  background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+  color: #7c3aed;
 }
 
 .health-btn:hover {
@@ -376,7 +378,7 @@
 }
 
 .cleaning-btn {
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
   color: #2563eb;
 }
 
@@ -385,7 +387,7 @@
 }
 
 .breeding-btn {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  background: linear-gradient(135deg, #E9FFF4, #D7F8E7);
   color: #059669;
 }
 
@@ -597,6 +599,8 @@
 .card-icon {
   font-size: 28rpx;
 }
+/* 卡片头部图标尺寸（PNG） */
+.card-icon-img { width: 32rpx; height: 32rpx; }
 
 .card-title {
   font-size: 30rpx;
@@ -775,6 +779,8 @@
   margin-bottom: 24rpx;
   opacity: 0.6;
 }
+/* 空态图片图标尺寸（PNG） */
+.empty-icon-img { width: 160rpx; height: 160rpx; border-radius: 80rpx; }
 
 .empty-text {
   font-size: 28rpx;

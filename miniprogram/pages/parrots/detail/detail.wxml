@@ -1,22 +1,13 @@
 <!--pages/parrots/detail/detail.wxml-->
 <view class="page-container">
-  <!-- 自定义头部：渐变背景 + 返回按钮 + 标题 -->
-  <view class="page-header">
-    <view class="header-inner">
-      <view class="header-left">
-        <view class="back-btn" bindtap="goBack">
-          <image class="back-icon-img" src="/images/remix/arrow-left-line.png" mode="widthFix" />
-        </view>
-        <view class="title-block">
-          <text class="title">{{parrot.name || '鹦鹉详情'}}</text>
-          <text class="subtitle">
-            <block wx:if="{{parrot.species_name}}">{{parrot.species_name}}</block>
-            <block wx:if="{{age}}"> · {{age}}</block>
-          </text>
-        </view>
-      </view>
-    </view>
-  </view>
+  <!-- 通用头部组件：标题与返回（使用详情页自定义返回逻辑） -->
+  <app-header 
+    title="{{parrot.name || '鹦鹉详情'}}" 
+    subtitle="{{(parrot.species_name ? parrot.species_name : '') + (age ? (' · ' + age) : '')}}" 
+    showBack="{{true}}"
+    customBack="{{true}}"
+    bind:back="goBack"
+  />
   
   <!-- 加载状态 -->
   <view class="loading-container" wx:if="{{loading}}">
@@ -51,7 +42,7 @@
         </view>
         <!-- 菜单按钮 -->
         <view class="menu-btn" bindtap="toggleMenu">
-          <text class="menu-icon">⋯</text>
+          <image class="menu-icon-img" src="/images/remix/settings-3-line.png" mode="widthFix" />
         </view>
       </view>
       
@@ -74,25 +65,25 @@
       <view class="quick-actions">
         <view class="action-btn feeding-btn" bindtap="quickFeeding">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="{{iconPaths.quickFeedingOrange}}" mode="widthFix" binderror="onDetailIconError" data-key="quickFeedingOrange"/>
+            <image class="action-icon-img" src="{{iconPaths.actions.quickFeeding}}" mode="widthFix" binderror="onDetailIconError" data-key="actions.quickFeeding"/>
           </view>
           <text class="action-text">喂食</text>
         </view>
         <view class="action-btn health-btn" bindtap="quickHealthCheck">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="{{iconPaths.quickHealthEmerald}}" mode="widthFix" binderror="onDetailIconError" data-key="quickHealthEmerald"/>
+            <image class="action-icon-img" src="{{iconPaths.actions.quickHealth}}" mode="widthFix" binderror="onDetailIconError" data-key="actions.quickHealth"/>
           </view>
           <text class="action-text">健康</text>
         </view>
         <view class="action-btn cleaning-btn" bindtap="quickCleaning">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="{{iconPaths.quickCleaningBlue}}" mode="widthFix" binderror="onDetailIconError" data-key="quickCleaningBlue"/>
+            <image class="action-icon-img" src="{{iconPaths.actions.quickCleaning}}" mode="widthFix" binderror="onDetailIconError" data-key="actions.quickCleaning"/>
           </view>
           <text class="action-text">清洁</text>
         </view>
         <view class="action-btn breeding-btn" bindtap="quickBreeding">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="{{iconPaths.quickBreedingGreen}}" mode="widthFix" binderror="onDetailIconError" data-key="quickBreedingGreen"/>
+            <image class="action-icon-img" src="{{iconPaths.actions.quickBreeding}}" mode="widthFix" binderror="onDetailIconError" data-key="actions.quickBreeding"/>
           </view>
           <text class="action-text">繁殖</text>
         </view>
@@ -150,7 +141,7 @@
           <!-- 鹦鹉照片 -->
           <view class="photo-section" wx:if="{{parrot.photo_url}}">
             <view class="card-header">
-              <text class="card-icon">📷</text>
+              <image class="card-icon-img" src="/images/remix/ri-camera-line-gray.png" mode="widthFix" />
               <text class="card-title">鹦鹉照片</text>
             </view>
             <view class="photo-container">
@@ -165,7 +156,7 @@
           
           <view class="characteristics-card">
             <view class="card-header">
-              <text class="card-icon">📝</text>
+              <image class="card-icon-img" src="/images/remix/edit-line.png" mode="widthFix" />
               <text class="card-title">备注信息</text>
             </view>
             <view class="notes-content">
@@ -191,7 +182,7 @@
             </view>
           </view>
           <view wx:else class="empty-tip">
-            <text class="empty-icon">🍽️</text>
+            <image class="empty-icon-img" src="/images/remix/ri-restaurant-fill-gray.png" mode="widthFix" />
             <text class="empty-text">暂无喂食记录</text>
           </view>
         </view>
@@ -216,7 +207,7 @@
             </view>
           </view>
           <view wx:else class="empty-tip">
-            <text class="empty-icon">❤️</text>
+            <image class="empty-icon-img" src="/images/remix/ri-heart-fill-gray.png" mode="widthFix" />
             <text class="empty-text">暂无健康记录</text>
           </view>
         </view>
@@ -259,7 +250,7 @@
             </view>
           </view>
           <view wx:else class="empty-tip">
-            <text class="empty-icon">🐣</text>
+            <image class="empty-icon-img" src="/images/remix/ri-book-fill-orange.png" mode="widthFix" />
             <text class="empty-text">暂无繁殖记录</text>
           </view>
         </view>

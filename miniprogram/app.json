@@ -1,27 +1,79 @@
 {
-  "pages":  [
-                  "pages/index/index",
-                  "pages/login/login",
-                  "pages/register/register",
-                  "pages/parrots/parrots",
-                  "pages/parrots/add-parrot/add-parrot",
-                  "pages/parrots/detail/detail",
-                  "pages/records/records",
-                  "pages/records/cleaning/cleaning",
-                  "pages/records/add-record/add-record",
-                  "pages/records/feeding/feeding",
-                  "pages/health-check/health-check",
-                  "pages/breeding/breeding",
-                  "pages/statistics/statistics",
-                  "pages/profile/profile",
-                  "pages/settings/settings",
-                  "pages/expenses/expenses",
-                  "pages/expenses/add-expense/add-expense",
-                  "pages/expenses/edit-expense/edit-expense",
-                  "pages/expenses/transactions/transactions",
-                  "pages/test-notification/test-notification",
-                  "pages/care-guide/care-guide"
-              ],
+  "pages": [
+    "pages/index/index",
+    "pages/login/login",
+    "pages/register/register"
+  ],
+  "subpackages": [
+    {
+      "root": "pages/parrots",
+      "pages": [
+        "parrots",
+        "add-parrot/add-parrot",
+        "detail/detail"
+      ]
+    },
+    {
+      "root": "pages/records",
+      "pages": [
+        "records",
+        "cleaning/cleaning",
+        "add-record/add-record",
+        "feeding/feeding"
+      ]
+    },
+    {
+      "root": "pages/health-check",
+      "pages": [
+        "health-check"
+      ]
+    },
+    {
+      "root": "pages/breeding",
+      "pages": [
+        "breeding"
+      ]
+    },
+    {
+      "root": "pages/statistics",
+      "pages": [
+        "statistics"
+      ]
+    },
+    {
+      "root": "pages/profile",
+      "pages": [
+        "profile"
+      ]
+    },
+    {
+      "root": "pages/settings",
+      "pages": [
+        "settings"
+      ]
+    },
+    {
+      "root": "pages/expenses",
+      "pages": [
+        "expenses",
+        "add-expense/add-expense",
+        "edit-expense/edit-expense",
+        "transactions/transactions"
+      ]
+    },
+    {
+      "root": "pages/care-guide",
+      "pages": [
+        "care-guide"
+      ]
+    },
+    {
+      "root": "pages/test-notification",
+      "pages": [
+        "test-notification"
+      ]
+    }
+  ],
     "entryPagePath": "pages/index/index",
     "window":  {
                    "backgroundTextStyle":  "light",
