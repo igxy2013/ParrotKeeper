@@ -38,7 +38,23 @@ Page({
     weightEndDate: '',
     
     // 加载状态
-    loading: false
+    loading: false,
+    // 动态 PNG 图标（失败自动回退为 SVG）
+    iconPaths: {
+      tipInfoBlue: '/images/remix/ri-information-fill-blue.png',
+      overview: {
+        heartWhite: '/images/remix/ri-heart-fill-white.png',
+        shieldWhite: '/images/remix/ri-shield-check-fill-white.png',
+        restaurantWhite: '/images/remix/ri-restaurant-fill-white.png',
+        scalesWhite: '/images/remix/ri-scales-fill-white.png'
+      },
+      lineChartPurple: '/images/remix/ri-line-chart-fill-purple.png',
+      arrowDownGray: '/images/remix/ri-arrow-down-s-fill-gray.png',
+      walletPurple: '/images/remix/ri-wallet-fill-purple.png',
+      arrowRightGray: '/images/remix/ri-arrow-right-s-fill-gray.png',
+      restaurantOrange: '/images/remix/ri-restaurant-fill-orange.png',
+      pieChartBlue: '/images/remix/ri-pie-chart-2-fill-blue.png'
+    }
   },
 
   onLoad() {
@@ -489,6 +505,43 @@ Page({
     // 按数量降序排序以贴近参考APP展示
     result.sort((a, b) => (b.count || 0) - (a.count || 0))
     return result
+  },
+
+  // 统计页图标加载失败时回退为 SVG
+  onStatIconError(e) {
+    try {
+      const keyPath = e.currentTarget.dataset.key
+      const current = this.data.iconPaths || {}
+      const next = JSON.parse(JSON.stringify(current))
+      const setByPath = (obj, path, value) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length - 1; i++) {
+          const p = parts[i]
+          if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {}
+          cur = cur[p]
+        }
+        cur[parts[parts.length - 1]] = value
+      }
+      const getByPath = (obj, path) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length; i++) {
+          cur = cur[parts[i]]
+          if (cur === undefined || cur === null) return null
+        }
+        return cur
+      }
+      const replaceExt = (p, toExt) => {
+        if (!p || typeof p !== 'string') return p
+        return p.replace(/\.(png|svg)$/i, `.${toExt}`)
+      }
+      const curVal = getByPath(next, keyPath)
+      if (typeof curVal === 'string') {
+        setByPath(next, keyPath, replaceExt(curVal, 'svg'))
+        this.setData({ iconPaths: next })
+      }
+    } catch (_) {}
   },
 
   // 绘制食物偏好饼图

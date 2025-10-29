@@ -397,7 +397,7 @@
           <view class="parrot-avatar">
             <image 
               class="parrot-image" 
-              src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" 
+              src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" 
               mode="aspectFill"
             />
           </view>
@@ -547,7 +547,7 @@
           bindtap="selectMaleParrot"
         >
           <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" />
+            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" />
           </view>
           <view class="parrot-info">
             <view class="name-section">
@@ -587,7 +587,7 @@
           bindtap="selectFemaleParrot"
         >
           <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" />
+            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" />
           </view>
           <view class="parrot-info">
             <view class="name-section">

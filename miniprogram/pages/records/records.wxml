@@ -55,10 +55,10 @@
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-feed-type-ids="{{item.feed_type_ids}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">✏️</text>
+              <image src="/images/remix/edit-line-gray.png" class="action-icon-img" mode="aspectFit" />
             </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">🗑️</text>
+              <image src="/images/remix/delete-bin-line-gray.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
         </view>
@@ -122,10 +122,10 @@
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">✏️</text>
+              <image src="/images/remix/edit-line-gray.png" class="action-icon-img" mode="aspectFit" />
             </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">🗑️</text>
+              <image src="/images/remix/delete-bin-line-gray.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
         </view>
@@ -190,10 +190,10 @@
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-cleaning-type-ids="{{item.cleaning_type_ids}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">✏️</text>
+              <image src="/images/remix/edit-line-gray.png" class="action-icon-img" mode="aspectFit" />
             </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">🗑️</text>
+              <image src="/images/remix/delete-bin-line-gray.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
         </view>
@@ -257,10 +257,10 @@
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">✏️</text>
+              <image src="/images/remix/edit-line-gray.png" class="action-icon-img" mode="aspectFit" />
             </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">🗑️</text>
+              <image src="/images/remix/delete-bin-line-gray.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
         </view>

@@ -3,7 +3,7 @@
   <!-- 顶部导航统一为组件 -->
   <app-header title="我的鹦鹉" subtitle="管理您的鹦鹉宝贝们">
     <view slot="actions" class="header-btn" bindtap="addParrot">
-      <image class="header-btn-icon-img" src="/images/remix/ri-add-fill-emerald.svg" mode="widthFix"/>
+      <image class="header-btn-icon-img" src="{{iconPaths.headerAddEmerald}}" mode="widthFix" binderror="onListIconError" data-key="headerAddEmerald"/>
     </view>
   </app-header>
 
@@ -37,7 +37,7 @@
   <!-- 搜索和筛选 -->
   <view class="search-filter-card">
     <view class="search-bar">
-      <image class="search-icon-img" src="/images/remix/ri-search-fill-gray.svg" mode="widthFix"/>
+          <image class="search-icon-img" src="{{iconPaths.searchGray}}" mode="widthFix" binderror="onListIconError" data-key="searchGray"/>
       <input 
         class="search-input" 
         placeholder="搜索鹦鹉名称、编号或脚环号..." 
@@ -50,15 +50,15 @@
     <view class="filter-bar">
       <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}" bindtap="showSpeciesFilter">
         <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
-        <image class="filter-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDownGray}}" mode="widthFix" binderror="onListIconError" data-key="arrowDownGray"/>
       </view>
       <view class="filter-item {{selectedStatus ? 'active' : ''}}" bindtap="showStatusFilter">
         <text class="filter-text">{{selectedStatus ? selectedStatusText : '状态'}}</text>
-        <image class="filter-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDownGray}}" mode="widthFix" binderror="onListIconError" data-key="arrowDownGray"/>
       </view>
       <view class="filter-item {{sortText !== '默认排序' ? 'active' : ''}}" bindtap="showSortFilter">
         <text class="filter-text">{{sortText}}</text>
-        <image class="filter-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDownGray}}" mode="widthFix" binderror="onListIconError" data-key="arrowDownGray"/>
       </view>
     </view>
   </view>
@@ -71,7 +71,7 @@
         <view class="parrot-avatar">
           <image 
             class="parrot-image" 
-            src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" 
+            src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" 
             mode="aspectFill"
             binderror="handleImageError"
             data-id="{{item.id}}"
@@ -92,7 +92,7 @@
           <text class="parrot-species">{{item.species_name}} • {{item.age_days ? item.age_days + '天' : '未知'}} • {{item.weight ? (item.weight % 1 === 0 ? item.weight : item.weight.toFixed(1)) + 'g' : ''}}</text>
           <view class="parrot-status">
             <view class="status-item">
-              <image class="status-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/>
+              <image class="status-icon-img" src="{{iconPaths.statusRestaurantOrange}}" mode="widthFix" binderror="onListIconError" data-key="statusRestaurantOrange"/>
               <text class="status-text">{{item.last_feed || '2小时前'}}</text>
             </view>
           </view>
@@ -100,7 +100,7 @@
         
         <!-- 箭头图标 -->
         <view class="parrot-arrow">
-          <image class="arrow-icon-img" src="/images/remix/ri-arrow-right-s-fill-gray.svg" mode="widthFix"/>
+            <image class="arrow-icon-img" src="{{iconPaths.arrowRightGray}}" mode="widthFix" binderror="onListIconError" data-key="arrowRightGray"/>
         </view>
       </view>
     </view>
@@ -110,7 +110,7 @@
   <view class="add-parrot-action" wx:if="{{parrots.length > 0}}">
     <view class="add-parrot-card">
       <view class="add-parrot-btn" bindtap="addParrot">
-        <image class="add-parrot-btn-icon-img" src="/images/remix/ri-add-fill-emerald.svg" mode="widthFix"/>
+          <image class="add-parrot-btn-icon-img" src="{{iconPaths.addParrotEmerald}}" mode="widthFix" binderror="onListIconError" data-key="addParrotEmerald"/>
         <text class="add-parrot-btn-text">添加鹦鹉</text>
       </view>
     </view>

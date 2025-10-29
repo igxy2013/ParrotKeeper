@@ -32,7 +32,7 @@
         <view class="parrot-avatar-wrapper">
           <image 
             class="parrot-avatar" 
-            src="{{parrot.photo_url || parrot.avatar_url || '/images/default-parrot.svg'}}" 
+            src="{{parrot.photo_url || parrot.avatar_url || '/images/default-parrot.png'}}" 
             mode="aspectFill"
             bindtap="previewPhoto"
           />
@@ -74,25 +74,25 @@
       <view class="quick-actions">
         <view class="action-btn feeding-btn" bindtap="quickFeeding">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/>
+            <image class="action-icon-img" src="{{iconPaths.quickFeedingOrange}}" mode="widthFix" binderror="onDetailIconError" data-key="quickFeedingOrange"/>
           </view>
           <text class="action-text">喂食</text>
         </view>
         <view class="action-btn health-btn" bindtap="quickHealthCheck">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-heart-fill-emerald.svg" mode="widthFix"/>
+            <image class="action-icon-img" src="{{iconPaths.quickHealthEmerald}}" mode="widthFix" binderror="onDetailIconError" data-key="quickHealthEmerald"/>
           </view>
           <text class="action-text">健康</text>
         </view>
         <view class="action-btn cleaning-btn" bindtap="quickCleaning">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-calendar-fill-blue.svg" mode="widthFix"/>
+            <image class="action-icon-img" src="{{iconPaths.quickCleaningBlue}}" mode="widthFix" binderror="onDetailIconError" data-key="quickCleaningBlue"/>
           </view>
           <text class="action-text">清洁</text>
         </view>
         <view class="action-btn breeding-btn" bindtap="quickBreeding">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-book-fill-green.svg" mode="widthFix"/>
+            <image class="action-icon-img" src="{{iconPaths.quickBreedingGreen}}" mode="widthFix" binderror="onDetailIconError" data-key="quickBreedingGreen"/>
           </view>
           <text class="action-text">繁殖</text>
         </view>

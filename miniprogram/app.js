@@ -12,7 +12,9 @@ App({
     needRefresh: false, // 页面数据刷新标志（模式变更时触发）
     appVersion: '1.0.0', // 小程序版本号（通过微信API动态获取）
     notificationManager, // 全局通知管理器
-    notificationUpdateCallback: null // 通知更新回调
+    notificationUpdateCallback: null, // 通知更新回调
+    platformInfo: { isIOS: false, system: '' },
+    useIconFont: true // 是否启用图标字体（iOS优先启用，统一兼容）
   },
 
   // 初始化小程序版本号
@@ -79,6 +81,7 @@ App({
     // 获取版本号：优先后端API，其次微信API
     this.fetchServerVersion()
     this.initAppVersion()
+    this.initPlatformInfo()
     
     // 检查登录状态
     const openid = wx.getStorageSync('openid')
@@ -109,6 +112,23 @@ App({
     this.globalData.isLogin = !!(this.globalData.openid && this.globalData.userInfo)
     if (this.globalData.isLogin) {
       console.log('检测到已登录状态')
+    }
+  },
+
+  // 初始化平台信息与图标策略
+  initPlatformInfo() {
+    try {
+      const info = wx.getSystemInfoSync()
+      const system = (info.system || '').toLowerCase()
+      const isIOS = system.indexOf('ios') !== -1
+      this.globalData.platformInfo = { isIOS, system: info.system || '' }
+      // iOS 强制启用图标字体（更稳定），其它平台也启用，必要时可用本地/远程字体兜底
+      this.globalData.useIconFont = true
+      console.log('平台信息:', this.globalData.platformInfo, 'useIconFont:', this.globalData.useIconFont)
+    } catch (e) {
+      console.warn('获取系统信息失败，使用默认设置', e)
+      this.globalData.platformInfo = { isIOS: false, system: '' }
+      this.globalData.useIconFont = true
     }
   },
 

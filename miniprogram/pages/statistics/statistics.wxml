@@ -4,7 +4,7 @@
   <view class="page-content">
   <!-- 游客模式提示 -->
   <view wx:if="{{!isLogin}}" class="guest-tip-card">
-    <view class="tip-icon"><image class="tip-icon-img" src="/images/remix/ri-information-fill-blue.svg" mode="widthFix"/></view>
+    <view class="tip-icon"><image class="tip-icon-img" src="{{iconPaths.tipInfoBlue}}" mode="widthFix" binderror="onStatIconError" data-key="tipInfoBlue"/></view>
     <view class="tip-content">
       <text class="tip-text">您正在以游客身份浏览示例数据</text>
       <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
@@ -24,7 +24,7 @@
     <view class="overview-card emerald">
       <view class="overview-header">
         <view class="overview-icon-container">
-          <image class="overview-icon-img" src="/images/remix/ri-heart-fill-white.svg" mode="scaleToFill"/>
+          <image class="overview-icon-img" src="{{iconPaths.overview.heartWhite}}" mode="scaleToFill" binderror="onStatIconError" data-key="overview.heartWhite"/>
         </view>
         <text class="label-chip">总数</text>
       </view>
@@ -35,7 +35,7 @@
     <view class="overview-card blue">
       <view class="overview-header">
         <view class="overview-icon-container">
-          <image class="overview-icon-img" src="/images/remix/ri-shield-check-fill-white.svg" mode="scaleToFill"/>
+          <image class="overview-icon-img" src="{{iconPaths.overview.shieldWhite}}" mode="scaleToFill" binderror="onStatIconError" data-key="overview.shieldWhite"/>
         </view>
         <text class="label-chip">健康</text>
       </view>
@@ -46,7 +46,7 @@
     <view class="overview-card orange">
       <view class="overview-header">
         <view class="overview-icon-container">
-          <image class="overview-icon-img" src="/images/remix/ri-restaurant-fill-white.svg" mode="scaleToFill"/>
+          <image class="overview-icon-img" src="{{iconPaths.overview.restaurantWhite}}" mode="scaleToFill" binderror="onStatIconError" data-key="overview.restaurantWhite"/>
         </view>
         <text class="label-chip">今日</text>
       </view>
@@ -57,7 +57,7 @@
     <view class="overview-card purple">
       <view class="overview-header">
         <view class="overview-icon-container">
-          <image class="overview-icon-img" src="/images/remix/ri-scales-fill-white.svg" mode="scaleToFill"/>
+          <image class="overview-icon-img" src="{{iconPaths.overview.scalesWhite}}" mode="scaleToFill" binderror="onStatIconError" data-key="overview.scalesWhite"/>
         </view>
         <text class="label-chip">平均</text>
       </view>
@@ -67,7 +67,7 @@
   </view>
   <!-- 游客模式提示 -->
   <view wx:if="{{!isLogin}}" class="guest-tip-card">
-    <view class="tip-icon"><image class="tip-icon-img" src="/images/remix/ri-information-fill-blue.svg" mode="widthFix"/></view>
+    <view class="tip-icon"><image class="tip-icon-img" src="{{iconPaths.tipInfoBlue}}" mode="widthFix" binderror="onStatIconError" data-key="tipInfoBlue"/></view>
     <view class="tip-content">
       <text class="tip-text">您正在以游客身份浏览示例数据</text>
       <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
@@ -79,7 +79,7 @@
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
-          <view class="card-icon"><image class="card-icon-img" src="/images/remix/ri-line-chart-fill-purple.svg" mode="widthFix"/></view>
+          <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.lineChartPurple}}" mode="widthFix" binderror="onStatIconError" data-key="lineChartPurple"/></view>
           <text class="card-title">体重趋势曲线</text>
         </view>
         <view class="parrot-selector">
@@ -131,12 +131,12 @@
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
-          <view class="card-icon"><image class="card-icon-img" src="/images/remix/ri-wallet-fill-purple.svg" mode="widthFix"/></view>
+          <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.walletPurple}}" mode="widthFix" binderror="onStatIconError" data-key="walletPurple"/></view>
           <text class="card-title">支出分析</text>
         </view>
         <view class="view-all-btn" bindtap="navigateToExpenses">
           <text>查看全部</text>
-          <image class="arrow-icon-img" src="/images/remix/ri-arrow-right-s-fill-gray.svg" mode="widthFix"/>
+          <image class="arrow-icon-img" src="{{iconPaths.arrowRightGray}}" mode="widthFix" binderror="onStatIconError" data-key="arrowRightGray"/>
         </view>
       </view>
       <view class="card-content">
@@ -155,7 +155,7 @@
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
-          <view class="placeholder-icon"><image class="placeholder-icon-img" src="/images/remix/ri-wallet-fill-purple.svg" mode="widthFix"/></view>
+          <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.walletPurple}}" mode="widthFix" binderror="onStatIconError" data-key="walletPurple"/></view>
           <text class="placeholder-text">暂无支出记录</text>
         </view>
       </view>
@@ -169,7 +169,7 @@
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
-          <view class="card-icon"><image class="card-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/></view>
+          <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.restaurantOrange}}" mode="widthFix" binderror="onStatIconError" data-key="restaurantOrange"/></view>
           <text class="card-title">食物偏好分析</text>
         </view>
       </view>
@@ -187,7 +187,7 @@
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
-          <view class="placeholder-icon"><image class="placeholder-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/></view>
+          <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.restaurantOrange}}" mode="widthFix" binderror="onStatIconError" data-key="restaurantOrange"/></view>
           <text class="placeholder-text">暂无数据</text>
         </view>
       </view>
@@ -199,7 +199,7 @@
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
-          <view class="card-icon"><image class="card-icon-img" src="/images/remix/ri-pie-chart-2-fill-blue.svg" mode="widthFix"/></view>
+          <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.pieChartBlue}}" mode="widthFix" binderror="onStatIconError" data-key="pieChartBlue"/></view>
           <text class="card-title">品种分布</text>
         </view>
       </view>
@@ -215,7 +215,7 @@
           </view>
         </view>
         <view class="empty-placeholder" wx:else>
-          <view class="placeholder-icon"><image class="placeholder-icon-img" src="/images/remix/ri-pie-chart-2-fill-blue.svg" mode="widthFix"/></view>
+          <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.pieChartBlue}}" mode="widthFix" binderror="onStatIconError" data-key="pieChartBlue"/></view>
           <text class="placeholder-text">暂无数据</text>
         </view>
       </view>

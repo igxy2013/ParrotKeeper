@@ -14,7 +14,7 @@ Page({
       health_status: 'healthy',
       photo_url: '',
       processed_photo_url: '', // 添加抠图后的图片URL
-      avatar_url: '/images/parrot-avatar-green.svg', // 默认头像
+      avatar_url: '/images/parrot-avatar-green.svg', // 默认头像（当前仅提供 SVG 资源）
       notes: '',
       parrot_number: '',
       ring_number: ''
@@ -159,7 +159,7 @@ Page({
             weight: parrot.weight ? String(parrot.weight) : '',
             health_status: parrot.health_status || 'healthy',
             photo_url: parrot.photo_url || '',
-            avatar_url: parrot.avatar_url || '/images/parrot-avatar-green.svg', // 从数据库加载头像
+            avatar_url: parrot.avatar_url || '/images/parrot-avatar-green.svg', // 从数据库加载头像（当前仅提供 SVG 资源）
             notes: parrot.notes || '',
             parrot_number: parrot.parrot_number || '',
             ring_number: parrot.ring_number || ''

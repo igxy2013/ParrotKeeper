@@ -3,7 +3,7 @@
   <!-- 顶部导航统一为组件 -->
   <app-header title="鹦鹉管家" subtitle="专业鹦鹉护理助手">
     <view slot="actions" class="header-action-btn" bindtap="openNotifications">
-      <image class="header-action-icon" src="/images/remix/ri-notification-3-line-white.svg" mode="aspectFit" />
+  <image class="header-action-icon" src="{{iconPaths.headerNotification}}" mode="aspectFit" binderror="handleIconError" data-key="headerNotification" />
       <view class="header-action-badge" wx:if="{{unreadCount > 0}}"></view>
     </view>
   </app-header>
@@ -39,28 +39,28 @@
     <view class="stats-grid">
       <view class="stat-card" bindtap="navigateToParrots">
         <view class="stat-icon-container emerald">
-          <image class="stat-icon-img" src="/images/remix/ri-heart-fill-green.svg" mode="widthFix"/>
+        <image class="stat-icon-img" src="{{iconPaths.statsHeart}}" mode="widthFix" binderror="handleIconError" data-key="statsHeart"/>
         </view>
         <view class="stat-value emerald-text">{{overview.total_parrots || 0}}</view>
         <view class="stat-label">我的鹦鹉</view>
       </view>
       <view class="stat-card" bindtap="navigateToFeedingRecords">
         <view class="stat-icon-container orange">
-          <image class="stat-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/>
+        <image class="stat-icon-img" src="{{iconPaths.statsFeeding}}" mode="widthFix" binderror="handleIconError" data-key="statsFeeding"/>
         </view>
         <view class="stat-value orange-text">{{overview.today_records.feeding || 0}}</view>
         <view class="stat-label">今日喂食</view>
       </view>
       <view class="stat-card">
         <view class="stat-icon-container purple">
-          <image class="stat-icon-img" src="/images/remix/ri-money-dollar-circle-fill-purple.svg" mode="widthFix"/>
+        <image class="stat-icon-img" src="{{iconPaths.statsIncome}}" mode="widthFix" binderror="handleIconError" data-key="statsIncome"/>
         </view>
         <view class="stat-value purple-text">¥{{overview.monthly_income || 0}}</view>
         <view class="stat-label">本月收入</view>
       </view>
       <view class="stat-card">
         <view class="stat-icon-container blue">
-          <image class="stat-icon-img" src="/images/remix/ri-shopping-bag-fill-blue.svg" mode="widthFix"/>
+        <image class="stat-icon-img" src="{{iconPaths.statsExpense}}" mode="widthFix" binderror="handleIconError" data-key="statsExpense"/>
         </view>
         <view class="stat-value blue-text">¥{{overview.monthly_expense || 0}}</view>
         <view class="stat-label">本月支出</view>
@@ -70,12 +70,12 @@
     <!-- 我的鹦鹉卡片 -->
     <view class="my-parrots-card" wx:if="{{myParrots.length > 0}}">
       <view class="card-header">
-        <text class="card-title"><image class="inline-title-icon" src="/images/remix/ri-heart-fill-green.svg" mode="widthFix"/> 我的鹦鹉</text>
+      <text class="card-title"><image class="inline-title-icon" src="{{iconPaths.myParrotsTitleHeart}}" mode="widthFix" binderror="handleIconError" data-key="myParrotsTitleHeart"/> 我的鹦鹉</text>
         <text class="more-link" bindtap="navigateToParrots">查看全部 →</text>
       </view>
       <view class="parrot-card-list">
         <view class="parrot-mini-card" wx:for="{{myParrots}}" wx:key="id" data-id="{{item.id}}" bindtap="openParrotDetail">
-          <image class="parrot-mini-avatar" src="{{item.photo_url || '/images/default-parrot.svg'}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
+        <image class="parrot-mini-avatar" src="{{item.photo_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
           <text class="parrot-mini-name">{{item.name}}</text>
           <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
           <view class="parrot-mini-badge {{item.health_status}}">{{item.health_text || '健康'}}</view>
@@ -91,49 +91,49 @@
       <view class="actions-grid">
         <view class="action-item feeding {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToFeedingRecords">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="widthFix"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.quickFeeding}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickFeeding"/>
           </view>
           <text class="action-label">喂食记录</text>
         </view>
         <view class="action-item health {{!isLogin ? 'disabled' : ''}}" bindtap="quickHealth">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-heart-fill-emerald.svg" mode="widthFix"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.quickHealth}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickHealth"/>
           </view>
           <text class="action-label">健康检查</text>
         </view>
         <view class="action-item training {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-calendar-fill-blue.svg" mode="widthFix"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.quickCleaning}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickCleaning"/>
           </view>
           <text class="action-label">清洁记录</text>
         </view>
         <view class="action-item add-expense {{!isLogin ? 'disabled' : ''}}" bindtap="quickBreeding">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-book-fill-green.svg" mode="widthFix"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.quickBreeding}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickBreeding"/>
           </view>
     <text class="action-label">繁殖记录</text>
         </view>
         <view class="action-item add {{!isLogin ? 'disabled' : ''}}" bindtap="addParrot">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-add-fill-emerald.svg" mode="widthFix"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.addParrot}}" mode="widthFix" binderror="handleIconError" data-key="actions.addParrot"/>
           </view>
           <text class="action-label">添加鹦鹉</text>
         </view>
         <view class="action-item expenses {{!isLogin ? 'disabled' : ''}}" bindtap="quickExpense">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-money-dollar-circle-fill-blue.svg" mode="widthFix"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.quickExpense}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickExpense"/>
           </view>
           <text class="action-label">添加收支</text>
         </view>
         <view class="action-item management {{!isLogin ? 'disabled' : ''}}" bindtap="goToExpenseManagement">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-book-fill-orange.svg" mode="widthFix"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.expenseMgmt}}" mode="widthFix" binderror="handleIconError" data-key="actions.expenseMgmt"/>
           </view>
           <text class="action-label">收支管理</text>
         </view>
         <view class="action-item statistics {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToStatistics">
           <view class="action-icon-wrapper">
-            <image class="action-icon-img" src="/images/remix/ri-bar-chart-fill-purple.svg" mode="widthFix"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.statistics}}" mode="widthFix" binderror="handleIconError" data-key="actions.statistics"/>
           </view>
           <text class="action-label">数据统计</text>
         </view>
@@ -149,7 +149,7 @@
         <view class="activity-item {{item.type === 'feeding' ? 'orange-theme' : (item.type === 'health' ? 'green-theme' : (item.type === 'cleaning' ? 'blue-theme' : 'purple-theme'))}}" 
               wx:for="{{recentRecords}}" wx:key="id" wx:if="{{index < 3}}">
           <view class="activity-icon-container">
-             <view class="activity-icon-bg" style="background-image: url({{item.type === 'feeding' ? '/images/remix/ri-restaurant-fill-white.svg' : (item.type === 'health' ? '/images/remix/ri-heart-fill-white.svg' : (item.type === 'cleaning' ? '/images/remix/ri-calendar-fill-white.svg' : (item.type === 'breeding' ? '/images/remix/ri-calendar-fill-white.svg' : '/images/remix/ri-calendar-fill-white.svg')))}});"></view>
+        <image class="activity-icon-img" src="{{item.iconPath}}" mode="widthFix" binderror="handleActivityIconError" data-index="{{index}}" />
           </view>
           <view class="activity-content">
             <text class="activity-title">给{{item.parrot_name}}{{item.title}}</text>
@@ -169,7 +169,7 @@
       <view class="card-content">
         <view class="alert-list">
           <view class="alert-item" wx:for="{{healthAlerts}}" wx:key="id">
-            <view class="alert-icon"><image class="alert-icon-img" src="/images/remix/ri-information-fill-amber.svg" mode="widthFix"/></view>
+      <view class="alert-icon"><image class="alert-icon-img" src="{{iconPaths.alertInfo}}" mode="widthFix" binderror="handleIconError" data-key="alertInfo"/></view>
             <view class="alert-content">
               <view class="alert-title">{{item.title}}</view>
               <view class="alert-subtitle">{{item.description}}</view>
@@ -187,7 +187,7 @@
     <view class="modal-header-gradient">
       <view class="modal-header-row">
         <text class="modal-title">添加新鹦鹉</text>
-        <view class="modal-close-btn" bindtap="closeAddParrotModal"><image class="modal-close-icon-img" src="/images/icons/close-white.svg" mode="widthFix"/></view>
+      <view class="modal-close-btn" bindtap="closeAddParrotModal"><image class="modal-close-icon-img" src="{{iconPaths.closeWhite}}" mode="widthFix" binderror="handleIconError" data-key="closeWhite"/></view>
       </view>
     </view>
 
@@ -196,13 +196,13 @@
       <view class="form-section">
         <!-- 名字 -->
         <view class="form-item">
-          <text class="form-label"><image class="label-icon-img" src="/images/icons/heart.svg" mode="widthFix"/>鹦鹉名字 *</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelHeart}}" mode="widthFix" binderror="handleIconError" data-key="labelHeart"/>鹦鹉名字 *</text>
           <input class="text-input" placeholder="给您的鹦鹉起个可爱的名字" value="{{newParrot.name}}" bindinput="onParrotNameInput" />
         </view>
 
         <!-- 品种 -->
         <view class="form-item">
-          <text class="form-label"><image class="label-icon-img" src="/images/icons/leaf.svg" mode="widthFix"/>鹦鹉品种 *</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelLeaf}}" mode="widthFix" binderror="handleIconError" data-key="labelLeaf"/>鹦鹉品种 *</text>
           <view class="picker-wrapper">
             <picker mode="selector" range="{{parrotTypes}}" value="{{typeIndex}}" bindchange="onTypePickerChange">
               <view class="picker-display">
@@ -216,39 +216,39 @@
         <!-- 编号 与 脚环号 -->
         <view class="form-grid">
           <view class="form-item">
-            <text class="form-label"><image class="label-icon-img" src="/images/icons/hash.svg" mode="widthFix"/>鹦鹉编号</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelHash}}" mode="widthFix" binderror="handleIconError" data-key="labelHash"/>鹦鹉编号</text>
             <input class="text-input" placeholder="例如：PK-2025-001" value="{{newParrot.parrot_number}}" bindinput="onParrotNumberInput" />
           </view>
           <view class="form-item">
-            <text class="form-label"><image class="label-icon-img" src="/images/icons/coin.svg" mode="widthFix"/>脚环号</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelCoin}}" mode="widthFix" binderror="handleIconError" data-key="labelCoin"/>脚环号</text>
             <input class="text-input" placeholder="例如：R-88921" value="{{newParrot.ring_number}}" bindinput="onRingNumberInput" />
           </view>
         </view>
 
         <!-- 体重 -->
         <view class="form-item">
-          <text class="form-label"><image class="label-icon-img" src="/images/icons/scale.svg" mode="widthFix"/>体重(g)</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelScale}}" mode="widthFix" binderror="handleIconError" data-key="labelScale"/>体重(g)</text>
           <input class="text-input" placeholder="如: 35" value="{{newParrot.weight}}" bindinput="onParrotWeightInput" />
         </view>
 
         <!-- 性别 与 颜色 -->
         <view class="form-grid">
           <view class="form-item">
-            <text class="form-label"><image class="label-icon-img" src="/images/icons/user.svg" mode="widthFix"/>性别</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelUser}}" mode="widthFix" binderror="handleIconError" data-key="labelUser"/>性别</text>
             <view class="gender-row">
               <view class="gender-btn {{newParrot.gender === '雄性' ? 'gender-male active' : 'gender-male'}}" bindtap="setParrotGender" data-gender="雄性">雄性</view>
               <view class="gender-btn {{newParrot.gender === '雌性' ? 'gender-female active' : 'gender-female'}}" bindtap="setParrotGender" data-gender="雌性">雌性</view>
             </view>
           </view>
           <view class="form-item">
-            <text class="form-label"><image class="label-icon-img" src="/images/icons/palette.svg" mode="widthFix"/>主要颜色</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelPalette}}" mode="widthFix" binderror="handleIconError" data-key="labelPalette"/>主要颜色</text>
             <input class="text-input" placeholder="如: 绿色" value="{{newParrot.color}}" bindinput="onParrotColorInput" />
           </view>
         </view>
 
         <!-- 出生日期 -->
         <view class="form-item">
-          <text class="form-label"><image class="label-icon-img" src="/images/icons/calendar.svg" mode="widthFix"/>出生日期</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelCalendar}}" mode="widthFix" binderror="handleIconError" data-key="labelCalendar"/>出生日期</text>
           <picker mode="date" value="{{newParrot.birthDate}}" bindchange="onBirthDateChange">
             <view class="picker-display">
               <text>{{newParrot.birthDate ? newParrot.birthDate : '请选择日期'}}</text>
@@ -259,7 +259,7 @@
 
         <!-- 入住日期 -->
         <view class="form-item">
-          <text class="form-label"><image class="label-icon-img" src="/images/icons/home.svg" mode="widthFix"/>入住日期</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelHome}}" mode="widthFix" binderror="handleIconError" data-key="labelHome"/>入住日期</text>
           <picker mode="date" value="{{newParrot.acquisition_date}}" bindchange="onAcquisitionDateChange">
             <view class="picker-display">
               <text>{{newParrot.acquisition_date ? newParrot.acquisition_date : '请选择日期'}}</text>
@@ -270,16 +270,16 @@
 
         <!-- 鹦鹉照片 -->
         <view class="form-item">
-          <text class="form-label"><image class="label-icon-img" src="/images/icons/camera.svg" mode="widthFix"/>鹦鹉照片</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelCamera}}" mode="widthFix" binderror="handleIconError" data-key="labelCamera"/>鹦鹉照片</text>
           <view class="photo-upload">
             <view class="photo-preview" wx:if="{{newParrot.photo_url}}">
               <image class="preview-image" src="{{newParrot.photo_url}}" mode="aspectFill" bindtap="previewParrotPhoto" />
               <view class="photo-actions">
-                <view class="action-btn" bindtap="deleteParrotPhoto"><image class="photo-action-icon-img" src="/images/icons/trash-white.svg" mode="widthFix"/></view>
+        <view class="action-btn" bindtap="deleteParrotPhoto"><image class="photo-action-icon-img" src="{{iconPaths.trashWhite}}" mode="widthFix" binderror="handleIconError" data-key="trashWhite"/></view>
               </view>
             </view>
             <view class="upload-area" wx:else bindtap="chooseParrotPhoto">
-              <view class="upload-icon"><image class="upload-icon-img" src="/images/icons/camera.svg" mode="widthFix"/></view>
+        <view class="upload-icon"><image class="upload-icon-img" src="{{iconPaths.labelCamera}}" mode="widthFix" binderror="handleIconError" data-key="labelCamera"/></view>
               <text class="upload-text">点击上传照片</text>
             </view>
           </view>
@@ -287,7 +287,7 @@
 
         <!-- 备注信息 -->
         <view class="form-item">
-          <text class="form-label"><image class="label-icon-img" src="/images/icons/note.svg" mode="widthFix"/>备注信息</text>
+      <text class="form-label"><image class="label-icon-img" src="{{iconPaths.labelNote}}" mode="widthFix" binderror="handleIconError" data-key="labelNote"/>备注信息</text>
           <textarea class="textarea-input" placeholder="记录一些特殊信息，如性格特点、喜好等..." value="{{newParrot.notes}}" bindinput="onParrotNotesInput" />
         </view>
       </view>
@@ -313,7 +313,7 @@
     <!-- 登录提示 -->
     <view class="login-prompt-card" wx:if="{{!isLogin}}">
       <view class="login-content">
-        <view class="login-icon"><image class="login-icon-img" src="/images/default-parrot.svg" mode="widthFix"/></view>
+      <view class="login-icon"><image class="login-icon-img" src="{{iconPaths.defaultParrot}}" mode="widthFix" binderror="handleIconError" data-key="defaultParrot"/></view>
         <text class="login-title">欢迎使用鹦鹉管家</text>
         <text class="login-subtitle">请先登录以使用完整功能</text>
         <button class="login-btn" bindtap="handleLogin">微信快速登录</button>

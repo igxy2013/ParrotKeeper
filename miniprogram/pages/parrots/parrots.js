@@ -38,7 +38,17 @@ Page({
     parrotFormMode: 'add',
     parrotFormTitle: '',
     currentParrotForm: null,
-    parrotTypes: []
+    parrotTypes: [],
+
+    // 动态 PNG 图标（失败自动回退为 SVG）
+    iconPaths: {
+      headerAddEmerald: '/images/remix/ri-add-fill-emerald.png',
+      searchGray: '/images/remix/ri-search-fill-gray.png',
+      arrowDownGray: '/images/remix/ri-arrow-down-s-fill-gray.png',
+      statusRestaurantOrange: '/images/remix/ri-restaurant-fill-orange.png',
+      arrowRightGray: '/images/remix/ri-arrow-right-s-fill-gray.png',
+      addParrotEmerald: '/images/remix/ri-add-fill-emerald.png'
+    }
   },
 
   onLoad() {
@@ -356,6 +366,43 @@ Page({
     this.loadSpeciesListForModal()
   },
 
+  // 列表图标加载失败时回退为 SVG
+  onListIconError(e) {
+    try {
+      const keyPath = e.currentTarget.dataset.key
+      const current = this.data.iconPaths || {}
+      const next = JSON.parse(JSON.stringify(current))
+      const setByPath = (obj, path, value) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length - 1; i++) {
+          const p = parts[i]
+          if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {}
+          cur = cur[p]
+        }
+        cur[parts[parts.length - 1]] = value
+      }
+      const getByPath = (obj, path) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length; i++) {
+          cur = cur[parts[i]]
+          if (cur === undefined || cur === null) return null
+        }
+        return cur
+      }
+      const replaceExt = (p, toExt) => {
+        if (!p || typeof p !== 'string') return p
+        return p.replace(/\.(png|svg)$/i, `.${toExt}`)
+      }
+      const curVal = getByPath(next, keyPath)
+      if (typeof curVal === 'string') {
+        setByPath(next, keyPath, replaceExt(curVal, 'svg'))
+        this.setData({ iconPaths: next })
+      }
+    } catch (_) {}
+  },
+
   // 编辑鹦鹉（如在列表页需要）
   editParrot(e) {
     if (e && e.stopPropagation) { e.stopPropagation() }
@@ -391,7 +438,7 @@ Page({
     const id = e.currentTarget.dataset.id;
     const parrots = this.data.parrots.map(parrot => {
       if (parrot.id === id) {
-        return { ...parrot, photo_url: '/images/default-parrot.svg' };
+        return { ...parrot, photo_url: '/images/default-parrot.png' };
       }
       return parrot;
     });

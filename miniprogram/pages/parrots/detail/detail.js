@@ -56,7 +56,14 @@ Page({
     parrotFormTitle: '编辑鹦鹉',
     currentParrotForm: null,
     parrotTypes: [],
-    speciesList: []
+    speciesList: [],
+    // 动态 PNG 图标（失败自动回退为 SVG）
+    iconPaths: {
+      quickFeedingOrange: '/images/remix/ri-restaurant-fill-orange.png',
+      quickHealthEmerald: '/images/remix/ri-heart-fill-emerald.png',
+      quickCleaningBlue: '/images/remix/ri-calendar-fill-blue.png',
+      quickBreedingGreen: '/images/remix/ri-book-fill-green.png'
+    }
   },
 
   onLoad(options) {
@@ -512,5 +519,43 @@ Page({
     this.loadParrotDetail().finally(() => {
       wx.stopPullDownRefresh()
     })
+  }
+  ,
+
+  // 图标加载失败时回退为 SVG
+  onDetailIconError(e) {
+    try {
+      const keyPath = e.currentTarget.dataset.key
+      const current = this.data.iconPaths || {}
+      const next = JSON.parse(JSON.stringify(current))
+      const setByPath = (obj, path, value) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length - 1; i++) {
+          const p = parts[i]
+          if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {}
+          cur = cur[p]
+        }
+        cur[parts[parts.length - 1]] = value
+      }
+      const getByPath = (obj, path) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length; i++) {
+          cur = cur[parts[i]]
+          if (cur === undefined || cur === null) return null
+        }
+        return cur
+      }
+      const replaceExt = (p, toExt) => {
+        if (!p || typeof p !== 'string') return p
+        return p.replace(/\.(png|svg)$/i, `.${toExt}`)
+      }
+      const curVal = getByPath(next, keyPath)
+      if (typeof curVal === 'string') {
+        setByPath(next, keyPath, replaceExt(curVal, 'svg'))
+        this.setData({ iconPaths: next })
+      }
+    } catch (_) {}
   }
 })

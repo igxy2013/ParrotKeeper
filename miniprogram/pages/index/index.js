@@ -54,7 +54,47 @@ Page({
     expenseCategoryLabels: ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他'],
     // 弹窗避让参数（默认数值，避免组件收到非数字）
     modalTopOffsetPx: 24,
-    modalBottomOffsetPx: 24
+    modalBottomOffsetPx: 24,
+
+    // PNG 图标路径（统一图标方案）
+    iconPaths: {
+      headerNotification: '/images/remix/ri-notification-3-line-white.png',
+      // 统计卡片
+      statsHeart: '/images/remix/ri-heart-fill-green.png',
+      statsFeeding: '/images/remix/ri-restaurant-fill-orange.png',
+      statsIncome: '/images/remix/ri-money-dollar-circle-fill-purple.png',
+      statsExpense: '/images/remix/ri-shopping-bag-fill-blue.png',
+      // 标题内图标
+      myParrotsTitleHeart: '/images/remix/ri-heart-fill-green.png',
+      // 默认占位图
+      defaultParrot: '/images/default-parrot.png',
+      // 快捷操作
+      actions: {
+        quickFeeding: '/images/remix/ri-restaurant-fill-orange.png',
+        quickHealth: '/images/remix/ri-heart-fill-emerald.png',
+        quickCleaning: '/images/remix/ri-calendar-fill-blue.png',
+        quickBreeding: '/images/remix/ri-book-fill-green.png',
+        addParrot: '/images/remix/ri-add-fill-emerald.png',
+        quickExpense: '/images/remix/ri-money-dollar-circle-fill-blue.png',
+        expenseMgmt: '/images/remix/ri-book-fill-orange.png',
+        statistics: '/images/remix/ri-bar-chart-fill-purple.png'
+      },
+      // 通知与表单图标
+      alertInfo: '/images/remix/ri-information-fill-amber.png',
+      closeWhite: '/images/icons/close-white.png',
+      labelHeart: '/images/icons/heart.png',
+      labelLeaf: '/images/icons/leaf.png',
+      labelHash: '/images/icons/hash.png',
+      labelCoin: '/images/icons/coin.png',
+      labelScale: '/images/icons/scale.png',
+      labelUser: '/images/icons/user.png',
+      labelPalette: '/images/icons/palette.png',
+      labelCalendar: '/images/icons/calendar.png',
+      labelHome: '/images/icons/home.png',
+      labelCamera: '/images/icons/camera.png',
+      labelNote: '/images/icons/note.png',
+      trashWhite: '/images/icons/trash-white.png'
+    }
   },
 
   onLoad() {
@@ -277,7 +317,7 @@ Page({
             observation: '观察中',
             excellent: '优秀'
           })[p.health_status] || '健康',
-          photo_url: p.photo_url || '/images/default-parrot.svg'
+          photo_url: p.photo_url || this.data.iconPaths.defaultParrot
         }))
         this.setData({ myParrots: parrots.slice(0, 3) })
       }
@@ -398,7 +438,16 @@ Page({
         })
         
         // 只取前5条
-        const recentRecords = allRecords.slice(0, 5)
+        const recentRecords = allRecords.slice(0, 5).map(item => {
+          const iconMapPng = {
+            feeding: '/images/remix/ri-restaurant-fill-white.png',
+            health: '/images/remix/ri-heart-fill-white.png',
+            cleaning: '/images/remix/ri-calendar-fill-white.png',
+            breeding: '/images/remix/ri-calendar-fill-white.png'
+          }
+          const iconPath = iconMapPng[item.type] || '/images/remix/ri-calendar-fill-white.png'
+          return { ...item, iconPath }
+        })
         
         this.setData({
           recentRecords
@@ -665,11 +714,63 @@ Page({
     const id = e.currentTarget.dataset.id
     const parrots = (this.data.myParrots || []).map(p => {
       if (p.id === id) {
-        return { ...p, photo_url: '/images/default-parrot.svg' }
+        return { ...p, photo_url: '/images/default-parrot.png' }
       }
       return p
     })
     this.setData({ myParrots: parrots })
+  },
+
+  // 通用：图标加载失败自动回退到 SVG
+  handleIconError(e) {
+    try {
+      const keyPath = e.currentTarget.dataset.key
+      if (!keyPath) return
+      const current = this.data.iconPaths || {}
+      const next = JSON.parse(JSON.stringify(current))
+      const setByPath = (obj, path, value) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length - 1; i++) {
+          const p = parts[i]
+          if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {}
+          cur = cur[p]
+        }
+        cur[parts[parts.length - 1]] = value
+      }
+      const getByPath = (obj, path) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length; i++) {
+          cur = cur[parts[i]]
+          if (cur === undefined || cur === null) return null
+        }
+        return cur
+      }
+      const replaceExt = (p, toExt) => {
+        if (!p || typeof p !== 'string') return p
+        return p.replace(/\.(png|svg)$/i, `.${toExt}`)
+      }
+      const curVal = getByPath(next, keyPath)
+      if (typeof curVal === 'string') {
+        setByPath(next, keyPath, replaceExt(curVal, 'svg'))
+        this.setData({ iconPaths: next })
+      }
+    } catch (_) {}
+  },
+
+  // 最近活动图标加载失败时降级为 SVG
+  handleActivityIconError(e) {
+    try {
+      const idx = e.currentTarget.dataset.index
+      const list = (this.data.recentRecords || []).slice()
+      const item = list[idx]
+      if (item && item.iconPath) {
+        item.iconPath = item.iconPath.replace(/\.(png|svg)$/i, '.svg')
+        list[idx] = item
+        this.setData({ recentRecords: list })
+      }
+    } catch (_) {}
   },
 
   // 导航到记录页面

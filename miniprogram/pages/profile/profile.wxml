@@ -2,7 +2,7 @@
 <view class="page-container {{pageThemeClass}}">
   <app-header title="个人中心" subtitle="管理您的账户信息">
     <view slot="actions" class="header-action-btn" bindtap="openNotifications">
-      <image class="header-action-icon" src="/images/remix/ri-notification-3-line-white.svg" mode="aspectFit" />
+      <image class="header-action-icon" src="{{iconPaths.headerNotification}}" mode="aspectFit" binderror="onProfileIconError" data-key="headerNotification" />
       <view class="header-action-badge" wx:if="{{unreadCount > 0}}"></view>
     </view>
   </app-header>
@@ -18,7 +18,7 @@
           mode="aspectFill"
         />
         <view class="avatar-edit-overlay">
-<image class="edit-icon-img" src="/images/remix/ri-camera-line.svg" mode="aspectFit" />
+          <image class="edit-icon-img" src="{{iconPaths.cameraLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="cameraLine" />
           <text class="avatar-edit-text">点击选择</text>
         </view>
       </view>
@@ -33,7 +33,7 @@
       <view class="nickname-display">
         <text class="user-name">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
         <view class="edit-nickname-btn" bindtap="toggleNicknameEdit">
-<image class="edit-icon-img" src="/images/remix/edit-line.svg" mode="aspectFit" />
+<image class="edit-icon-img" src="{{iconPaths.editLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine" />
         </view>
       </view>
       <text class="user-role">{{roleDisplay}}</text>
@@ -64,7 +64,7 @@
   <!-- 未登录状态 -->
   <view class="login-prompt" wx:if="{{!isLogin}}">
     <view class="login-card">
-<image class="login-icon-img" src="/images/parrot-avatar-green.svg" mode="aspectFit" />
+<image class="login-icon-img" src="{{iconPaths.loginAvatar}}" mode="aspectFit" binderror="onProfileIconError" data-key="loginAvatar" />
       <text class="login-text">欢迎使用鹦鹉管家</text>
       <text class="login-subtitle">请先登录以查看个人信息</text>
       <button class="login-btn" bindtap="handleLogin">微信快速登录</button>
@@ -78,7 +78,7 @@
     <!-- 模式设置卡片 -->
       <view class="function-card mode-card">
         <view class="section-title">
-<image class="section-icon-img" src="/images/remix/settings-3-line.svg" mode="aspectFit" />
+          <image class="section-icon-img" src="{{iconPaths.sectionSettings}}" mode="aspectFit" binderror="onProfileIconError" data-key="sectionSettings" />
           <text>模式设置</text>
         </view>
         <view class="mode-toggle">
@@ -93,7 +93,7 @@
   <view class="modal-container avatar-modal" catchtap="preventClose">
     <view class="modal-header">
       <text class="modal-title">选择头像</text>
-<view class="modal-close" bindtap="hideAvatarModal"><image class="modal-close-icon" src="/images/remix/close-line.svg" mode="aspectFit" /></view>
+        <view class="modal-close" bindtap="hideAvatarModal"><image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" /></view>
     </view>
     <view class="modal-body">
       <view class="avatar-options">
@@ -119,21 +119,21 @@
 <view class="stats-grid" wx:if="{{isLogin}}">
   <view class="stat-card red">
     <view class="stat-icon stat-icon-red">
-      <image class="stat-icon-img" src="/images/remix/ri-heart-fill-red.svg" mode="aspectFit" />
+      <image class="stat-icon-img" src="{{iconPaths.statHeartRed}}" mode="widthFix" binderror="onProfileIconError" data-key="statHeartRed" />
     </view>
     <view class="stat-value">{{stats.parrotCount}}</view>
     <view class="stat-label">我的鹦鹉</view>
   </view>
   <view class="stat-card orange">
     <view class="stat-icon stat-icon-orange">
-      <image class="stat-icon-img" src="/images/remix/ri-restaurant-fill-orange.svg" mode="aspectFit" />
+      <image class="stat-icon-img" src="{{iconPaths.statFeedingOrange}}" mode="widthFix" binderror="onProfileIconError" data-key="statFeedingOrange" />
     </view>
     <view class="stat-value">{{stats.totalFeedings}}</view>
     <view class="stat-label">总喂食次数</view>
   </view>
   <view class="stat-card green">
     <view class="stat-icon stat-icon-green">
-      <image class="stat-icon-img" src="/images/remix/ri-shield-check-fill-blue.svg" mode="aspectFit" />
+      <image class="stat-icon-img" src="{{iconPaths.statShieldBlue}}" mode="widthFix" binderror="onProfileIconError" data-key="statShieldBlue" />
     </view>
     <view class="stat-value">{{stats.totalCheckups}}</view>
     <view class="stat-label">健康检查</view>
@@ -145,7 +145,7 @@
   <view class="modal-container team-info-modal" catchtap="preventClose">
     <view class="modal-header">
       <text class="modal-title">当前团队</text>
-      <view class="modal-close" bindtap="hideTeamInfoModal"><image class="modal-close-icon" src="/images/remix/close-line.svg" mode="aspectFit" /></view>
+      <view class="modal-close" bindtap="hideTeamInfoModal"><image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" /></view>
     </view>
     <view class="modal-body">
       <view class="team-info-section">
@@ -190,7 +190,7 @@
   <view class="modal-container join-team-modal" catchtap="preventClose">
     <view class="modal-header">
       <text class="modal-title">加入团队</text>
-      <view class="modal-close" bindtap="hideJoinTeamModal"><image class="modal-close-icon" src="/images/remix/close-line.svg" mode="aspectFit" /></view>
+      <view class="modal-close" bindtap="hideJoinTeamModal"><image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" /></view>
     </view>
     <view class="modal-body">
       <view class="form-row">
@@ -210,7 +210,7 @@
   <view class="modal-container create-team-modal" catchtap="preventClose">
     <view class="modal-header">
       <text class="modal-title">创建团队</text>
-      <view class="modal-close" bindtap="hideCreateTeamModal"><image class="modal-close-icon" src="/images/remix/close-line.svg" mode="aspectFit" /></view>
+      <view class="modal-close" bindtap="hideCreateTeamModal"><image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" /></view>
     </view>
     <view class="modal-body">
       <view class="form-row">
@@ -236,7 +236,7 @@
   <view class="modal-container manage-team-modal" catchtap="preventClose">
     <view class="modal-header">
       <text class="modal-title">团队管理</text>
-      <view class="modal-close" bindtap="hideTeamManageModal"><image class="modal-close-icon" src="/images/remix/close-line.svg" mode="aspectFit" /></view>
+      <view class="modal-close" bindtap="hideTeamManageModal"><image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" /></view>
     </view>
     <view class="modal-body">
       <view class="cards-grid">
@@ -312,50 +312,50 @@
 <!-- 团队协作模块（仅团队模式显示） -->
 <view class="team-card" wx:if="{{isLogin && userMode === 'team'}}">
   <view class="section-title">
-<image class="section-icon-img" src="/images/remix/user-line.svg" mode="aspectFit" />
+    <image class="section-icon-img" src="{{iconPaths.userLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="userLine" />
     <text>团队协作</text>
   </view>
   <!-- 改为图片式卡片列表，像素级对齐设计 -->
   <view class="team-list">
     <view class="team-item theme-blue" bindtap="onTeamItemTap" data-action="current">
       <view class="team-item-icon">
-        <image class="team-item-icon-img" src="/images/remix/user-line.svg" mode="aspectFit" />
+        <image class="team-item-icon-img" src="{{iconPaths.userLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="userLine" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">当前团队</view>
         <view class="team-item-desc">查看团队成员</view>
       </view>
-      <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+      <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
     </view>
     <view class="team-item theme-green" bindtap="onTeamItemTap" data-action="join">
       <view class="team-item-icon">
-        <image class="team-item-icon-img" src="/images/remix/ri-add-line.svg" mode="aspectFit" />
+        <image class="team-item-icon-img" src="{{iconPaths.addLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="addLine" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">加入团队</view>
         <view class="team-item-desc">通过邀请码加入团队</view>
       </view>
-      <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+      <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
     </view>
     <view class="team-item theme-purple" bindtap="onTeamItemTap" data-action="create">
       <view class="team-item-icon">
-        <image class="team-item-icon-img" src="/images/remix/ri-user-fill.svg" mode="aspectFit" />
+        <image class="team-item-icon-img" src="{{iconPaths.userFill}}" mode="aspectFit" binderror="onProfileIconError" data-key="userFill" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">创建团队</view>
         <view class="team-item-desc">创建新的团队并邀请成员</view>
       </view>
-      <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+      <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
     </view>
     <view class="team-item theme-orange" bindtap="onTeamItemTap" data-action="manage">
       <view class="team-item-icon">
-        <image class="team-item-icon-img" src="/images/remix/settings-3-line.svg" mode="aspectFit" />
+        <image class="team-item-icon-img" src="{{iconPaths.sectionSettings}}" mode="aspectFit" binderror="onProfileIconError" data-key="sectionSettings" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">团队管理</view>
         <view class="team-item-desc">管理团队成员和设置</view>
       </view>
-      <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+      <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
     </view>
   </view>
 </view>
@@ -363,7 +363,7 @@
 <!-- 功能菜单模块 -->
 <view class="menu-card">
   <view class="section-title">
-    <image class="section-icon-img" src="/images/remix/information-line.svg" mode="aspectFit" />
+    <image class="section-icon-img" src="{{iconPaths.infoLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="infoLine" />
     <text>功能菜单</text>
   </view>
   <view class="menu-list">
@@ -371,26 +371,26 @@
       <block wx:if="{{item.isContact}}">
         <button class="menu-item" open-type="contact" session-from="{{contactSessionFrom}}" bindcontact="onContact">
           <view class="menu-item-icon {{item.bgClass}}">
-            <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" />
+            <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" binderror="onMenuItemIconError" data-index="{{index}}" />
           </view>
           <view class="menu-item-content">
             <view class="menu-item-title">{{item.title}}</view>
             <view class="menu-item-desc">{{item.desc}}</view>
           </view>
-          <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+      <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
         </button>
       </block>
       <block wx:else>
         <view class="menu-item" bindtap="onMenuItemTap" data-title="{{item.title}}">
           <view class="menu-item-icon {{item.bgClass}}">
-            <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" />
+            <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" binderror="onMenuItemIconError" data-index="{{index}}" />
           </view>
           <view class="menu-item-content">
             <view class="menu-item-title">{{item.title}}</view>
             <view class="menu-item-desc">{{item.desc}}</view>
           </view>
           <view class="menu-item-badge" wx:if="{{item.title === '通知' && unreadCount > 0}}">{{unreadCount}}</view>
-          <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
+          <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
         </view>
       </block>
     </block>

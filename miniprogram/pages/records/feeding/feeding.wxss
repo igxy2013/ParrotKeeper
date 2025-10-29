@@ -76,6 +76,11 @@
   color: white;
 }
 
+.action-icon-img {
+  width: 32rpx;
+  height: 32rpx;
+}
+
 /* 间距样式 */
 .space-x-1 > view:not(:first-child) {
   margin-left: 8rpx;

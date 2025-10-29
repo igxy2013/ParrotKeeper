@@ -36,13 +36,12 @@ Page({
     showAvatarModal: false,
     avatarOptions: [
       '/images/default-avatar.png',
-      '/images/default-avatar.svg',
-      '/images/parrot-avatar-green.svg',
-      '/images/parrot-avatar-blue.svg',
-      '/images/parrot-avatar-orange.svg',
-      '/images/parrot-avatar-purple.svg',
-      '/images/parrot-avatar-red.svg',
-      '/images/parrot-avatar-yellow.svg'
+      '/images/parrot-avatar-green.png',
+      '/images/parrot-avatar-blue.png',
+      '/images/parrot-avatar-orange.png',
+      '/images/parrot-avatar-purple.png',
+      '/images/parrot-avatar-red.png',
+      '/images/parrot-avatar-yellow.png'
     ],
     selectedAvatar: '',
 
@@ -61,12 +60,30 @@ Page({
     unreadCount: 0,
 
     menuItems: [
-      { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.svg' },
-      { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.svg' },
-      { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.svg', isContact: true },
-      { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.svg' },
-      { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink', iconSrc: '/images/remix/share-forward-line.svg' }
-    ]
+      { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.png' },
+      { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.png' },
+      { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.png', isContact: true },
+      { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.png' },
+      { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink', iconSrc: '/images/remix/share-forward-line.png' }
+    ],
+
+    // PNG 图标（静态，失败自动回退为 SVG）
+    iconPaths: {
+      headerNotification: '/images/remix/ri-notification-3-line-white.png',
+      cameraLine: '/images/remix/ri-camera-line.png',
+      editLine: '/images/remix/edit-line.png',
+      loginAvatar: '/images/parrot-avatar-green.png',
+      sectionSettings: '/images/remix/settings-3-line.png',
+      closeLine: '/images/remix/close-line.png',
+      statHeartRed: '/images/remix/ri-heart-fill-red.png',
+      statFeedingOrange: '/images/remix/ri-restaurant-fill-orange.png',
+      statShieldBlue: '/images/remix/ri-shield-check-fill-green.png',
+      userLine: '/images/remix/user-line.png',
+      userFill: '/images/remix/ri-user-fill.png',
+      arrowRight: '/images/remix/ri-arrow-right-line.png',
+      addLine: '/images/remix/ri-add-line.png',
+      infoLine: '/images/remix/information-line.png'
+    }
   },
 
   onLoad() {
@@ -138,12 +155,16 @@ Page({
   async loadOverviewStats() {
     try {
       const res = await app.request({ url: '/api/statistics/overview', method: 'GET' })
-      if (res.success) {
+      if (res.success && res.data) {
+        const d = res.data || {}
         this.setData({
           stats: {
             ...this.data.stats,
-            ...res.data,
-            statsViews: res.data.stats_views || 0
+            // 后端字段为 snake_case，这里统一映射到前端 camelCase
+            parrotCount: ('total_parrots' in d) ? d.total_parrots : (('parrot_count' in d) ? d.parrot_count : 0),
+            totalFeedings: ('total_feedings' in d) ? d.total_feedings : (('monthly_feeding' in d) ? d.monthly_feeding : (d.today_records && ('feeding' in d.today_records) ? d.today_records.feeding : 0)),
+            totalCheckups: ('total_checkups' in d) ? d.total_checkups : (('monthly_health_checks' in d) ? d.monthly_health_checks : 0),
+            statsViews: ('stats_views' in d) ? d.stats_views : (('stats_view_count' in d) ? d.stats_view_count : 0)
           }
         })
       }
@@ -206,6 +227,55 @@ Page({
       return '/images/remix/ri-trophy-fill-purple.svg'
     }
     return '/images/remix/ri-trophy-fill.svg'
+  },
+
+  // 菜单项图标加载失败降级为 SVG
+  onMenuItemIconError(e) {
+    try {
+      const idx = e.currentTarget.dataset.index
+      const items = (this.data.menuItems || []).slice()
+      if (items[idx] && items[idx].iconSrc) {
+        items[idx].iconSrc = items[idx].iconSrc.replace(/\.(png|svg)$/i, '.svg')
+        this.setData({ menuItems: items })
+      }
+    } catch (_) {}
+  },
+
+  // 静态图标失败降级为 SVG
+  onProfileIconError(e) {
+    try {
+      const keyPath = e.currentTarget.dataset.key
+      const current = this.data.iconPaths || {}
+      const next = JSON.parse(JSON.stringify(current))
+      const setByPath = (obj, path, value) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length - 1; i++) {
+          const p = parts[i]
+          if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {}
+          cur = cur[p]
+        }
+        cur[parts[parts.length - 1]] = value
+      }
+      const getByPath = (obj, path) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length; i++) {
+          cur = cur[parts[i]]
+          if (cur === undefined || cur === null) return null
+        }
+        return cur
+      }
+      const replaceExt = (p, toExt) => {
+        if (!p || typeof p !== 'string') return p
+        return p.replace(/\.(png|svg)$/i, `.${toExt}`)
+      }
+      const curVal = getByPath(next, keyPath)
+      if (typeof curVal === 'string') {
+        setByPath(next, keyPath, replaceExt(curVal, 'svg'))
+        this.setData({ iconPaths: next })
+      }
+    } catch (_) {}
   },
 
   // 显示成就解锁提示

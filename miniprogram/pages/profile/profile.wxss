@@ -759,7 +759,9 @@
 @media (max-width: 750rpx) {
   .stats-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 15rpx;
+    gap: 10rpx;
+    column-gap: 10rpx;
+    row-gap: 10rpx;
   }
   
   .stat-item {
@@ -1383,7 +1385,7 @@
 @media (max-width: 750rpx) {
   .stats-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 15rpx;
+    gap: 10rpx;
   }
   
   .stat-item {
@@ -1625,7 +1627,9 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16rpx; /* 参考APP gap-4 */
+  gap: 10rpx; /* 横向间距小一点 */
+  column-gap: 10rpx; /* 兼容部分不支持 gap 的环境 */
+  row-gap: 10rpx;
   margin: 24rpx 20rpx;
 }
 .stat-card {
@@ -1638,7 +1642,7 @@
   box-shadow: 0 12rpx 24rpx rgba(0,0,0,0.08); /* shadow-lg 接近 */
 }
 .stat-card .stat-icon { width: 48rpx; height: 48rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; margin: 0 auto 12rpx; }
-.stat-icon-img { width: 28rpx; height: 28rpx; }
+.stat-icon-img { width: 40rpx; height: auto; }
 .stat-icon-red { background: #fee2e2; }
 .stat-icon-orange { background: #ffedd5; }
 .stat-icon-green { background: #dcfce7; }

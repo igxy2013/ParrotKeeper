@@ -105,9 +105,33 @@
 
 /* Image-based icons sizing */
 .icon-notification-img { width: 32rpx; height: 32rpx; }
-.stat-icon-img { width: 40rpx; height: 40rpx; }
+.stat-icon-img { width: 40rpx; height: 40rpx; display: block; }
+.stat-icon-mask {
+  width: 40rpx;
+  height: 40rpx;
+  display: block;
+  background-color: #ffffff; /* 默认白色，确保在彩色背景上清晰可见 */
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
 .inline-title-icon { width: 28rpx; height: 28rpx; margin-right: 12rpx; vertical-align: -4rpx; }
-.action-icon-img { width: 44rpx; height: 44rpx; }
+.action-icon-img { width: 44rpx; height: 44rpx; display: block; }
+.action-icon-mask {
+  width: 44rpx;
+  height: 44rpx;
+  display: block;
+  background-color: #ffffff; /* 默认填充色，可被内联覆盖 */
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
 .activity-icon-img { 
   width: 48rpx; 
   height: 48rpx; 
@@ -119,9 +143,14 @@
   width: 48rpx;
   height: 48rpx;
   display: block;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
+  /* 使用 mask 渲染矢量图标，避免 iOS 对 background-image 的裁剪/解析问题 */
+  background-color: #ffffff; /* 图标填充色 */
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
   transform: translateY(-1rpx); /* 修复部分设备底部像素裁剪 */
 }
 .alert-icon-img { width: 40rpx; height: 40rpx; }
@@ -656,6 +685,7 @@
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
   background: #ffffff;
   transition: transform 0.3s ease;
+  line-height: 0; /* 避免内联基线影响导致图标被裁剪 */
 }
 
 .action-item:active .action-icon-wrapper {
