@@ -112,6 +112,75 @@ Page({
     this.setData({ activeTab: tab })
   },
 
+  // 解析服务端时间字符串：优先按本地时间解析，避免无时区字符串被当作 UTC
+  parseServerTime(value) {
+    if (!value) return null
+    try {
+      if (value instanceof Date) return value
+      if (typeof value === 'number') {
+        const dNum = new Date(value)
+        return isNaN(dNum.getTime()) ? null : dNum
+      }
+      if (typeof value === 'string') {
+        const s = value.trim()
+        // 仅日期：YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+          return new Date(`${s}T00:00:00`)
+        }
+        // 已包含 Z 或时区偏移，直接解析
+        if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s)) {
+          const d = new Date(s)
+          return isNaN(d.getTime()) ? null : d
+        }
+
+        // iOS 不支持 "YYYY-MM-DD HH:mm[:ss]" 的直接解析，先规范化
+        const isDashSpace = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)
+        if (isDashSpace) {
+          // 优先转换为斜杠并补秒：YYYY/MM/DD HH:mm:ss
+          let fixed = s.replace(/-/g, '/')
+          if (/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/.test(fixed)) {
+            fixed = fixed + ':00'
+          }
+          const d1 = new Date(fixed)
+          if (!isNaN(d1.getTime())) return d1
+          // 兜底：转换为 ISO T 格式并补秒：YYYY-MM-DDTHH:mm:ss
+          let iso = s.replace(' ', 'T')
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) {
+            iso = iso + ':00'
+          }
+          const d2 = new Date(iso)
+          if (!isNaN(d2.getTime())) return d2
+        }
+
+        // 无时区信息：按本地时间解析（iOS 兼容）
+        if (s.includes('T')) {
+          // iOS 需要补秒：YYYY-MM-DDTHH:mm:ss
+          let iso = s
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) {
+            iso = iso + ':00'
+          }
+          const d = new Date(iso)
+          if (!isNaN(d.getTime())) return d
+        } else {
+          // 先尝试斜杠格式
+          let local = s.replace(/-/g, '/')
+          if (/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/.test(local)) {
+            local = local + ':00'
+          }
+          let d = new Date(local)
+          if (!isNaN(d.getTime())) return d
+          // 最后再尝试原始字符串（避免 iOS 警告命中率高的格式）
+          d = new Date(s)
+          if (!isNaN(d.getTime())) return d
+        }
+        return null
+      }
+      return null
+    } catch (e) {
+      return null
+    }
+  },
+
   // 加载鹦鹉详情
   async loadParrotDetail() {
     try {
@@ -171,25 +240,59 @@ Page({
       // 先处理最近记录，便于计算"距上次喂食"
       if (recordsRes.success) {
         const recordsRaw = recordsRes.data.records || []
-        const recentRecords = recordsRaw.map(r => ({
-          ...r,
-          created_at: r.time ? new Date(r.time).toLocaleString() : ''
-        }))
+        // 统一从真实字段提取时间，并生成展示文本
+        const recentRecords = recordsRaw.map(r => {
+          // 根据记录类型选择真实时间字段
+          let rawTime = ''
+          if (r.type === 'feeding') {
+            rawTime = (r.data && r.data.feeding_time) || ''
+          } else if (r.type === 'health') {
+            rawTime = (r.data && r.data.record_date) || ''
+          } else if (r.type === 'cleaning') {
+            rawTime = (r.data && r.data.cleaning_time) || ''
+          } else if (r.type === 'breeding') {
+            rawTime = r.mating_date || r.created_at || ''
+          } else {
+            rawTime = r.created_at || r.time || ''
+          }
+
+          // 统一解析为 Date，避免跨平台解析偏差
+          const dt = this.parseServerTime(rawTime)
+          // 展示用：仅在解析成功时使用相对时间，避免 iOS 对字符串解析警告
+          const displayText = dt ? getApp().formatRelativeTime(dt) : ''
+
+          return {
+            ...r,
+            time: rawTime,
+            // 仍沿用 created_at 字段在 WXML 中显示：解析成功则格式化，否则直接使用原始字符串
+            created_at: dt ? getApp().formatDateTime(dt, 'YYYY-MM-DD HH:mm') : (rawTime ? rawTime : ''),
+            display_time_text: displayText
+          }
+        })
+
+        // 是否存在喂食记录
         const hasFeedingRecords = recentRecords.some(r => r.type === 'feeding')
-        
+
         // 按类型分类记录
         const feedingRecords = recentRecords.filter(r => r.type === 'feeding')
         const healthRecords = recentRecords.filter(r => r.type === 'health')
         const breedingRecords = recentRecords.filter(r => r.type === 'breeding')
-        
-        // 计算最后喂食时间信息
+
+        // 计算最后喂食时间信息（基于真实时间字段，按本地时间解析）
         let lastFeedingInfo = '暂无喂食记录'
         if (feedingRecords.length > 0) {
-          const lastFeeding = feedingRecords[0] // 假设记录已按时间排序
-          if (lastFeeding.time) {
-            const lastTime = new Date(lastFeeding.time)
+          // 按时间倒序取最近的一条（统一解析后比较）
+          const sortedFeeding = feedingRecords.slice().sort((a, b) => {
+            const ta = a.time ? (this.parseServerTime(a.time)?.getTime() || 0) : 0
+            const tb = b.time ? (this.parseServerTime(b.time)?.getTime() || 0) : 0
+            return tb - ta
+          })
+          const lastFeeding = sortedFeeding[0]
+          if (lastFeeding && lastFeeding.time) {
+            const lastTime = this.parseServerTime(lastFeeding.time) || this.parseServerTime(lastFeeding.created_at) || new Date(lastFeeding.time)
             const now = new Date()
-            const diffHours = Math.floor((now - lastTime) / (1000 * 60 * 60))
+            const diffMs = now - lastTime
+            const diffHours = Math.floor(Math.max(0, diffMs) / (1000 * 60 * 60))
             if (diffHours < 1) {
               lastFeedingInfo = '刚刚喂食'
             } else if (diffHours < 24) {
@@ -200,7 +303,7 @@ Page({
             }
           }
         }
-        
+
         this.setData({ 
           recentRecords, 
           hasFeedingRecords,
@@ -218,7 +321,7 @@ Page({
         const recent = this.data.recentRecords || []
         const lastFeeding = recent.find(r => r.type === 'feeding' && r.time)
         if (lastFeeding && lastFeeding.time) {
-          const last = new Date(lastFeeding.time)
+          const last = this.parseServerTime(lastFeeding.time) || new Date(lastFeeding.time)
           const now = new Date()
           daysSinceLastFeeding = Math.max(0, Math.floor((now - last) / (1000 * 60 * 60 * 24)))
         }
@@ -285,9 +388,9 @@ Page({
       app.showError('您没有操作权限')
       return
     }
-    wx.navigateTo({
-      url: `/pages/records/feeding/feeding${this.data.parrotId ? `?parrot_id=${this.data.parrotId}` : ''}`
-    })
+    const pid = encodeURIComponent(String(this.data.parrotId || ''))
+    const url = `/pages/records/add-record/add-record?type=feeding${pid ? `&parrot_ids=${pid}` : ''}`
+    wx.navigateTo({ url })
   },
 
   // 快速健康检查
@@ -296,9 +399,9 @@ Page({
       app.showError('您没有操作权限')
       return
     }
-    wx.navigateTo({
-      url: `/pages/health-check/health-check${this.data.parrotId ? `?parrot_id=${this.data.parrotId}` : ''}`
-    })
+    const pid = encodeURIComponent(String(this.data.parrotId || ''))
+    const url = `/pages/records/add-record/add-record?type=health${pid ? `&parrot_ids=${pid}` : ''}`
+    wx.navigateTo({ url })
   },
 
   // 快速训练记录
@@ -340,9 +443,8 @@ Page({
       return
     }
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
-    wx.navigateTo({
-      url: `/pages/records/cleaning/cleaning${pid ? `?parrot_id=${pid}` : ''}`
-    })
+    const url = `/pages/records/add-record/add-record?type=cleaning${pid ? `&parrot_ids=${pid}` : ''}`
+    wx.navigateTo({ url })
   },
 
   // 快速繁殖记录
@@ -353,9 +455,8 @@ Page({
     }
     // 跳转到繁殖记录新页面
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
-    wx.navigateTo({
-      url: `/pages/breeding/breeding${pid ? `?parrot_id=${pid}` : ''}`
-    })
+    const url = `/pages/records/add-record/add-record?type=breeding${pid ? `&parrot_ids=${pid}` : ''}`
+    wx.navigateTo({ url })
   },
 
   // 切换菜单显示状态

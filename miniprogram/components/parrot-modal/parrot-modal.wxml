@@ -109,7 +109,7 @@
     <!-- 底部按钮 -->
     <view class="modal-footer">
       <button class="btn-secondary" bindtap="onCancel">取消</button>
-      <button class="btn-primary" bindtap="onSubmit" disabled="{{!form.name || !form.type}}">{{mode === 'edit' ? '保存' : '添加鹦鹉'}}</button>
+      <button class="btn-primary {{(!form.name || !form.type) ? 'is-disabled' : ''}}" bindtap="onSubmit" disabled="{{!form.name || !form.type}}">{{mode === 'edit' ? '保存' : '添加鹦鹉'}}</button>
     </view>
   </view>
 </view>

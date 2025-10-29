@@ -66,7 +66,7 @@
 .btn-secondary, .btn-primary { flex:1; padding:18rpx 24rpx; border-radius:28rpx; font-size:26rpx; }
 .btn-secondary { background:#e5e7eb; color:#374151; }
 .btn-primary { background: linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4); color:#ffffff; }
-.btn-primary[disabled] { opacity:0.5; }
+.btn-primary.is-disabled { opacity:0.5; }
 
 .photo-upload { padding:16rpx 0; }
 .photo-preview { position:relative; width:220rpx; height:220rpx; border-radius:24rpx; overflow:hidden; }

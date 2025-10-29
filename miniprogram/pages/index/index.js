@@ -399,7 +399,8 @@ Page({
           res.data.health.forEach(record => {
             const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
             const recordType = record.record_type || '健康检查'
-            const rawTime = record.record_date
+            // 兼容后端返回：优先 record_date，兜底 created_at
+            const rawTime = record.record_date || record.created_at
             const dt = this.parseServerTime(rawTime)
             allRecords.push({
               id: `health_${record.id}`,
@@ -421,14 +422,16 @@ Page({
           res.data.breeding.forEach(record => {
             const maleName = record.male_parrot_name || (record.male_parrot && record.male_parrot.name) || ''
             const femaleName = record.female_parrot_name || (record.female_parrot && record.female_parrot.name) || ''
+            // 真实时间字段优先：配对日期；兜底为记录创建时间
             const rawTime = record.mating_date || record.created_at
+            const dt = this.parseServerTime(rawTime)
             allRecords.push({
               id: `breeding_${record.id}`,
               title: '进行了配对',
               type: 'breeding',
               parrot_name: `${maleName} × ${femaleName}`,
-              timeValue: rawTime,
-              timeText: app.formatRelativeTime(rawTime)
+              timeValue: dt ? dt.toISOString() : rawTime,
+              timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(rawTime)
             })
           })
         }
@@ -466,43 +469,82 @@ Page({
   // 聚合首页喂食记录
   aggregateRecentFeeding(records) {
     const grouped = {}
-    records.forEach(record => {
-      const time = record.feeding_time
-      const dt = this.parseServerTime(time)
-      const key = `${time}_${record.notes || ''}_${record.amount || ''}`
+    // iOS 安全日期解析：尽量按本地时间解析常见格式，避免错误的时区偏移
+    function parseIOSDateSafe(input) {
+      try {
+        if (!input) return null
+        if (input instanceof Date) return input
+        if (typeof input === 'number') {
+          const d = new Date(input)
+          return isNaN(d.getTime()) ? null : d
+        }
+        if (typeof input === 'string') {
+          const s = input.trim()
+          // 1) yyyy-MM-dd HH:mm[:ss]
+          var m = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/)
+          if (m) {
+            const d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], m[6] ? +m[6] : 0)
+            return isNaN(d.getTime()) ? null : d
+          }
+          // 2) yyyy/MM/dd[ HH:mm[:ss]]
+          m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/)
+          if (m) {
+            const d = new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 0, m[5] ? +m[5] : 0, m[6] ? +m[6] : 0)
+            return isNaN(d.getTime()) ? null : d
+          }
+          // 3) ISO 或含时区，替换空格为 T 后尝试
+          const iso = s.includes(' ') ? s.replace(' ', 'T') : s
+          const d = new Date(iso)
+          return isNaN(d.getTime()) ? null : d
+        }
+        return null
+      } catch (_) {
+        return null
+      }
+    }
+
+    records.forEach(function(record){
+      const time = record && record.feeding_time
+      const dt = parseIOSDateSafe(time) || null
+      const key = String(time || '') + '_' + String(record && record.notes || '') + '_' + String(record && record.amount || '')
       if (!grouped[key]) {
         grouped[key] = {
-          id: `feeding_group_${record.id || key}`,
+          id: 'feeding_group_' + (record && record.id ? record.id : key),
           type: 'feeding',
-          timeValue: dt ? dt.toISOString() : time,
-          timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(time),
+          // 用毫秒时间戳进行排序，避免跨端解析差异
+          timeValue: dt ? String(dt.getTime()) : (time || ''),
+          // 改为绝对时间展示，避免“x小时前”误判
+          timeText: dt ? app.formatDateTime(dt, 'YYYY-MM-DD HH:mm') : (time ? app.formatDateTime(time, 'YYYY-MM-DD HH:mm') : ''),
           parrot_names: [],
           feed_type_names: []
         }
       }
-      const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
-      const feedTypeName = record.feed_type_name || (record.feed_type && record.feed_type.name) || ''
-      if (parrotName && !grouped[key].parrot_names.includes(parrotName)) {
+      const parrotName = (record && (record.parrot_name || (record.parrot && record.parrot.name))) || ''
+      const feedTypeName = (record && (record.feed_type_name || (record.feed_type && record.feed_type.name))) || ''
+      if (parrotName && grouped[key].parrot_names.indexOf(parrotName) === -1) {
         grouped[key].parrot_names.push(parrotName)
       }
-      if (feedTypeName && !grouped[key].feed_type_names.includes(feedTypeName)) {
+      if (feedTypeName && grouped[key].feed_type_names.indexOf(feedTypeName) === -1) {
         grouped[key].feed_type_names.push(feedTypeName)
       }
     })
-    const result = Object.values(grouped).map(item => ({
-      id: item.id,
-      title: `喂食了${item.feed_type_names.join('、')}`,
-      type: 'feeding',
-      parrot_name: item.parrot_names.join('、'),
-      timeValue: item.timeValue,
-      timeText: item.timeText
-    }))
+    const groupedValues = Object.values(grouped)
+    const result = groupedValues.map(function(item){
+      return {
+        id: item.id,
+        title: '喂食了' + item.feed_type_names.join('、'),
+        type: 'feeding',
+        parrot_name: item.parrot_names.join('、'),
+        timeValue: item.timeValue,
+        timeText: item.timeText
+      }
+    })
     // 按时间倒序
-    result.sort((a, b) => {
-      const da = this.parseServerTime(b.timeValue || b.time)
-      const db = this.parseServerTime(a.timeValue || a.time)
-      const ma = da ? da.getTime() : 0
-      const mb = db ? db.getTime() : 0
+    result.sort(function(a, b){
+      const ta = parseInt(b.timeValue, 10)
+      const tb = parseInt(a.timeValue, 10)
+      const ma = isNaN(ta) ? 0 : ta
+      const mb = isNaN(tb) ? 0 : tb
       return ma - mb
     })
     return result

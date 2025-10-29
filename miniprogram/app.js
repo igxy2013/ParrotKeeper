@@ -120,10 +120,12 @@ App({
   // 初始化平台信息与图标策略
   initPlatformInfo() {
     try {
-      const info = wx.getSystemInfoSync()
-      const system = (info.system || '').toLowerCase()
-      const isIOS = system.indexOf('ios') !== -1
-      this.globalData.platformInfo = { isIOS, system: info.system || '' }
+      // 使用新接口优先获取设备/应用信息，旧接口作为兼容兜底
+      const deviceInfo = wx.getDeviceInfo ? wx.getDeviceInfo() : (wx.getSystemInfoSync ? wx.getSystemInfoSync() : {})
+      const appBaseInfo = wx.getAppBaseInfo ? wx.getAppBaseInfo() : {}
+      const systemStr = (deviceInfo.system || appBaseInfo.system || '').toLowerCase()
+      const isIOS = systemStr.indexOf('ios') !== -1
+      this.globalData.platformInfo = { isIOS, system: deviceInfo.system || appBaseInfo.system || '' }
       // iOS 强制启用图标字体（更稳定），其它平台也启用，必要时可用本地/远程字体兜底
       this.globalData.useIconFont = true
       console.log('平台信息:', this.globalData.platformInfo, 'useIconFont:', this.globalData.useIconFont)

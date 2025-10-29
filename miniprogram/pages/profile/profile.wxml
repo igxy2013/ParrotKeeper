@@ -402,7 +402,7 @@
 <image class="version-logo-img" src="/images/logo.png" mode="aspectFit" />
   <view class="version-title">鹦鹉管家</view>
   <view class="version-sub">专业的鹦鹉护理助手</view>
-  <view class="version-info">版本 1.0.0 • 用心呵护每一只小鹦鹉</view>
+  <view class="version-info">版本 {{appVersion}} • 用心呵护每一只小鹦鹉</view>
 </view>
 </view>
 <!-- 自定义底部导航 -->

@@ -238,6 +238,9 @@ Page({
           maleCount,
           femaleCount
         })
+
+        // 异步填充每只鹦鹉的“最近喂食时间”文本
+        this.updateLastFeedForParrots(updatedParrots)
         
         console.log('设置数据完成，当前parrots数量:', this.data.parrots.length);
       } else {
@@ -460,6 +463,96 @@ Page({
       return parrot;
     });
     this.setData({ parrots });
+  },
+
+  // 统一解析服务端时间字符串，兼容无时区的格式
+  parseServerTime(ts) {
+    if (!ts || typeof ts !== 'string') return null
+    // 优先尝试标准可解析格式
+    const direct = new Date(ts)
+    if (!isNaN(direct.getTime())) return direct
+    // 手动解析常见格式：YYYY-MM-DD HH:mm[:ss]
+    const m = ts.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+    if (m) {
+      const [_, y, mo, d, h, mi, s] = m
+      const date = new Date(
+        Number(y),
+        Number(mo) - 1,
+        Number(d),
+        Number(h),
+        Number(mi),
+        s ? Number(s) : 0
+      )
+      return isNaN(date.getTime()) ? null : date
+    }
+    // 尝试在末尾补 Z 作为UTC再解析
+    const utc = new Date(ts + 'Z')
+    return isNaN(utc.getTime()) ? null : utc
+  },
+
+  // 计算最近喂食的相对时间文本
+  computeLastFeedingText(lastTime) {
+    if (!lastTime) return '暂无喂食记录'
+    const now = new Date()
+    const diffHours = Math.floor((now - lastTime) / (1000 * 60 * 60))
+    if (diffHours < 1) {
+      return '刚刚喂食'
+    } else if (diffHours < 24) {
+      return `${diffHours}小时前`
+    } else {
+      const diffDays = Math.floor(diffHours / 24)
+      return `${diffDays}天前`
+    }
+  },
+
+  // 为列表中的每只鹦鹉异步获取并填充最近喂食时间
+  async updateLastFeedForParrots(parrotList) {
+    const list = Array.isArray(parrotList) ? parrotList : []
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i]
+      try {
+        const res = await getApp().request({
+          url: `/api/parrots/${p.id}/records`,
+          method: 'GET',
+          data: { limit: 5 }
+        })
+        let records = []
+        if (res && res.success && res.data) {
+          if (Array.isArray(res.data.records)) {
+            records = res.data.records
+          } else if (Array.isArray(res.data)) {
+            records = res.data
+          }
+        }
+        const feedingRecords = records.filter(function(r){ return r && (r.type === 'feeding') })
+        var times = feedingRecords.map(function(r){
+          const raw = (r.data && r.data.feeding_time) || r.time || r.created_at || ''
+          return app.parseIOSDate ? app.parseIOSDate(raw) || null : (function(){
+            return (function(ts){ return (ts ? (new Date(ts)) : null) }) (raw)
+          })()
+        }).filter(function(d){ return !!d })
+        // 取最近一次
+        times.sort(function(a, b){ return b.getTime() - a.getTime() })
+        const last = times.length > 0 ? times[0] : null
+        const text = this.computeLastFeedingText(last)
+        const idx = (this.data.parrots || []).findIndex(function(item){ return item.id === p.id })
+        if (idx >= 0) {
+          const key = `parrots[${idx}].last_feed`
+          const setter = {}
+          setter[key] = text
+          this.setData(setter)
+        }
+      } catch (e) {
+        // 请求失败则保持原样或标记暂无
+        const idx = (this.data.parrots || []).findIndex(function(item){ return item.id === p.id })
+        if (idx >= 0 && !this.data.parrots[idx].last_feed) {
+          const key = `parrots[${idx}].last_feed`
+          const setter = {}
+          setter[key] = '暂无喂食记录'
+          this.setData(setter)
+        }
+      }
+    }
   },
 
   // 加载当前团队信息

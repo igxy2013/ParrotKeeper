@@ -58,6 +58,8 @@ Page({
     showNotifications: false,
     notifications: [],
     unreadCount: 0,
+    // 应用版本号（从全局注入，展示真实小程序版本）
+    appVersion: '未知',
 
     menuItems: [
       { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.png' },
@@ -93,6 +95,11 @@ Page({
     this.loadOverviewStats();
     // 初始化通知中心数据与回调
     this.initNotifications();
+    // 注入真实版本号（优先使用后端/平台提供，其次本地）
+    try {
+      const v = (app.globalData && app.globalData.appVersion) ? app.globalData.appVersion : '未知'
+      this.setData({ appVersion: v })
+    } catch (_) {}
     // 设置客服会话上下文，便于客服识别来源与用户
     try {
       const uid = app.globalData.openid || '';
