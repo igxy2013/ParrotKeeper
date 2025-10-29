@@ -40,15 +40,6 @@ App({
           this.globalData.appVersion = res.version
           console.log('从后端API获取版本号:', res.version)
         }
-        // 动态覆盖 baseUrl（若后端提供）
-        if (res && res.success && res.base_url) {
-          const prev = this.globalData.baseUrl
-          this.globalData.baseUrl = res.base_url
-          try { wx.setStorageSync('baseUrl', res.base_url) } catch(_) {}
-          if (prev !== res.base_url) {
-            console.log('已从后端配置覆盖 baseUrl:', res.base_url)
-          }
-        }
       })
       .catch(err => {
         console.warn('获取后端版本号失败:', err)

@@ -69,14 +69,10 @@ def create_app(config_name=None):
     # 健康检查
     @app.route('/api/health')
     def health_check():
-        # 暴露基础地址，供前端动态获取并覆盖 baseUrl
-        port = app.config.get('SERVER_PORT', 5075)
-        base_url = app.config.get('BASE_URL') or f"http://localhost:{port}"
         return jsonify({
             'success': True,
             'message': '服务正常',
-            'version': app.config.get('APP_VERSION', 'unknown'),
-            'base_url': base_url
+            'version': app.config.get('APP_VERSION', 'unknown')
         })
     
     # 静态文件服务
@@ -208,8 +204,5 @@ if __name__ == '__main__':
     
     # 使用Flask开发服务器进行测试
     print("启动开发服务器...")
-    # 从环境变量或配置读取主机与端口
-    host = os.environ.get('SERVER_HOST') or app.config.get('SERVER_HOST') or '0.0.0.0'
-    port = int(os.environ.get('SERVER_PORT') or app.config.get('SERVER_PORT') or 5075)
-    print(f"服务器地址: http://{host}:{port}")
-    app.run(host=host, port=port, debug=True)
+    print("服务器地址: http://0.0.0.0:5075")
+    app.run(host='0.0.0.0', port=5075, debug=True)
