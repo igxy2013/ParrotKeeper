@@ -5,6 +5,7 @@ Page({
     canLogin: true,
     username: '',
     password: '',
+    showPassword: false,
     selectedMode: 'personal' // 默认选择个人模式
   },
 
@@ -142,5 +143,10 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  // 切换密码显隐
+  togglePasswordVisibility() {
+    this.setData({ showPassword: !this.data.showPassword })
   }
 })

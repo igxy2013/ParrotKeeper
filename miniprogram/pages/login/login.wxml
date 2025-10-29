@@ -1,5 +1,6 @@
 <view class="container">
   <view class="login-box">
+    <image class="logo" src="/images/logo.png" mode="widthFix"/>
     <view class="title">鹦鹉管家AI</view>
     <view class="subtitle">请登录以继续使用</view>
     
@@ -7,15 +8,17 @@
     <view class="mode-selection">
       <view class="mode-title">选择使用模式</view>
       <view class="mode-options">
-        <view class="mode-option {{selectedMode === 'personal' ? 'active' : ''}}" bindtap="selectMode" data-mode="personal">
-          <view class="mode-icon">👤</view>
+        <view class="mode-option mode-personal {{selectedMode === 'personal' ? 'active' : ''}}" bindtap="selectMode" data-mode="personal">
+          <image class="mode-icon-img" src="/images/remix/user-line.png" mode="widthFix"/>
           <view class="mode-name">个人模式</view>
           <view class="mode-desc">管理个人鹦鹉数据</view>
+          <image wx:if="{{selectedMode === 'personal'}}" class="selected-badge" src="/images/remix/checkbox-circle-fill-white.png" mode="widthFix"/>
         </view>
-        <view class="mode-option {{selectedMode === 'team' ? 'active' : ''}}" bindtap="selectMode" data-mode="team">
-          <view class="mode-icon">👥</view>
+        <view class="mode-option mode-team {{selectedMode === 'team' ? 'active' : ''}}" bindtap="selectMode" data-mode="team">
+          <image class="mode-icon-img" src="/images/remix/customer-service-2-line.png" mode="widthFix"/>
           <view class="mode-name">团队模式</view>
           <view class="mode-desc">查看团队管理员数据</view>
+          <image wx:if="{{selectedMode === 'team'}}" class="selected-badge" src="/images/remix/checkbox-circle-fill-white.png" mode="widthFix"/>
         </view>
       </view>
     </view>
@@ -23,29 +26,35 @@
     <!-- 账号登录表单 -->
     <view class="form-section">
       <view class="input-group">
+        <image class="input-icon-img" src="/images/remix/user-fill.png" mode="widthFix"/>
         <input 
-          class="login-input" 
+          class="login-input input-with-icon center-text" 
           type="text" 
           placeholder="请输入用户名" 
           value="{{username}}" 
           bindinput="onUsernameInput"
+          placeholder-class="placeholder-center"
+          style="text-align:center"
           maxlength="20"
         />
       </view>
       
-      <view class="input-group">
+      <view class="input-group password-group">
+        <image class="input-icon-img" src="/images/remix/lock-fill.png" mode="widthFix"/>
         <input 
-          class="login-input" 
-          type="password" 
+          class="login-input input-with-icon input-with-right-icon" 
+          type="text" 
+          password="{{!showPassword}}"
           placeholder="请输入密码" 
           value="{{password}}" 
           bindinput="onPasswordInput"
           maxlength="20"
         />
+        <image class="password-toggle" src="{{showPassword ? '/images/remix/eye-fill.png' : '/images/remix/eye-off-fill.png'}}" mode="widthFix" catchtap="togglePasswordVisibility"/>
       </view>
       
       <button class="login-btn account-btn" bindtap="onAccountLogin" disabled="{{!canLogin}}">
-        账号登录
+        <view class="btn-content"><image class="btn-icon-img" src="/images/remix/user-line-white.png" mode="widthFix"/> <text>账号登录</text></view>
       </button>
       
       <view class="register-link" bindtap="onRegister">
@@ -60,7 +69,7 @@
     </view>
     
     <button class="login-btn wechat-btn" bindtap="onWechatLogin" disabled="{{!canLogin}}">
-      微信快速登录
+      <view class="btn-content"><image class="btn-icon-img" src="/images/remix/wechat-line-white.png" mode="widthFix"/> <text>微信快速登录</text></view>
     </button>
   </view>
 </view>

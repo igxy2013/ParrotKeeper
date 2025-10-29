@@ -224,7 +224,8 @@ Page({
         return url ? { idx, url } : null;
       }).filter(Boolean);
 
-      const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : g.parrot_avatar;
+      // 单头像需为 URL 字符串（WXML 中直接用于 image.src）
+      const firstAvatarUrl = parrot_avatars.length ? parrot_avatars[0].url : g.parrot_avatar;
       return {
         // 用 key 作为渲染唯一键，单条操作使用首个原始记录ID
         key: g.key,
@@ -239,7 +240,7 @@ Page({
         parrot_names: g.parrot_names,
         parrot_names_display: display,
         parrot_count: g.parrot_ids.length,
-        parrot_avatar: firstAvatar,
+        parrot_avatar: firstAvatarUrl,
         food_types: Object.values(g.food_types_map).map(it => ({
           id: it.id,
           name: it.name,

@@ -50,15 +50,15 @@
   padding: 20px 15px;
   border: 2px solid #e1e5e9;
   border-radius: 15px;
-  background: #f8f9fa;
+  background: transparent;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .mode-option.active {
-  border-color: #667eea;
-  background: #f0f3ff;
+  transform: translateY(-2px);
 }
 
 .mode-icon {
@@ -77,6 +77,28 @@
   font-size: 12px;
   color: #666;
   line-height: 1.3;
+}
+
+/* 模式卡片背景增强 */
+.mode-option.mode-personal {
+  background: transparent;
+  border-color: #e1e5e9;
+}
+.mode-option.mode-team {
+  background: transparent;
+  border-color: #e1e5e9;
+}
+.mode-option.mode-personal.active .mode-name,
+.mode-option.mode-team.active .mode-name {
+  color: #ffffff;
+}
+.mode-option.mode-personal.active .mode-desc,
+.mode-option.mode-team.active .mode-desc {
+  color: rgba(255, 255, 255, 0.9);
+}
+.mode-option.mode-personal.active .mode-icon-img,
+.mode-option.mode-team.active .mode-icon-img {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)) brightness(0) invert(1);
 }
 
 /* 表单区域 */
@@ -101,13 +123,27 @@
 }
 
 .login-input:focus {
-  border-color: #667eea;
+  border-color: #07c160;
   background: white;
   outline: none;
 }
 
 .login-input::placeholder {
   color: #999;
+}
+
+/* 用户名输入居中 */
+.login-input.center-text {
+  text-align: center;
+  padding-right: 48px; /* 与左侧图标对称，实现视觉居中 */
+}
+.login-input.center-text::placeholder {
+  text-align: center;
+}
+
+/* WeChat input 的占位符类，保证居中 */
+.placeholder-center {
+  text-align: center;
 }
 
 .login-btn {
@@ -119,15 +155,19 @@
   border: none;
   font-weight: 500;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: normal;
 }
 
 .account-btn {
-  background: #667eea;
+  background: #07c160;
   color: white;
 }
 
 .account-btn:hover {
-  background: #5a6fd8;
+  background: #07c160;
 }
 
 .wechat-btn {
@@ -145,7 +185,7 @@
 }
 
 .register-link {
-  color: #667eea;
+  color: #07c160;
   font-size: 14px;
   margin-top: 10px;
   cursor: pointer;
@@ -153,7 +193,7 @@
 }
 
 .register-link:hover {
-  color: #5a6fd8;
+  color: #07c160;
   text-decoration: underline;
 }
 
@@ -174,4 +214,83 @@
   margin: 0 15px;
   color: #999;
   font-size: 14px;
+}
+
+/* 现代化增强样式 */
+.logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  margin: 0 auto 12px;
+  display: block;
+}
+
+.mode-icon-img {
+  width: 24px;
+  height: 24px;
+  display: block;
+  margin: 0 auto 8px;
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-icon-img {
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.8;
+}
+
+.input-with-icon {
+  padding-left: 48px;
+}
+
+.password-group .password-toggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  opacity: 0.9;
+  z-index: 2;
+  cursor: pointer;
+}
+/* 为右侧图标在输入框内预留空间 */
+.input-with-right-icon {
+  padding-right: 48px;
+}
+
+.btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-icon-img {
+  width: 20px;
+  height: 20px;
+}
+.mode-option.mode-personal.active {
+  border-color: #07c160;
+  background: linear-gradient(135deg, #06ad56 0%, #07c160 100%);
+  box-shadow: 0 8px 20px rgba(7, 193, 96, 0.25);
+}
+.mode-option.mode-team.active {
+  border-color: #07c160;
+  background: linear-gradient(135deg, #06ad56 0%, #07c160 100%);
+  box-shadow: 0 8px 20px rgba(7, 193, 96, 0.25);
+}
+.selected-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
 }

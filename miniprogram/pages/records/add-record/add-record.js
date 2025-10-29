@@ -75,8 +75,19 @@ const app = getApp()
     submitting: false,
     
     // 其他
-    today: '',
-    recordId: null // 编辑模式下的记录ID
+      today: '',
+      recordId: null // 编辑模式下的记录ID
+    },
+  
+  // 将记录类型映射为中文文案
+  typeToText: function(type) {
+    const map = {
+      feeding: '喂食',
+      cleaning: '清洁',
+      health: '健康',
+      breeding: '繁殖'
+    }
+    return map[type] || ''
   },
 
   onLoad: async function(options) {
@@ -110,29 +121,26 @@ const app = getApp()
     this.initCleaningTypeList()
     
     // 检查是否是编辑模式
+    const incomingType = options.type || this.data.recordType
     if (options.id) {
       this.setData({
         recordId: parseInt(options.id),
         // 编辑模式也需要根据传入的类型设置记录类型
-        recordType: options.type || this.data.recordType
+        recordType: incomingType
       })
-      // 设置编辑模式的页面标题
+      // 设置编辑模式的页面标题（细分到记录类型）
       wx.setNavigationBarTitle({
-        title: '编辑记录'
+        title: `编辑${this.typeToText(incomingType)}记录`
       })
       await this.loadRecordData(options.id)
     } else {
-      // 设置添加模式的页面标题
-      wx.setNavigationBarTitle({
-        title: '添加记录'
+      // 添加模式，根据传入类型设置标题
+      this.setData({
+        recordType: incomingType
       })
-      
-      // 检查是否指定了记录类型（仅在添加模式下）
-      if (options.type) {
-        this.setData({
-          recordType: options.type
-        })
-      }
+      wx.setNavigationBarTitle({
+        title: `添加${this.typeToText(incomingType)}记录`
+      })
     }
   },
 

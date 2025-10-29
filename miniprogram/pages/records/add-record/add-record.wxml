@@ -1,7 +1,7 @@
 <!--pages/records/add-record/add-record.wxml-->
 <view class="page-container">
   <!-- 使用项目通用顶部导航组件 -->
-  <app-header title="添加记录" subtitle="记录鹦鹉的日常护理" showBack="{{true}}" theme="blue">
+  <app-header title="{{(recordId ? '编辑' : '添加') + (recordType === 'feeding' ? '喂食' : recordType === 'cleaning' ? '清洁' : recordType === 'health' ? '健康' : recordType === 'breeding' ? '繁殖' : '') + '记录'}}" subtitle="记录鹦鹉的日常护理" showBack="{{true}}" theme="blue">
   </app-header>
 
   <view class="form-content">

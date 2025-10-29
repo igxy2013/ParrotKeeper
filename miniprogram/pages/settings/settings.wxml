@@ -188,7 +188,10 @@
         </view>
         <view class="setting-arrow">></view>
       </view>
-    </view>
+  </view>
+
+    <!-- 通知开启时，额外安全留白，防止底部导航遮挡底部按钮 -->
+    <view wx:if="{{notificationsEnabled}}" class="safe-bottom-spacer"></view>
 
   </view>
 </view>

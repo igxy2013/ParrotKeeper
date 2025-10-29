@@ -246,8 +246,24 @@ Page({
 
   // 编辑记录
   editRecord(e) {
-    const { id } = e.currentTarget.dataset;
-    const url = `/pages/records/add-record/add-record?mode=edit&type=cleaning&id=${encodeURIComponent(id)}`;
+    const { id, ids, parrotIds, cleaningTypeIds } = e.currentTarget.dataset;
+    const parts = [];
+    const joinValue = (v) => Array.isArray(v) ? v.join(',') : String(v);
+    parts.push('mode=edit');
+    parts.push('type=cleaning');
+    if (id !== undefined && id !== null && String(id).length) {
+      parts.push('id=' + encodeURIComponent(String(id)));
+    }
+    if (ids !== undefined && ids !== null && String(joinValue(ids)).length) {
+      parts.push('record_ids=' + encodeURIComponent(joinValue(ids)));
+    }
+    if (parrotIds !== undefined && parrotIds !== null && String(joinValue(parrotIds)).length) {
+      parts.push('parrot_ids=' + encodeURIComponent(joinValue(parrotIds)));
+    }
+    if (cleaningTypeIds !== undefined && cleaningTypeIds !== null && String(joinValue(cleaningTypeIds)).length) {
+      parts.push('cleaning_type_ids=' + encodeURIComponent(joinValue(cleaningTypeIds)));
+    }
+    const url = `/pages/records/add-record/add-record?${parts.join('&')}`;
     wx.navigateTo({ url });
   },
 
