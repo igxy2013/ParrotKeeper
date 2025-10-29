@@ -98,12 +98,27 @@ Page({
         const list = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
         const mapped = mappedBase.map(r => {
           const fromRecord = r.parrot && (r.parrot.photo_url || r.parrot.avatar_url)
-          let avatar = fromRecord || null
+          let avatar = null
+          if (fromRecord) {
+            avatar = app.resolveUploadUrl(fromRecord)
+          }
           if (!avatar) {
             const pid = r.parrot_id
             const pname = r.parrot_name
             const p = list.find(x => (pid && x.id === pid) || (pname && x.name === pname))
-            avatar = p ? (p.photo_url || p.avatar_url) : null
+            if (p) {
+              const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
+              const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
+              avatar = resolvedPhoto || resolvedAvatar
+              if (!avatar) {
+                const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+                avatar = app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
+              }
+            }
+          }
+          if (!avatar) {
+            // 最终兜底彩色头像
+            avatar = app.getDefaultAvatarForParrot({ name: r.parrot_name }) || '/images/parrot-avatar-green.svg'
           }
           return {
             ...r,

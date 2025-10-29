@@ -149,12 +149,43 @@ App({
       }
       return str
     }
-    // 兼容历史路径：去掉前导的 /uploads/images 或 /uploads 或 /images
+    // 保留本地静态资源：以 /images/ 开头的路径为小程序内置资源，直接返回
+    if (/^\/?images\//.test(str)) {
+      return str.startsWith('/') ? str : '/' + str
+    }
+    // 兼容后端上传路径：去掉前导的 /uploads/images 或 /uploads
     const normalized = str
       .replace(/^\/?uploads\/?images\/?/, '')
       .replace(/^\/?uploads\/?/, '')
-      .replace(/^\/?images\/?/, '')
     return this.globalData.baseUrl + '/uploads/' + normalized
+  },
+
+  // 基于性别/品种生成本地默认彩色头像（稳定且无需网络）
+  getDefaultAvatarForParrot(parrot) {
+    try {
+      const paletteAll = ['green', 'blue', 'red', 'yellow', 'purple', 'orange']
+      const warm = ['red', 'yellow', 'orange', 'purple']
+      const cool = ['blue', 'green']
+      const gender = (parrot && parrot.gender) || 'unknown'
+      const speciesName = (parrot && (parrot.species_name || (parrot.species && parrot.species.name) || parrot.name || '')) || ''
+      // 计算稳定索引：基于品种/名称字符串哈希
+      let hash = 0
+      for (let i = 0; i < speciesName.length; i++) {
+        hash = (hash + speciesName.charCodeAt(i)) % 9973
+      }
+      if (gender === 'male') {
+        const idx = hash % cool.length
+        return `/images/parrot-avatar-${cool[idx]}.svg`
+      } else if (gender === 'female') {
+        const idx = hash % warm.length
+        return `/images/parrot-avatar-${warm[idx]}.svg`
+      } else {
+        const idx = hash % paletteAll.length
+        return `/images/parrot-avatar-${paletteAll[idx]}.svg`
+      }
+    } catch (_) {
+      return '/images/parrot-avatar-green.svg'
+    }
   },
 
   // 微信登录

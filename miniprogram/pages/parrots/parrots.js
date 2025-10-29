@@ -206,14 +206,22 @@ Page({
         console.log('获取到的鹦鹉数据:', parrots);
         console.log('数据数量:', parrots.length);
         
-        const newParrots = parrots.map(p => ({
-          ...p,
-          weight: p.weight ? parseFloat(p.weight) : null,
-          acquisition_date_formatted: app.formatDate(p.acquisition_date),
-          // 统一规范化图片URL，避免相对路径导致无法展示
-          photo_url: app.resolveUploadUrl(p.photo_url),
-          avatar_url: app.resolveUploadUrl(p.avatar_url)
-        }))
+        const newParrots = parrots.map(p => {
+          const speciesName = p.species && p.species.name ? p.species.name : (p.species_name || '')
+          const photoUrl = app.resolveUploadUrl(p.photo_url)
+          const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
+            gender: p.gender,
+            species_name: speciesName,
+            name: p.name
+          })
+          return {
+            ...p,
+            weight: p.weight ? parseFloat(p.weight) : null,
+            acquisition_date_formatted: app.formatDate(p.acquisition_date),
+            photo_url: photoUrl,
+            avatar_url: avatarUrl
+          }
+        })
         
         console.log('处理后的鹦鹉数据:', newParrots);
         
@@ -441,7 +449,13 @@ Page({
     const id = e.currentTarget.dataset.id;
     const parrots = this.data.parrots.map(parrot => {
       if (parrot.id === id) {
-        return { ...parrot, photo_url: '/images/default-parrot.png' };
+        const speciesName = (parrot.species && parrot.species.name) ? parrot.species.name : (parrot.species_name || '')
+        const fallbackAvatar = app.getDefaultAvatarForParrot({
+          gender: parrot.gender,
+          species_name: speciesName,
+          name: parrot.name
+        })
+        return { ...parrot, photo_url: '', avatar_url: fallbackAvatar };
       }
       return parrot;
     });

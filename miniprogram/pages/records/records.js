@@ -224,7 +224,19 @@ Page({
           }
           const pid = r.parrot_id || (r.parrot && r.parrot.id)
           const p = r.parrot || allParrots.find(x => (pid && x.id === pid) || (r.parrot_name && x.name === r.parrot_name))
-          const avatar = p ? (p.photo_url || p.avatar_url) : null
+          let avatar = null
+          if (p) {
+            const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
+            const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
+            avatar = resolvedPhoto || resolvedAvatar
+            if (!avatar) {
+              const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+              avatar = app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
+            }
+          } else {
+            // 未找到鹦鹉对象时，以名称兜底彩色头像
+            avatar = app.getDefaultAvatarForParrot({ name: r.parrot_name })
+          }
           return {
             ...formatted,
             parrot_avatar: avatar,

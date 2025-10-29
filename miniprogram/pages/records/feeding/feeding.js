@@ -217,15 +217,35 @@ Page({
       // 改为对象数组以提供唯一 wx:key，避免重复警告
       const parrot_avatars = (g.parrot_ids || []).map((pid, idx) => {
         const fromGroup = g.parrot_avatar_map && g.parrot_avatar_map[pid];
-        const url = fromGroup ? fromGroup : (function(){
+        let url = fromGroup ? fromGroup : (function(){
           const p = allParrots.find(x => x.id === pid);
-          return p ? (p.photo_url || p.avatar_url) : null;
+          if (!p) return null;
+          const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : '';
+          const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : '';
+          return resolvedPhoto || resolvedAvatar || (function(){
+            const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '');
+            return app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name });
+          })();
         })();
-        return url ? { idx, url } : null;
+        if (!url) {
+          // 仍找不到时，兜底为绿色头像
+          url = '/images/parrot-avatar-green.svg'
+        }
+        // 统一解析一次，避免相对路径问题
+        const finalUrl = app.resolveUploadUrl(url)
+        return { idx, url: finalUrl };
       }).filter(Boolean);
 
       // 单头像需为 URL 字符串（WXML 中直接用于 image.src）
-      const firstAvatarUrl = parrot_avatars.length ? parrot_avatars[0].url : g.parrot_avatar;
+      let firstAvatarUrl = parrot_avatars.length ? parrot_avatars[0].url : (function(){
+        if (g.parrot_avatar) {
+          const r = app.resolveUploadUrl(g.parrot_avatar)
+          return r || '/images/parrot-avatar-green.svg'
+        }
+        // 如果组头像为空，依据首个鹦鹉名称生成彩色头像
+        const firstName = (g.parrot_names && g.parrot_names[0]) || ''
+        return firstName ? app.getDefaultAvatarForParrot({ name: firstName }) : '/images/parrot-avatar-green.svg'
+      })();
       return {
         // 用 key 作为渲染唯一键，单条操作使用首个原始记录ID
         key: g.key,

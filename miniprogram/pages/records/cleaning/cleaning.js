@@ -149,10 +149,26 @@ Page({
         }
         // 收集头像
         const pid = record.parrot.id
-        let pavatar = record.parrot.photo_url || record.parrot.avatar_url
+        let pavatar = (function(){
+          const resolvedPhoto = record.parrot.photo_url ? app.resolveUploadUrl(record.parrot.photo_url) : ''
+          const resolvedAvatar = record.parrot.avatar_url ? app.resolveUploadUrl(record.parrot.avatar_url) : ''
+          return resolvedPhoto || resolvedAvatar
+        })()
         if (!pavatar && pid) {
           const p = allParrots.find(x => x.id === pid || (record.parrot.name && x.name === record.parrot.name))
-          pavatar = p ? (p.photo_url || p.avatar_url) : null
+          if (p) {
+            const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
+            const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
+            pavatar = resolvedPhoto || resolvedAvatar
+            if (!pavatar) {
+              const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+              pavatar = app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
+            }
+          }
+        }
+        if (!pavatar) {
+          // 兜底彩色头像
+          pavatar = app.getDefaultAvatarForParrot({ name: record.parrot.name }) || '/images/parrot-avatar-green.svg'
         }
         if (pid && pavatar && !grouped[key].parrot_avatar_map[pid]) {
           grouped[key].parrot_avatar_map[pid] = pavatar
@@ -171,11 +187,19 @@ Page({
     })
     const result = Object.values(grouped).map(item => {
       const parrot_avatars = (item.parrot_ids || []).map(pid => {
-        if (item.parrot_avatar_map[pid]) return item.parrot_avatar_map[pid]
+        if (item.parrot_avatar_map[pid]) return app.resolveUploadUrl(item.parrot_avatar_map[pid])
         const p = allParrots.find(x => x.id === pid)
-        return p ? (p.photo_url || p.avatar_url) : null
+        if (p) {
+          const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
+          const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
+          const url = resolvedPhoto || resolvedAvatar
+          if (url) return url
+          const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+          return app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
+        }
+        return '/images/parrot-avatar-green.svg'
       }).filter(Boolean)
-      const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : null
+      const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : '/images/parrot-avatar-green.svg'
       return {
         ...item,
         parrot_name: item.parrot_names.join('、'),

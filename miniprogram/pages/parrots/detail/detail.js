@@ -127,10 +127,15 @@ Page({
       if (detailRes.success) {
         const rawParrot = detailRes.data
         // 规范化图片URL，兼容后端返回相对路径
+        const speciesName = rawParrot.species && rawParrot.species.name ? rawParrot.species.name : (rawParrot.species_name || '')
         const parrot = {
           ...rawParrot,
           photo_url: app.resolveUploadUrl(rawParrot.photo_url),
-          avatar_url: app.resolveUploadUrl(rawParrot.avatar_url)
+          avatar_url: rawParrot.avatar_url ? app.resolveUploadUrl(rawParrot.avatar_url) : app.getDefaultAvatarForParrot({
+            gender: rawParrot.gender,
+            species_name: speciesName,
+            name: rawParrot.name
+          })
         }
         
         // 计算年龄和入住天数

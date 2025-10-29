@@ -75,7 +75,7 @@
       </view>
       <view class="parrot-card-list">
         <view class="parrot-mini-card" wx:for="{{myParrots}}" wx:key="id" data-id="{{item.id}}" bindtap="openParrotDetail">
-        <image class="parrot-mini-avatar" src="{{item.photo_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
+        <image class="parrot-mini-avatar" src="{{item.photo_url || item.avatar_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
           <text class="parrot-mini-name">{{item.name}}</text>
           <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
           <view class="parrot-mini-badge {{item.health_status}}">{{item.health_text || '健康'}}</view>

@@ -307,18 +307,23 @@ Page({
         data: { page: 1, limit: 3, sort_by: 'created_desc' }
       })
       if (res.success) {
-        const parrots = (res.data.parrots || []).map(p => ({
-          ...p,
-          species_name: p.species && p.species.name ? p.species.name : (p.species_name || ''),
-          health_text: ({
-            healthy: '健康',
-            sick: '生病',
-            recovering: '康复中',
-            observation: '观察中',
-            excellent: '优秀'
-          })[p.health_status] || '健康',
-          photo_url: p.photo_url || this.data.iconPaths.defaultParrot
-        }))
+        const parrots = (res.data.parrots || []).map(p => {
+          const speciesName = p.species && p.species.name ? p.species.name : (p.species_name || '')
+          const healthTextMap = { healthy: '健康', sick: '生病', recovering: '康复中', observation: '观察中', excellent: '优秀' }
+          const photoUrl = app.resolveUploadUrl(p.photo_url)
+          const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
+            gender: p.gender,
+            species_name: speciesName,
+            name: p.name
+          })
+          return {
+            ...p,
+            species_name: speciesName,
+            health_text: healthTextMap[p.health_status] || '健康',
+            photo_url: photoUrl,
+            avatar_url: avatarUrl
+          }
+        })
         this.setData({ myParrots: parrots.slice(0, 3) })
       }
     } catch (error) {
@@ -714,7 +719,8 @@ Page({
     const id = e.currentTarget.dataset.id
     const parrots = (this.data.myParrots || []).map(p => {
       if (p.id === id) {
-        return { ...p, photo_url: '/images/default-parrot.png' }
+        const fallback = app.getDefaultAvatarForParrot(p)
+        return { ...p, photo_url: '', avatar_url: fallback }
       }
       return p
     })
