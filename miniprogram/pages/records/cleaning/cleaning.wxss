@@ -1,8 +1,8 @@
 /* Cleaning page styles inspired by reference UI */
 .cleaning-page {
   min-height: 100vh;
-  /* 粉色主题背景，与头部一致 */
-  background: linear-gradient(135deg, #fff1f5 0%, #fff7fb 50%, #fdf2f8 100%);
+  /* 蓝色主题背景，与按钮一致 */
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%);
 }
 
 .header {
@@ -14,7 +14,7 @@
   justify-content: space-between;
   padding: 24rpx 24rpx 24rpx 24rpx;
   padding-top: 96rpx;
-  background: linear-gradient(90deg, #34d399, #2dd4bf, #22d3ee);
+  background: linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8);
   box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.15);
 }
 .header-left { display: flex; align-items: center; }
@@ -38,12 +38,21 @@
 }
 .add-icon { color: #fff; font-size: 36rpx; }
 
+/* 统一 app-header 右侧加号图标尺寸 */
+.header-btn-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 .content { padding: 48rpx 24rpx; box-sizing: border-box; }
 
 .summary-card {
   /* 参考喂食页统计卡片风格：更大圆角、更宽留白、更柔和阴影 */
-  background: linear-gradient(90deg, #f472b6, #ec4899, #db2777);
+  background: linear-gradient(90deg, #5996f8ff, #2563eb, #587fe8ff);
   color: #ffffff;
+  border-radius: 48rpx;
+  padding: 48rpx;
+  box-shadow: 0 28rpx 70rpx -24rpx rgba(0, 0, 0, 0.28);
   margin-bottom: 24rpx;
   width: 100%;
   box-sizing: border-box;
@@ -58,9 +67,9 @@
   justify-content: center;
 }
 .summary-value { 
-  font-size: 48rpx; 
+  font-size: 42rpx; 
   font-weight: 700; 
-  line-height: 1.2; 
+  line-height: 1.25; 
   margin-bottom: 8rpx;
 }
 .summary-label { 
@@ -72,19 +81,81 @@
 .filter-section { margin: 24rpx 0 16rpx; }
 .chip-scroll { white-space: nowrap; }
 .chip { display: inline-flex; align-items: center; padding: 12rpx 24rpx; margin-right: 12rpx; border-radius: 9999rpx; background: #f3f4f6; color: #4b5563; font-size: 24rpx; }
-.chip.active { background: #ec4899; color: #fff; box-shadow: 0 4rpx 10rpx rgba(236, 72, 153, 0.35); }
+.chip.active { background: #3b82f6; color: #fff; box-shadow: 0 4rpx 10rpx rgba(59, 130, 246, 0.35); }
 .chip-text { }
 
-.list { margin-top: 24rpx; display: flex; flex-direction: column; gap: 16rpx; }
+.list { margin-top: 24rpx; display: flex; flex-direction: column;}
 .card { display: flex; gap: 24rpx; padding: 24rpx; border-radius: 32rpx; background: rgba(255,255,255,0.96); backdrop-filter: blur(8rpx); border: 1rpx solid rgba(17,24,39,0.06); box-shadow: 0 20rpx 50rpx -24rpx rgba(0,0,0,0.25); }
 .card-left { width: 128rpx; height: 128rpx; border-radius: 50%; overflow: hidden; background: #f1f5f9; box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.06); }
 .avatar { width: 128rpx; height: 128rpx; }
 .card-right { flex: 1; }
-.card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12rpx; }
-.info { display: flex; align-items: center; gap: 12rpx; }
-.name { font-size: 30rpx; font-weight: 700; color: #1f2937; }
-.type-badge { font-size: 24rpx; padding: 8rpx 16rpx; border-radius: 20rpx; background: #fce7f3; color: #ec4899; }
-.time { font-size: 24rpx; color: #64748b; }
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24rpx;
+}
+
+.head-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16rpx;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.time {
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.type-badge { font-size: 24rpx; padding: 8rpx 16rpx; border-radius: 20rpx; background: #dbeafe; color: #3b82f6; }
+
+/* 操作按钮样式 */
+.action-buttons {
+  display: flex;
+  gap: 12rpx;
+}
+
+.action-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+}
+
+.action-icon-img {
+  width: 28rpx;
+  height: 28rpx;
+}
 .card-body { display: flex; flex-direction: column; gap: 8rpx; }
 .detail { display: flex; flex-direction: column; align-items: flex-start; gap: 6rpx; }
 .label { font-size: 24rpx; color: #64748b; }
@@ -94,7 +165,7 @@
 .empty-icon { width: 160rpx; height: 160rpx; border-radius: 80rpx; background: #f1f5f9; display:flex; align-items:center; justify-content:center; margin: 0 auto 24rpx; font-size: 56rpx; color: #94a3b8; }
 .empty-text { color: #64748b; font-size: 28rpx; margin-bottom: 16rpx; }
 .btn.btn-primary { margin-top: 24rpx; }
-.btn-primary { background: #ec4899; color: #ffffff; }
+.btn-primary { background: #3b82f6; color: #ffffff; }
 
 /* 统一头部按钮样式（与其他页面一致） */
 .header-btn {

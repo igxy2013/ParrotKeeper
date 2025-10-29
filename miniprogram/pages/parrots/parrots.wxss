@@ -90,6 +90,12 @@
   font-weight: bold;
 }
 
+/* 统一 app-header 右侧加号图标尺寸（我的鹦鹉页） */
+.header-btn-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 /* 图片化的头部按钮图标尺寸 */
 .header-btn-icon-img { width: 36rpx; height: 36rpx; }
 

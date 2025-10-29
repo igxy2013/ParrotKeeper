@@ -93,6 +93,11 @@
   font-size: 32rpx;
 }
 
+.header-btn-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 .btn { border-radius: 9999rpx; }
 .btn-primary { background: #8b5cf6; color: #ffffff; }
 .btn-large { padding: 20rpx 28rpx; font-size: 28rpx; }

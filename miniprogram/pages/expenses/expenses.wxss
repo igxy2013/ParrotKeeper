@@ -612,3 +612,9 @@
   font-size: 28rpx; 
   line-height: 1;
 }
+
+/* 统一 app-header 右侧加号图标尺寸（收支页） */
+.header-btn-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}

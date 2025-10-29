@@ -3,7 +3,7 @@
   <!-- 通用头部组件 -->
   <app-header title="喂食记录" subtitle="记录每次喂食情况" showBack="{{true}}" theme="orange">
     <view slot="actions" class="header-btn" bindtap="showAddForm">
-      <text class="header-btn-icon">+</text>
+      <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
     </view>
   </app-header>
 

@@ -5,7 +5,7 @@
     <view class="header-inner">
       <view class="header-left">
         <view class="back-btn" bindtap="goBack">
-          <text class="back-icon">←</text>
+          <image class="back-icon-img" src="/images/remix/arrow-left-line.png" mode="widthFix" />
         </view>
         <view class="title-block">
           <text class="title">{{parrot.name || '鹦鹉详情'}}</text>

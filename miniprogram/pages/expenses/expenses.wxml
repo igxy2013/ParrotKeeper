@@ -3,7 +3,7 @@
   <app-header title="收支管理" subtitle="记录鹦鹉相关收入支出" showBack="{{true}}" theme="orange">
     <view slot="actions" class="header-actions">
       <view class="header-add-btn" bindtap="onShowAddRecord">
-        <text class="add-icon">＋</text>
+        <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
       </view>
     </view>
   </app-header>

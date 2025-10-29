@@ -53,7 +53,8 @@ Page({
   // 检查登录状态
   checkLoginStatus() {
     const isLogin = app.globalData.isLogin
-    this.setData({ isLogin })
+    const hasOperationPermission = app.hasOperationPermission()
+    this.setData({ isLogin, hasOperationPermission })
     
     if (!isLogin) {
       this.setData({
@@ -233,6 +234,66 @@ Page({
     const record = e.currentTarget.dataset.record
     // 可以导航到详情页面或显示详情弹窗
     console.log('查看记录详情:', record)
+  },
+
+  // 编辑记录
+  editRecord(e) {
+    const { id } = e.currentTarget.dataset;
+    const url = `/pages/records/add-record/add-record?mode=edit&type=breeding&id=${encodeURIComponent(id)}`;
+    wx.navigateTo({ url });
+  },
+
+  // 删除记录
+  deleteRecord(e) {
+    const { id } = e.currentTarget.dataset;
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这条繁殖记录吗？删除后无法恢复。',
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) {
+          this.performDelete(id);
+        }
+      }
+    });
+  },
+
+  // 执行删除操作
+  async performDelete(id) {
+    try {
+      wx.showLoading({ title: '删除中...' });
+      
+      const res = await app.request({
+        url: `/api/records/breeding/${id}`,
+        method: 'DELETE'
+      });
+      
+      wx.hideLoading();
+      
+      if (res.success) {
+        wx.showToast({
+          title: '删除成功',
+          icon: 'success'
+        });
+        
+        // 重新加载数据
+        this.loadBreedingRecords();
+      } else {
+        wx.showToast({
+          title: res.message || '删除失败',
+          icon: 'error'
+        });
+      }
+    } catch (error) {
+      wx.hideLoading();
+      console.error('删除记录失败:', error);
+      wx.showToast({
+        title: '删除失败',
+        icon: 'error'
+      });
+    }
   },
 
   // 格式化日期

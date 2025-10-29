@@ -51,6 +51,12 @@
   font-weight: bold;
 }
 
+/* 图片版返回图标尺寸（与通用头部一致） */
+.back-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 .title-block {
   flex: 1;
   display: flex;

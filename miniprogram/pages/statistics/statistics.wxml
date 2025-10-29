@@ -147,6 +147,7 @@
               <text class="expense-category-name">{{item.category}}</text>
               <view class="expense-amount-wrapper">
                 <text class="expense-amount">¥{{item.amount}}</text>
+                <text class="expense-percent">{{item.percentage}}%</text>
               </view>
             </view>
           </view>

@@ -42,12 +42,12 @@ Page({
 
     // 动态 PNG 图标（失败自动回退为 SVG）
     iconPaths: {
-      headerAddEmerald: '/images/remix/ri-add-fill-emerald.png',
-      searchGray: '/images/remix/ri-search-fill-gray.png',
+      headerAddEmerald: '/images/remix/add-circle-fill.png',
+      searchGray: '/images/remix/ri-search-line-gray.png',
       arrowDownGray: '/images/remix/ri-arrow-down-s-fill-gray.png',
       statusRestaurantOrange: '/images/remix/ri-restaurant-fill-orange.png',
       arrowRightGray: '/images/remix/ri-arrow-right-s-fill-gray.png',
-      addParrotEmerald: '/images/remix/ri-add-fill-emerald.png'
+      addParrotEmerald: '/images/remix/add-circle-fill.png'
     }
   },
 

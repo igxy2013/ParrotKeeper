@@ -1,8 +1,8 @@
 // pages/records/add-record/add-record.js
 const app = getApp()
 
-Page({
-  data: {
+  Page({
+    data: {
     // 记录类型
     recordType: 'feeding',
     
@@ -64,7 +64,9 @@ Page({
     showParrotModal: false,
     showMaleParrotModal: false,
     showFemaleParrotModal: false,
-    showHealthStatusModal: false,
+      showHealthStatusModal: false,
+      // 统一右侧勾选PNG图标路径（占位：待替换为 checkbox-circle-fill）
+      checkIconSrc: '/images/remix/checkbox-circle-fill.png',
     showFeedTypeModal: false,
     showCleaningTypeModal: false,
     
@@ -671,9 +673,46 @@ Page({
     })
   },
   
+  // 使用原生复选框进行清洁类型选择（多选）
+  onCleaningTypeChange: function(e) {
+    const selectedIds = (e.detail.value || []).map(v => String(v))
+    const cleaningTypeList = this.data.cleaningTypeList.map(item => ({
+      ...item,
+      selected: selectedIds.includes(String(item.id))
+    }))
+    const selectedNames = cleaningTypeList
+      .filter(item => item.selected)
+      .map(item => item.name)
+      .join('、')
+    this.setData({
+      cleaningTypeList,
+      selectedCleaningTypes: selectedIds,
+      selectedCleaningTypeNames: selectedNames,
+      'formData.cleaning_types': selectedIds
+    })
+    this.validateForm()
+  },
+  
   // 选择健康状态（单选）
   selectHealthStatus: function(e) {
     const status = e.currentTarget.dataset.status
+    const healthStatusMap = {
+      'healthy': '健康',
+      'sick': '生病',
+      'recovering': '康复中',
+      'observation': '观察中'
+    }
+    this.setData({
+      healthStatusText: healthStatusMap[status] || '健康',
+      'formData.health_status': status,
+      showHealthStatusModal: false
+    })
+    this.validateForm()
+  },
+  
+  // 使用原生单选框进行健康状态选择（单选）
+  onHealthStatusChange: function(e) {
+    const status = e.detail.value || 'healthy'
     const healthStatusMap = {
       'healthy': '健康',
       'sick': '生病',
@@ -698,6 +737,44 @@ Page({
       showMaleParrotModal: false
     })
     this.hideMaleParrotPicker()
+    this.validateForm()
+  },
+
+  // 使用原生复选框进行鹦鹉选择（多选）
+  onParrotChange: function(e) {
+    const selectedIds = (e.detail.value || []).map(v => String(v))
+    const parrotList = this.data.parrotList.map(item => ({
+      ...item,
+      selected: selectedIds.includes(String(item.id))
+    }))
+    const selectedNames = parrotList
+      .filter(item => item.selected)
+      .map(item => item.name)
+      .join('、')
+    this.setData({
+      parrotList,
+      selectedParrots: selectedIds,
+      selectedParrotNames: selectedNames,
+      'formData.parrot_ids': selectedIds
+    })
+    this.validateForm()
+  },
+
+  // 使用原生单选框进行鹦鹉选择（仅健康检查）
+  onParrotRadioChange: function(e) {
+    const selectedId = String(e.detail.value || '')
+    const parrotList = this.data.parrotList.map(item => ({
+      ...item,
+      selected: String(item.id) === selectedId
+    }))
+    const selectedParrot = parrotList.find(item => item.selected)
+    this.setData({
+      parrotList,
+      selectedParrots: selectedId ? [selectedId] : [],
+      selectedParrotNames: selectedParrot ? selectedParrot.name : '',
+      'formData.parrot_ids': selectedId ? [selectedId] : [],
+      showParrotModal: false
+    })
     this.validateForm()
   },
   // 选择雌性鹦鹉（单选）

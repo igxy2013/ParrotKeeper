@@ -2,7 +2,7 @@
 <view class="page-container">
   <app-header title="健康检查记录" subtitle="记录鹦鹉健康状况" showBack="true" theme="purple">
     <view slot="actions" class="header-btn" bindtap="addHealthRecord">
-      <text class="header-btn-icon">+</text>
+      <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
     </view>
   </app-header>
 
@@ -78,8 +78,19 @@
                 <text class="record-weight" wx:if="{{item.weight}}">体重：{{item.weight}} g</text>
               </view>
             </view>
-            <view class="health-status-badge status-{{item.health_status}}">
-              {{item.health_status_text || '健康'}}
+            <view class="header-right">
+              <view class="health-status-badge status-{{item.health_status}}">
+                {{item.health_status_text || '健康'}}
+              </view>
+              <!-- 编辑和删除按钮 -->
+              <view class="action-buttons" wx:if="{{hasOperationPermission}}">
+                <view class="action-btn edit-btn" bindtap="editRecord" data-id="{{item.id}}">
+                  <image src="/images/remix/edit-line-gray.png" class="action-icon-img" mode="aspectFit" />
+                </view>
+                <view class="action-btn delete-btn" bindtap="deleteRecord" data-id="{{item.id}}">
+                  <image src="/images/remix/delete-bin-line-gray.png" class="action-icon-img" mode="aspectFit" />
+                </view>
+              </view>
             </view>
           </view>
           <view class="record-body">

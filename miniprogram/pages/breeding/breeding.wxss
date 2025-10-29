@@ -63,6 +63,12 @@
   font-size: 32rpx;
 }
 
+/* 统一 app-header 右侧加号图标尺寸（繁殖页） */
+.header-btn-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 /* 统计卡片 */
 .stats-section {
   margin-bottom: 32rpx;
@@ -154,6 +160,42 @@
 
 .record-info {
   flex: 1;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16rpx;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.action-icon-img {
+  width: 32rpx;
+  height: 32rpx;
 }
 
 .parrot-pair {
@@ -313,4 +355,3 @@
 }
 
 /* 弹窗样式 */
-

@@ -92,6 +92,11 @@
   font-size: 36rpx;
 }
 
+.header-btn-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 .header-btn.notification::before {
   content: '🔔';
 }

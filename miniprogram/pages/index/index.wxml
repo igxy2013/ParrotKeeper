@@ -95,17 +95,17 @@
           </view>
           <text class="action-label">喂食记录</text>
         </view>
-        <view class="action-item health {{!isLogin ? 'disabled' : ''}}" bindtap="quickHealth">
-          <view class="action-icon-wrapper">
-        <image class="action-icon-img" src="{{iconPaths.actions.quickHealth}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickHealth"/>
-          </view>
-          <text class="action-label">健康检查</text>
-        </view>
         <view class="action-item training {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
           <view class="action-icon-wrapper">
         <image class="action-icon-img" src="{{iconPaths.actions.quickCleaning}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickCleaning"/>
           </view>
           <text class="action-label">清洁记录</text>
+        </view>
+        <view class="action-item health {{!isLogin ? 'disabled' : ''}}" bindtap="quickHealth">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.quickHealth}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickHealth"/>
+          </view>
+          <text class="action-label">健康检查</text>
         </view>
         <view class="action-item add-expense {{!isLogin ? 'disabled' : ''}}" bindtap="quickBreeding">
           <view class="action-icon-wrapper">

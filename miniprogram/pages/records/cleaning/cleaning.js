@@ -244,6 +244,66 @@ Page({
     wx.navigateTo({ url: '/pages/records/add-record/add-record?type=cleaning' })
   },
 
+  // 编辑记录
+  editRecord(e) {
+    const { id } = e.currentTarget.dataset;
+    const url = `/pages/records/add-record/add-record?mode=edit&type=cleaning&id=${encodeURIComponent(id)}`;
+    wx.navigateTo({ url });
+  },
+
+  // 删除记录
+  deleteRecord(e) {
+    const { id } = e.currentTarget.dataset;
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这条清洁记录吗？删除后无法恢复。',
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) {
+          this.performDelete(id);
+        }
+      }
+    });
+  },
+
+  // 执行删除操作
+  async performDelete(id) {
+    try {
+      wx.showLoading({ title: '删除中...' });
+      
+      const res = await app.request({
+        url: `/api/records/cleaning/${id}`,
+        method: 'DELETE'
+      });
+      
+      wx.hideLoading();
+      
+      if (res.success) {
+        wx.showToast({
+          title: '删除成功',
+          icon: 'success'
+        });
+        
+        // 重新加载数据
+        this.loadCleaningRecords();
+      } else {
+        wx.showToast({
+          title: res.message || '删除失败',
+          icon: 'error'
+        });
+      }
+    } catch (error) {
+      wx.hideLoading();
+      console.error('删除记录失败:', error);
+      wx.showToast({
+        title: '删除失败',
+        icon: 'error'
+      });
+    }
+  },
+
   goBack() {
     const pages = getCurrentPages()
     if (pages && pages.length > 1) {

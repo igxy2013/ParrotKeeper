@@ -59,6 +59,12 @@
   color: #ffffff;
 }
 
+/* 统一返回图标图片尺寸 */
+.ah-back-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 .ah-app-info {
   display: flex;
   flex-direction: column;

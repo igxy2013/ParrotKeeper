@@ -637,7 +637,7 @@
   background: linear-gradient(135deg, #FFF4DF, #FEE8BF);
 }
 .action-item.health {
-  background: linear-gradient(135deg, #E9FFF4, #D7F8E7);
+  background: linear-gradient(135deg, #faf5ff, #f3e8ff);
 }
 .action-item.training {
   background: linear-gradient(135deg, #E6F6FF, #D6EEFF);
@@ -660,7 +660,7 @@
 }
 .action-item.cleaning,
 .action-item.guide {
-  background: linear-gradient(135deg, #E9FFF4, #D7F8E7);
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
 }
 
 /* 活跃态不改背景，仅缩放与阴影（遵循APP） */

@@ -2,7 +2,7 @@
 <view class="page-container">
   <app-header title="养殖记录" subtitle="专业鹦鹉护理助手">
     <view slot="actions" wx:if="{{isLogin && hasOperationPermission}}" class="header-btn" bindtap="addRecord">
-      <text class="header-btn-icon">+</text>
+      <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
     </view>
   </app-header>
   <view class="page-content">

@@ -71,7 +71,7 @@ Page({
       // 快捷操作
       actions: {
         quickFeeding: '/images/remix/ri-restaurant-fill-orange.png',
-        quickHealth: '/images/remix/ri-heart-fill-emerald.png',
+        quickHealth: '/images/remix/ri-heart-fill-purple.png',
         quickCleaning: '/images/remix/ri-calendar-fill-blue.png',
         quickBreeding: '/images/remix/ri-book-fill-green.png',
         addParrot: '/images/remix/ri-add-fill-emerald.png',

@@ -111,6 +111,11 @@
   font-size: 32rpx;
 }
 
+.header-btn-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 .px-4 {
   padding-left: 32rpx;
   padding-right: 32rpx;
