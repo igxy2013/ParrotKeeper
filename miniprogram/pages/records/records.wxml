@@ -358,6 +358,8 @@
           <view class="option-icon">⚡</view>
           <view class="option-content">
             <text class="option-title">快速记录</text>
+
+
             <text class="option-desc">使用默认设置快速添加记录</text>
           </view>
         </view>

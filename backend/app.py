@@ -67,7 +67,16 @@ def create_app(config_name=None):
     @app.errorhandler(413)
     def too_large(error):
         return jsonify({'success': False, 'message': '文件太大'}), 413
-    
+
+    # 启用跨源隔离以满足 SharedArrayBuffer 要求（Chrome M92+）
+    @app.after_request
+    def add_cross_origin_isolation_headers(response):
+        # 页面隔离：需要同源窗口，避免与其他源共享进程
+        response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+        # 资源嵌入策略：仅允许带有 CORP 或 CORS 的跨源资源
+        response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+        return response
+
     # 健康检查
     @app.route('/api/health')
     def health_check():
@@ -80,8 +89,12 @@ def create_app(config_name=None):
     # 静态文件服务
     @app.route('/uploads/<path:filename>')
     def uploaded_file(filename):
-        from flask import send_from_directory
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+        from flask import send_from_directory, make_response
+        resp = make_response(send_from_directory(app.config['UPLOAD_FOLDER'], filename))
+        # 允许其他站点在 COEP 环境中加载本服务的图片资源（如需）。
+        # 如果只在同域内使用，可改为 'same-origin'。
+        resp.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
+        return resp
     
     # 添加调试中间件
     @app.before_request
