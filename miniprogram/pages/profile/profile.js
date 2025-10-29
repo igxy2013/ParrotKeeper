@@ -222,6 +222,9 @@ Page({
     const app = getApp();
     const notificationManager = app.globalData.notificationManager;
 
+    // 生成当天的定时提醒（到点后生成一次，避免重复）
+    try { notificationManager.generateDailyRemindersForToday(); } catch (_) {}
+
     // 从本地存储加载通知与未读数
     const notifications = notificationManager.getLocalNotifications();
     const unreadCount = notificationManager.getUnreadCount();

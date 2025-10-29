@@ -214,11 +214,14 @@ Page({
         display = `${names.slice(0,2).join('、')} 等${names.length}只`;
       }
       // 生成头像数组（按 parrot_ids 顺序），优先使用记录内头像，其次从全量鹦鹉列表补齐
-      const parrot_avatars = (g.parrot_ids || []).map(pid => {
+      // 改为对象数组以提供唯一 wx:key，避免重复警告
+      const parrot_avatars = (g.parrot_ids || []).map((pid, idx) => {
         const fromGroup = g.parrot_avatar_map && g.parrot_avatar_map[pid];
-        if (fromGroup) return fromGroup;
-        const p = allParrots.find(x => x.id === pid);
-        return p ? (p.photo_url || p.avatar_url) : null;
+        const url = fromGroup ? fromGroup : (function(){
+          const p = allParrots.find(x => x.id === pid);
+          return p ? (p.photo_url || p.avatar_url) : null;
+        })();
+        return url ? { idx, url } : null;
       }).filter(Boolean);
 
       const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : g.parrot_avatar;
@@ -249,10 +252,10 @@ Page({
       };
     });
 
-    // 按时间倒序
+    // 按时间倒序（使用 iOS 安全解析）
     result.sort((a, b) => {
-      const ta = new Date(a.feeding_time).getTime();
-      const tb = new Date(b.feeding_time).getTime();
+      const ta = (this.parseIOSDate(a.feeding_time) || new Date(0)).getTime();
+      const tb = (this.parseIOSDate(b.feeding_time) || new Date(0)).getTime();
       return tb - ta;
     });
     return result;
@@ -267,7 +270,7 @@ Page({
     // 根据时间筛选
     if (this.data.activeFilter !== '全部') {
       filtered = filtered.filter(record => {
-        const recordDate = new Date(record.feeding_time);
+        const recordDate = this.parseIOSDate(record.feeding_time) || new Date(0);
         
         switch (this.data.activeFilter) {
           case '今天':
@@ -450,7 +453,7 @@ Page({
 
   // 格式化日期
   formatDate(dateTime) {
-    const date = new Date(dateTime);
+    const date = this.parseIOSDate(dateTime) || new Date();
     const month = date.getMonth() + 1;
     const day = date.getDate();
     return `${month}月${day}日`;
@@ -458,10 +461,39 @@ Page({
 
   // 格式化时间
   formatTime(dateTime) {
-    const date = new Date(dateTime);
+    const date = this.parseIOSDate(dateTime) || new Date();
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
+  },
+
+  // iOS 安全日期解析（支持常见字符串格式与时间戳）
+  parseIOSDate(dateTime) {
+    try {
+      if (!dateTime) return null;
+      if (dateTime instanceof Date) return dateTime;
+      if (typeof dateTime === 'number') return new Date(dateTime);
+      if (typeof dateTime === 'string') {
+        const s = dateTime.trim();
+        // 1) yyyy-MM-dd HH:mm[:ss]
+        let m = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+        if (m) {
+          return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], m[6] ? +m[6] : 0);
+        }
+        // 2) yyyy/MM/dd[ HH:mm[:ss]]
+        m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+        if (m) {
+          return new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 0, m[5] ? +m[5] : 0, m[6] ? +m[6] : 0);
+        }
+        // 3) ISO 或含时区，替换空格为 T 后尝试
+        const iso = s.includes(' ') ? s.replace(' ', 'T') : s;
+        const d = new Date(iso);
+        if (!isNaN(d.getTime())) return d;
+      }
+    } catch (e) {
+      // 忽略错误并返回 null
+    }
+    return null;
   },
 
   // 编辑记录

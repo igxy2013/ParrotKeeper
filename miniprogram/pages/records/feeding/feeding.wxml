@@ -62,9 +62,9 @@
             <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
               <!-- 合并头像为单个圆形，最多显示3个 -->
               <view class="avatar-cluster">
-                <block wx:for="{{item.parrot_avatars}}" wx:for-index="idx" wx:for-item="avatar" wx:key="*this">
+                <block wx:for="{{item.parrot_avatars}}" wx:for-index="idx" wx:for-item="avatar" wx:key="idx">
                   <view wx:if="{{idx < 3}}" class="cluster-item pos-{{idx}} count-{{item.parrot_avatars.length >= 3 ? 3 : item.parrot_avatars.length}}">
-                    <image src="{{avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+                    <image src="{{avatar.url || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
                   </view>
                 </block>
               </view>

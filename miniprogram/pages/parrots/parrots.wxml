@@ -106,6 +106,16 @@
     </view>
   </view>
 
+  <!-- 添加鹦鹉按钮（位于列表末尾） -->
+  <view class="add-parrot-action" wx:if="{{parrots.length > 0}}">
+    <view class="add-parrot-card">
+      <view class="add-parrot-btn" bindtap="addParrot">
+        <image class="add-parrot-btn-icon-img" src="/images/remix/ri-add-fill-emerald.svg" mode="widthFix"/>
+        <text class="add-parrot-btn-text">添加鹦鹉</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 空状态 -->
   <view class="empty-state-card" wx:if="{{parrots.length === 0 && !loading}}">
     <view class="empty-content">

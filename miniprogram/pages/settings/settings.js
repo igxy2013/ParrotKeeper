@@ -16,6 +16,9 @@ Page({
     cleaningReminder: true,
     medicationReminder: true,
     breedingReminder: true,
+    // 每日提醒时间
+    feedingReminderTime: '08:00',
+    cleaningReminderTime: '18:00',
     // 模板ID配置有效性（用于提示与按钮可用态）
     hasTemplateIds: false
   },
@@ -42,8 +45,13 @@ Page({
         cleaningReminder: notificationSettings.cleaningReminder,
         medicationReminder: notificationSettings.medicationReminder,
         breedingReminder: notificationSettings.breedingReminder,
+        feedingReminderTime: notificationSettings.feedingReminderTime || '08:00',
+        cleaningReminderTime: notificationSettings.cleaningReminderTime || '18:00',
         hasTemplateIds: !!hasValidTemplateIds()
       })
+
+      // 同步后端提醒设置（若已登录）
+      this.syncServerReminderSettings()
     } catch (error) {
       console.error('加载偏好设置失败:', error)
     }
@@ -62,10 +70,28 @@ Page({
         healthReminder: this.data.healthReminder,
         cleaningReminder: this.data.cleaningReminder,
         medicationReminder: this.data.medicationReminder,
-        breedingReminder: this.data.breedingReminder
+        breedingReminder: this.data.breedingReminder,
+        feedingReminderTime: this.data.feedingReminderTime,
+        cleaningReminderTime: this.data.cleaningReminderTime
       }
       
       notificationManager.saveNotificationSettings(notificationSettings)
+
+      // 调用后端保存提醒时间（若已登录）
+      if (app.globalData && app.globalData.openid) {
+        app.request({
+          url: '/api/reminders/settings',
+          method: 'PUT',
+          data: {
+            feedingReminderTime: this.data.feedingReminderTime,
+            cleaningReminderTime: this.data.cleaningReminderTime,
+            feedingReminder: this.data.feedingReminder,
+            cleaningReminder: this.data.cleaningReminder
+          }
+        }).catch(err => {
+          console.warn('更新后端提醒设置失败:', err)
+        })
+      }
     } catch (error) {
       console.error('保存偏好设置失败:', error)
     }
@@ -142,6 +168,54 @@ Page({
   toggleBreedingReminder(e) {
     this.setData({ breedingReminder: e.detail.value })
     this.savePreferences()
+  },
+
+  // 时间选择器变更
+  onFeedingTimeChange(e) {
+    const value = e && e.detail && e.detail.value ? e.detail.value : this.data.feedingReminderTime
+    this.setData({ feedingReminderTime: value })
+    this.savePreferences()
+  },
+
+  onCleaningTimeChange(e) {
+    const value = e && e.detail && e.detail.value ? e.detail.value : this.data.cleaningReminderTime
+    this.setData({ cleaningReminderTime: value })
+    this.savePreferences()
+  },
+
+  // 从后端同步提醒设置（若已登录）
+  syncServerReminderSettings() {
+    const app = getApp()
+    if (!app.globalData || !app.globalData.openid) return
+
+    app.request({ url: '/api/reminders/settings' })
+      .then(res => {
+        if (res && res.success && res.data) {
+          const data = res.data
+          const updated = {}
+          if (data.feedingReminderTime) updated.feedingReminderTime = data.feedingReminderTime
+          if (data.cleaningReminderTime) updated.cleaningReminderTime = data.cleaningReminderTime
+          if (typeof data.feedingReminder !== 'undefined') updated.feedingReminder = !!data.feedingReminder
+          if (typeof data.cleaningReminder !== 'undefined') updated.cleaningReminder = !!data.cleaningReminder
+
+          if (Object.keys(updated).length > 0) {
+            this.setData(updated)
+            // 同步到本地通知设置
+            const notificationManager = app.globalData.notificationManager
+            const currentSettings = notificationManager.getNotificationSettings()
+            notificationManager.saveNotificationSettings({
+              ...currentSettings,
+              feedingReminderTime: updated.feedingReminderTime || this.data.feedingReminderTime,
+              cleaningReminderTime: updated.cleaningReminderTime || this.data.cleaningReminderTime,
+              feedingReminder: typeof updated.feedingReminder !== 'undefined' ? updated.feedingReminder : this.data.feedingReminder,
+              cleaningReminder: typeof updated.cleaningReminder !== 'undefined' ? updated.cleaningReminder : this.data.cleaningReminder
+            })
+          }
+        }
+      })
+      .catch(err => {
+        console.warn('同步后端提醒设置失败:', err)
+      })
   },
 
   // 重新申请订阅权限（在已开启时可手动触发）

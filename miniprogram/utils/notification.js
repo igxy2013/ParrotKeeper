@@ -19,7 +19,10 @@ class NotificationManager {
       healthReminder: true,
       cleaningReminder: true,
       medicationReminder: true,
-      breedingReminder: true
+      breedingReminder: true,
+      // 每日提醒时间（本地展示用）
+      feedingReminderTime: '08:00',
+      cleaningReminderTime: '18:00'
     }
   }
 
@@ -276,6 +279,72 @@ class NotificationManager {
     return `${hours}:${minutes}`
   }
 
+  // 将 HH:mm 转换为分钟数
+  parseTimeToMinutes(hhmm) {
+    try {
+      if (!hhmm || typeof hhmm !== 'string') return 0
+      const m = hhmm.trim().match(/^(\d{1,2}):(\d{2})$/)
+      if (!m) return 0
+      const h = Math.min(23, Math.max(0, parseInt(m[1], 10)))
+      const mi = Math.min(59, Math.max(0, parseInt(m[2], 10)))
+      return h * 60 + mi
+    } catch (_) { return 0 }
+  }
+
+  // 生成当天的每日提醒（喂食/换水），避免重复
+  generateDailyRemindersForToday() {
+    try {
+      const settings = this.getNotificationSettings()
+      if (!settings.enabled) return
+
+      const now = new Date()
+      const todayKey = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}`
+      const STATE_KEY = 'daily_reminders_state'
+      const state = wx.getStorageSync(STATE_KEY) || {}
+      const currentMinutes = now.getHours() * 60 + now.getMinutes()
+
+      const feedingTimeStr = settings.feedingReminderTime || '08:00'
+      const cleaningTimeStr = settings.cleaningReminderTime || '18:00'
+      const feedingMinutes = this.parseTimeToMinutes(feedingTimeStr)
+      const cleaningMinutes = this.parseTimeToMinutes(cleaningTimeStr)
+
+      // 当天状态初始化
+      if (state.date !== todayKey) {
+        state.date = todayKey
+        state.feeding = false
+        state.cleaning = false
+      }
+
+      // 到点且未生成：喂食提醒
+      if (settings.feedingReminder && !state.feeding && currentMinutes >= feedingMinutes) {
+        this.addLocalNotification(
+          'system',
+          '喂食提醒',
+          '今天的喂食时间到了，请及时喂食',
+          '',
+          feedingTimeStr
+        )
+        state.feeding = true
+      }
+
+      // 到点且未生成：换水提醒
+      if (settings.cleaningReminder && !state.cleaning && currentMinutes >= cleaningMinutes) {
+        this.addLocalNotification(
+          'system',
+          '换水提醒',
+          '今天的换水时间到了，请及时更换饮用水',
+          '',
+          cleaningTimeStr
+        )
+        state.cleaning = true
+      }
+
+      wx.setStorageSync(STATE_KEY, state)
+    } catch (e) {
+      console.warn('生成每日提醒失败:', e)
+    }
+  }
+
   // 添加喂食通知
   addFeedingNotification(parrotName, feedingTime) {
     const settings = this.getNotificationSettings()
@@ -401,13 +470,54 @@ class NotificationManager {
     }
   }
 
+  // iOS 安全日期解析（支持多种常见格式）
+  parseIOSDate(timeInput) {
+    try {
+      if (!timeInput) return null
+      if (timeInput instanceof Date) return timeInput
+      if (typeof timeInput === 'number') return new Date(timeInput)
+      if (typeof timeInput === 'string') {
+        const s = timeInput.trim()
+        // 1) 处理 "yyyy-MM-dd HH:mm:ss" 或 "yyyy-MM-dd HH:mm"
+        let m = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/)
+        if (m) {
+          return new Date(
+            +m[1],
+            +m[2] - 1,
+            +m[3],
+            +m[4],
+            +m[5],
+            m[6] ? +m[6] : 0
+          )
+        }
+        // 2) 处理 "yyyy/MM/dd" 或 "yyyy/MM/dd HH:mm:ss"
+        m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/)
+        if (m) {
+          return new Date(
+            +m[1],
+            +m[2] - 1,
+            +m[3],
+            m[4] ? +m[4] : 0,
+            m[5] ? +m[5] : 0,
+            m[6] ? +m[6] : 0
+          )
+        }
+        // 3) ISO 格式或含时区，先尝试替换空格为 T
+        const iso = s.includes(' ') ? s.replace(' ', 'T') : s
+        const d = new Date(iso)
+        if (!isNaN(d.getTime())) return d
+      }
+    } catch (e) {
+      // 静默兜底
+    }
+    return null
+  }
+
   // 格式化时间显示
   formatTime(timeString) {
     try {
       if (!timeString) return this.formatCurrentTime()
-      
-      const date = new Date(timeString)
-      if (isNaN(date.getTime())) return this.formatCurrentTime()
+      const date = this.parseIOSDate(timeString) || new Date()
       
       const hours = date.getHours().toString().padStart(2, '0')
       const minutes = date.getMinutes().toString().padStart(2, '0')

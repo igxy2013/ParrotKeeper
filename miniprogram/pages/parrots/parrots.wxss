@@ -828,3 +828,45 @@
 }
 .upload-icon { font-size: 48rpx; }
 .upload-text { margin-top: 12rpx; color: #6b7280; font-size: 24rpx; }
+
+/* 添加鹦鹉按钮卡片（列表底部） */
+.add-parrot-action {
+  padding: 0;
+}
+
+.add-parrot-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20rpx);
+  border-radius: 48rpx;
+  padding: 32rpx;
+  margin: 0 32rpx 40rpx;
+  box-shadow: 0 12rpx 32rpx rgba(76, 175, 80, 0.15);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.add-parrot-btn {
+  height: 96rpx;
+  border-radius: 48rpx;
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.3);
+}
+
+.add-parrot-btn:active {
+  transform: translateY(2rpx) scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(76, 175, 80, 0.4);
+}
+
+.add-parrot-btn-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.add-parrot-btn-text {
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: 600;
+}

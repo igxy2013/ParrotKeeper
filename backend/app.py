@@ -12,6 +12,9 @@ from routes.teams import teams_bp
 from routes.achievements import achievements_bp
 from routes.image_processing import image_processing_bp
 from routes.notifications import notifications_bp
+from routes.reminders import reminders_bp
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, date
 from routes.care_guide import care_guide_bp
 import os
 
@@ -42,6 +45,7 @@ def create_app(config_name=None):
     app.register_blueprint(image_processing_bp)
     app.register_blueprint(notifications_bp)
     app.register_blueprint(care_guide_bp)
+    app.register_blueprint(reminders_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
@@ -81,7 +85,10 @@ def create_app(config_name=None):
     @app.before_request
     def log_request():
         print(f"请求: {request.method} {request.path}")
-    
+
+    # 初始化并启动定时任务（服务端订阅消息推送）
+    init_scheduler(app)
+
     return app
 
 def init_db(app):
@@ -89,6 +96,100 @@ def init_db(app):
     with app.app_context():
         db.create_all()
         print("数据库表创建完成")
+
+def init_scheduler(app):
+    """初始化APScheduler并注册定时推送任务"""
+    try:
+        scheduler = BackgroundScheduler()
+
+        def push_due_reminders():
+            from models import Reminder, ReminderLog, User
+            from routes.notifications import get_access_token
+            from config import Config
+            import requests
+            from datetime import datetime
+
+            with app.app_context():
+                now = datetime.now()
+                hh = now.hour
+                mm = now.minute
+                today = date.today()
+
+                # 查询所有每日启用的提醒
+                reminders = Reminder.query.filter_by(is_active=True, frequency='daily').all()
+
+                access_token = get_access_token()
+                if not access_token:
+                    print('定时任务：无法获取access_token，跳过本轮推送')
+                    return
+
+                api_url = f'https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token={access_token}'
+
+                for r in reminders:
+                    try:
+                        if not r.reminder_time:
+                            continue
+                        if r.reminder_time.hour != hh or r.reminder_time.minute != mm:
+                            continue
+
+                        # 去重：当天是否已推送
+                        exists = ReminderLog.query.filter_by(reminder_id=r.id, sent_date=today).first()
+                        if exists:
+                            continue
+
+                        user = User.query.get(r.user_id)
+                        if not user or not user.openid:
+                            continue
+
+                        # 根据类型选择模板ID
+                        if r.reminder_type == 'feeding':
+                            template_id = getattr(Config, 'WECHAT_TEMPLATE_ID_FEEDING', None)
+                            reminder_type_cn = '喂食提醒'
+                        elif r.reminder_type == 'cleaning':
+                            template_id = getattr(Config, 'WECHAT_TEMPLATE_ID_CLEANING', None)
+                            reminder_type_cn = '清洁提醒'
+                        else:
+                            template_id = None
+                            reminder_type_cn = '系统提醒'
+
+                        if not template_id:
+                            # 未配置模板则跳过服务端订阅推送，可考虑仅记录日志
+                            continue
+
+                        # 构造模板数据（关键词字段需与模板匹配）
+                        template_data = {
+                            'thing1': { 'value': r.title or '您有一条提醒' },
+                            'time2': { 'value': now.strftime('%Y-%m-%d %H:%M') },
+                            'thing3': { 'value': user.nickname or '鹦鹉管家' },
+                            'thing4': { 'value': reminder_type_cn }
+                        }
+
+                        payload = {
+                            'touser': user.openid,
+                            'template_id': template_id,
+                            'page': 'pages/index/index',
+                            'data': template_data
+                        }
+
+                        resp = requests.post(api_url, json=payload)
+                        result = resp.json()
+                        if result.get('errcode') == 0:
+                            # 记录日志，避免当天重复
+                            log = ReminderLog(reminder_id=r.id, sent_date=today)
+                            db.session.add(log)
+                            db.session.commit()
+                            print(f"定时推送成功: user={user.id}, type={r.reminder_type}")
+                        else:
+                            print(f"定时推送失败: {result}")
+                    except Exception as e:
+                        print(f"定时推送异常: {str(e)}")
+
+        # 每分钟执行一次，检测当前分钟是否有到点提醒
+        scheduler.add_job(push_due_reminders, 'cron', second=0)
+        scheduler.start()
+        print('APScheduler 已启动')
+    except Exception as e:
+        print(f'初始化APScheduler失败: {str(e)}')
 
 if __name__ == '__main__':
     app = create_app()

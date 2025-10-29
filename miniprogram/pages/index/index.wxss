@@ -72,15 +72,29 @@
   gap: 16rpx;
 }
 
-.header-btn {
-  width: 72rpx;
-  height: 72rpx;
-  background: rgba(255, 255, 255, 0.2);
+/* 统一：与个人中心一致的头部通知按钮样式 */
+.header-action-btn {
+  width: 64rpx;
+  height: 64rpx;
   border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(12rpx);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10rpx);
+}
+.header-action-btn:active { transform: scale(0.96); }
+.header-action-icon { width: 36rpx; height: 36rpx; }
+.header-action-badge {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  width: 18rpx;
+  height: 18rpx;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255,255,255,0.85);
+  box-shadow: 0 4rpx 8rpx rgba(239, 68, 68, 0.35);
 }
 
 .icon-notification,

@@ -206,6 +206,17 @@ class Reminder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class ReminderLog(db.Model):
+    __tablename__ = 'reminder_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reminder_id = db.Column(db.Integer, db.ForeignKey('reminders.id'), nullable=False)
+    sent_date = db.Column(db.Date, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # 每个提醒每天只能记录一次，避免重复推送
+    __table_args__ = (db.UniqueConstraint('reminder_id', 'sent_date', name='unique_reminder_daily_log'),)
+
 class Achievement(db.Model):
     __tablename__ = 'achievements'
     

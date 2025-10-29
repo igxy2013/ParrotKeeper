@@ -48,6 +48,20 @@
           <switch checked="{{feedingReminder}}" bindchange="toggleFeedingReminder" />
         </view>
 
+        <!-- 喂食提醒时间选择器 -->
+        <view class="setting-action-item">
+          <view class="setting-icon-wrapper">
+            <view class="setting-icon">⏰</view>
+          </view>
+          <view class="setting-content">
+            <view class="setting-name">喂食提醒时间</view>
+            <view class="setting-desc">选择每日提醒时间</view>
+          </view>
+          <picker mode="time" value="{{feedingReminderTime}}" bindchange="onFeedingTimeChange">
+            <view class="setting-arrow">{{feedingReminderTime || '选择时间'}}</view>
+          </picker>
+        </view>
+
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
             <view class="setting-icon">🏥</view>
@@ -68,6 +82,20 @@
             <view class="setting-desc">笼子清洁和卫生提醒</view>
           </view>
           <switch checked="{{cleaningReminder}}" bindchange="toggleCleaningReminder" />
+        </view>
+
+        <!-- 清洁提醒时间选择器 -->
+        <view class="setting-action-item">
+          <view class="setting-icon-wrapper">
+            <view class="setting-icon">⏰</view>
+          </view>
+          <view class="setting-content">
+            <view class="setting-name">清洁提醒时间</view>
+            <view class="setting-desc">选择每日提醒时间</view>
+          </view>
+          <picker mode="time" value="{{cleaningReminderTime}}" bindchange="onCleaningTimeChange">
+            <view class="setting-arrow">{{cleaningReminderTime || '选择时间'}}</view>
+          </picker>
         </view>
 
         <view class="setting-action-item">

@@ -2,9 +2,9 @@
 <view class="page-container">
   <!-- 顶部导航统一为组件 -->
   <app-header title="鹦鹉管家" subtitle="专业鹦鹉护理助手">
-    <view slot="actions" class="header-btn" bindtap="openNotifications" style="position: relative;">
-      <image class="icon-notification-img" src="/images/remix/ri-notification-3-line-white.svg" mode="widthFix"/>
-      <view wx:if="{{unreadCount > 0}}" style="position:absolute;top:6rpx;right:6rpx;min-width:28rpx;height:28rpx;padding:0 8rpx;border-radius:14rpx;background:#ff4757;color:#fff;font-size:20rpx;line-height:28rpx;text-align:center;">{{unreadCount}}</view>
+    <view slot="actions" class="header-action-btn" bindtap="openNotifications">
+      <image class="header-action-icon" src="/images/remix/ri-notification-3-line-white.svg" mode="aspectFit" />
+      <view class="header-action-badge" wx:if="{{unreadCount > 0}}"></view>
     </view>
   </app-header>
 
