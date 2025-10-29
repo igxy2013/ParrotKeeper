@@ -66,12 +66,6 @@
       "pages": [
         "care-guide"
       ]
-    },
-    {
-      "root": "pages/test-notification",
-      "pages": [
-        "test-notification"
-      ]
     }
   ],
     "entryPagePath": "pages/index/index",

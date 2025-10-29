@@ -330,26 +330,28 @@ Page({
             ? res.data.items
             : [];
 
-        const parrotSet = new Set();
-        let totalAmount = 0;
-        const eventKeySet = new Set();
+        // 使用与页面展示一致的聚合口径，避免按原始记录量导致总食量翻倍
+        const normalized = this.mapFeedingRecordsForUI(items);
+        const aggregated = this.aggregateRecordsForUI(normalized);
 
-        items.forEach(record => {
-          const pid = record.parrot_id || (record.parrot && record.parrot.id);
-          if (pid) parrotSet.add(pid);
-          const amt = record.amount;
-          totalAmount += typeof amt === 'number' ? amt : parseFloat(amt || 0);
-          const timeStr = record.feeding_time || record.record_time || record.time || '';
-          const notesStr = record.notes || '';
-          const amtStr = typeof amt === 'number' ? String(amt) : (amt ? String(amt) : '');
-          const key = `${timeStr}|${amtStr}|${notesStr}`;
-          eventKeySet.add(key);
+        // 统计唯一鹦鹉数量
+        const parrotSet = new Set();
+        aggregated.forEach(g => {
+          (g.parrot_ids || []).forEach(pid => parrotSet.add(pid));
         });
+
+        // 总次数 = 聚合后的事件条目数
+        const totalCount = aggregated.length;
+
+        // 总食量 = 聚合后每条的各食物类型 amount 之和，再跨条目累加
+        const totalAmount = aggregated.reduce((sum, g) => {
+          const perEvent = (Array.isArray(g.food_types) ? g.food_types : []).reduce((s, f) => s + (parseFloat(f.amount) || 0), 0);
+          return sum + perEvent;
+        }, 0);
 
         this.setData({
           todayStats: {
-            // 与首页统计口径一致：按 (feeding_time, amount, notes) 分组计数
-            totalCount: eventKeySet.size,
+            totalCount,
             parrotCount: parrotSet.size,
             totalAmount: Number(totalAmount.toFixed(1))
           }
@@ -377,16 +379,17 @@ Page({
       const datePart = match && match[1] ? match[1] : '';
       return datePart === todayStr;
     });
-
+    // 今日唯一鹦鹉数
     const parrotSet = new Set();
-    let totalAmount = 0;
-
     todayRecords.forEach(record => {
-      const pid = record.parrot_id || (record.parrot && record.parrot.id);
-      if (pid) parrotSet.add(pid);
-      const amt = record.amount;
-      totalAmount += typeof amt === 'number' ? amt : parseFloat(amt || 0);
+      (record.parrot_ids || []).forEach(pid => parrotSet.add(pid));
     });
+
+    // 总食量基于聚合后的食物类型总和，保证与卡片一致
+    const totalAmount = todayRecords.reduce((sum, g) => {
+      const perEvent = (Array.isArray(g.food_types) ? g.food_types : []).reduce((s, f) => s + (parseFloat(f.amount) || 0), 0);
+      return sum + perEvent;
+    }, 0);
 
     this.setData({
       todayStats: {

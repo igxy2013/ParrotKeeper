@@ -72,6 +72,7 @@ Page({
       headerNotification: '/images/remix/ri-notification-3-line-white.png',
       cameraLine: '/images/remix/ri-camera-line.png',
       editLine: '/images/remix/edit-line.png',
+      editLine_white: '/images/remix/edit-line-white.png',
       loginAvatar: '/images/parrot-avatar-green.png',
       sectionSettings: '/images/remix/settings-3-line.png',
       closeLine: '/images/remix/close-line.png',

@@ -33,7 +33,7 @@
       <view class="nickname-display">
         <text class="user-name">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
         <view class="edit-nickname-btn" bindtap="toggleNicknameEdit">
-<image class="edit-icon-img" src="{{iconPaths.editLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine" />
+<image class="edit-icon-img" src="{{iconPaths.editLine_white}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine_white" />
         </view>
       </view>
       <text class="user-role">{{roleDisplay}}</text>

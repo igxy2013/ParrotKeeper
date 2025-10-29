@@ -1135,6 +1135,33 @@ Page({
     }
   },
 
+  // 组件版提交（parrot-modal触发的submit事件）
+  async submitNewParrotFromComponent(e) {
+    if (!this.data.isLogin) {
+      app.showError('请先登录后使用此功能')
+      return
+    }
+    const payload = (e && e.detail && e.detail.data) || null
+    if (!payload || !payload.name) {
+      app.showError('请填写必填项：名字与品种')
+      return
+    }
+    try {
+      const res = await app.request({ url: '/api/parrots', method: 'POST', data: payload })
+      if (res.success) {
+        app.showSuccess('添加成功')
+        this.closeAddParrotModal()
+        if (typeof this.loadMyParrots === 'function') {
+          this.loadMyParrots()
+        }
+      } else {
+        app.showError(res.message || '添加失败')
+      }
+    } catch (error) {
+      app.showError('网络错误，添加失败')
+    }
+  },
+
   /* ===== 收支弹窗逻辑 ===== */
 })
 

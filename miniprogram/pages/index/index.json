@@ -3,7 +3,8 @@
     "app-header": "/components/app-header/app-header",
     "notification-center": "/components/notification-center/notification-center",
     "bottom-nav": "/components/bottom-nav/bottom-nav",
-    "expense-modal": "/components/expense-modal/expense-modal"
+    "expense-modal": "/components/expense-modal/expense-modal",
+    "parrot-modal": "/components/parrot-modal/parrot-modal"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "鹦鹉管家AI",
