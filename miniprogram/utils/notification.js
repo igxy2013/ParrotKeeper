@@ -137,6 +137,7 @@ class NotificationManager {
         url: '/api/notifications/send',
         method: 'POST',
         data: {
+          openid: app.globalData && app.globalData.openid ? app.globalData.openid : '',
           template_id: templateId,
           data: templateData
         }

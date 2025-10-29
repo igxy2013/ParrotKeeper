@@ -55,9 +55,13 @@ Page({
     contactSessionFrom: '',
     // 团队功能暂不开放，列表置空以隐藏入口
     teamItems: [],
+    // 通知中心状态
+    showNotifications: false,
+    notifications: [],
+    unreadCount: 0,
+
     menuItems: [
       { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.svg' },
-      { icon: '🔔', title: '通知', desc: '消息提醒设置', bgClass: 'bg-blue', iconSrc: '/images/remix/ri-notification-3-line.svg' },
       { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.svg' },
       { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.svg', isContact: true },
       { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.svg' },
@@ -69,6 +73,8 @@ Page({
     this.initUser();
     this.loadPreferences();
     this.loadOverviewStats();
+    // 初始化通知中心数据与回调
+    this.initNotifications();
     // 设置客服会话上下文，便于客服识别来源与用户
     try {
       const uid = app.globalData.openid || '';
@@ -81,6 +87,13 @@ Page({
         })
       });
     } catch (_) {}
+  },
+
+  onUnload() {
+    const app = getApp();
+    if (app && app.globalData) {
+      app.globalData.notificationUpdateCallback = null;
+    }
   },
 
   // 加载统计概览用于展示统计网格（改用统一请求封装）
@@ -191,9 +204,9 @@ Page({
       // 跳转到独立的应用设置页面
       wx.navigateTo({ url: '/pages/settings/settings' });
     } else if (title === '通知') {
-      wx.navigateTo({ url: '/pages/settings/settings' });
+      this.openNotifications();
     } else if (title === '护理指南') {
-      wx.showToast({ title: '护理指南功能即将上线', icon: 'none' });
+      wx.navigateTo({ url: '/pages/care-guide/care-guide' });
     } else if (title === '客服支持') {
       // 备选处理：若未通过内置按钮触发，可给出提示
       wx.showToast({ title: '请点击该项以打开客服会话', icon: 'none' });
@@ -202,6 +215,51 @@ Page({
     } else if (title === '分享应用') {
       wx.showShareMenu({ withShareTicket: true });
     }
+  },
+
+  // 通知中心：初始化与交互
+  initNotifications() {
+    const app = getApp();
+    const notificationManager = app.globalData.notificationManager;
+
+    // 从本地存储加载通知与未读数
+    const notifications = notificationManager.getLocalNotifications();
+    const unreadCount = notificationManager.getUnreadCount();
+    this.setData({ notifications, unreadCount });
+
+    // 设置通知更新回调（页面级）
+    app.globalData.notificationUpdateCallback = () => {
+      const updatedNotifications = notificationManager.getLocalNotifications();
+      const updatedUnreadCount = notificationManager.getUnreadCount();
+      this.setData({ notifications: updatedNotifications, unreadCount: updatedUnreadCount });
+    };
+  },
+
+  openNotifications() {
+    this.setData({ showNotifications: true });
+  },
+
+  closeNotifications() {
+    this.setData({ showNotifications: false });
+  },
+
+  markAllNotificationsRead() {
+    const app = getApp();
+    const notificationManager = app.globalData.notificationManager;
+    notificationManager.markAllNotificationsRead();
+  },
+
+  clearAllNotifications() {
+    const app = getApp();
+    const notificationManager = app.globalData.notificationManager;
+    notificationManager.clearAllNotifications();
+  },
+
+  handleNotificationTap(e) {
+    const { id } = e.detail || {};
+    const app = getApp();
+    const notificationManager = app.globalData.notificationManager;
+    notificationManager.markNotificationRead(id);
   },
 
   // 内置客服回调（open-type="contact"）
@@ -351,8 +409,30 @@ Page({
     });
   },
 
-  // 其它已有的方法占位
-  showAbout() {},
+  // 关于我们：展示版本与说明
+  showAbout() {
+    const app = getApp()
+
+    const showModalWithVersion = (version) => {
+      const contentText = `鹦鹉管家 v${version}\n用心呵护每一只小鹦鹉\n如需帮助，请使用“客服支持”菜单联系我们。\n我们重视隐私，仅收集必要数据用于改善服务。`
+      wx.showModal({
+        title: '关于我们',
+        content: contentText,
+        showCancel: false
+      })
+    }
+
+    // 优先从后端健康检查接口获取版本号，失败则回退到本地版本
+    app.request({ url: '/api/health' })
+      .then(res => {
+        const version = (res && res.version) ? res.version : (app.globalData.appVersion || '未知')
+        showModalWithVersion(version)
+      })
+      .catch(() => {
+        const version = app.globalData.appVersion || '未知'
+        showModalWithVersion(version)
+      })
+  },
   showHelp() {},
   handleLogout() {},
 

@@ -35,6 +35,10 @@ class Config:
     # 基础URL配置
     BASE_URL = os.environ.get('BASE_URL') or 'http://localhost:5075'
 
+    # 护理指南配置（后端可配置内容）
+    CARE_GUIDE_CONFIG_PATH = os.environ.get('CARE_GUIDE_CONFIG_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'care_guide_config.json')
+    CARE_GUIDE_ADMIN_KEY = os.environ.get('CARE_GUIDE_ADMIN_KEY')  # 可选：用于更新接口的简单鉴权
+
 class DevelopmentConfig(Config):
     DEBUG = True
 

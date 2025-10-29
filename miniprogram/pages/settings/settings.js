@@ -1,12 +1,23 @@
 // pages/settings/settings.js
 Page({
   data: {
+    // 通知设置（规范化对象存储，便于统一读写）
+    notificationSettings: {
+      enabled: false,
+      feedingReminder: true,
+      healthReminder: true,
+      cleaningReminder: true,
+      medicationReminder: true,
+      breedingReminder: true
+    },
     notificationsEnabled: false,
     feedingReminder: true,
     healthReminder: true,
     cleaningReminder: true,
     medicationReminder: true,
-    breedingReminder: true
+    breedingReminder: true,
+    // 模板ID配置有效性（用于提示与按钮可用态）
+    hasTemplateIds: false
   },
 
   onLoad() {
@@ -18,17 +29,20 @@ Page({
     try {
       const app = getApp()
       const notificationManager = app.globalData.notificationManager
+      const { hasValidTemplateIds } = require('../../utils/template-config')
       
       // 加载通知设置
       const notificationSettings = notificationManager.getNotificationSettings()
       
       this.setData({
+        notificationSettings,
         notificationsEnabled: notificationSettings.enabled,
         feedingReminder: notificationSettings.feedingReminder,
         healthReminder: notificationSettings.healthReminder,
         cleaningReminder: notificationSettings.cleaningReminder,
         medicationReminder: notificationSettings.medicationReminder,
-        breedingReminder: notificationSettings.breedingReminder
+        breedingReminder: notificationSettings.breedingReminder,
+        hasTemplateIds: !!hasValidTemplateIds()
       })
     } catch (error) {
       console.error('加载偏好设置失败:', error)
@@ -58,80 +72,50 @@ Page({
   },
 
   // 切换通知开关
-  async toggleNotifications() {
-    const currentSettings = this.data.notificationSettings
-    const newEnabled = !currentSettings.enabled
-    
-    if (newEnabled) {
-      // 检查是否配置了有效的模板ID
-      const { hasValidTemplateIds } = require('../../utils/template-config')
-      
-      if (!hasValidTemplateIds()) {
-        wx.showModal({
-          title: '提示',
-          content: '当前未配置订阅消息模板ID，通知功能将仅支持本地提醒。如需微信订阅消息推送，请联系开发者配置模板。',
-          showCancel: false,
-          confirmText: '我知道了',
-          success: () => {
-            // 即使没有模板ID，也允许开启本地通知功能
-            this.updateNotificationSettings(newEnabled)
-          }
-        })
-        return
-      }
-      
-      // 开启通知时，先申请基础权限
-      try {
-        wx.showLoading({ title: '申请权限中...' })
-        
-        const acceptedTemplates = await notificationManager.requestSubscriptionPermission()
-        console.log('基础权限申请成功:', acceptedTemplates)
-        
-        // 尝试申请额外权限（不强制要求成功）
-        try {
-          const additionalTemplates = await notificationManager.requestAdditionalSubscriptionPermission()
-          console.log('额外权限申请成功:', additionalTemplates)
-        } catch (additionalError) {
-          console.log('额外权限申请失败，但不影响基础功能:', additionalError)
-        }
-        
-        wx.hideLoading()
-        wx.showToast({
-          title: '权限申请成功',
-          icon: 'success'
-        })
-        
-      } catch (error) {
-        wx.hideLoading()
-        wx.showToast({
-          title: '权限申请失败',
-          icon: 'none'
-        })
-        console.error('订阅消息权限申请失败:', error)
-        return // 权限申请失败时不更新设置
-      }
+  async toggleNotifications(e) {
+    const app = getApp()
+    const notificationManager = app.globalData.notificationManager
+    const currentSettings = this.data.notificationSettings || {
+      enabled: this.data.notificationsEnabled,
+      feedingReminder: this.data.feedingReminder,
+      healthReminder: this.data.healthReminder,
+      cleaningReminder: this.data.cleaningReminder,
+      medicationReminder: this.data.medicationReminder,
+      breedingReminder: this.data.breedingReminder
     }
-    
-    this.updateNotificationSettings(newEnabled)
+    const requestedEnabled = (e && e.detail && typeof e.detail.value !== 'undefined')
+      ? !!e.detail.value
+      : !currentSettings.enabled
+
+    // 仅更新本地开关；订阅权限必须通过“订阅权限”按钮点击触发
+    this.updateNotificationSettings(requestedEnabled)
+
+    if (requestedEnabled && this.data.hasTemplateIds) {
+      wx.showToast({ title: '已开启本地通知，请点击“订阅权限”授权', icon: 'none' })
+    }
   },
 
   // 更新通知设置的辅助方法
   updateNotificationSettings(enabled) {
-    const currentSettings = this.data.notificationSettings
-    const newSettings = {
-      ...currentSettings,
-      enabled: enabled
+    const app = getApp()
+    const notificationManager = app.globalData.notificationManager
+    const currentSettings = this.data.notificationSettings || {
+      enabled: this.data.notificationsEnabled,
+      feedingReminder: this.data.feedingReminder,
+      healthReminder: this.data.healthReminder,
+      cleaningReminder: this.data.cleaningReminder,
+      medicationReminder: this.data.medicationReminder,
+      breedingReminder: this.data.breedingReminder
     }
-    
+    const newSettings = { ...currentSettings, enabled }
+
     notificationManager.saveNotificationSettings(newSettings)
     this.setData({
-      notificationSettings: newSettings
+      notificationSettings: newSettings,
+      notificationsEnabled: newSettings.enabled
     })
-    
-    wx.showToast({
-      title: enabled ? '通知已开启' : '通知已关闭',
-      icon: 'success'
-    })
+
+    wx.showToast({ title: enabled ? '通知已开启' : '通知已关闭', icon: 'success' })
   },
 
   // 切换各种提醒设置
@@ -158,6 +142,53 @@ Page({
   toggleBreedingReminder(e) {
     this.setData({ breedingReminder: e.detail.value })
     this.savePreferences()
+  },
+
+  // 重新申请订阅权限（在已开启时可手动触发）
+  async reapplySubscriptionPermissions() {
+    const app = getApp()
+    const notificationManager = app.globalData.notificationManager
+    try {
+      wx.showLoading({ title: '申请权限中...' })
+      const acceptedTemplates = await notificationManager.requestSubscriptionPermission()
+      console.log('基础权限重新申请成功:', acceptedTemplates)
+      try {
+        const additionalTemplates = await notificationManager.requestAdditionalSubscriptionPermission()
+        console.log('额外权限重新申请成功:', additionalTemplates)
+      } catch (additionalError) {
+        console.log('额外权限重新申请失败，但不影响基础功能:', additionalError)
+      }
+      wx.hideLoading()
+      wx.showToast({ title: '权限申请成功', icon: 'success' })
+    } catch (error) {
+      wx.hideLoading()
+      wx.showToast({ title: '权限申请失败', icon: 'none' })
+      console.error('订阅消息权限申请失败:', error)
+    }
+  },
+
+  // 发送测试订阅消息
+  async sendTestNotification() {
+    const app = getApp()
+    const notificationManager = app.globalData.notificationManager
+    const { getConfiguredTemplateIds } = require('../../utils/template-config')
+    const TIDS = getConfiguredTemplateIds()
+    const candidate = TIDS.feeding || TIDS.health || TIDS.cleaning || TIDS.medication || TIDS.breeding
+    if (!candidate) {
+      wx.showToast({ title: '未配置模板ID，无法测试订阅消息', icon: 'none' })
+      return
+    }
+    try {
+      await notificationManager.sendSubscriptionMessage(candidate, {
+        content: '这是一条测试通知',
+        time: app.formatDateTime(Date.now(), 'YYYY-MM-DD HH:mm'),
+        sender: '鹦鹉管家',
+        type: '测试消息'
+      })
+      wx.showToast({ title: '测试消息已发送', icon: 'success' })
+    } catch (e) {
+      wx.showToast({ title: '发送失败', icon: 'none' })
+    }
   },
 
   // （已移除主题相关功能）

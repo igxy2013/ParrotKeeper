@@ -1,5 +1,5 @@
 {
-    "pages":  [
+  "pages":  [
                   "pages/index/index",
                   "pages/login/login",
                   "pages/register/register",
@@ -19,7 +19,8 @@
                   "pages/expenses/add-expense/add-expense",
                   "pages/expenses/edit-expense/edit-expense",
                   "pages/expenses/transactions/transactions",
-                  "pages/test-notification/test-notification"
+                  "pages/test-notification/test-notification",
+                  "pages/care-guide/care-guide"
               ],
     "entryPagePath": "pages/index/index",
     "window":  {

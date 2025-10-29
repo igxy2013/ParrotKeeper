@@ -1853,12 +1853,44 @@
 /* 新增：功能菜单样式 */
 .menu-card { background: rgba(255,255,255,0.9); border: 1rpx solid rgba(255,255,255,0.6); border-radius: 32rpx; margin: 24rpx 20rpx; padding: 24rpx; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); }
 .menu-list { display: flex; flex-direction: column; gap: 16rpx; }
-.menu-item { display: flex; align-items: center; gap: 20rpx; padding: 20rpx; background: linear-gradient(135deg, #fff, #f8fafc); border: 1rpx solid #eef2f7; border-radius: 24rpx; }
+.menu-item { display: flex; align-items: center; gap: 20rpx; padding: 20rpx; background: linear-gradient(135deg, #fff, #f8fafc); border: 1rpx solid #eef2f7; border-radius: 24rpx; position: relative; }
 .menu-item-icon { width: 64rpx; height: 64rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 32rpx; }
 .menu-item-icon-img { width: 30rpx; height: 30rpx; }
 .menu-item-title { font-weight: 700; color: #111827; font-size: 28rpx; }
 .menu-item-desc { font-size: 24rpx; color: #6b7280; margin-top: 4rpx; font-weight: 500; }
 .menu-item .arrow { color: #9ca3af; margin-left: auto; }
+
+/* 头部通知未读红点 */
+.header-action-badge {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  width: 18rpx;
+  height: 18rpx;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255,255,255,0.85);
+  box-shadow: 0 4rpx 8rpx rgba(239, 68, 68, 0.35);
+}
+
+/* 菜单项未读角标 */
+.menu-item-badge {
+  position: absolute;
+  right: 60rpx;
+  top: 22rpx;
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 10rpx;
+  border-radius: 15rpx;
+  background: #ef4444;
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 8rpx rgba(239, 68, 68, 0.25);
+}
 .arrow-icon { width: 32rpx; height: 32rpx; margin-left: auto; }
 
 /* 修复：button 作为菜单项时的默认样式与卡片不一致 */
@@ -1965,3 +1997,5 @@ button.menu-item::after { border: none; }
 .theme-dark .member-row { background: rgba(255,255,255,0.06); }
 .theme-dark .member-name { color: #e5e7eb; }
 .theme-dark .member-role { background: rgba(255,255,255,0.12); color: #e5e7eb; }
+
+/* 护理指南弹窗 */

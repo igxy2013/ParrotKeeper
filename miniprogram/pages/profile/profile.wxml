@@ -1,8 +1,9 @@
 <!--pages/profile/profile.wxml-->
 <view class="page-container {{pageThemeClass}}">
   <app-header title="个人中心" subtitle="管理您的账户信息">
-    <view slot="actions" class="header-action-btn" bindtap="onMenuItemTap" data-title="设置">
+    <view slot="actions" class="header-action-btn" bindtap="openNotifications">
       <image class="header-action-icon" src="/images/remix/ri-notification-3-line-white.svg" mode="aspectFit" />
+      <view class="header-action-badge" wx:if="{{unreadCount > 0}}"></view>
     </view>
   </app-header>
   <view class="page-content">
@@ -228,6 +229,8 @@
   </view>
 </view>
 
+
+
 <!-- 团队管理弹窗 -->
 <view class="modal-overlay" wx:if="{{showTeamManageModal}}" bindtap="hideTeamManageModal">
   <view class="modal-container manage-team-modal" catchtap="preventClose">
@@ -386,6 +389,7 @@
             <view class="menu-item-title">{{item.title}}</view>
             <view class="menu-item-desc">{{item.desc}}</view>
           </view>
+          <view class="menu-item-badge" wx:if="{{item.title === '通知' && unreadCount > 0}}">{{unreadCount}}</view>
           <image class="arrow-icon" src="/images/remix/ri-arrow-right-line.svg" mode="aspectFit" />
         </view>
       </block>
@@ -403,4 +407,13 @@
 </view>
 <!-- 自定义底部导航 -->
 <bottom-nav active="profile" />
+<!-- 通知中心组件挂载到页面根部 -->
+<notification-center 
+  visible="{{showNotifications}}" 
+  notifications="{{notifications}}" 
+  bind:close="closeNotifications" 
+  bind:markAllRead="markAllNotificationsRead" 
+  bind:clearAll="clearAllNotifications" 
+  bind:itemTap="handleNotificationTap" 
+/>
 </view>

@@ -12,6 +12,7 @@ from routes.teams import teams_bp
 from routes.achievements import achievements_bp
 from routes.image_processing import image_processing_bp
 from routes.notifications import notifications_bp
+from routes.care_guide import care_guide_bp
 import os
 
 def create_app(config_name=None):
@@ -40,6 +41,7 @@ def create_app(config_name=None):
     app.register_blueprint(achievements_bp)
     app.register_blueprint(image_processing_bp)
     app.register_blueprint(notifications_bp)
+    app.register_blueprint(care_guide_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']

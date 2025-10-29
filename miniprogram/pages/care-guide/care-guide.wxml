@@ -1,0 +1,28 @@
+<!-- pages/care-guide/care-guide.wxml -->
+<view class="page-container {{pageThemeClass}}">
+  <app-header title="护理指南" subtitle="鹦鹉护理知识与建议" showBack="true"></app-header>
+  <view class="page-content">
+    <view wx:if="{{loading}}" class="loading-box">正在加载护理指南...</view>
+    <view wx:if="{{!!error}}" class="error-box">{{error}}</view>
+
+    <block wx:for="{{sections}}" wx:key="key">
+      <view class="guide-section">
+        <text class="guide-section-title">{{item.title}}</text>
+        <block wx:for="{{item.items}}" wx:key="index">
+          <view class="guide-item">
+            <text wx:if="{{item.emoji}}" class="guide-item-icon-emoji">{{item.emoji}}</text>
+            <image wx:if="{{item.iconUrl}}" class="guide-item-icon-img" src="{{item.iconUrl}}" mode="aspectFit"/>
+            <view class="guide-item-text">
+              <text class="guide-item-desc">{{item.text}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </block>
+
+    <view class="footer-tip">内容为通用建议，具体健康问题请咨询专业兽医。</view>
+  </view>
+</view>
+
+<!-- 底部导航栏（非 Tab 页复用） -->
+<bottom-nav active="profile" />
