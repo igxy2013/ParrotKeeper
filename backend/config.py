@@ -35,8 +35,8 @@ class Config:
     # 应用版本（用于对外展示，通过环境变量注入）
     APP_VERSION = os.environ.get('APP_VERSION') or '1.0.0'
     
-    # 基础URL配置
-    BASE_URL = os.environ.get('BASE_URL') or 'http://localhost:5075'
+    # 基础URL配置（用于生成图片等资源的完整可访问地址）
+    BASE_URL = os.environ.get('BASE_URL') or 'https://bimai.xyz'
 
     # 护理指南配置（后端可配置内容）
     CARE_GUIDE_CONFIG_PATH = os.environ.get('CARE_GUIDE_CONFIG_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'care_guide_config.json')
