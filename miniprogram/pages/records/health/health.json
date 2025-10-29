@@ -3,7 +3,7 @@
     "app-header": "/components/app-header/app-header"
   },
   "navigationStyle": "custom",
-  "navigationBarTitleText": "健康检查",
+  "navigationBarTitleText": "健康检查记录",
   "enablePullDownRefresh": true,
   "backgroundColor": "#f8f9fa",
   "backgroundTextStyle": "dark"

@@ -19,13 +19,8 @@
         "records",
         "cleaning/cleaning",
         "add-record/add-record",
-        "feeding/feeding"
-      ]
-    },
-    {
-      "root": "pages/health-check",
-      "pages": [
-        "health-check"
+        "feeding/feeding",
+        "health/health" 
       ]
     },
     {
@@ -49,7 +44,8 @@
     {
       "root": "pages/settings",
       "pages": [
-        "settings"
+        "settings",
+        "feedback/feedback"
       ]
     },
     {

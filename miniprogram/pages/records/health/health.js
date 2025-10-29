@@ -1,4 +1,4 @@
-// pages/records/health/health.js
+// pages/health/health.js
 const app = getApp()
 
 Page({
@@ -15,7 +15,7 @@ Page({
     healthRecords: [],
     loading: false,
 
-    // 概览统计（对齐APP：健康鹦鹉、需关注、检查次数）
+    // 概览统计
     overview: {
       healthyCount: 0,
       attentionCount: 0,
@@ -23,25 +23,29 @@ Page({
     }
   },
 
+  onLoad(options) {
+    this.checkLoginStatus()
+  },
+
   onShow() {
-    this.checkLoginAndLoad()
+    this.checkLoginStatus()
   },
 
   onPullDownRefresh() {
-    this.loadHealthRecords(true).finally(() => wx.stopPullDownRefresh())
+    this.loadHealthRecords(true).then(() => {
+      wx.stopPullDownRefresh()
+    })
   },
 
-  // 检查登录并加载数据
-  checkLoginAndLoad() {
+  // 检查登录状态
+  checkLoginStatus() {
     const isLogin = app.globalData.isLogin
     const hasOperationPermission = app.hasOperationPermission()
     this.setData({ isLogin, hasOperationPermission })
-
+    
     if (isLogin) {
       this.loadParrotsList()
-      this.loadHealthRecords(true)
-    } else {
-      this.setData({ parrotsList: [], healthRecords: [] })
+      this.loadHealthRecords()
     }
   },
 
@@ -50,12 +54,17 @@ Page({
     try {
       const res = await app.request({
         url: '/api/parrots',
-        method: 'GET',
-        data: { limit: 100 }
+        method: 'GET'
       })
       if (res.success) {
-        const list = Array.isArray(res.data?.parrots) ? res.data.parrots : (Array.isArray(res.data) ? res.data : [])
+        const list = Array.isArray(res.data?.parrots)
+          ? res.data.parrots
+          : (Array.isArray(res.data) ? res.data : [])
         this.setData({ parrotsList: list })
+        // 依赖鹦鹉列表来补全头像，列表就绪后再刷新健康记录以补齐头像
+        if (this.data.isLogin) {
+          this.loadHealthRecords(true)
+        }
       }
     } catch (e) {
       console.error('加载鹦鹉列表失败:', e)
@@ -91,35 +100,38 @@ Page({
           record_date_formatted: app.formatDate(r.record_date),
           weight: r.weight,
           notes: r.notes,
+          symptoms: r.symptoms,
+          treatment: r.treatment,
           health_status: r.health_status,
+          health_status_text: r.health_status_text,
           record_date_raw: r.record_date
         }))
-        // 生成头像字段：优先使用记录中的 parrot.avatar/photo，其次从 parrotsList 匹配
+        // 生成头像字段：优先使用记录内头像，其次从 parrotsList 匹配
         const list = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
         const mapped = mappedBase.map(r => {
-          const fromRecord = r.parrot && (r.parrot.photo_url || r.parrot.avatar_url)
-          let avatar = null
-          if (fromRecord) {
-            avatar = app.resolveUploadUrl(fromRecord)
-          }
+          // 优先使用记录内的照片/头像，并解析为完整URL
+          const recordPhoto = (r.parrot && r.parrot.photo_url) ? app.resolveUploadUrl(r.parrot.photo_url) : ''
+          const recordAvatar = (r.parrot && r.parrot.avatar_url) ? app.resolveUploadUrl(r.parrot.avatar_url) : ''
+          let avatar = recordPhoto || recordAvatar || ''
+
           if (!avatar) {
+            // 回退从鹦鹉列表匹配，解析URL；若仍为空则给默认头像
             const pid = r.parrot_id
             const pname = r.parrot_name
             const p = list.find(x => (pid && x.id === pid) || (pname && x.name === pname))
             if (p) {
               const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
               const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
-              avatar = resolvedPhoto || resolvedAvatar
-              if (!avatar) {
-                const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
-                avatar = app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
-              }
+              const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+              avatar = resolvedPhoto || resolvedAvatar || app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
             }
           }
+
+          // 仍未获得头像时，使用默认头像占位
           if (!avatar) {
-            // 最终兜底彩色头像
-            avatar = app.getDefaultAvatarForParrot({ name: r.parrot_name }) || '/images/parrot-avatar-green.svg'
+            avatar = '/images/parrot-avatar-green.svg'
           }
+
           return {
             ...r,
             parrot_avatar: avatar,
@@ -137,45 +149,45 @@ Page({
     }
   },
 
-  // 切换鹦鹉筛选
-  switchParrot(e) {
-    const { id, name } = e.currentTarget.dataset
-    this.setData({
-      selectedParrotId: id || '',
-      selectedParrotName: name || '全部'
-    })
-    this.loadHealthRecords(true)
-  },
-
-  // 计算概览数据（健康鹦鹉、需关注、检查次数）
+  // 计算概览统计
   computeOverview(records) {
-    if (!Array.isArray(records) || records.length === 0) {
-      this.setData({ overview: { healthyCount: 0, attentionCount: 0, checkCount: 0 } })
-      return
-    }
-
     let healthyCount = 0
     let attentionCount = 0
     const checkCount = records.length
 
-    records.forEach(r => {
-      const status = r.health_status
-      if (status === 'healthy') {
-        healthyCount += 1
-      } else if (status === 'sick' || status === 'recovering' || status === 'observation') {
-        attentionCount += 1
+    // 统计不同健康状态的鹦鹉数量
+    const parrotHealthStatus = {}
+    records.forEach(record => {
+      if (record.parrot_name) {
+        parrotHealthStatus[record.parrot_name] = record.health_status
       }
     })
 
-    this.setData({ overview: { healthyCount, attentionCount, checkCount } })
+    Object.values(parrotHealthStatus).forEach(status => {
+      if (status === 'healthy') {
+        healthyCount++
+      } else if (status === 'sick' || status === 'observation') {
+        attentionCount++
+      }
+    })
+
+    this.setData({
+      overview: {
+        healthyCount,
+        attentionCount,
+        checkCount
+      }
+    })
   },
 
-  // 工具：格式化日期为 YYYY-MM-DD
-  formatDateYYYYMMDD(d) {
-    const y = d.getFullYear()
-    const m = `${d.getMonth()+1}`.padStart(2, '0')
-    const dd = `${d.getDate()}`.padStart(2, '0')
-    return `${y}-${m}-${dd}`
+  // 切换鹦鹉筛选
+  switchParrot(e) {
+    const { id, name } = e.currentTarget.dataset
+    this.setData({
+      selectedParrotId: id,
+      selectedParrotName: name
+    })
+    this.loadHealthRecords()
   },
 
   // 添加健康记录
@@ -183,5 +195,65 @@ Page({
     wx.navigateTo({
       url: '/pages/records/add-record/add-record?type=health'
     })
+  },
+
+  // 编辑记录
+  editRecord(e) {
+    const { id } = e.currentTarget.dataset;
+    const url = `/pages/records/add-record/add-record?mode=edit&type=health&id=${encodeURIComponent(id)}`;
+    wx.navigateTo({ url });
+  },
+
+  // 删除记录
+  deleteRecord(e) {
+    const { id } = e.currentTarget.dataset;
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这条健康记录吗？删除后无法恢复。',
+      confirmText: '删除',
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) {
+          this.performDelete(id);
+        }
+      }
+    });
+  },
+
+  // 执行删除操作
+  async performDelete(id) {
+    try {
+      wx.showLoading({ title: '删除中...' });
+      
+      const res = await app.request({
+        url: `/api/records/health/${id}`,
+        method: 'DELETE'
+      });
+      
+      wx.hideLoading();
+      
+      if (res.success) {
+        wx.showToast({
+          title: '删除成功',
+          icon: 'success'
+        });
+        
+        // 重新加载数据
+        this.loadHealthRecords();
+      } else {
+        wx.showToast({
+          title: res.message || '删除失败',
+          icon: 'error'
+        });
+      }
+    } catch (error) {
+      wx.hideLoading();
+      console.error('删除记录失败:', error);
+      wx.showToast({
+        title: '删除失败',
+        icon: 'error'
+      });
+    }
   }
 })

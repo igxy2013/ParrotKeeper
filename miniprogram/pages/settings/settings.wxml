@@ -143,27 +143,8 @@
         </view>
       </view>
 
-      <view class="setting-action-item" bindtap="showAbout">
-        <view class="setting-icon-wrapper">
-          <view class="setting-icon about-icon">ℹ️</view>
-        </view>
-        <view class="setting-content">
-          <view class="setting-name">关于应用</view>
-          <view class="setting-desc">查看应用版本和信息</view>
-        </view>
-        <view class="setting-arrow">></view>
-      </view>
 
-      <view class="setting-action-item" bindtap="showHelp">
-        <view class="setting-icon-wrapper">
-          <view class="setting-icon help-icon">❓</view>
-        </view>
-        <view class="setting-content">
-          <view class="setting-name">帮助反馈</view>
-          <view class="setting-desc">获取帮助或提交反馈</view>
-        </view>
-        <view class="setting-arrow">></view>
-      </view>
+      
 
       <!-- 通知功能测试菜单已隐藏
       <view class="setting-action-item" bindtap="goToTestNotification">

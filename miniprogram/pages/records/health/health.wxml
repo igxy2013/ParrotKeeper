@@ -1,6 +1,6 @@
-<!--pages/records/health/health.wxml-->
+<!--pages/health-check/health-check.wxml-->
 <view class="page-container">
-  <app-header title="健康检查" subtitle="记录鹦鹉健康状况" showBack="true" theme="purple">
+  <app-header title="健康检查记录" subtitle="记录鹦鹉健康状况" showBack="true" theme="purple">
     <view slot="actions" class="header-btn" bindtap="addHealthRecord">
       <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
     </view>
@@ -27,7 +27,7 @@
         </scroll-view>
       </view>
 
-      <!-- 健康概览卡片（对齐参考APP：三项指标） -->
+      <!-- 健康概览卡片 -->
       <view class="overview-card rounded-3xl p-6 shadow-xl">
         <text class="overview-title text-lg font-bold">健康概览</text>
         <view class="overview-grid">
@@ -62,28 +62,49 @@
               </block>
               <block wx:elif="{{item.parrot_avatars && item.parrot_avatars.length === 1}}">
                 <view class="single-avatar">
-                  <image src="{{item.parrot_avatar || '/images/default-parrot.png'}}" class="w-full h-full object-cover" mode="aspectFill" />
+                  <image src="{{item.parrot_avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
                 </view>
               </block>
               <block wx:else>
                 <view class="single-avatar">
-                  <image src="/images/default-parrot.png" class="w-full h-full object-cover" mode="aspectFill" />
+                  <image src="/images/default-parrot.png" class="cluster-img" mode="aspectFill" />
                 </view>
               </block>
             </view>
             <view class="record-info">
               <text class="record-title">{{item.parrot_name}}</text>
-              <text class="record-time">{{item.record_date_formatted}}</text>
+              <view class="record-meta">
+                <text class="record-time">{{item.record_date_formatted}}</text>
+                <text class="record-weight" wx:if="{{item.weight}}">体重：{{item.weight}} g</text>
+              </view>
+            </view>
+            <view class="header-right">
+              <view class="health-status-badge status-{{item.health_status}}">
+                {{item.health_status_text || '健康'}}
+              </view>
+              <!-- 编辑和删除按钮 -->
+              <view class="action-buttons" wx:if="{{hasOperationPermission}}">
+                <view class="action-btn edit-btn" bindtap="editRecord" data-id="{{item.id}}">
+                  <image src="/images/remix/edit-line-gray.png" class="action-icon-img" mode="aspectFit" />
+                </view>
+                <view class="action-btn delete-btn" bindtap="deleteRecord" data-id="{{item.id}}">
+                  <image src="/images/remix/delete-bin-line-gray.png" class="action-icon-img" mode="aspectFit" />
+                </view>
+              </view>
             </view>
           </view>
           <view class="record-body">
-            <view class="record-detail" wx:if="{{item.weight}}">
-              <text class="detail-label">体重：</text>
-              <text class="detail-value">{{item.weight}} g</text>
-            </view>
             <view class="record-detail" wx:if="{{item.notes}}">
               <text class="detail-label">备注：</text>
               <text class="detail-value">{{item.notes}}</text>
+            </view>
+            <view class="record-detail" wx:if="{{item.symptoms}}">
+              <text class="detail-label">症状：</text>
+              <text class="detail-value">{{item.symptoms}}</text>
+            </view>
+            <view class="record-detail" wx:if="{{item.treatment}}">
+              <text class="detail-label">治疗：</text>
+              <text class="detail-value">{{item.treatment}}</text>
             </view>
           </view>
         </view>

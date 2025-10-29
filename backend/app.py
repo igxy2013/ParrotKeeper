@@ -16,6 +16,7 @@ from routes.reminders import reminders_bp
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, date
 from routes.care_guide import care_guide_bp
+from routes.feedback import feedback_bp
 import os
 
 def create_app(config_name=None):
@@ -46,6 +47,7 @@ def create_app(config_name=None):
     app.register_blueprint(notifications_bp)
     app.register_blueprint(care_guide_bp)
     app.register_blueprint(reminders_bp)
+    app.register_blueprint(feedback_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']

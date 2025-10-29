@@ -915,7 +915,7 @@ Page({
     }
     
     wx.navigateTo({
-      url: '/pages/health-check/health-check'
+      url: '/pages/records/health/health'
     })
   },
 

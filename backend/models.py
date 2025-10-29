@@ -262,3 +262,16 @@ class UserStatistics(db.Model):
     
     # 唯一约束：每个用户每个团队只能有一条统计记录
     __table_args__ = (db.UniqueConstraint('user_id', 'team_id', name='unique_user_statistics'),)
+
+class Feedback(db.Model):
+    __tablename__ = 'feedbacks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    contact = db.Column(db.String(255))
+    image_urls = db.Column(db.Text)  # 存储为JSON字符串数组
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 关系
+    user = db.relationship('User', backref='feedbacks', lazy=True)

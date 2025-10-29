@@ -65,6 +65,7 @@ Page({
       { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.png' },
       { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.png' },
       { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.png', isContact: true },
+      { icon: '❓', title: '帮助反馈', desc: '提交问题与建议', bgClass: 'bg-amber', iconSrc: '/images/remix/feedback-line.png' },
       { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.png' },
       { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink', iconSrc: '/images/remix/share-forward-line.png' }
     ],
@@ -326,6 +327,8 @@ Page({
     } else if (title === '客服支持') {
       // 备选处理：若未通过内置按钮触发，可给出提示
       wx.showToast({ title: '请点击该项以打开客服会话', icon: 'none' });
+    } else if (title === '帮助反馈') {
+      wx.navigateTo({ url: '/pages/settings/feedback/feedback' });
     } else if (title === '关于我们') {
       this.showAbout && this.showAbout();
     } else if (title === '分享应用') {

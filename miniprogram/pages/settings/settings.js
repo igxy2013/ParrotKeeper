@@ -320,7 +320,7 @@ Page({
       });
   },
   showHelp() {
-    wx.showModal({ title: '帮助反馈', content: '有问题或建议，欢迎联系我们。', showCancel: false });
+    wx.navigateTo({ url: '/pages/settings/feedback/feedback' })
   },
 
   // 跳转到通知功能测试页面（已隐藏）
