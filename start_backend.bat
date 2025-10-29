@@ -58,9 +58,12 @@ if not exist ".env" (
 
 :: Start backend service with Waitress production server
 echo.
-echo [INFO] Starting backend service with Waitress production server...
+echo [INFO] Preparing to start backend with Waitress (production)...
 echo ========================================
-python app.py
+REM Set production environment for Flask config
+set FLASK_ENV=production
+REM Start using Waitress WSGI server, calling the app factory
+waitress-serve --host=0.0.0.0 --port=5075 --call app:create_app
 
 :: If service exits unexpectedly, pause to view error info
 if %errorlevel% neq 0 (
