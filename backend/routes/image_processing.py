@@ -21,7 +21,9 @@ def remove_image_background():
         if not original_path:
             return jsonify({'error': '文件格式不支持'}), 400
         
-        base_url = current_app.config.get('BASE_URL', 'http://localhost:5075')
+        # 优先使用配置中的 BASE_URL；否则根据统一端口生成本地地址
+        port = current_app.config.get('SERVER_PORT') or int(os.environ.get('SERVER_PORT') or 5075)
+        base_url = current_app.config.get('BASE_URL') or f'http://localhost:{port}'
         response_data = {
             'original_url': f"{base_url}/uploads/{original_path}",
             'message': '图片上传成功'
@@ -46,7 +48,8 @@ def process_existing_image():
         if not data or 'image_path' not in data:
             return jsonify({'error': '缺少图片路径参数'}), 400
         
-        base_url = current_app.config.get('BASE_URL', 'http://localhost:5075')
+        port = current_app.config.get('SERVER_PORT') or int(os.environ.get('SERVER_PORT') or 5075)
+        base_url = current_app.config.get('BASE_URL') or f'http://localhost:{port}'
         # 获取相对路径并转换为绝对路径
         relative_path = data['image_path'].replace(f'{base_url}/uploads/', '')
         absolute_path = os.path.join(current_app.config['UPLOAD_FOLDER'], relative_path)

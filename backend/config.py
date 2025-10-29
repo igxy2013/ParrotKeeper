@@ -34,9 +34,13 @@ class Config:
 
     # 应用版本（用于对外展示，通过环境变量注入）
     APP_VERSION = os.environ.get('APP_VERSION') or '1.0.0'
-    
-    # 基础URL配置
-    BASE_URL = os.environ.get('BASE_URL') or 'http://localhost:5075'
+
+    # 服务器监听配置（统一从 .env 读取）
+    SERVER_HOST = os.environ.get('SERVER_HOST') or '0.0.0.0'
+    SERVER_PORT = int(os.environ.get('SERVER_PORT') or 5075)
+
+    # 基础URL配置：优先使用环境变量 BASE_URL；否则用本机 + 统一端口
+    BASE_URL = os.environ.get('BASE_URL') or f'http://localhost:{SERVER_PORT}'
 
     # 护理指南配置（后端可配置内容）
     CARE_GUIDE_CONFIG_PATH = os.environ.get('CARE_GUIDE_CONFIG_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'care_guide_config.json')
