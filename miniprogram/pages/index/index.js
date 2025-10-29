@@ -109,6 +109,28 @@ Page({
 
   onShow() {
     this.checkLoginStatus()
+    // 到点后补偿生成当天的本地定时提醒（避免仅在onLoad时触发）
+    try {
+      const app = getApp();
+      const nm = app.globalData.notificationManager;
+      nm.generateDailyRemindersForToday();
+      const notifications = nm.getLocalNotifications();
+      const unreadCount = nm.getUnreadCount();
+      this.setData({ notifications, unreadCount });
+
+      // 在页面可见期间，每60秒轮询一次到点生成提醒
+      if (this._reminderTimer) {
+        clearInterval(this._reminderTimer);
+      }
+      this._reminderTimer = setInterval(() => {
+        try {
+          nm.generateDailyRemindersForToday();
+          const updated = nm.getLocalNotifications();
+          const updatedUnread = nm.getUnreadCount();
+          this.setData({ notifications: updated, unreadCount: updatedUnread });
+        } catch (_) {}
+      }, 60000);
+    } catch (_) {}
     // 无论是否登录都可以浏览首页，但只有登录用户才加载个人数据
     if (this.data.isLogin) {
       // 检查是否需要刷新数据（模式切换后）
@@ -117,6 +139,20 @@ Page({
         app.globalData.needRefresh = false; // 重置标志
       }
       this.loadData()
+    }
+  },
+
+  onHide() {
+    if (this._reminderTimer) {
+      clearInterval(this._reminderTimer);
+      this._reminderTimer = null;
+    }
+  },
+
+  onUnload() {
+    if (this._reminderTimer) {
+      clearInterval(this._reminderTimer);
+      this._reminderTimer = null;
     }
   },
 

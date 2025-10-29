@@ -62,6 +62,7 @@ Page({
     try {
       const app = getApp()
       const notificationManager = app.globalData.notificationManager
+      const prevSettings = notificationManager.getNotificationSettings()
       
       // 保存通知设置
       const notificationSettings = {
@@ -76,6 +77,24 @@ Page({
       }
       
       notificationManager.saveNotificationSettings(notificationSettings)
+
+      // 若时间或开关发生变化，重置当天对应类型的生成状态，允许在当天重新生成一次
+      try {
+        const STATE_KEY = 'daily_reminders_state'
+        const now = new Date()
+        const todayKey = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}`
+        const state = wx.getStorageSync(STATE_KEY) || {}
+        if (state.date === todayKey) {
+          const resetFeeding = (prevSettings.feedingReminderTime !== this.data.feedingReminderTime) || (!prevSettings.feedingReminder && this.data.feedingReminder)
+          const resetCleaning = (prevSettings.cleaningReminderTime !== this.data.cleaningReminderTime) || (!prevSettings.cleaningReminder && this.data.cleaningReminder)
+          if (resetFeeding) state.feeding = false
+          if (resetCleaning) state.cleaning = false
+          wx.setStorageSync(STATE_KEY, state)
+        }
+      } catch (_) {}
+
+      // 立即尝试生成当天的本地定时提醒（若时间已到且未生成）
+      try { notificationManager.generateDailyRemindersForToday() } catch (_) {}
 
       // 调用后端保存提醒时间（若已登录）
       if (app.globalData && app.globalData.openid) {
@@ -140,6 +159,11 @@ Page({
       notificationSettings: newSettings,
       notificationsEnabled: newSettings.enabled
     })
+
+    // 开启后尝试生成当天提醒（若时间已到），关闭则不做处理
+    if (enabled) {
+      try { notificationManager.generateDailyRemindersForToday() } catch (_) {}
+    }
 
     wx.showToast({ title: enabled ? '通知已开启' : '通知已关闭', icon: 'success' })
   },

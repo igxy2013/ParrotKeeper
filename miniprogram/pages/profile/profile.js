@@ -89,6 +89,44 @@ Page({
     } catch (_) {}
   },
 
+  onShow() {
+    try {
+      const app = getApp();
+      const nm = app.globalData.notificationManager;
+      nm.generateDailyRemindersForToday();
+      const notifications = nm.getLocalNotifications();
+      const unreadCount = nm.getUnreadCount();
+      this.setData({ notifications, unreadCount });
+
+      // 页面可见期间轮询，确保跨分钟到点也能生成当天提醒
+      if (this._reminderTimer) {
+        clearInterval(this._reminderTimer);
+      }
+      this._reminderTimer = setInterval(() => {
+        try {
+          nm.generateDailyRemindersForToday();
+          const updated = nm.getLocalNotifications();
+          const updatedUnread = nm.getUnreadCount();
+          this.setData({ notifications: updated, unreadCount: updatedUnread });
+        } catch (_) {}
+      }, 60000);
+    } catch (_) {}
+  },
+
+  onHide() {
+    if (this._reminderTimer) {
+      clearInterval(this._reminderTimer);
+      this._reminderTimer = null;
+    }
+  },
+
+  onUnload() {
+    if (this._reminderTimer) {
+      clearInterval(this._reminderTimer);
+      this._reminderTimer = null;
+    }
+  },
+
   onUnload() {
     const app = getApp();
     if (app && app.globalData) {
