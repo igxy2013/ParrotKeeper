@@ -125,7 +125,13 @@ Page({
       ])
       
       if (detailRes.success) {
-        const parrot = detailRes.data
+        const rawParrot = detailRes.data
+        // 规范化图片URL，兼容后端返回相对路径
+        const parrot = {
+          ...rawParrot,
+          photo_url: app.resolveUploadUrl(rawParrot.photo_url),
+          avatar_url: app.resolveUploadUrl(rawParrot.avatar_url)
+        }
         
         // 计算年龄和入住天数
         const age = this.calculateAge(parrot.birth_date)

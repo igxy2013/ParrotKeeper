@@ -206,10 +206,13 @@ Page({
         console.log('获取到的鹦鹉数据:', parrots);
         console.log('数据数量:', parrots.length);
         
-        const newParrots = parrots.map(parrot => ({
-          ...parrot,
-          weight: parrot.weight ? parseFloat(parrot.weight) : null,
-          acquisition_date_formatted: app.formatDate(parrot.acquisition_date)
+        const newParrots = parrots.map(p => ({
+          ...p,
+          weight: p.weight ? parseFloat(p.weight) : null,
+          acquisition_date_formatted: app.formatDate(p.acquisition_date),
+          // 统一规范化图片URL，避免相对路径导致无法展示
+          photo_url: app.resolveUploadUrl(p.photo_url),
+          avatar_url: app.resolveUploadUrl(p.avatar_url)
         }))
         
         console.log('处理后的鹦鹉数据:', newParrots);

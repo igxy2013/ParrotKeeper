@@ -5,8 +5,9 @@ App({
   globalData: {
     userInfo: null,
     openid: null,
-    //baseUrl: 'http://localhost:5075', // 后端API地址（本地开发环境）
-    baseUrl: 'https://acbim.cn', // 后端API地址（正式环境）
+    // 动态设置，默认正式环境，开发工具中自动切换为本地
+    baseUrl: 'https://acbim.cn', // 后端API地址（默认正式环境）
+    //baseUrl: 'http://192.168.0.80:5075', // 后端API地址（默认正式环境）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
     needRefresh: false, // 页面数据刷新标志（模式变更时触发）
@@ -78,10 +79,11 @@ App({
   onLaunch() {
     console.log('小程序启动')
     
+    // 先初始化平台与后端地址，再请求后端版本
+    this.initPlatformInfo()
     // 获取版本号：优先后端API，其次微信API
     this.fetchServerVersion()
     this.initAppVersion()
-    this.initPlatformInfo()
     
     // 检查登录状态
     const openid = wx.getStorageSync('openid')
@@ -130,6 +132,29 @@ App({
       this.globalData.platformInfo = { isIOS: false, system: '' }
       this.globalData.useIconFont = true
     }
+  },
+
+
+  // 解析后端上传图片的URL：支持相对路径与完整URL
+  resolveUploadUrl(path) {
+    if (!path) return ''
+    const str = String(path)
+    // 若是完整URL，且包含 /uploads/，则统一重写到当前 baseUrl，避免跨域失效
+    if (/^https?:\/\//.test(str)) {
+      const m = str.match(/\/uploads\/(.+)$/)
+      if (m && m[1]) {
+        // 去掉历史前缀 images/，避免路径被解析为 images/images
+        const suffix = m[1].replace(/^images\/?/, '')
+        return this.globalData.baseUrl + '/uploads/' + suffix
+      }
+      return str
+    }
+    // 兼容历史路径：去掉前导的 /uploads/images 或 /uploads 或 /images
+    const normalized = str
+      .replace(/^\/?uploads\/?images\/?/, '')
+      .replace(/^\/?uploads\/?/, '')
+      .replace(/^\/?images\/?/, '')
+    return this.globalData.baseUrl + '/uploads/' + normalized
   },
 
   // 微信登录
