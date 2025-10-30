@@ -25,11 +25,13 @@ Page({
           weightStartDate: payload.weightStartDate || '',
           weightEndDate: payload.weightEndDate || '',
         }, () => {
+          this.updateLegend()
           this.drawChart()
         })
       })
     } else {
       // 无传入数据时，显示占位
+      this.updateLegend()
       this.drawChart()
     }
   },
@@ -341,6 +343,20 @@ Page({
         ctx.restore()
       }
     })
+  },
+
+  // 根据当前显示系列生成图例
+  updateLegend() {
+    const series = this.data.weightSeries || []
+    const selectedId = this.data.selectedParrotId
+    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series
+    const palette = this.data.weightColors || ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
+    const legend = (displaySeries || []).map((s, idx) => ({
+      parrot_id: s.parrot_id,
+      parrot_name: s.parrot_name,
+      color: palette[idx % palette.length]
+    }))
+    this.setData({ weightLegend: legend })
   },
 
   // 点击命中判断

@@ -18,11 +18,43 @@
   background: #1f2937;
   border-radius: 8rpx;
 }
+.title-icon {
+  width: 24rpx;
+  height: 24rpx;
+  margin-left: 14rpx;
+}
 .title {
   margin-left: 20rpx;
-  font-size: 28rpx;
+  font-size: 22rpx;
 }
 .spacer { flex: 1; }
+.legend-scroll {
+  padding: 6rpx 12rpx;
+}
+.legend-track {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10rpx;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 4rpx 8rpx;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10rpx;
+}
+.legend-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1rpx rgba(255,255,255,0.12) inset;
+}
+.legend-label {
+  font-size: 14rpx;
+  color: #cbd5e1;
+}
 .canvas-wrap {
   flex: 1;
 }
