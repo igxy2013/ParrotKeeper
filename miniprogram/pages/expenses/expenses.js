@@ -417,7 +417,7 @@ Page({
   // 为弹窗头部计算胶囊避让内边距（与首页实现保持一致）
   computeModalCapsulePadding() {
     try {
-      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : {}
       const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
       if (win && rect && typeof win.windowWidth === 'number') {
         const rightGap = win.windowWidth - rect.right

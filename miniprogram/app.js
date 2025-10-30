@@ -121,7 +121,7 @@ App({
   initPlatformInfo() {
     try {
       // 使用新接口优先获取设备/应用信息，旧接口作为兼容兜底
-      const deviceInfo = wx.getDeviceInfo ? wx.getDeviceInfo() : (wx.getSystemInfoSync ? wx.getSystemInfoSync() : {})
+      const deviceInfo = wx.getDeviceInfo ? wx.getDeviceInfo() : {}
       const appBaseInfo = wx.getAppBaseInfo ? wx.getAppBaseInfo() : {}
       const systemStr = (deviceInfo.system || appBaseInfo.system || '').toLowerCase()
       const isIOS = systemStr.indexOf('ios') !== -1
@@ -143,9 +143,13 @@ App({
     const str = String(path)
     // 若是完整URL，且包含 /uploads/，则统一重写到当前 baseUrl，避免跨域失效
     if (/^https?:\/\//.test(str)) {
+      // 如果是生产域名 bimai.xyz 的绝对地址，保持原样，避免在本地将其重写为本地 baseUrl 导致 404
+      if (/^https?:\/\/([^.]*\.)?bimai\.xyz\//.test(str)) {
+        return str
+      }
+      // 其他包含 /uploads/ 的绝对路径，按当前 baseUrl 统一
       const m = str.match(/\/uploads\/(.+)$/)
       if (m && m[1]) {
-        // 去掉历史前缀 images/，避免路径被解析为 images/images
         const suffix = m[1].replace(/^images\/?/, '')
         return this.globalData.baseUrl + '/uploads/' + suffix
       }

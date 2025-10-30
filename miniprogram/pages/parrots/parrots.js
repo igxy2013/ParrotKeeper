@@ -644,11 +644,12 @@ Page({
     });
   },
   computeMenuRightPadding() {
-    const systemInfo = wx.getSystemInfoSync()
-    if (systemInfo.platform === 'ios') {
-      const menuButtonInfo = wx.getMenuButtonBoundingClientRect()
-      if (menuButtonInfo && menuButtonInfo.right) {
-        const rightPadding = systemInfo.windowWidth - menuButtonInfo.right + 10
+    const device = wx.getDeviceInfo ? wx.getDeviceInfo() : {}
+    const win = wx.getWindowInfo ? wx.getWindowInfo() : {}
+    if (device.platform === 'ios') {
+      const menuButtonInfo = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+      if (menuButtonInfo && menuButtonInfo.right && typeof win.windowWidth === 'number') {
+        const rightPadding = win.windowWidth - menuButtonInfo.right + 10
         this.setData({ menuRightPadding: rightPadding })
       }
     }

@@ -124,7 +124,7 @@ Page({
   // 为弹窗头部计算胶囊避让内边距
   computeModalCapsulePadding() {
     try {
-      const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : {}
       const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
       if (win && rect && typeof win.windowWidth === 'number') {
         // 右侧需要预留：胶囊到屏幕右侧的距离 + 胶囊宽度 + 16px缓冲
