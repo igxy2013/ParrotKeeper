@@ -38,6 +38,8 @@ const app = getApp()
       weightEndDate: '',
       // 点击点高亮与标签
       activeWeightPoint: null,
+      // 体重趋势卡片的当前范围平均体重
+      weightAvgChart: '',
     
     // 加载状态
     loading: false,
@@ -1019,6 +1021,8 @@ const app = getApp()
         ctx.textBaseline = 'middle'
         ctx.font = '14px sans-serif'
         ctx.fillText('暂无体重数据', width / 2, height / 2)
+        // 无数据时平均体重置空
+        this.setData({ weightAvgChart: '--' })
         return
       }
   
@@ -1047,6 +1051,8 @@ const app = getApp()
         ctx.textBaseline = 'middle'
         ctx.font = '14px sans-serif'
         ctx.fillText('暂无有效体重数据', width / 2, height / 2)
+        // 无有效数据时平均体重置空
+        this.setData({ weightAvgChart: '--' })
         return
       }
 
@@ -1062,6 +1068,7 @@ const app = getApp()
         ctx.textBaseline = 'middle'
         ctx.font = '14px sans-serif'
         ctx.fillText('体重数据异常', width / 2, height / 2)
+        this.setData({ weightAvgChart: '--' })
         return
       }
 
@@ -1070,6 +1077,11 @@ const app = getApp()
         minW = Math.max(0, minW - 1)
         maxW = maxW + 1
       }
+
+      // 计算当前显示范围的平均体重并展示
+      const sumW = weights.reduce((s, v) => s + (typeof v === 'number' && !isNaN(v) ? v : 0), 0)
+      const avgWStr = weights.length > 0 ? (Math.round(sumW / weights.length) + 'g') : '--'
+      this.setData({ weightAvgChart: avgWStr })
   
       // 内边距（为坐标轴标签预留空间）
       const paddingLeft = 48

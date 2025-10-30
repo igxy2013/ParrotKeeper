@@ -481,6 +481,25 @@
   padding: 0 15rpx;
 }
 
+/* 体重趋势卡片的图表元信息（平均体重） */
+.chart-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 8rpx 4rpx 16rpx;
+}
+
+.meta-label {
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.meta-value {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
 .chart-item {
   display: flex;
   flex-direction: column;
