@@ -28,7 +28,15 @@ Page({
   },
 
   onShow() {
-    this.loadFeedingRecords();
+    // 先加载鹦鹉列表与食物类型，确保头像与类型名可用，再加载记录
+    Promise.all([this.loadParrots(), this.loadFoodTypes()])
+      .then(() => {
+        return this.loadFeedingRecords();
+      })
+      .catch(() => {
+        // 即使前置数据加载失败，也尝试加载记录以保证页面可用
+        this.loadFeedingRecords();
+      });
   },
 
   onPullDownRefresh() {

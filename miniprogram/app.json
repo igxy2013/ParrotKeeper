@@ -32,7 +32,8 @@
     {
       "root": "pages/statistics",
       "pages": [
-        "statistics"
+        "statistics",
+        "weight-fullscreen/weight-fullscreen"
       ]
     },
     {

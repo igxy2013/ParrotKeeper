@@ -45,7 +45,7 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
         load_instance = True
         exclude = ('created_at',)
     
-    parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name', 'avatar_url'))
+    parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name', 'avatar_url', 'photo_url'))
     feed_type = fields.Nested(FeedTypeSchema, dump_only=True)
     created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)

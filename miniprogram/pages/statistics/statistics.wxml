@@ -98,6 +98,9 @@
             </view>
           </view>
         </view>
+        <view class="view-all-btn" bindtap="openWeightFullscreen">
+          <text>全屏</text>
+        </view>
       </view>
       <view class="card-content">
         <view class="legend-container" wx:if="{{weightLegend.length > 0}}">

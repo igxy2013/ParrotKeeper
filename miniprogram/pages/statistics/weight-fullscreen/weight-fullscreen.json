@@ -1,0 +1,9 @@
+{
+  "usingComponents": {},
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "体重趋势",
+  "backgroundColor": "#0b1220",
+  "backgroundTextStyle": "dark",
+  "disableScroll": true,
+  "pageOrientation": "landscape"
+}

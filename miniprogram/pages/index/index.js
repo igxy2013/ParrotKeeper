@@ -1212,5 +1212,17 @@ Page({
   },
 
   /* ===== 收支弹窗逻辑 ===== */
+  onShareAppMessage() {
+    const title = '鹦鹉管家AI - 智能养鸟助手'
+    return {
+      title,
+      path: '/pages/index/index'
+    }
+  },
+  onShareTimeline() {
+    return {
+      title: '鹦鹉管家AI - 智能养鸟助手'
+    }
+  }
 })
 

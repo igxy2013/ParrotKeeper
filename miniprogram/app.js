@@ -6,10 +6,10 @@ App({
     userInfo: null,
     openid: null,
     // 动态设置，默认正式环境，开发工具中自动切换为本地
-    baseUrl: 'https://bimai.xyz', // 后端API地址（默认正式环境）
+    //baseUrl: 'https://bimai.xyz', // 后端API地址（默认正式环境）
     //baseUrl: 'https://acbim.cn', // 后端API地址（默认正式环境）
     //baseUrl: 'https://aixbim.cn', // 后端API地址（默认正式环境）
-    //baseUrl: 'http://192.168.0.80:5075', // 后端API地址（默认开发环境，与 .env 端口一致）
+    baseUrl: 'http://192.168.0.80:5075', // 后端API地址（默认开发环境，与 .env 端口一致）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
     needRefresh: false, // 页面数据刷新标志（模式变更时触发）
@@ -116,6 +116,16 @@ App({
     this.globalData.isLogin = !!(this.globalData.openid && this.globalData.userInfo)
     if (this.globalData.isLogin) {
       console.log('检测到已登录状态')
+    }
+
+    // 全局启用分享菜单（好友和朋友圈）
+    try {
+      wx.showShareMenu({
+        withShareTicket: true,
+        menus: ['shareAppMessage', 'shareTimeline']
+      })
+    } catch (e) {
+      console.warn('启用分享菜单失败:', e)
     }
   },
 

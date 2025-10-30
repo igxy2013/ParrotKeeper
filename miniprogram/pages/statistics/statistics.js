@@ -708,6 +708,26 @@ const app = getApp()
     })
   },
 
+  // 打开体重趋势全屏横屏页面
+  openWeightFullscreen() {
+    const payload = {
+      weightSeries: this.data.weightSeries,
+      selectedParrotId: this.data.selectedParrotId,
+      weightColors: this.data.weightColors,
+      weightLegend: this.data.weightLegend,
+      weightStartDate: this.data.weightStartDate,
+      weightEndDate: this.data.weightEndDate
+    }
+    wx.navigateTo({
+      url: '/pages/statistics/weight-fullscreen/weight-fullscreen',
+      success: (res) => {
+        if (res && res.eventChannel && res.eventChannel.emit) {
+          res.eventChannel.emit('weightData', payload)
+        }
+      }
+    })
+  },
+
   // 游客模式加载示例数据
   loadGuestData() {
     this.setData({
@@ -1483,6 +1503,18 @@ const app = getApp()
   // 阻止下拉菜单内部点击事件冒泡
   preventBubble() {
     // 空函数，用于阻止事件冒泡
+  }
+  ,onShareAppMessage() {
+    const title = '数据统计 - 体重趋势与消费分析'
+    return {
+      title,
+      path: '/pages/statistics/statistics'
+    }
+  },
+  onShareTimeline() {
+    return {
+      title: '数据统计 - 体重趋势与消费分析'
+    }
   }
 })
 

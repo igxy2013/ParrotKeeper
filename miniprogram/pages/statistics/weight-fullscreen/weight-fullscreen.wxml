@@ -1,0 +1,10 @@
+<view class="fullscreen-page" catchtouchmove="true">
+  <view class="top-bar">
+    <view class="back-btn" bindtap="goBack">返回</view>
+    <view class="title">体重趋势曲线</view>
+    <view class="spacer"></view>
+  </view>
+  <view class="canvas-wrap">
+    <canvas type="2d" id="weightFullscreenCanvas" style="width: 100%; height: 100%;" bindtouchstart="onCanvasTap"></canvas>
+  </view>
+</view>
