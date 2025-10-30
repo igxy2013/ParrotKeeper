@@ -47,6 +47,14 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    # 数据库连接池优化（提升并发与稳定性，仅生产环境启用）
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_size": 20,
+        "max_overflow": 20,
+        "pool_recycle": 1800,
+        "pool_pre_ping": True,
+        "pool_timeout": 30,
+    }
 
 config = {
     'development': DevelopmentConfig,

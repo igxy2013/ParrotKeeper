@@ -217,7 +217,11 @@ if __name__ == '__main__':
     for rule in app.url_map.iter_rules():
         print(f"  {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
     
-    # 使用Flask开发服务器进行测试
-    print("启动开发服务器...")
-    print("服务器地址: http://0.0.0.0:5075")
-    app.run(host='0.0.0.0', port=5075, debug=True)
+    # 仅在开发环境下启动 Flask 内置开发服务器
+    env = os.environ.get('FLASK_ENV', 'production')
+    if env == 'development':
+        print("启动开发服务器...")
+        print("服务器地址: http://0.0.0.0:5075")
+        app.run(host='0.0.0.0', port=5075, debug=True)
+    else:
+        print("当前为生产环境：请使用 Waitress/Gunicorn 等 WSGI 服务器启动。")

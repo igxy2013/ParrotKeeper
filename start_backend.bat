@@ -62,8 +62,11 @@ echo [INFO] Preparing to start backend with Waitress (production)...
 echo ========================================
 REM Set production environment for Flask config
 set FLASK_ENV=production
+REM Tune Waitress threads and connection backlog for higher concurrency
+if not defined WAITRESS_THREADS set WAITRESS_THREADS=16
+if not defined WAITRESS_BACKLOG set WAITRESS_BACKLOG=1024
 REM Start using Waitress WSGI server, calling the app factory
-waitress-serve --host=0.0.0.0 --port=5075 --call app:create_app
+waitress-serve --host=0.0.0.0 --port=5075 --threads=%WAITRESS_THREADS% --backlog=%WAITRESS_BACKLOG% --call app:create_app
 
 :: If service exits unexpectedly, pause to view error info
 if %errorlevel% neq 0 (
