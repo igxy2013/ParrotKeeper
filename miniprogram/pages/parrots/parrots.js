@@ -45,8 +45,10 @@ Page({
       headerAddEmerald: '/images/remix/add-circle-fill.png',
       searchGray: '/images/remix/ri-search-line-gray.png',
       arrowDownGray: '/images/remix/ri-arrow-down-s-fill-gray.png',
+      arrowDown: '/images/remix/arrow-down-s-line.png',
       statusRestaurantOrange: '/images/remix/ri-restaurant-fill-orange.png',
       arrowRightGray: '/images/remix/ri-arrow-right-s-fill-gray.png',
+      arrowRight: '/images/remix/arrow-right-s-line.png',
       addParrotEmerald: '/images/remix/add-circle-fill.png'
     }
   },

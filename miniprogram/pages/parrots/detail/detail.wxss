@@ -780,7 +780,7 @@
   opacity: 0.6;
 }
 /* 空态图片图标尺寸（PNG） */
-.empty-icon-img { width: 160rpx; height: 160rpx; border-radius: 80rpx; }
+.empty-icon-img { width: 60rpx; height: 60rpx; }
 
 .empty-text {
   font-size: 28rpx;

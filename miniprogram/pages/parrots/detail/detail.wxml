@@ -149,14 +149,14 @@
                 class="parrot-photo" 
                 src="{{parrot.photo_url}}" 
                 mode="aspectFill"
-                bindtap="previewParrotPhoto"
+                bindtap="previewPhoto"
               />
             </view>
           </view>
           
           <view class="characteristics-card">
             <view class="card-header">
-              <image class="card-icon-img" src="/images/remix/edit-line.png" mode="widthFix" />
+              <image class="card-icon-img" src="/images/remix/edit-line-gray.png" mode="widthFix" />
               <text class="card-title">备注信息</text>
             </view>
             <view class="notes-content">
@@ -252,7 +252,7 @@
             </view>
           </view>
           <view wx:else class="empty-tip">
-            <image class="empty-icon-img" src="/images/remix/ri-book-fill-orange.png" mode="widthFix" />
+            <image class="empty-icon-img" src="/images/remix/book-fill-gray.png" mode="widthFix" />
             <text class="empty-text">暂无繁殖记录</text>
           </view>
         </view>

@@ -1,5 +1,5 @@
-<view wx:if="{{visible}}" class="nc-overlay" catchtouchmove="true" bindtap="onOverlayTap">
-  <view class="nc-panel" catchtap="noop">
+<view wx:if="{{isOpen}}" class="nc-overlay {{closing ? 'closing' : ''}}" catchtouchmove="true" bindtap="onOverlayTap">
+  <view class="nc-panel {{closing ? 'closing' : ''}}" catchtap="noop">
     <view class="nc-header">
       <text class="nc-title">通知中心</text>
       <view class="nc-actions">

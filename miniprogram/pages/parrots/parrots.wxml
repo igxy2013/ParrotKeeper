@@ -50,15 +50,15 @@
     <view class="filter-bar">
       <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}" bindtap="showSpeciesFilter">
         <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
-          <image class="filter-arrow-img" src="{{iconPaths.arrowDownGray}}" mode="widthFix" binderror="onListIconError" data-key="arrowDownGray"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
       </view>
       <view class="filter-item {{selectedStatus ? 'active' : ''}}" bindtap="showStatusFilter">
         <text class="filter-text">{{selectedStatus ? selectedStatusText : '状态'}}</text>
-          <image class="filter-arrow-img" src="{{iconPaths.arrowDownGray}}" mode="widthFix" binderror="onListIconError" data-key="arrowDownGray"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
       </view>
       <view class="filter-item {{sortText !== '默认排序' ? 'active' : ''}}" bindtap="showSortFilter">
         <text class="filter-text">{{sortText}}</text>
-          <image class="filter-arrow-img" src="{{iconPaths.arrowDownGray}}" mode="widthFix" binderror="onListIconError" data-key="arrowDownGray"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
       </view>
     </view>
   </view>
@@ -100,7 +100,7 @@
         
         <!-- 箭头图标 -->
         <view class="parrot-arrow">
-            <image class="arrow-icon-img" src="{{iconPaths.arrowRightGray}}" mode="widthFix" binderror="onListIconError" data-key="arrowRightGray"/>
+            <image class="arrow-icon-img" src="{{iconPaths.arrowRight}}" mode="widthFix" binderror="onListIconError" data-key="arrowRight"/>
         </view>
       </view>
     </view>

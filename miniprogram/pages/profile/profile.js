@@ -84,7 +84,7 @@ Page({
       statShieldBlue: '/images/remix/ri-shield-check-fill-green.png',
       userLine: '/images/remix/user-line.png',
       userFill: '/images/remix/ri-user-fill.png',
-      arrowRight: '/images/remix/ri-arrow-right-line.png',
+      arrowRight: '/images/remix/arrow-right-s-line.png',
       addLine: '/images/remix/ri-add-line.png',
       infoLine: '/images/remix/information-line.png'
     }

@@ -1,11 +1,6 @@
 <!--pages/profile/profile.wxml-->
 <view class="page-container {{pageThemeClass}}">
-  <app-header title="个人中心" subtitle="管理您的账户信息">
-    <view slot="actions" class="header-action-btn" bindtap="openNotifications">
-      <image class="header-action-icon" src="{{iconPaths.headerNotification}}" mode="aspectFit" binderror="onProfileIconError" data-key="headerNotification" />
-      <view class="header-action-badge" wx:if="{{unreadCount > 0}}"></view>
-    </view>
-  </app-header>
+  <app-header title="个人中心" subtitle="管理您的账户信息"></app-header>
   <view class="page-content">
   <!-- 用户信息卡片 -->
   <view class="user-card" wx:if="{{isLogin}}">
@@ -306,8 +301,6 @@
   </view>
   
 </view>
-
-<!-- 成就模块已移除 -->
 
 <!-- 团队协作模块（仅团队模式显示） -->
 <view class="team-card" wx:if="{{isLogin && userMode === 'team'}}">

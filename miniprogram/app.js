@@ -326,11 +326,16 @@ App({
       title,
       mask: true
     })
+    // 标记已显示，避免未配对的隐藏调用
+    this._loadingShown = true
   },
 
   // 隐藏加载提示
   hideLoading() {
-    wx.hideLoading()
+    if (this._loadingShown) {
+      wx.hideLoading()
+      this._loadingShown = false
+    }
   },
 
   // 显示成功提示

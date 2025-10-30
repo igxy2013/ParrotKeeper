@@ -51,14 +51,14 @@
         <view class="stat-value orange-text">{{overview.today_records.feeding || 0}}</view>
         <view class="stat-label">今日喂食</view>
       </view>
-      <view class="stat-card">
+      <view class="stat-card" bindtap="goToExpenseManagement">
         <view class="stat-icon-container purple">
         <image class="stat-icon-img" src="{{iconPaths.statsIncome}}" mode="widthFix" binderror="handleIconError" data-key="statsIncome"/>
         </view>
         <view class="stat-value purple-text">¥{{overview.monthly_income || 0}}</view>
         <view class="stat-label">本月收入</view>
       </view>
-      <view class="stat-card">
+      <view class="stat-card" bindtap="goToExpenseManagement">
         <view class="stat-icon-container blue">
         <image class="stat-icon-img" src="{{iconPaths.statsExpense}}" mode="widthFix" binderror="handleIconError" data-key="statsExpense"/>
         </view>

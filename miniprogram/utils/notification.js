@@ -22,7 +22,8 @@ class NotificationManager {
       breedingReminder: true,
       // 每日提醒时间（本地展示用）
       feedingReminderTime: '08:00',
-      cleaningReminderTime: '18:00'
+      cleaningReminderTime: '18:00',
+      medicationReminderTime: '09:00'
     }
   }
 
@@ -305,18 +306,38 @@ class NotificationManager {
 
       const feedingTimeStr = settings.feedingReminderTime || '08:00'
       const cleaningTimeStr = settings.cleaningReminderTime || '18:00'
+      const medicationTimeStr = settings.medicationReminderTime || '09:00'
       const feedingMinutes = this.parseTimeToMinutes(feedingTimeStr)
       const cleaningMinutes = this.parseTimeToMinutes(cleaningTimeStr)
+      const medicationMinutes = this.parseTimeToMinutes(medicationTimeStr)
 
       // 当天状态初始化
       if (state.date !== todayKey) {
         state.date = todayKey
         state.feeding = false
         state.cleaning = false
+        state.medication = false
+        // 立即持久化当天初始化，避免并发读到旧状态
+        wx.setStorageSync(STATE_KEY, state)
       }
 
+      // 本地去重：如果今天已经存在相同类型的系统提醒，则不再添加
+      const notifications = this.getLocalNotifications()
+      const hasFeedingToday = Array.isArray(notifications) && notifications.some(n => {
+        return n && n.type === 'system' && n.title === '喂食提醒' && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey)
+      })
+      const hasCleaningToday = Array.isArray(notifications) && notifications.some(n => {
+        return n && n.type === 'system' && n.title === '换水提醒' && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey)
+      })
+      const hasMedicationToday = Array.isArray(notifications) && notifications.some(n => {
+        return n && n.type === 'system' && n.title === '用药提醒' && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey)
+      })
+
       // 到点且未生成：喂食提醒
-      if (settings.feedingReminder && !state.feeding && currentMinutes >= feedingMinutes) {
+      if (settings.feedingReminder && !state.feeding && currentMinutes >= feedingMinutes && !hasFeedingToday) {
+        // 先写入状态，降低并发下的重复添加概率
+        state.feeding = true
+        wx.setStorageSync(STATE_KEY, state)
         this.addLocalNotification(
           'system',
           '喂食提醒',
@@ -324,11 +345,13 @@ class NotificationManager {
           '',
           feedingTimeStr
         )
-        state.feeding = true
       }
 
       // 到点且未生成：换水提醒
-      if (settings.cleaningReminder && !state.cleaning && currentMinutes >= cleaningMinutes) {
+      if (settings.cleaningReminder && !state.cleaning && currentMinutes >= cleaningMinutes && !hasCleaningToday) {
+        // 先写入状态，降低并发下的重复添加概率
+        state.cleaning = true
+        wx.setStorageSync(STATE_KEY, state)
         this.addLocalNotification(
           'system',
           '换水提醒',
@@ -336,7 +359,30 @@ class NotificationManager {
           '',
           cleaningTimeStr
         )
-        state.cleaning = true
+      }
+
+      // 到点且未生成：用药提醒（若存在生病鹦鹉）
+      if (settings.medicationReminder && !state.medication && currentMinutes >= medicationMinutes && !hasMedicationToday) {
+        try {
+          const app = getApp()
+          app.request({ url: '/api/statistics/overview', method: 'GET' })
+            .then(res => {
+              if (res && res.success && res.data && res.data.health_status && (res.data.health_status.sick > 0)) {
+                // 先写入状态，降低并发下的重复添加概率
+                const s2 = wx.getStorageSync(STATE_KEY) || state
+                s2.medication = true
+                wx.setStorageSync(STATE_KEY, s2)
+                this.addLocalNotification(
+                  'system',
+                  '用药提醒',
+                  '有鹦鹉生病，请按医嘱进行用药',
+                  '',
+                  medicationTimeStr
+                )
+              }
+            })
+            .catch(() => {})
+        } catch (_) {}
       }
 
       wx.setStorageSync(STATE_KEY, state)

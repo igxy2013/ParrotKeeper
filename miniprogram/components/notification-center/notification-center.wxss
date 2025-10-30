@@ -6,13 +6,19 @@
   z-index: 2000;
   display: flex;
   align-items: flex-start;
-  justify-content: flex-end;
+  justify-content: center; /* 水平居中弹窗 */
+  animation: ncOverlayFadeIn 180ms ease-out;
+}
+
+/* 关闭态：淡出遮罩 */
+.nc-overlay.closing {
+  animation: ncOverlayFadeOut 160ms ease-in forwards;
 }
 
 /* 面板（靠右上，略低于自定义导航） */
 .nc-panel {
-  margin-top: 120rpx; /* 兼容不同机型的状态栏高度，位于导航下方 */
-  margin-right: 20rpx;
+  margin-top: 180rpx; /* 下移一点，避让导航与胶囊区域 */
+  margin-right: 0; /* 居中时不需要右侧外边距 */
   width: 640rpx;
   max-width: 90vw;
   border-radius: 32rpx;
@@ -20,6 +26,14 @@
   backdrop-filter: blur(20rpx);
   box-shadow: 0 16rpx 48rpx rgba(0,0,0,0.16);
   overflow: hidden;
+  transform-origin: top center;
+  will-change: transform, opacity;
+  animation: ncPanelAppear 220ms ease-out;
+}
+
+/* 关闭态：面板上移并轻微缩小淡出 */
+.nc-panel.closing {
+  animation: ncPanelDisappear 200ms ease-in forwards;
 }
 
 .nc-header {
@@ -63,3 +77,24 @@
 .nc-empty { padding: 60rpx 0; display:flex; flex-direction:column; align-items:center; gap: 16rpx; }
 .nc-empty-icon { font-size: 56rpx; color: #bbb; }
 .nc-empty-text { font-size: 26rpx; color: #999; }
+
+/* 动画定义 */
+@keyframes ncOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ncPanelAppear {
+  0% { opacity: 0; transform: translateY(-20rpx) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ncOverlayFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes ncPanelDisappear {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-16rpx) scale(0.98); }
+}
