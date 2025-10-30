@@ -1,8 +1,8 @@
 // pages/statistics/statistics.js
 const app = getApp()
 
-Page({
-  data: {
+  Page({
+    data: {
     isLogin: false,
     userMode: null, // 当前用户模式
     currentMonth: new Date().getMonth() + 1,
@@ -35,7 +35,9 @@ Page({
     weightStartIndex: 0,
     weightEndIndex: 0,
     weightStartDate: '',
-    weightEndDate: '',
+      weightEndDate: '',
+      // 点击点高亮与标签
+      activeWeightPoint: null,
     
     // 加载状态
     loading: false,
@@ -996,6 +998,8 @@ Page({
       const nodeRes = res && res[0]
       const rect = res && res[1]
       if (!nodeRes || !nodeRes.node || !rect) return
+      // 记录画布位置与尺寸用于点击定位
+      this.weightCanvasRect = rect
       const canvas = nodeRes.node
       const width = rect.width || 300
       const height = rect.height || 200
@@ -1141,6 +1145,7 @@ Page({
       }
   
       const colorPalette = this.data.weightColors || ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
+      const tapAreas = []
   
       // 绘制每条折线
       displaySeries.forEach((s, idx) => {
@@ -1308,24 +1313,138 @@ Page({
           if (!isFinite(norm) || isNaN(norm)) return
           
           const y = paddingTop + (1 - norm) * chartH
-          
+
           // 绘制带阴影的数据点
           ctx.shadowColor = color
           ctx.shadowBlur = 8
           ctx.shadowOffsetX = 0
           ctx.shadowOffsetY = 2
-          
+
           ctx.beginPath()
           ctx.arc(x, y, 4, 0, Math.PI * 2) // 增大数据点半径
           ctx.fill()
-          
+
           // 清除阴影设置，避免影响后续绘制
           ctx.shadowColor = 'transparent'
           ctx.shadowBlur = 0
           ctx.shadowOffsetX = 0
           ctx.shadowOffsetY = 0
+
+          // 收集点击检测区域
+          tapAreas.push({ x, y, radius: 10, weight: p.weight, date: p.date, parrot_name: s.parrot_name, color })
         })
       })
+
+      // 记录可点击区域供事件使用
+      this.weightTapAreas = tapAreas
+
+      // 若存在高亮点，绘制高亮及标签
+      const active = this.data.activeWeightPoint
+      if (active && typeof active.x === 'number' && typeof active.y === 'number') {
+        // 高亮圆点外圈
+        ctx.save()
+        ctx.lineWidth = 2
+        ctx.strokeStyle = active.color || '#333'
+        ctx.beginPath()
+        ctx.arc(active.x, active.y, 6, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.restore()
+
+        // 绘制标签背景与文字（显示体重值）
+        const label = (typeof active.weight === 'number' && !isNaN(active.weight)) ? (Math.round(active.weight) + 'g') : '--'
+        ctx.font = '12px sans-serif'
+        const textW = ctx.measureText(label).width
+        const paddingX = 6
+        const paddingY = 4
+        const boxW = textW + paddingX * 2
+        const boxH = 20
+        // 标签位置，尽量在点上方，避免超出边界
+        let boxX = active.x - boxW / 2
+        let boxY = active.y - 10 - boxH
+        if (boxX < 8) boxX = 8
+        if (boxX + boxW > width - 8) boxX = width - 8 - boxW
+        if (boxY < paddingTop + 4) boxY = active.y + 10
+
+        // 背景
+        ctx.save()
+        ctx.fillStyle = 'rgba(17, 24, 39, 0.85)'
+        ctx.beginPath()
+        ctx.rect(boxX, boxY, boxW, boxH)
+        ctx.fill()
+        ctx.restore()
+
+        // 文本
+        ctx.save()
+        ctx.fillStyle = '#fff'
+        ctx.textBaseline = 'middle'
+        ctx.textAlign = 'center'
+        ctx.fillText(label, boxX + boxW / 2, boxY + boxH / 2)
+        ctx.restore()
+      }
+    })
+  },
+
+  // 体重曲线点击事件：命中点则显示体重值标签
+  onWeightCanvasTap(e) {
+    const areas = this.weightTapAreas || []
+    if (!areas.length) return
+
+    // 每次点击时获取最新的画布位置，避免页面滚动导致的坐标偏移
+    const query = wx.createSelectorQuery()
+    query.select('#weightCanvas').boundingClientRect()
+    query.exec(res => {
+      const rect = res && res[0]
+      if (!rect) return
+      this.weightCanvasRect = rect
+
+      // 统一坐标解析：优先使用局部坐标（touches[0].x/y），否则回退到页面/视口坐标减去 rect 偏移
+      const getCoordCandidates = (evt) => {
+        const cands = []
+        // 局部坐标（在 canvas 上通常可用）
+        if (evt && evt.touches && evt.touches[0]) {
+          const t = evt.touches[0]
+          if (typeof t.x === 'number' && typeof t.y === 'number') cands.push({ x: t.x, y: t.y })
+          if (typeof t.pageX === 'number' && typeof t.pageY === 'number') cands.push({ x: t.pageX - rect.left, y: t.pageY - rect.top })
+          if (typeof t.clientX === 'number' && typeof t.clientY === 'number') cands.push({ x: t.clientX - rect.left, y: t.clientY - rect.top })
+        }
+        if (evt && evt.changedTouches && evt.changedTouches[0]) {
+          const t = evt.changedTouches[0]
+          if (typeof t.x === 'number' && typeof t.y === 'number') cands.push({ x: t.x, y: t.y })
+          if (typeof t.pageX === 'number' && typeof t.pageY === 'number') cands.push({ x: t.pageX - rect.left, y: t.pageY - rect.top })
+          if (typeof t.clientX === 'number' && typeof t.clientY === 'number') cands.push({ x: t.clientX - rect.left, y: t.clientY - rect.top })
+        }
+        if (evt && evt.detail) {
+          if (typeof evt.detail.x === 'number' && typeof evt.detail.y === 'number') cands.push({ x: evt.detail.x, y: evt.detail.y })
+          if (typeof evt.detail.clientX === 'number' && typeof evt.detail.clientY === 'number') cands.push({ x: evt.detail.clientX - rect.left, y: evt.detail.clientY - rect.top })
+        }
+        return cands
+      }
+      const candidates = getCoordCandidates(e)
+      if (!candidates.length) return
+
+      let hit = null
+      // 逐个候选坐标尝试命中，提升鲁棒性
+      for (let k = 0; k < candidates.length && !hit; k++) {
+        const relX = candidates[k].x
+        const relY = candidates[k].y
+        for (let i = 0; i < areas.length; i++) {
+          const a = areas[i]
+          const dx = relX - a.x
+          const dy = relY - a.y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist <= (a.radius || 16)) { hit = a; break }
+        }
+      }
+
+      if (hit) {
+        this.setData({ activeWeightPoint: hit }, () => {
+          this.drawWeightChart()
+        })
+      } else {
+        this.setData({ activeWeightPoint: null }, () => {
+          this.drawWeightChart()
+        })
+      }
     })
   },
 

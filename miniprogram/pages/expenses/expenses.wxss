@@ -586,6 +586,40 @@
 }
 
 
+/* 搜索框样式 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #ffffff;
+  border-radius: 9999rpx;
+  border: 1rpx solid rgba(0,0,0,0.08);
+  box-shadow: 0 8rpx 16rpx rgba(0,0,0,0.04);
+  padding: 12rpx 16rpx;
+  margin-bottom: 16rpx;
+}
+.search-icon-img {
+  width: 28rpx;
+  height: 28rpx;
+  display: block;
+}
+.search-input {
+  flex: 1;
+  font-size: 26rpx;
+  color: #111827;
+  background: #f8f9fa;
+  border-radius: 9999rpx;
+  padding: 12rpx 16rpx;
+}
+.search-clear {
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 9999rpx;
+}
+
+
 
 /* 类别网格（参考APP） */
 .category-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24rpx; }

@@ -427,10 +427,28 @@ Page({
       sourceType: ['album', 'camera'],
       success: (res) => {
         const tempFilePath = res.tempFiles[0].tempFilePath
-        // 这里可以添加上传照片的逻辑
-        wx.showToast({
-          title: '照片功能开发中',
-          icon: 'none'
+        // 上传到通用接口并分类到 parrots
+        wx.uploadFile({
+          url: app.globalData.baseUrl + '/api/upload/image',
+          filePath: tempFilePath,
+          name: 'file',
+          formData: { category: 'parrots' },
+          header: { 'X-OpenID': app.globalData.openid },
+          success: (uploadRes) => {
+            try {
+              const data = JSON.parse(uploadRes.data)
+              if (data && data.success && data.data && data.data.url) {
+                const fullUrl = app.globalData.baseUrl + '/uploads/' + data.data.url
+                wx.previewImage({ urls: [fullUrl] })
+                wx.showToast({ title: '上传成功', icon: 'success' })
+              } else {
+                wx.showToast({ title: data.message || '上传失败', icon: 'none' })
+              }
+            } catch (_) {
+              wx.showToast({ title: '上传失败', icon: 'none' })
+            }
+          },
+          fail: () => wx.showToast({ title: '上传失败', icon: 'none' })
         })
       }
     })

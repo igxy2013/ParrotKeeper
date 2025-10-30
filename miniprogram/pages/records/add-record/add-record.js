@@ -208,10 +208,22 @@ const app = getApp()
           'milk_powder': '奶粉'
         }
         
-        const feedTypeList = res.data.map(item => ({
-          ...item,
-          typeText: typeMap[item.type] || item.type
-        }))
+        const feedTypeList = res.data.map(item => {
+          // 生成用于展示的名称：苹果→新鲜水果；胡萝卜→新鲜蔬菜
+          let displayName = item.name
+          if (typeof item.name === 'string') {
+            if (item.name.indexOf('苹果') !== -1) {
+              displayName = '新鲜水果'
+            } else if (item.name.indexOf('胡萝卜') !== -1) {
+              displayName = '新鲜蔬菜'
+            }
+          }
+          return {
+            ...item,
+            typeText: typeMap[item.type] || item.type,
+            displayName
+          }
+        })
         
         // 应用预填食物类型ID到选择状态
         const { prefillFeedTypeIds } = this.data
@@ -219,7 +231,7 @@ const app = getApp()
         const feedTypeIdsApplied = prefillFeedTypeIds && prefillFeedTypeIds.length ? prefillFeedTypeIds.slice() : this.data.formData.food_types
         const feedTypeListWithSelection = feedTypeList.map(f => {
           const selected = feedTypeIdsApplied.includes(f.id)
-          if (selected) selectedFeedTypes.push({ id: f.id, name: f.name })
+          if (selected) selectedFeedTypes.push({ id: f.id, name: f.displayName })
           return { ...f, selected }
         })
         const selectedFeedTypeNames = selectedFeedTypes.map(f => f.name).join('、')
@@ -395,7 +407,7 @@ const app = getApp()
         // 生成选中名称
         const selectedParrots = this.data.parrotList.filter(p => formData.parrot_ids.includes(p.id)).map(p => ({ id: p.id, name: p.name }))
         const selectedParrotNames = selectedParrots.map(p => p.name).join('、')
-        const selectedFeedTypes = this.data.feedTypeList.filter(f => formData.food_types.includes(f.id)).map(f => ({ id: f.id, name: f.name }))
+        const selectedFeedTypes = this.data.feedTypeList.filter(f => formData.food_types.includes(f.id)).map(f => ({ id: f.id, name: f.displayName || f.name }))
         const selectedFeedTypeNames = selectedFeedTypes.map(f => f.name).join('、')
         
         // 同步列表项的选中状态，确保弹窗内显示勾选
@@ -864,6 +876,47 @@ const app = getApp()
       }
     })
   },
+  // 根据记录类型解析上传分类
+  resolveUploadCategory: function(type) {
+    switch (type) {
+      case 'feeding': return 'records/feeding'
+      case 'cleaning': return 'records/cleaning'
+      case 'health': return 'records/health'
+      case 'breeding': return 'records/breeding'
+      default: return 'records/others'
+    }
+  },
+  // 如有必要，上传记录照片并返回完整URL数组
+  uploadRecordPhotosIfNeeded: async function(recordType, photos) {
+    const category = this.resolveUploadCategory(recordType)
+    const resultUrls = []
+    for (const p of (photos || [])) {
+      const isFull = typeof p === 'string' && (p.startsWith('http') || p.includes('/uploads/'))
+      if (isFull) {
+        resultUrls.push(p)
+        continue
+      }
+      const uploadRes = await new Promise((resolve, reject) => {
+        wx.uploadFile({
+          url: app.globalData.baseUrl + '/api/upload/image',
+          filePath: p,
+          name: 'file',
+          formData: { category },
+          header: { 'X-OpenID': app.globalData.openid },
+          success: resolve,
+          fail: reject
+        })
+      })
+      const data = JSON.parse(uploadRes.data)
+      if (data && data.success && data.data && data.data.url) {
+        const fullUrl = app.globalData.baseUrl + '/uploads/' + data.data.url
+        resultUrls.push(fullUrl)
+      } else {
+        throw new Error((data && data.message) || '图片上传失败')
+      }
+    }
+    return resultUrls
+  },
   deletePhoto: function(e) {
     const index = e.currentTarget.dataset.index
     const photos = this.data.formData.photos.slice()
@@ -932,9 +985,24 @@ const app = getApp()
     try {
       const { recordType, formData, recordId, prefillRecordIds } = this.data
       const timeStr = `${formData.record_date} ${formData.record_time}:00`
+      // 先上传照片并获取完整URL
+      let uploadedPhotoUrls = []
+      if (formData.photos && formData.photos.length > 0) {
+        app.showLoading('上传照片...')
+        try {
+          uploadedPhotoUrls = await this.uploadRecordPhotosIfNeeded(recordType, formData.photos)
+        } catch (e) {
+          console.error('记录照片上传失败:', e)
+          app.showError(e.message || '记录照片上传失败')
+          this.setData({ submitting: false })
+          app.hideLoading()
+          return
+        }
+        app.hideLoading()
+      }
       const baseCommon = {
         notes: formData.notes,
-        photos: formData.photos
+        photos: uploadedPhotoUrls
       }
       
       // 喂食记录：新增按食物类型拆分提交；编辑支持批量更新

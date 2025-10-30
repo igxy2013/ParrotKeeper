@@ -486,10 +486,10 @@
         wx:key="id"
         bindtap="selectFeedType"
         data-id="{{item.id}}"
-        data-name="{{item.name}}"
+        data-name="{{item.displayName || item.name}}"
       >
         <view class="feed-type-info">
-          <text class="feed-type-name">{{item.name}}</text>
+          <text class="feed-type-name">{{item.displayName || item.name}}</text>
           <view class="feed-type-details">
             <text class="feed-type-brand">{{item.brand}}</text>
             <text class="feed-type-type">{{item.typeText}}</text>

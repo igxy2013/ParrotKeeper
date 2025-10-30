@@ -38,6 +38,13 @@ class Config:
     # 基础URL配置（用于生成图片等资源的完整可访问地址）
     BASE_URL = os.environ.get('BASE_URL') or 'https://bimai.xyz'
 
+    # 服务端网络配置（从 .env 读取）
+    HOST = os.environ.get('HOST') or '0.0.0.0'
+    try:
+        PORT = int(os.environ.get('PORT') or os.environ.get('BACKEND_PORT') or 5075)
+    except Exception:
+        PORT = 5075
+
     # 护理指南配置（后端可配置内容）
     CARE_GUIDE_CONFIG_PATH = os.environ.get('CARE_GUIDE_CONFIG_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'care_guide_config.json')
     CARE_GUIDE_ADMIN_KEY = os.environ.get('CARE_GUIDE_ADMIN_KEY')  # 可选：用于更新接口的简单鉴权

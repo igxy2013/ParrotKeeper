@@ -90,6 +90,8 @@ Page({
     // 弹窗避让参数
     modalTopOffsetPx: 24,
     modalBottomOffsetPx: 24,
+    // 搜索关键字
+    searchKeyword: ''
   },
 
   onLoad() {
@@ -493,20 +495,48 @@ Page({
   applyFilters() {
     const selectedType = this.data.recordTypeOptions[this.data.selectedRecordTypeIndex]
     const selectedCategory = this.data.categoryOptions[this.data.selectedCategoryIndex]
+    const keyword = (this.data.searchKeyword || '').trim().toLowerCase()
 
     const filtered = this.data.records.filter(rec => {
       // 记录类型匹配
       const typeMatch = selectedType === '全部' ? true : rec.type === selectedType
       if (!typeMatch) return false
       // 类别匹配：当选择具体类别时，两个类型都按显示的类别文字匹配
-      if (selectedCategory === '全部') return true
-      return rec.category === selectedCategory
+      const categoryMatch = selectedCategory === '全部' ? true : rec.category === selectedCategory
+      if (!categoryMatch) return false
+      // 关键字匹配：匹配类型、类别、描述、鹦鹉名、日期、时间
+      if (!keyword) return true
+      const haystack = `${rec.type} ${rec.category} ${rec.description || ''} ${rec.parrot || ''} ${rec.date || ''} ${rec.time || ''}`.toLowerCase()
+      return haystack.includes(keyword)
     })
     // 仅更新列表，不再覆盖统计卡片的后端汇总值
     // 统计卡片统一由 loadStats() 的后端结果驱动，避免分页/列表筛选造成误差
     this.setData({ 
       filteredRecords: filtered,
       displayTotalCount: filtered.length
+    })
+  },
+
+  // 搜索输入事件
+  onSearchInput(e) {
+    const value = e.detail.value || ''
+    this.setData({ searchKeyword: value }, () => {
+      this.applyFilters()
+    })
+  },
+
+  // 点击清空搜索
+  onSearchClear() {
+    this.setData({ searchKeyword: '' }, () => {
+      this.applyFilters()
+    })
+  },
+
+  // 键盘搜索确认
+  onSearchConfirm(e) {
+    const value = e.detail.value || ''
+    this.setData({ searchKeyword: value }, () => {
+      this.applyFilters()
     })
   },
 

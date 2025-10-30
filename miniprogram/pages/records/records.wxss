@@ -284,7 +284,7 @@
 /* 三个头像：上左右 + 下中 */
 .cluster-item.count-3.pos-0 { left: 0; top: 0; width: 50%; height: 50%; }
 .cluster-item.count-3.pos-1 { right: 0; top: 0; width: 50%; height: 50%; }
-.cluster-item.count-3.pos-2 { left: 25%; bottom: 0; width: 50%; height: 50%; }
+.cluster-item.count-3.pos-2 { left: 0; bottom: 0; width: 100%; height: 50%; }
 
 .single-avatar {
   width: 128rpx;

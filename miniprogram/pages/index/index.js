@@ -1098,6 +1098,7 @@ Page({
           url: app.globalData.baseUrl + '/api/upload/image',
           filePath: filePath,
           name: 'file',
+          formData: { category: 'parrots' },
           header: { 'X-OpenID': app.globalData.openid },
           success: resolve,
           fail: reject

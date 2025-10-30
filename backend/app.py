@@ -221,7 +221,12 @@ if __name__ == '__main__':
     env = os.environ.get('FLASK_ENV', 'production')
     if env == 'development':
         print("启动开发服务器...")
-        print("服务器地址: http://0.0.0.0:5075")
-        app.run(host='0.0.0.0', port=5075, debug=True)
+        host = app.config.get('HOST', '0.0.0.0')
+        try:
+            port = int(app.config.get('PORT', 5075))
+        except Exception:
+            port = 5075
+        print(f"服务器地址: http://{host}:{port}")
+        app.run(host=host, port=port, debug=True)
     else:
         print("当前为生产环境：请使用 Waitress/Gunicorn 等 WSGI 服务器启动。")

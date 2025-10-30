@@ -59,6 +59,7 @@ Page({
         url: app.globalData.baseUrl + '/api/upload/image',
         filePath: photo.tempPath,
         name: 'file',
+        formData: { category: 'feedback' },
         header: { 'X-OpenID': app.globalData.openid },
         success: resolve,
         fail: reject
@@ -109,4 +110,3 @@ Page({
     }
   }
 })
-

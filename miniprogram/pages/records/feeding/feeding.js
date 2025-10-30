@@ -116,7 +116,13 @@ Page({
       const formatted_time = this.formatTime(rec.feeding_time);
       let food_types = [];
       if (rec.feed_type) {
-        const name = rec.feed_type.name || rec.feed_type_name || '食物';
+        const type = rec.feed_type.type;
+        let name = rec.feed_type.name || rec.feed_type_name || '食物';
+        if (type === 'fruit') {
+          name = rec.feed_type.brand || '新鲜水果';
+        } else if (type === 'vegetable') {
+          name = rec.feed_type.brand || '新鲜蔬菜';
+        }
         food_types = [{ id: rec.feed_type.id, name, amount: rec.amount }];
       } else if (rec.feed_type_name) {
         food_types = [{ id: rec.feed_type_id, name: rec.feed_type_name, amount: rec.amount }];

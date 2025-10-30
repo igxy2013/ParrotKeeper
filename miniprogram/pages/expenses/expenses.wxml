@@ -36,6 +36,13 @@
       </view>
     </view>
 
+    <!-- 记录列表卡片上方搜索框 -->
+    <view class="search-bar">
+      <image class="search-icon-img" src="/images/remix/ri-search-line-gray.png" mode="widthFix" />
+      <input class="search-input" placeholder="搜索描述、类别、类型..." value="{{searchKeyword}}" confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
+      <view class="search-clear" wx:if="{{searchKeyword}}" bindtap="onSearchClear">清除</view>
+    </view>
+
 
 
     <!-- 记录列表 -->
@@ -74,7 +81,6 @@
               <view class="list-item-desc">{{item.description || '无描述'}}</view>
               <view class="list-item-meta">
                 <text class="date-tag">{{item.date}} {{item.time}}</text>
-                <text class="parrot-tag" wx:if="{{item.parrot}}">{{item.parrot}}</text>
               </view>
             </view>
             <view class="list-item-right">

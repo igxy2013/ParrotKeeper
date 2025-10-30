@@ -107,7 +107,7 @@
           </view>
         </view>
         <view class="weight-chart-container">
-          <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;"></canvas>
+          <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;" bindtouchstart="onWeightCanvasTap"></canvas>
         </view>
         <!-- 自定义时间范围滑块 -->
         <view class="weight-range-control" wx:if="{{weightRangeDates.length > 1}}">
