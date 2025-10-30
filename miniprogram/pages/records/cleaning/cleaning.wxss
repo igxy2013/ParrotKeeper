@@ -129,8 +129,8 @@
 }
 
 .action-btn {
-  width: 56rpx;
-  height: 56rpx;
+  width: 60rpx;
+  height: 60rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -153,8 +153,8 @@
 }
 
 .action-icon-img {
-  width: 28rpx;
-  height: 28rpx;
+  width: 32rpx;
+  height: 32rpx;
 }
 .card-body { display: flex; flex-direction: column; gap: 8rpx; }
 .detail { display: flex; flex-direction: column; align-items: flex-start; gap: 6rpx; }

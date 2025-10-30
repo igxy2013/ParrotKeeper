@@ -38,7 +38,7 @@ Component({
     categoryOptions: [],
     canSubmit: false,
     // 类别标签列表
-    incomeCategoryLabels: ['销售幼鸟','配种服务','其他收入'],
+    incomeCategoryLabels: ['繁殖销售','鸟类销售','服务收入','比赛奖金','其他收入'],
     expenseCategoryLabels: ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
   },
 
@@ -96,11 +96,11 @@ Component({
       let categoryIndex = 0
       
       if (editRecord.type === '收入') {
-        categoryOptions = this.data.incomeCategoryLabels || ['销售幼鸟','配种服务','其他收入']
+        categoryOptions = this.data.incomeCategoryLabels || ['繁殖销售','鸟类销售','服务收入','比赛奖金','其他收入']
         // 根据category找到对应的index
         const categoryMap = {
-          'bird_sale': '销售幼鸟',
-          'service': '配种服务',
+          'bird_sale': '鸟类销售',
+          'service': '服务收入',
           'breeding_sale': '繁殖销售',
           'competition': '比赛奖金',
           'other': '其他收入'
@@ -143,7 +143,7 @@ Component({
       const type = e.currentTarget.dataset.type
       let categoryOptions = []
       if (type === '收入') {
-        categoryOptions = this.data.incomeCategoryLabels || ['销售幼鸟','配种服务','其他收入']
+        categoryOptions = this.data.incomeCategoryLabels || ['繁殖销售','鸟类销售','服务收入','比赛奖金','其他收入']
       } else {
         categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
       }
@@ -234,8 +234,8 @@ Component({
       if (f.type === '收入') {
         // 收入类别映射到后端值
         const incomeMap = {
-          '销售幼鸟': 'bird_sale',
-          '配种服务': 'service',
+          '鸟类销售': 'bird_sale',
+          '服务收入': 'service',
           '繁殖销售': 'breeding_sale',
           '比赛奖金': 'competition',
           '其他收入': 'other',

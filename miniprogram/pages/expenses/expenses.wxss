@@ -135,6 +135,40 @@
   border-bottom: 1rpx solid #f0f0f0;
 }
 
+/* 列表前置筛选器样式 */
+.filter-controls {
+  padding: 16rpx 20rpx;
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.filter-picker {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 16rpx;
+  background: #f8f9fa;
+  border-radius: 9999rpx;
+}
+
+.picker-label {
+  font-size: 24rpx;
+  color: #374151;
+}
+
+.picker-text {
+  font-size: 24rpx;
+  color: #111827;
+}
+
+.picker-arrow {
+  font-size: 22rpx;
+  color: #6b7280;
+  margin-left: 6rpx;
+}
+
 .records-title {
   font-size: 32rpx;
   font-weight: 600;
@@ -504,6 +538,10 @@
   margin: 0 auto 12rpx; /* 居中并增加底部间距 */
   font-size: 32rpx; /* 增大图标字体 */
 }
+.stat-card .stat-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
 .stat-card .stat-value { 
   font-size: 48rpx; /* 增大数值字体 */
   font-weight: 700; 
@@ -612,9 +650,19 @@
   font-size: 28rpx; 
   line-height: 1;
 }
+.action-icon-img {
+  width: 32rpx;
+  height: 32rpx;
+}
 
 /* 统一 app-header 右侧加号图标尺寸（收支页） */
 .header-btn-icon-img {
   width: 36rpx;
   height: 36rpx;
+}
+.empty-icon-img {
+  width: 80rpx;
+  height: 80rpx;
+  display: block;
+  margin: 0 auto 12rpx;
 }

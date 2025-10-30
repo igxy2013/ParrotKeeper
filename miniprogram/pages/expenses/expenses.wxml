@@ -21,12 +21,16 @@
     <!-- 统计卡片 -->
     <view class="stats-grid two-columns">
       <view class="stat-card income">
-        <view class="stat-icon">⬆️</view>
+        <view class="stat-icon">
+          <image class="stat-icon-img" src="/images/remix/ri-money-dollar-circle-fill-green.png" mode="widthFix" />
+        </view>
         <view class="stat-value">¥{{stats.localTotalIncome || 0}}</view>
         <view class="stat-label">收入</view>
       </view>
       <view class="stat-card expense">
-        <view class="stat-icon">⬇️</view>
+        <view class="stat-icon">
+          <image class="stat-icon-img" src="/images/remix/shopping-bag-fill-red.png" mode="widthFix" />
+        </view>
         <view class="stat-value">¥{{stats.localTotalExpense || 0}}</view>
         <view class="stat-label">支出</view>
       </view>
@@ -38,7 +42,24 @@
     <view class="card">
       <view class="card-header">
         <text class="card-title">记录列表</text>
- <text class="total-text">共 {{totalCount || filteredRecords.length}} 条</text>
+        <text class="total-text">共 {{displayTotalCount}} 条</text>
+      </view>
+      <!-- 记录列表上方筛选器 -->
+      <view class="filter-controls">
+        <picker mode="selector" range="{{recordTypeOptions}}" value="{{selectedRecordTypeIndex}}" bindchange="onRecordTypeChange">
+          <view class="filter-picker">
+            <text class="picker-label">记录类型</text>
+            <text class="picker-text">{{recordTypeOptions[selectedRecordTypeIndex]}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+        <picker mode="selector" range="{{categoryOptions}}" value="{{selectedCategoryIndex}}" bindchange="onCategoryChange">
+          <view class="filter-picker">
+            <text class="picker-label">类别</text>
+            <text class="picker-text">{{categoryOptions[selectedCategoryIndex]}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
       </view>
       <view class="card-content">
         <view class="list-container">
@@ -60,10 +81,10 @@
               <view class="list-item-value {{item.type === '收入' ? 'income' : 'expense'}}">¥{{item.amount}}</view>
               <view class="list-item-actions">
                 <button class="action-btn edit-btn" bindtap="onEditRecord" data-record="{{item}}">
-                  <text class="action-icon">✏️</text>
+                  <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="widthFix" />
                 </button>
                 <button class="action-btn delete-btn" bindtap="onDeleteRecord" data-record="{{item}}">
-                  <text class="action-icon">🗑️</text>
+                  <image class="action-icon-img" src="/images/remix/delete-bin-line-white.png" mode="widthFix" />
                 </button>
               </view>
             </view>
@@ -76,7 +97,7 @@
 
       <!-- 空状态 -->
       <view class="empty-state" wx:if="{{!loading && filteredRecords.length === 0}}">
-        <view class="empty-icon">💰</view>
+        <image class="empty-icon-img" src="/images/remix/ri-wallet-fill-purple.png" mode="widthFix" />
         <text class="empty-text">暂无记录</text>
       </view>
         </view>

@@ -26,6 +26,12 @@ Page({
     expenseCategories: ['全部', '食物', '医疗', '玩具', '笼具', '幼鸟', '种鸟', '其他'],
     incomeCategories: ['全部', '繁殖销售', '鸟类销售', '服务收入', '比赛奖金', '其他收入'],
 
+    // 列表筛选：记录类型与支出类别
+    recordTypeOptions: ['全部', '收入', '支出'],
+    selectedRecordTypeIndex: 0,
+    categoryOptions: ['全部'],
+    selectedCategoryIndex: 0,
+
     // 展示用类别网格
     recordCategories: [
       { name: '食物', iconText: '🍚', type: '支出' },
@@ -44,6 +50,8 @@ Page({
 
     records: [],
     filteredRecords: [],
+    // 展示用：当前筛选后可见记录总数
+    displayTotalCount: 0,
     stats: {
       totalIncome: 0,
       totalExpense: 0,
@@ -88,6 +96,8 @@ Page({
     this.loadParrots()
     this.loadExpenses()
     this.loadStats()
+    // 初始化类别选项与默认选择
+    this.updateCategoryOptions()
   },
 
   onShow() {
@@ -106,7 +116,8 @@ Page({
       records: [],
       filteredRecords: [],
       hasMore: true,
-      totalCount: 0
+      totalCount: 0,
+      displayTotalCount: 0
     })
     this.loadExpenses().then(() => {
       wx.stopPullDownRefresh()
@@ -149,6 +160,7 @@ Page({
       records: [],
       filteredRecords: [],
       totalCount: 0,
+      displayTotalCount: 0,
       loading: false
     }, () => {
       // 在setData完成后再调用，确保selectedPeriod已更新
@@ -221,10 +233,8 @@ Page({
         endDate = new Date(now.getFullYear() + 1, 0, 1)
         break
       case '全部':
-        // 覆盖全量数据：使用足够宽的时间范围
-        startDate = new Date(1970, 0, 1)
-        endDate = new Date(2100, 0, 1)
-        break
+        // 全部时间：不传时间参数，由后端返回全量汇总与列表
+        return {}
       default:
         return {}
     }
@@ -242,25 +252,50 @@ Page({
     this.setData({ loading: true })
     
     try {
-      const params = {
+      const dateParams = this.getDateRange()
+      const selectedType = this.data.recordTypeOptions[this.data.selectedRecordTypeIndex]
+      const selectedCategoryLabel = this.data.categoryOptions[this.data.selectedCategoryIndex]
+
+      // 计算后端分类值（分别针对支出与收入）
+      const expenseCategoryValue = Object.keys(this.data.categoryMap).find(k => this.data.categoryMap[k] === selectedCategoryLabel)
+      const incomeReverseMap = {
+        '繁殖销售': 'breeding_sale',
+        '鸟类销售': 'bird_sale',
+        '服务收入': 'service',
+        '比赛奖金': 'competition',
+        '其他收入': 'other'
+      }
+      const incomeCategoryValue = incomeReverseMap[selectedCategoryLabel]
+
+      // 请求参数：分别为支出与收入接口组装，按需附加类别过滤
+      const expenseParams = {
         page: this.data.page,
         per_page: 20,
-        ...this.getDateRange()
+        ...dateParams,
+        // 当选择支出或全部且选择的是支出类别时，传递支出类别到后端
+        ...((selectedCategoryLabel !== '全部' && (selectedType === '支出' || (selectedType === '全部' && this.data.expenseCategories.includes(selectedCategoryLabel))) && expenseCategoryValue) ? { category: expenseCategoryValue } : {})
+      }
+      const incomeParams = {
+        page: this.data.page,
+        per_page: 20,
+        ...dateParams,
+        // 当选择收入或全部且选择的是收入类别时，传递收入类别到后端
+        ...((selectedCategoryLabel !== '全部' && (selectedType === '收入' || (selectedType === '全部' && this.data.incomeCategories.includes(selectedCategoryLabel))) && incomeCategoryValue) ? { category: incomeCategoryValue } : {})
       }
       
-      console.log('加载支出记录，时间筛选参数:', params)
+      console.log('加载记录参数 - 支出:', expenseParams, '收入:', incomeParams)
 
       // 同时获取支出和收入记录
       const [expenseRes, incomeRes] = await Promise.all([
         app.request({
           url: '/api/expenses',
           method: 'GET',
-          data: params
+          data: expenseParams
         }),
         app.request({
           url: '/api/expenses/incomes',
           method: 'GET',
-          data: params
+          data: incomeParams
         })
       ])
       
@@ -332,6 +367,9 @@ Page({
         page: this.data.page + 1,
         hasMore,
         totalCount
+      }, () => {
+        // 加载后应用筛选
+        this.applyFilters()
       })
     } catch (error) {
       console.error('加载记录失败:', error)
@@ -347,7 +385,16 @@ Page({
   // 加载统计数据
   async loadStats() {
     try {
-      const params = this.getDateRange()
+      // 传递时间范围 + 类型与类别过滤到后端
+      const dateParams = this.getDateRange()
+      const selectedType = this.data.recordTypeOptions[this.data.selectedRecordTypeIndex]
+      const categoryValue = this.getSelectedCategoryValue()
+      const params = {
+        ...dateParams,
+        record_type: selectedType === '全部' ? '全部' : selectedType,
+        // 如果未选择具体类别或无法映射则不传该字段
+        ...(categoryValue ? { category: categoryValue } : {})
+      }
       const res = await app.request({
         url: '/api/expenses/summary',
         method: 'GET',
@@ -366,6 +413,34 @@ Page({
       }
     } catch (error) {
       console.error('加载统计数据失败:', error)
+    }
+  },
+
+  // 将当前选择的“类别”标签映射为后端存储值
+  getSelectedCategoryValue() {
+    const label = this.data.categoryOptions[this.data.selectedCategoryIndex]
+    const type = this.data.recordTypeOptions[this.data.selectedRecordTypeIndex]
+    if (!label || label === '全部') return ''
+
+    // 支出：使用现有 categoryMap 的反向映射
+    const expenseValue = Object.keys(this.data.categoryMap).find(k => this.data.categoryMap[k] === label)
+    // 收入：使用固定映射（与加载记录时保持一致）
+    const incomeReverseMap = {
+      '繁殖销售': 'breeding_sale',
+      '鸟类销售': 'bird_sale',
+      '服务收入': 'service',
+      '比赛奖金': 'competition',
+      '其他收入': 'other'
+    }
+    const incomeValue = incomeReverseMap[label]
+
+    if (type === '支出') {
+      return expenseValue || ''
+    } else if (type === '收入') {
+      return incomeValue || ''
+    } else {
+      // 全部类型：优先匹配支出，否则匹配收入
+      return expenseValue || incomeValue || ''
     }
   },
 
@@ -412,6 +487,83 @@ Page({
     // 刷新页面数据（重新拉取第一页）
     this.loadExpenses();
     this.loadStats();
+  },
+
+  // 应用筛选
+  applyFilters() {
+    const selectedType = this.data.recordTypeOptions[this.data.selectedRecordTypeIndex]
+    const selectedCategory = this.data.categoryOptions[this.data.selectedCategoryIndex]
+
+    const filtered = this.data.records.filter(rec => {
+      // 记录类型匹配
+      const typeMatch = selectedType === '全部' ? true : rec.type === selectedType
+      if (!typeMatch) return false
+      // 类别匹配：当选择具体类别时，两个类型都按显示的类别文字匹配
+      if (selectedCategory === '全部') return true
+      return rec.category === selectedCategory
+    })
+    // 仅更新列表，不再覆盖统计卡片的后端汇总值
+    // 统计卡片统一由 loadStats() 的后端结果驱动，避免分页/列表筛选造成误差
+    this.setData({ 
+      filteredRecords: filtered,
+      displayTotalCount: filtered.length
+    })
+  },
+
+  // 记录类型下拉选择
+  onRecordTypeChange(e) {
+    const idx = Number(e.detail.value)
+    this.setData({ selectedRecordTypeIndex: idx }, () => {
+      this.updateCategoryOptions()
+      // 重置类别选择为“全部”
+      this.setData({ 
+        selectedCategoryIndex: 0,
+        // 重置分页与列表，确保重新按新筛选拉取第一页
+        page: 1,
+        hasMore: true,
+        records: [],
+        filteredRecords: [],
+        totalCount: 0,
+        displayTotalCount: 0
+      }, () => {
+        // 重新拉取列表与统计
+        this.loadExpenses()
+        this.loadStats()
+      })
+    })
+  },
+
+  // 类别下拉选择
+  onCategoryChange(e) {
+    const idx = Number(e.detail.value)
+    this.setData({ 
+      selectedCategoryIndex: idx,
+      // 重置分页与列表，确保重新按新类别拉取第一页
+      page: 1,
+      hasMore: true,
+      records: [],
+      filteredRecords: [],
+      totalCount: 0,
+      displayTotalCount: 0
+    }, () => {
+      this.loadExpenses()
+      this.loadStats()
+    })
+  },
+
+  // 根据记录类型更新类别选项
+  updateCategoryOptions() {
+    const selectedType = this.data.recordTypeOptions[this.data.selectedRecordTypeIndex]
+    let options = ['全部']
+    if (selectedType === '收入') {
+      options = this.data.incomeCategories
+    } else if (selectedType === '支出') {
+      options = this.data.expenseCategories
+    } else {
+      // 全部类型：合并收入与支出类别（去掉各自的“全部”）
+      options = ['全部', ...this.data.expenseCategories.slice(1), ...this.data.incomeCategories.slice(1)]
+    }
+    this.setData({ categoryOptions: options })
   },
 
   // 为弹窗头部计算胶囊避让内边距（与首页实现保持一致）
@@ -505,8 +657,9 @@ Page({
         // 收入类别映射到后端值
         const incomeMap = {
           '繁殖销售': 'breeding_sale',
-          '出售用品': 'bird_sale',
-          '培训服务': 'service',
+          '鸟类销售': 'bird_sale',
+          '服务收入': 'service',
+          '比赛奖金': 'competition',
           '其他收入': 'other'
         }
         const categoryValue = incomeMap[newRecord.category]

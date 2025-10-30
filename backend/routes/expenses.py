@@ -376,6 +376,9 @@ def get_expense_summary():
         user = request.current_user
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
+        # 新增：按类型与类别过滤
+        record_type = request.args.get('record_type', '')  # 可为 '收入'、'支出'、''(全部)
+        category = request.args.get('category', '')        # 后端存储的类别值，例如支出: 'food'，收入: 'competition'
         
         # 根据用户模式获取可访问的支出和收入ID
         expense_ids = get_accessible_expense_ids_by_mode(user)
@@ -388,6 +391,14 @@ def get_expense_summary():
         income_base_query = db.session.query(func.sum(Income.amount)).filter(
             Income.id.in_(income_ids)
         )
+
+        # 按类型与类别过滤（可选）
+        # 当 record_type 为 '支出' 或 全部 时，支出可按 category 过滤
+        if category and (record_type in ('支出', '', '全部')):
+            expense_base_query = expense_base_query.filter(Expense.category == category)
+        # 当 record_type 为 '收入' 或 全部 时，收入可按 category 过滤
+        if category and (record_type in ('收入', '', '全部')):
+            income_base_query = income_base_query.filter(Income.category == category)
         
         # 如果有时间范围参数，使用指定的时间范围
         if start_date and end_date:
@@ -415,31 +426,28 @@ def get_expense_summary():
                 Expense.id.in_(expense_ids),
                 Expense.expense_date >= start_date_obj,
                 Expense.expense_date < end_date_obj
-            ).group_by(Expense.category).all()
+            )
+            # 类别分组统计也支持按类别过滤（仅针对支出分类）
+            if category and (record_type in ('支出', '', '全部')):
+                category_stats = category_stats.filter(Expense.category == category)
+            category_stats = category_stats.group_by(Expense.category).all()
             
         else:
-            # 默认使用本月数据
-            current_month = date.today().replace(day=1)
+            # 未提供时间范围：返回“全部时间”的汇总（不限制日期）
+            total_expense = expense_base_query.scalar() or 0
+            total_income = income_base_query.scalar() or 0
             
-            # 本月支出
-            total_expense = expense_base_query.filter(
-                Expense.expense_date >= current_month
-            ).scalar() or 0
-            
-            # 本月收入
-            total_income = income_base_query.filter(
-                Income.income_date >= current_month
-            ).scalar() or 0
-            
-            # 按类别统计本月支出
+            # 按类别统计“全部时间”的支出
             category_stats = db.session.query(
                 Expense.category,
                 func.sum(Expense.amount).label('total'),
                 func.count(Expense.id).label('count')
             ).filter(
-                Expense.id.in_(expense_ids),
-                Expense.expense_date >= current_month
-            ).group_by(Expense.category).all()
+                Expense.id.in_(expense_ids)
+            )
+            if category and (record_type in ('支出', '', '全部')):
+                category_stats = category_stats.filter(Expense.category == category)
+            category_stats = category_stats.group_by(Expense.category).all()
         
         categories = []
         for stat in category_stats:

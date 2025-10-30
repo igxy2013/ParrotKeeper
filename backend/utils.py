@@ -103,7 +103,11 @@ def get_wechat_session(code):
     app_secret = current_app.config['WECHAT_APP_SECRET']
     
     if not app_id or not app_secret:
-        return None
+        # 明确返回配置缺失的错误，便于前端展示与排查
+        return {
+            'errcode': 'NO_APP_CONFIG',
+            'errmsg': '未配置微信小程序AppID/Secret'
+        }
     
     url = 'https://api.weixin.qq.com/sns/jscode2session'
     params = {
@@ -117,13 +121,19 @@ def get_wechat_session(code):
         response = requests.get(url, params=params)
         data = response.json()
         
+        # 如果包含 openid，表示获取成功；否则返回完整错误数据
         if 'openid' in data:
             return data
         else:
-            return None
+            # 打印具体错误，便于服务端日志定位问题
+            print(f"获取微信session失败，返回: {data}")
+            return data
     except Exception as e:
         print(f"获取微信session失败: {e}")
-        return None
+        return {
+            'errcode': 'REQUEST_EXCEPTION',
+            'errmsg': f'请求微信接口异常: {str(e)}'
+        }
 
 def login_required(f):
     """登录验证装饰器"""

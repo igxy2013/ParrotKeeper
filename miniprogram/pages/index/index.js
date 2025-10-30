@@ -50,7 +50,7 @@ Page({
       date: ''
     },
     // 类别标签列表（UI使用）
-    incomeCategoryLabels: ['销售幼鸟','配种服务','其他收入'],
+    incomeCategoryLabels: ['繁殖销售','鸟类销售','服务收入','比赛奖金','其他收入'],
     expenseCategoryLabels: ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他'],
     // 弹窗避让参数（默认数值，避免组件收到非数字）
     modalTopOffsetPx: 24,
