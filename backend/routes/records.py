@@ -293,6 +293,14 @@ def update_feeding_record_internal(record_id, data):
                 return error_response('喂食时间格式错误')
     if 'notes' in data:
         record.notes = data['notes']
+    if 'photos' in data:
+        try:
+            import json
+            photos = data.get('photos') or []
+            if isinstance(photos, list):
+                record.image_urls = json.dumps(photos, ensure_ascii=False)
+        except Exception:
+            pass
     
     db.session.commit()
     
@@ -319,6 +327,8 @@ def update_health_record_internal(record_id, data):
         record.weight = data['weight']
     if 'temperature' in data:
         record.temperature = data['temperature']
+    if 'health_status' in data:
+        record.health_status = data['health_status']
     if 'symptoms' in data:
         record.symptoms = data['symptoms']
     if 'treatment' in data:
@@ -831,7 +841,9 @@ def add_health_record_internal(data):
     record = HealthRecord(
         parrot_id=parrot_id,
         record_type=data.get('record_type'),
+        health_status=data.get('health_status'),
         description=data.get('description'),
+        notes=data.get('notes'),
         weight=data.get('weight'),
         temperature=data.get('temperature'),
         symptoms=data.get('symptoms'),
@@ -844,6 +856,14 @@ def add_health_record_internal(data):
         created_by_user_id=user.id,  # 记录创建者
         team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
     )
+    # 记录照片
+    try:
+        import json
+        photos = data.get('photos') or []
+        if isinstance(photos, list) and photos:
+            record.image_urls = json.dumps(photos, ensure_ascii=False)
+    except Exception:
+        pass
     
     db.session.add(record)
     db.session.commit()

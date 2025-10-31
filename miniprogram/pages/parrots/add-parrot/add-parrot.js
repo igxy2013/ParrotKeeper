@@ -359,16 +359,34 @@ Page({
           })
           app.showSuccess('上传成功，已自动抠图')
         } else {
-          app.showSuccess('上传成功，抠图处理失败')
+          wx.showModal({
+            title: '温馨提示',
+            content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+            showCancel: false
+          })
         }
       } else if (result.error) {
-        throw new Error(result.error)
+        wx.showModal({
+          title: '温馨提示',
+          content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+          showCancel: false
+        })
+        return
       } else {
-        throw new Error('上传失败，未知错误')
+        wx.showModal({
+          title: '温馨提示',
+          content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+          showCancel: false
+        })
+        return
       }
     } catch (error) {
       console.error('上传照片失败:', error)
-      app.showError(`上传照片失败: ${error.message}`)
+      wx.showModal({
+        title: '温馨提示',
+        content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+        showCancel: false
+      })
     } finally {
       app.hideLoading()
     }

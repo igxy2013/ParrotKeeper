@@ -180,7 +180,11 @@ Page({
       app.showSuccess('抠图成功，已替换照片');
     } catch (e) {
       console.error('抠图失败:', e);
-      app.showError(e.message || '抠图失败，请稍后重试');
+      wx.showModal({
+        title: '温馨提示',
+        content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+        showCancel: false
+      })
     } finally {
       if (isLoading) {
         app.hideLoading();

@@ -112,10 +112,12 @@ class HealthRecord(db.Model):
     weight = db.Column(db.Numeric(5, 2))
     temperature = db.Column(db.Numeric(4, 1))
     symptoms = db.Column(db.Text)
+    notes = db.Column(db.Text)
     treatment = db.Column(db.Text)
     medication = db.Column(db.String(255))
     vet_name = db.Column(db.String(100))
     cost = db.Column(db.Numeric(8, 2))
+    image_urls = db.Column(db.Text)  # JSON 数组，记录照片URL列表
     record_date = db.Column(db.DateTime, default=datetime.utcnow)
     next_checkup_date = db.Column(db.Date)
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者

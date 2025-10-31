@@ -84,10 +84,10 @@ if not defined WAITRESS_THREADS set WAITRESS_THREADS=16
 if not defined WAITRESS_BACKLOG set WAITRESS_BACKLOG=1024
 REM Determine host/port from environment or defaults
 if not defined HOST set HOST=0.0.0.0
-REM 优先使用.env文件中设置的PORT变量，然后是BACKEND_PORT，最后是默认值5085
+REM 优先使用.env文件中设置的PORT变量，然后是BACKEND_PORT，最后是默认值5075
+REM 重新设置PORT_VAR以确保读取到环境变量
 set PORT_VAR=%PORT%
 if "%PORT_VAR%"=="" set PORT_VAR=%BACKEND_PORT%
-if "%PORT_VAR%"=="" set PORT_VAR=5085
 
 REM Start using Waitress WSGI server, calling the app factory
 echo [INFO] Starting on %HOST%:%PORT_VAR%

@@ -611,7 +611,7 @@
 .avatar-cluster {
   width: 128rpx;  /* 约 64px，与单头像一致 */
   height: 128rpx;
-  border-radius: 50%;
+  border-radius: 15%;
   overflow: hidden;
   position: relative;
   background-color: #f3f4f6;
@@ -667,7 +667,7 @@
 .single-avatar {
   width: 128rpx; /* 约 64px */
   height: 128rpx;
-  border-radius: 50%;
+  border-radius: 15%;
   overflow: hidden;
   background-color: #f3f4f6;
 }

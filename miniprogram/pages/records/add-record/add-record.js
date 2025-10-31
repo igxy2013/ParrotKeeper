@@ -358,7 +358,15 @@ const app = getApp()
           record_date: dateStr,
           record_time: timeStr,
           notes: record.notes || '',
-          photos: record.photos ? JSON.parse(record.photos) : [],
+          photos: (function(p){
+            if (Array.isArray(p)) return p;
+            if (typeof p === 'string') {
+              const s = p.trim();
+              if (!s) return [];
+              try { return JSON.parse(s); } catch(_) { return []; }
+            }
+            return [];
+          })(record.photos),
           
           // 喂食记录字段（编辑旧数据时按单选回填到多选数组）
           food_types: feedTypeId ? [parseInt(feedTypeId)] : [],

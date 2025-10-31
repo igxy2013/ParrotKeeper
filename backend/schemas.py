@@ -94,6 +94,7 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
     health_status_text = fields.Method('get_health_status_text', dump_only=True)
+    photos = fields.Method('get_photos', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
@@ -110,6 +111,16 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
             'observation': '观察中'
         }
         return status_map.get(obj.health_status, obj.health_status)
+
+    def get_photos(self, obj):
+        try:
+            import json
+            if not obj.image_urls:
+                return []
+            data = json.loads(obj.image_urls)
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
 
 class CleaningRecordSchema(SQLAlchemyAutoSchema):
     class Meta:

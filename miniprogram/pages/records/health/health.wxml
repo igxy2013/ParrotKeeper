@@ -55,19 +55,19 @@
                 <view class="avatar-cluster">
                   <block wx:for="{{item.parrot_avatars}}" wx:for-index="idx" wx:for-item="avatar" wx:key="*this">
                     <view wx:if="{{idx < 3}}" class="cluster-item pos-{{idx}} count-{{item.parrot_avatars.length >= 3 ? 3 : item.parrot_avatars.length}}">
-                      <image src="{{avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+                      <image src="{{avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFit" />
                     </view>
                   </block>
                 </view>
               </block>
               <block wx:elif="{{item.parrot_avatars && item.parrot_avatars.length === 1}}">
                 <view class="single-avatar">
-                  <image src="{{item.parrot_avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+                  <image src="{{item.parrot_avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFit" />
                 </view>
               </block>
               <block wx:else>
                 <view class="single-avatar">
-                  <image src="/images/default-parrot.png" class="cluster-img" mode="aspectFill" />
+                  <image src="/images/default-parrot.png" class="cluster-img" mode="aspectFit" />
                 </view>
               </block>
             </view>
@@ -93,11 +93,11 @@
               </view>
             </view>
           </view>
+          <view class="record-notes" wx:if="{{item.notes}}">
+            <text class="notes-label">备注：</text>
+            <text class="notes-value">{{item.notes}}</text>
+          </view>
           <view class="record-body">
-            <view class="record-detail" wx:if="{{item.notes}}">
-              <text class="detail-label">备注：</text>
-              <text class="detail-value">{{item.notes}}</text>
-            </view>
             <view class="record-detail" wx:if="{{item.symptoms}}">
               <text class="detail-label">症状：</text>
               <text class="detail-value">{{item.symptoms}}</text>
