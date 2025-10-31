@@ -87,7 +87,7 @@
           <text class="form-label">鹦鹉照片</text>
           <view class="photo-upload">
             <view class="photo-preview" wx:if="{{form.photo_url}}">
-              <image class="preview-image" src="{{form.photo_url}}" mode="aspectFill" bindtap="previewPhoto" />
+              <image class="preview-image" src="{{form.photo_url}}" mode="aspectFit" bindtap="previewPhoto" />
               <view class="photo-actions">
                 <view class="action-btn" bindtap="deletePhoto"><text class="action-icon">删除</text></view>
               </view>
