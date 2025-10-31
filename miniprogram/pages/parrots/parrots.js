@@ -5,15 +5,18 @@ Page({
   data: {
     parrots: [],
     speciesList: [],
+    speciesPickerRange: ['全部品种'],
     loading: false,
     searchKeyword: '',
     selectedSpeciesId: '',
     selectedSpeciesName: '',
     selectedStatus: '',
     selectedStatusText: '',
+    statusPickerRange: ['全部状态', '健康', '生病', '康复中', '观察中'],
     sortBy: 'created_at',
     sortOrder: 'desc',
     sortText: '最新添加',
+    sortPickerRange: ['名称 A-Z', '名称 Z-A', '年龄从小到大', '年龄从大到小', '最新添加'],
     isLogin: false, // 添加登录状态
     userMode: null, // 当前用户模式
     lastUserMode: null, // 记录上次的用户模式，用于检测模式变化
@@ -160,8 +163,11 @@ Page({
       })
       
       if (res.success) {
+        const list = res.data || []
+        const names = ['全部品种', ...list.map(s => s.name)]
         this.setData({
-          speciesList: res.data
+          speciesList: list,
+          speciesPickerRange: names
         })
       }
     } catch (error) {
@@ -294,6 +300,22 @@ Page({
     this.refreshData()
   },
 
+  // 原生品种选择器变更
+  onSpeciesPickerChange(e) {
+    const idx = e.detail.value
+    if (idx == null) return
+    if (idx === 0) {
+      this.setData({ selectedSpeciesId: '', selectedSpeciesName: '' })
+    } else {
+      const realIdx = idx - 1
+      const item = (this.data.speciesList || [])[realIdx]
+      if (item) {
+        this.setData({ selectedSpeciesId: item.id || '', selectedSpeciesName: item.name || '' })
+      }
+    }
+    this.refreshData()
+  },
+
   // 显示状态筛选
   showStatusFilter() {
     this.setData({ showStatusModal: true })
@@ -320,6 +342,18 @@ Page({
       selectedStatusText: statusMap[status],
       showStatusModal: false
     })
+    this.refreshData()
+  },
+
+  // 原生状态选择器变更
+  onStatusPickerChange(e) {
+    const idx = e.detail.value
+    if (idx == null) return
+    const values = ['', 'healthy', 'sick', 'recovering', 'observation']
+    const texts = ['全部状态', '健康', '生病', '康复中', '观察中']
+    const val = values[idx] || ''
+    const txt = texts[idx] || '全部状态'
+    this.setData({ selectedStatus: val, selectedStatusText: txt })
     this.refreshData()
   },
 
@@ -351,6 +385,22 @@ Page({
       sortText: sortLabelMap[key],
       showSortModal: false
     })
+    this.refreshData()
+  },
+
+  // 原生排序选择器变更
+  onSortPickerChange(e) {
+    const idx = e.detail.value
+    if (idx == null) return
+    const opts = [
+      { by: 'name', order: 'asc', text: '名称 A-Z' },
+      { by: 'name', order: 'desc', text: '名称 Z-A' },
+      { by: 'birth_date', order: 'desc', text: '年龄从小到大' },
+      { by: 'birth_date', order: 'asc', text: '年龄从大到小' },
+      { by: 'created_at', order: 'desc', text: '最新添加' }
+    ]
+    const sel = opts[idx] || opts[4]
+    this.setData({ sortBy: sel.by, sortOrder: sel.order, sortText: sel.text })
     this.refreshData()
   },
 

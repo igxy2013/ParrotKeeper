@@ -49,6 +49,10 @@ class Config:
     CARE_GUIDE_CONFIG_PATH = os.environ.get('CARE_GUIDE_CONFIG_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'care_guide_config.json')
     CARE_GUIDE_ADMIN_KEY = os.environ.get('CARE_GUIDE_ADMIN_KEY')  # 可选：用于更新接口的简单鉴权
 
+    # remove.bg 配置
+    REMOVE_BG_API_KEY = os.environ.get('REMOVE_BG_API_KEY')
+    REMOVE_BG_API_URL = os.environ.get('REMOVE_BG_API_URL') or 'https://api.remove.bg/v1.0/removebg'
+
 class DevelopmentConfig(Config):
     DEBUG = True
 

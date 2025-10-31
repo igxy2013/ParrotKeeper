@@ -61,6 +61,13 @@ Page({
     // 应用版本号（从全局注入，展示真实小程序版本）
     appVersion: '未知',
 
+    // 分享相关（弹窗与默认配置）
+    showShareModal: false,
+    shareTitle: '鹦鹉管家｜专业的鹦鹉护理助手',
+    sharePath: '/pages/index/index',
+    shareImageUrl: '/images/logo.png',
+    shareQuery: '',
+
     menuItems: [
       { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.png' },
       { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.png' },
@@ -112,6 +119,10 @@ Page({
           userMode: mode
         })
       });
+    } catch (_) {}
+    // 启用分享到聊天与朋友圈菜单
+    try {
+      wx.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'] })
     } catch (_) {}
   },
 
@@ -332,8 +343,46 @@ Page({
     } else if (title === '关于我们') {
       this.showAbout && this.showAbout();
     } else if (title === '分享应用') {
-      wx.showShareMenu({ withShareTicket: true });
+      this.showShareOptions();
     }
+  },
+
+  // —— 分享相关 ——
+  showShareOptions() {
+    // 打开分享弹窗，并确保系统分享菜单可见（含朋友圈）
+    this.setData({ showShareModal: true });
+    try {
+      wx.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'] });
+    } catch (_) {}
+  },
+
+  hideShareOptions() { this.setData({ showShareModal: false }); },
+
+  copyShareText() {
+    const text = '推荐你试试「鹦鹉管家」——专业的鹦鹉护理助手。打开微信“小程序”，搜索“鹦鹉管家”即可使用。';
+    wx.setClipboardData({
+      data: text,
+      success: () => wx.showToast({ title: '已复制推荐语', icon: 'none' })
+    })
+  },
+
+  onShareAppMessage() {
+    const { shareTitle, sharePath, shareImageUrl, shareQuery } = this.data;
+    const query = shareQuery ? (sharePath.includes('?') ? `&${shareQuery}` : `?${shareQuery}`) : '';
+    return {
+      title: shareTitle,
+      path: `${sharePath}${query}`,
+      imageUrl: shareImageUrl
+    };
+  },
+
+  onShareTimeline() {
+    const { shareTitle, shareQuery, shareImageUrl } = this.data;
+    return {
+      title: shareTitle,
+      query: shareQuery || 'from=profile',
+      imageUrl: shareImageUrl
+    };
   },
 
   // 通知中心：初始化与交互

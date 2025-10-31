@@ -63,7 +63,9 @@ Page({
         quickFeeding: '/images/remix/ri-restaurant-fill-orange.png',
         quickHealth: '/images/remix/ri-heart-fill-purple.png',
         quickCleaning: '/images/remix/ri-calendar-fill-blue.png',
-        quickBreeding: '/images/remix/ri-book-fill-green.png'
+        quickBreeding: '/images/remix/ri-book-fill-green.png',
+        // 抠图按钮图标（如缺失需用户下载）
+        removeBg: '/images/remix/magic-line.png'
       }
     }
   },
@@ -110,6 +112,80 @@ Page({
   setActiveTab(e) {
     const tab = e.currentTarget.dataset.tab || e.detail || '基本信息'
     this.setData({ activeTab: tab })
+  },
+
+  // 抠图前确认
+  confirmRemoveBg() {
+    if (!this.data.parrot || !this.data.parrot.photo_url) {
+      app.showError('暂无可处理的照片')
+      return
+    }
+    wx.showModal({
+      title: 'AI一键抠图',
+      content: '将使用AI对当前照片进行抠图，移除背景，并替换为新照片。是否继续？',
+      confirmText: '继续',
+      success: (res) => {
+        if (res.confirm) {
+          this.processPhotoRemoveBg()
+        }
+      }
+    })
+  },
+
+  // 调用后端进行抠图并替换
+  async processPhotoRemoveBg() {
+    let isLoading = false;
+    try {
+      app.showLoading('抠图处理中...');
+      isLoading = true;
+      const currentUrl = this.data.parrot.photo_url;
+      console.log('发送抠图请求，图片路径:', currentUrl); // 添加日志以便调试
+      
+      // 检查图片路径是否为空
+      if (!currentUrl) {
+        throw new Error('图片路径为空');
+      }
+      
+      const res = await app.request({
+        url: '/api/image/process-existing',
+        method: 'POST',
+        data: { image_path: currentUrl }
+      });
+
+      // 接口约定：成功时返回 processed_url
+      const processedUrl = res && (res.processed_url || (res.data && res.data.processed_url));
+      if (!processedUrl) {
+        throw new Error(res && (res.error || res.message) || '抠图处理失败');
+      }
+
+      // 统一存储相对路径（与上传逻辑一致）：提取 /uploads/ 之后的部分
+      let storagePath = processedUrl;
+      const m = String(processedUrl).match(/\/uploads\/(.+)$/);
+      if (m && m[1]) storagePath = m[1];
+
+      // 更新后端鹦鹉照片URL
+      const saveRes = await app.request({
+        url: `/api/parrots/${this.data.parrotId}`,
+        method: 'PUT',
+        data: { photo_url: storagePath }
+      });
+
+      if (!saveRes || !saveRes.success) {
+        throw new Error((saveRes && saveRes.message) || '保存照片失败');
+      }
+
+      // 刷新本地展示
+      const resolved = app.resolveUploadUrl(storagePath);
+      this.setData({ parrot: { ...this.data.parrot, photo_url: resolved } });
+      app.showSuccess('抠图成功，已替换照片');
+    } catch (e) {
+      console.error('抠图失败:', e);
+      app.showError(e.message || '抠图失败，请稍后重试');
+    } finally {
+      if (isLoading) {
+        app.hideLoading();
+      }
+    }
   },
 
   // 解析服务端时间字符串：优先按本地时间解析，避免无时区字符串被当作 UTC

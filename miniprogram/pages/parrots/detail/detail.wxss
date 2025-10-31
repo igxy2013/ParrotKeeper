@@ -32,7 +32,11 @@
   gap: 24rpx;
   flex: 1;
 }
-
+.aitext{
+  font-size: 30rpx;
+  font-weight: 500;
+  color:#8b5cf6
+}
 .back-btn {
   width: 80rpx;
   height: 80rpx;
@@ -593,6 +597,17 @@
   font-size: 30rpx;
   font-weight: 600;
   color: #ea580c;
+}
+
+/* 卡片右侧操作区域与图标尺寸 */
+.card-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+.card-action-icon-img {
+  width: 32rpx;
+  height: 32rpx;
 }
 
 .characteristics-list {

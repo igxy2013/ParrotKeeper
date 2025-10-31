@@ -48,18 +48,24 @@
     </view>
     
     <view class="filter-bar">
-      <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}" bindtap="showSpeciesFilter">
-        <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
-          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
-      </view>
-      <view class="filter-item {{selectedStatus ? 'active' : ''}}" bindtap="showStatusFilter">
-        <text class="filter-text">{{selectedStatus ? selectedStatusText : '状态'}}</text>
-          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
-      </view>
-      <view class="filter-item {{sortText !== '默认排序' ? 'active' : ''}}" bindtap="showSortFilter">
-        <text class="filter-text">{{sortText}}</text>
-          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
-      </view>
+      <picker mode="selector" range="{{speciesPickerRange}}" bindchange="onSpeciesPickerChange">
+        <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}">
+          <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
+            <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{statusPickerRange}}" bindchange="onStatusPickerChange">
+        <view class="filter-item {{selectedStatus ? 'active' : ''}}">
+          <text class="filter-text">{{selectedStatus ? selectedStatusText : '状态'}}</text>
+            <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
+        </view>
+      </picker>
+      <picker mode="selector" range="{{sortPickerRange}}" bindchange="onSortPickerChange">
+        <view class="filter-item {{sortText !== '默认排序' ? 'active' : ''}}">
+          <text class="filter-text">{{sortText}}</text>
+            <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
+         </view>
+      </picker>
     </view>
   </view>
 

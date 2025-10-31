@@ -24,7 +24,7 @@
           <image 
             class="parrot-avatar" 
             src="{{parrot.photo_url || parrot.avatar_url || '/images/default-parrot.png'}}" 
-            mode="aspectFill"
+            mode="aspectFit"
             bindtap="previewPhoto"
           />
         </view>
@@ -140,6 +140,14 @@
             <view class="card-header">
               <image class="card-icon-img" src="/images/remix/ri-camera-line-gray.png" mode="widthFix" />
               <text class="card-title">鹦鹉照片</text>
+              <view class="card-actions">
+                <image 
+                  class="card-action-icon-img" 
+                  src="{{iconPaths.actions.removeBg}}" 
+                  mode="widthFix" 
+                />
+                <text class="aitext" bindtap="confirmRemoveBg" binderror="onDetailIconError" data-key="actions.removeBg" >AI一键抠图</text>
+              </view>
             </view>
             <view class="photo-container">
               <image 
@@ -148,6 +156,7 @@
                 mode="aspectFit"
                 bindtap="previewPhoto"
               />
+
             </view>
           </view>
           
