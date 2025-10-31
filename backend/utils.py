@@ -50,7 +50,8 @@ def remove_background(image_path):
 
         if not api_key:
             print('背景移除失败: 未配置 REMOVE_BG_API_KEY')
-            return None
+            # 当API密钥未配置时，尝试使用本地BRIA-RMBG模型
+            return remove_background_with_rembg(image_path)
 
         # 生成新的文件名（透明背景输出 PNG）
         name, _ = os.path.splitext(image_path)
@@ -78,11 +79,93 @@ def remove_background(image_path):
             try:
                 err_json = resp.json()
                 print(f"背景移除失败: {err_json}")
+                # 检查是否是API密钥无效的错误
+                if 'auth_failed' in str(err_json):
+                    print("检测到API密钥无效，切换到本地BRIA-RMBG模型处理")
+                    return remove_background_with_rembg(image_path)
             except Exception:
                 print(f"背景移除失败: HTTP {resp.status_code}")
-            return None
+            # 当API调用失败时，尝试使用本地BRIA-RMBG模型
+            return remove_background_with_rembg(image_path)
     except Exception as e:
         print(f"背景移除异常: {str(e)}")
+        # 当API调用出现异常时，尝试使用本地BRIA-RMBG模型
+        return remove_background_with_rembg(image_path)
+
+def remove_background_with_rembg(image_path):
+    """使用rembg库和BRIA-RMBG模型移除图片背景"""
+    try:
+        # 延迟导入，避免在不需要时加载模型
+        from rembg import remove, new_session
+        from PIL import Image
+        import numpy as np
+
+        # 生成新的文件名（透明背景输出 PNG）
+        name, _ = os.path.splitext(image_path)
+        output_path = f"{name}_no_bg_rembg.png"
+
+        # 创建BRIA-RMBG模型会话，使用正确的模型名称
+        session = new_session("bria-rmbg")
+        
+        # 使用rembg处理图片
+        with open(image_path, 'rb') as input_file:
+            input_data = input_file.read()
+            # 使用会话处理图片
+            output_data = remove(input_data, session=session)
+            
+        # 保存处理后的图片
+        with open(output_path, 'wb') as output_file:
+            if isinstance(output_data, bytes):
+                output_file.write(output_data)
+            elif isinstance(output_data, Image.Image):
+                # 如果返回的是PIL Image对象
+                output_data.save(output_file, format='PNG')
+            elif isinstance(output_data, np.ndarray):
+                # 如果返回的是numpy数组
+                img = Image.fromarray(output_data)
+                img.save(output_file, format='PNG')
+            else:
+                # 处理其他可能的返回类型
+                output_file.write(output_data)
+        
+        # 添加自动裁剪功能
+        cropped_path = auto_crop_image(output_path)
+        if cropped_path:
+            return cropped_path
+        else:
+            return output_path
+    except Exception as e:
+        print(f"BRIA-RMBG背景移除异常: {str(e)}")
+        import traceback
+        traceback.print_exc()  # 打印详细的错误堆栈
+        return None
+
+def remove_background_with_pymatting(image_path):
+    """使用PyMatting库进行更精确的背景移除"""
+    try:
+        import numpy as np
+        from PIL import Image
+        from pymatting import cutout
+        
+        # 生成输出文件名
+        name, _ = os.path.splitext(image_path)
+        output_path = f"{name}_pymatting_no_bg.png"
+        
+        # 使用PyMatting进行抠图
+        # PyMatting会自动估计alpha matte并进行抠图
+        cutout(image_path, output_path)
+        
+        print(f"PyMatting背景移除完成: {output_path}")
+        
+        # 添加自动裁剪功能
+        cropped_path = auto_crop_image(output_path)
+        if cropped_path:
+            return cropped_path
+        else:
+            return output_path
+            
+    except Exception as e:
+        print(f"PyMatting背景移除失败: {str(e)}")
         return None
 
 def auto_crop_image(image_path):
