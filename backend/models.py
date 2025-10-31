@@ -277,3 +277,16 @@ class Feedback(db.Model):
     
     # 关系
     user = db.relationship('User', backref='feedbacks', lazy=True)
+
+class UserSetting(db.Model):
+    __tablename__ = 'user_settings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    team_id = db.Column(db.Integer, nullable=True)
+    key = db.Column(db.String(100), nullable=False)
+    value = db.Column(db.Text, nullable=True)  # 存储JSON字符串
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'team_id', 'key', name='unique_user_setting_key'),)

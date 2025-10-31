@@ -77,44 +77,34 @@
                 <text class="record-time">{{item.record_date_formatted}}</text>
                 <text class="record-weight" wx:if="{{item.weight}}">体重：{{item.weight}} g</text>
               </view>
-            </view>
-            <view class="header-right">
-              <view class="health-status-badge status-{{item.health_status}}">
-                {{item.health_status_text || '健康'}}
               </view>
-              <!-- 编辑和删除按钮 -->
-              <view class="action-buttons" wx:if="{{hasOperationPermission}}">
-  <view class="action-btn edit-btn" bindtap="editRecord" data-id="{{item.id}}">
-    <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
-  </view>
-  <view class="action-btn delete-btn" bindtap="deleteRecord" data-id="{{item.id}}">
-    <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
-  </view>
+                <view class="header-right">
+                  <view class="health-status-badge status-{{item.health_status}}">
+                    {{item.health_status_text || '健康'}}
+                  </view>
+                  <!-- 编辑和删除按钮 -->
+                  <view class="action-buttons" wx:if="{{hasOperationPermission}}">
+                  <view class="action-btn edit-btn" bindtap="editRecord" data-id="{{item.id}}">
+                    <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
+                  </view>
+                  <view class="action-btn delete-btn" bindtap="deleteRecord" data-id="{{item.id}}">
+                    <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
+                  </view>
+                </view>
               </view>
             </view>
-          </view>
           <view class="record-notes" wx:if="{{item.notes}}">
             <text class="notes-label">备注：</text>
             <text class="notes-value">{{item.notes}}</text>
           </view>
-          <view class="record-body">
-            <view class="record-detail" wx:if="{{item.symptoms}}">
-              <text class="detail-label">症状：</text>
-              <text class="detail-value">{{item.symptoms}}</text>
-            </view>
-            <view class="record-detail" wx:if="{{item.treatment}}">
-              <text class="detail-label">治疗：</text>
-              <text class="detail-value">{{item.treatment}}</text>
-            </view>
-          </view>
         </view>
       </view>
-
       <!-- 空状态 -->
       <view class="empty-state" wx:if="{{healthRecords.length === 0 && !loading}}">
         <view class="empty-icon">🏥</view>
         <view class="empty-text">暂无健康记录</view>
-        <button wx:if="{{hasOperationPermission}}" class="btn btn-primary btn-large mt-20" bindtap="addHealthRecord">添加健康记录</button>
+        <view class="empty-subtitle">开始记录您的健康检查过程</view>
+        <view class="btn-primary" bindtap="addHealthRecord">添加健康记录</view>
       </view>
     </view>
   </view>

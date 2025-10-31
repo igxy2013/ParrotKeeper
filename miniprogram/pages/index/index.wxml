@@ -31,39 +31,102 @@
           <view class="status-text">{{overview_status_text}}</view>
         </view>
 </view>
-<!-- 自定义底部导航 -->
-<bottom-nav active="index" />
     </view>
 
-    <!-- 统计数据网格 -->
-    <view class="stats-grid">
-      <view class="stat-card" bindtap="navigateToParrots">
-        <view class="stat-icon-container emerald">
-        <image class="stat-icon-img" src="{{iconPaths.statsHeart}}" mode="widthFix" binderror="handleIconError" data-key="statsHeart"/>
-        </view>
-        <view class="stat-value emerald-text">{{overview.total_parrots || 0}}</view>
-        <view class="stat-label">我的鹦鹉</view>
+    <!-- 统计数据网格（支持长按自定义显示项） -->
+    <view class="stats-grid {{isEditMode ? 'edit-mode' : ''}}" bindlongpress="openWidgetPicker">
+      <!-- 编辑模式背景遮罩 -->
+      <view wx:if="{{isEditMode}}" class="edit-mode-mask"></view>
+      <!-- 拖拽浮层（实时跟随手指） -->
+      <view wx:if="{{isEditMode && dragGhost}}" class="drag-ghost" style="left: {{dragGhost.x}}px; top: {{dragGhost.y}}px; width: {{dragGhost.w}}px; height: {{dragGhost.h}}px;">
+        <block wx:if="{{dragGhost.id === 'parrots'}}">
+          <home-card-parrots count="{{overview.total_parrots || 0}}" />
+        </block>
+        <block wx:elif="{{dragGhost.id === 'feeding_today'}}">
+          <home-card-feeding-today count="{{(overview.today_records && overview.today_records.feeding) || 0}}" />
+        </block>
+        <block wx:elif="{{dragGhost.id === 'monthly_income'}}">
+          <home-card-monthly-income amount="{{overview.monthly_income || 0}}" />
+        </block>
+        <block wx:elif="{{dragGhost.id === 'monthly_expense'}}">
+          <home-card-monthly-expense amount="{{overview.monthly_expense || 0}}" />
+        </block>
       </view>
-      <view class="stat-card" bindtap="navigateToFeedingRecords">
-        <view class="stat-icon-container orange">
-        <image class="stat-icon-img" src="{{iconPaths.statsFeeding}}" mode="widthFix" binderror="handleIconError" data-key="statsFeeding"/>
-        </view>
-        <view class="stat-value orange-text">{{overview.today_records.feeding || 0}}</view>
-        <view class="stat-label">今日喂食</view>
+      <!-- 编辑模式顶部工具栏 -->
+      <view wx:if="{{isEditMode}}" class="edit-toolbar">
+        <text class="edit-title">自定义卡片</text>
       </view>
-      <view class="stat-card" bindtap="goToExpenseManagement">
-        <view class="stat-icon-container purple">
-        <image class="stat-icon-img" src="{{iconPaths.statsIncome}}" mode="widthFix" binderror="handleIconError" data-key="statsIncome"/>
+      
+      <!-- 现有卡片 -->
+      <block wx:if="{{isEditMode}}">
+        <view class="widget-container wiggle" catchtouchmove="blockTouchMove">
+          <view wx:for="{{homeWidgets}}" wx:key="*this" wx:if="{{!hiddenWidgetsMap[item]}}"
+                class="widget-wrapper" data-id="{{item}}" style="{{draggingWidgetId === item ? 'opacity:0.35' : ''}}"
+                bindtouchstart="onDragStart" bindtouchmove="onDragMove" bindtouchend="onDragEnd">
+            <block wx:if="{{item === 'parrots'}}">
+              <home-card-parrots count="{{overview.total_parrots || 0}}" bind:tap="navigateToParrots" />
+            </block>
+            <block wx:elif="{{item === 'feeding_today'}}">
+              <home-card-feeding-today count="{{(overview.today_records && overview.today_records.feeding) || 0}}" bind:tap="navigateToFeedingRecords" />
+            </block>
+            <block wx:elif="{{item === 'monthly_income'}}">
+              <home-card-monthly-income amount="{{overview.monthly_income || 0}}" bind:tap="goToExpenseManagement" />
+            </block>
+            <block wx:elif="{{item === 'monthly_expense'}}">
+              <home-card-monthly-expense amount="{{overview.monthly_expense || 0}}" bind:tap="goToExpenseManagement" />
+            </block>
+            
+            <view wx:if="{{isEditMode}}" class="remove-btn" bindtap="removeWidget" data-widget="{{item}}">
+              <image src="/images/icons/close-white.png" class="remove-icon" />
+            </view>
+          </view>
         </view>
-        <view class="stat-value purple-text">¥{{overview.monthly_income || 0}}</view>
-        <view class="stat-label">本月收入</view>
+      </block>
+      <block wx:else>
+        <view class="widget-container">
+          <view wx:for="{{homeWidgets}}" wx:key="*this" wx:if="{{!hiddenWidgetsMap[item]}}"
+                class="widget-wrapper" data-id="{{item}}"
+                bindtouchstart="onDragStart" bindtouchmove="onDragMove" bindtouchend="onDragEnd">
+            <block wx:if="{{item === 'parrots'}}">
+              <home-card-parrots count="{{overview.total_parrots || 0}}" bind:tap="navigateToParrots" />
+            </block>
+            <block wx:elif="{{item === 'feeding_today'}}">
+              <home-card-feeding-today count="{{(overview.today_records && overview.today_records.feeding) || 0}}" bind:tap="navigateToFeedingRecords" />
+            </block>
+            <block wx:elif="{{item === 'monthly_income'}}">
+              <home-card-monthly-income amount="{{overview.monthly_income || 0}}" bind:tap="goToExpenseManagement" />
+            </block>
+            <block wx:elif="{{item === 'monthly_expense'}}">
+              <home-card-monthly-expense amount="{{overview.monthly_expense || 0}}" bind:tap="goToExpenseManagement" />
+            </block>
+            
+            <view wx:if="{{isEditMode}}" class="remove-btn" bindtap="removeWidget" data-widget="{{item}}">
+              <image src="/images/icons/close-white.png" class="remove-icon" />
+            </view>
+          </view>
+        </view>
+      </block>
+      
+      <!-- 空状态：当四张卡片都隐藏时展示提示与恢复按钮 -->
+      <view wx:if="{{!isEditMode && hiddenWidgets.length >= homeWidgets.length}}" class="empty-widgets-placeholder">
+        <text class="empty-title">统计卡片已隐藏</text>
+        <text class="empty-subtitle">长按此区域自定义显示，或恢复默认布局</text>
+        <button class="empty-reset-btn" bindtap="resetHiddenWidgets">恢复默认</button>
       </view>
-      <view class="stat-card" bindtap="goToExpenseManagement">
-        <view class="stat-icon-container blue">
-        <image class="stat-icon-img" src="{{iconPaths.statsExpense}}" mode="widthFix" binderror="handleIconError" data-key="statsExpense"/>
+
+      <!-- 添加卡片按钮区域 -->
+      <view wx:if="{{isEditMode}}" class="add-widgets-section">
+        <view class="add-widgets-title">可添加的卡片</view>
+        <view class="add-widgets-grid">
+          <view wx:for="{{availableWidgetsToAdd}}" wx:key="id" 
+                class="add-widget-item" bindtap="addWidget" data-widget="{{item.id}}">
+            <view class="add-widget-icon">
+              <image src="{{item.icon}}" class="widget-icon" />
+              <view class="add-plus">+</view>
+            </view>
+            <text class="add-widget-name">{{item.name}}</text>
+          </view>
         </view>
-        <view class="stat-value blue-text">¥{{overview.monthly_expense || 0}}</view>
-        <view class="stat-label">本月支出</view>
       </view>
     </view>
 
@@ -179,6 +242,14 @@
     </view>
   </view>
 </view>
+
+  <!-- 编辑模式完成按钮 -->
+  <view wx:if="{{isEditMode}}" class="edit-done-btn-container">
+    <button class="edit-done-btn-fixed" bindtap="exitEditMode">完成</button>
+  </view>
+
+<!-- 自定义底部导航 -->
+<bottom-nav active="index" />
 
 <!-- 统一使用通用弹窗组件：添加鹦鹉 -->
 <parrot-modal 

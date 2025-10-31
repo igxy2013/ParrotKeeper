@@ -6,7 +6,14 @@ Page({
     greeting: '早上好',
     userInfo: {},
     isLogin: false,
-    overview: {},
+    overview: {
+      total_parrots: 0,
+      today_records: {
+        feeding: 0
+      },
+      monthly_income: 0,
+      monthly_expense: 0
+    },
     recentRecords: [],
     healthAlerts: [],
     weather: null,
@@ -17,6 +24,25 @@ Page({
     showNotifications: false,
     notifications: [],
     unreadCount: 0,
+    // 新增：首页卡片自定义
+    homeWidgets: ['parrots','feeding_today','monthly_income','monthly_expense'],
+    // 隐藏的卡片列表与映射
+    hiddenWidgets: [],
+    hiddenWidgetsMap: {},
+    availableWidgetsToAdd: [],
+    // 拖拽排序相关状态
+    draggingWidgetId: null,
+    dragTargetVisibleIndex: -1,
+    dragRects: [],
+    dragGhost: null,
+    // 编辑模式状态
+    isEditMode: false,
+    availableWidgets: [
+      { id: 'parrots', name: '我的鹦鹉', icon: '/images/remix/ri-heart-fill-green.png' },
+      { id: 'feeding_today', name: '今日喂食', icon: '/images/remix/ri-restaurant-fill-orange.png' },
+      { id: 'monthly_income', name: '月收入', icon: '/images/remix/ri-money-dollar-circle-fill-purple.png' },
+      { id: 'monthly_expense', name: '月支出', icon: '/images/remix/ri-shopping-bag-fill-blue.png' }
+    ],
 
     // 添加鹦鹉弹窗&表单
     showAddParrotModal: false,
@@ -104,6 +130,10 @@ Page({
     this.computeModalCapsulePadding()
     // 初始化通知
     this.initNotifications()
+    // 加载首页卡片配置
+    this.loadHomeWidgets()
+    // 加载用户自定义排序
+    this.loadHomeWidgetsOrder()
   },
 
   // 计算右上角胶囊菜单到屏幕右侧的总内边距，便于自定义导航栏布局
@@ -234,13 +264,13 @@ Page({
       userInfo
     })
     
-    // 如果未登录，跳转到登录页面
-    if (!isLogin) {
-      console.log('用户未登录，跳转到登录页面')
-      wx.navigateTo({
-        url: '/pages/login/login'
-      })
-    }
+    // 注释掉自动跳转逻辑，允许用户在未登录状态下查看首页
+    // if (!isLogin) {
+    //   console.log('用户未登录，跳转到登录页面')
+    //   wx.navigateTo({
+    //     url: '/pages/login/login'
+    //   })
+    // }
   },
 
   // 加载数据
@@ -269,13 +299,247 @@ Page({
         const overview = res.data
         const overviewStatusText = this.getHealthStatusText(overview)
         this.setData({
-          overview,
+          overview: {
+            total_parrots: overview.total_parrots || 0,
+            today_records: {
+              feeding: (overview.today_records && overview.today_records.feeding) || 0
+            },
+            monthly_income: overview.monthly_income || 0,
+            monthly_expense: overview.monthly_expense || 0,
+            ...overview
+          },
           overview_status_text: overviewStatusText
         })
       }
     } catch (error) {
       console.error('加载概览数据失败:', error)
+      // 保持默认值，不更新overview
     }
+  },
+
+  // 新增：加载/保存首页卡片配置
+  async loadHomeWidgets() {
+    try {
+      const stored = wx.getStorageSync('hiddenWidgets')
+      let hiddenWidgets = []
+      if (Array.isArray(stored)) {
+        hiddenWidgets = stored
+      } else if (stored && typeof stored === 'object') {
+        // 兼容旧版本以对象/映射形式存储的隐藏项
+        hiddenWidgets = Object.keys(stored).filter(k => !!stored[k])
+      } else {
+        hiddenWidgets = []
+      }
+      // 防护：如果全部卡片都被隐藏，则自动重置为空
+      const totalWidgets = (this.data.homeWidgets || []).length
+      if (hiddenWidgets.length >= totalWidgets && totalWidgets > 0) {
+        console.warn('检测到所有首页卡片均隐藏，自动恢复为默认显示')
+        hiddenWidgets = []
+        this.saveHiddenWidgets(hiddenWidgets)
+      }
+      this.setData({ hiddenWidgets })
+      this.updateHiddenWidgetsMap()
+      this.setData({ availableWidgetsToAdd: this.getAvailableWidgetsToAdd() })
+    } catch (error) {
+      console.error('加载隐藏卡片配置失败:', error)
+    }
+  },
+
+  // 加载自定义排序（若存储中有有效顺序则应用）
+  loadHomeWidgetsOrder() {
+    try {
+      const stored = wx.getStorageSync('homeWidgetsOrder')
+      const defaults = ['parrots','feeding_today','monthly_income','monthly_expense']
+      if (Array.isArray(stored)) {
+        // 过滤无效项并补齐缺失项
+        const valid = stored.filter(id => defaults.includes(id))
+        const missing = defaults.filter(id => !valid.includes(id))
+        const ordered = [...valid, ...missing]
+        this.setData({ homeWidgets: ordered })
+      }
+    } catch (e) {
+      // 忽略错误，使用默认顺序
+    }
+  },
+
+  saveHomeWidgetsOrder(order) {
+    try { wx.setStorageSync('homeWidgetsOrder', order) } catch (_) {}
+  },
+
+  // 编辑模式下阻止页面滚动（用于 catchtouchmove）
+  blockTouchMove() {
+    // 空函数即可，catchtouchmove 会阻止滚动与事件继续冒泡到页面
+  },
+  
+  // 保存隐藏卡片配置
+  async saveHiddenWidgets(hiddenWidgets) {
+    try {
+      wx.setStorageSync('hiddenWidgets', hiddenWidgets)
+    } catch (error) {
+      console.error('保存隐藏卡片配置失败:', error)
+    }
+  },
+
+  // 根据数组生成映射，供 WXML 高效判断
+  updateHiddenWidgetsMap() {
+    const src = this.data.hiddenWidgets
+    const list = Array.isArray(src)
+      ? src
+      : (src && typeof src === 'object')
+        ? Object.keys(src).filter(k => !!src[k])
+        : []
+    const map = {}
+    list.forEach(id => { map[id] = true })
+    this.setData({ hiddenWidgetsMap: map })
+  },
+  
+  // 保留原有方法以兼容
+  async saveHomeWidgets(widgets) {
+    // 这个方法现在不再使用，但保留以防其他地方调用
+    console.log('saveHomeWidgets 方法已废弃，请使用 saveHiddenWidgets')
+  },
+
+  // 进入编辑模式
+  openWidgetPicker() {
+    this.setData({ isEditMode: true })
+    wx.vibrateShort() // 触觉反馈
+  },
+
+  // 退出编辑模式
+  exitEditMode() {
+    this.setData({ isEditMode: false, draggingWidgetId: null, dragTargetVisibleIndex: -1 })
+  },
+
+  // 移除卡片（添加到隐藏列表）
+  removeWidget(e) {
+    const widgetId = e.currentTarget.dataset.widget
+    console.log('removeWidget tap:', widgetId)
+    if (!this.data.hiddenWidgets.includes(widgetId)) {
+      const newHiddenWidgets = [...this.data.hiddenWidgets, widgetId]
+      this.setData({ hiddenWidgets: newHiddenWidgets })
+      this.saveHiddenWidgets(newHiddenWidgets)
+      this.updateHiddenWidgetsMap()
+      this.setData({ availableWidgetsToAdd: this.getAvailableWidgetsToAdd() })
+      try { wx.vibrateShort() } catch (_) {}
+      wx.showToast({ title: '已隐藏', icon: 'success', duration: 800 })
+    }
+  },
+
+  // 添加卡片（从隐藏列表中移除）
+  addWidget(e) {
+    const widgetId = e.currentTarget.dataset.widget
+    if (this.data.hiddenWidgets.includes(widgetId)) {
+      const newHiddenWidgets = this.data.hiddenWidgets.filter(id => id !== widgetId)
+      this.setData({ hiddenWidgets: newHiddenWidgets })
+      this.saveHiddenWidgets(newHiddenWidgets)
+      this.updateHiddenWidgetsMap()
+      this.setData({ availableWidgetsToAdd: this.getAvailableWidgetsToAdd() })
+    }
+  },
+
+  // 恢复默认显示（清空所有隐藏项）
+  resetHiddenWidgets() {
+    try {
+      const empty = []
+      this.setData({ hiddenWidgets: empty })
+      this.saveHiddenWidgets(empty)
+      this.updateHiddenWidgetsMap()
+      this.setData({ availableWidgetsToAdd: this.getAvailableWidgetsToAdd() })
+      wx.showToast({ title: '已恢复默认', icon: 'success' })
+    } catch (e) {
+      console.error('恢复默认失败', e)
+      wx.showToast({ title: '恢复失败', icon: 'none' })
+    }
+  },
+
+  // 获取可添加的卡片列表（被隐藏的卡片）
+  getAvailableWidgetsToAdd() {
+    const map = this.data.hiddenWidgetsMap || {}
+    return this.data.availableWidgets.filter(widget => !!map[widget.id])
+  },
+
+  // 计算当前可见卡片（用于拖拽排序）
+  getVisibleWidgets() {
+    const map = this.data.hiddenWidgetsMap || {}
+    return (this.data.homeWidgets || []).filter(id => !map[id])
+  },
+
+  // 采集可见卡片的位置信息
+  computeWidgetRects(cb) {
+    try {
+      const q = wx.createSelectorQuery().in(this)
+      q.selectAll('.widget-wrapper').boundingClientRect(rects => {
+        if (Array.isArray(rects)) {
+          this.setData({ dragRects: rects })
+          if (typeof cb === 'function') cb(rects)
+        }
+      }).exec()
+    } catch (e) {}
+  },
+
+  // 拖拽开始
+  onDragStart(e) {
+    if (!this.data.isEditMode) return
+    const id = e.currentTarget.dataset.id
+    const touch = (e.touches && e.touches[0]) || {}
+    this.setData({ draggingWidgetId: id })
+    this.computeWidgetRects((rects) => {
+      const vis = this.getVisibleWidgets()
+      const idx = vis.indexOf(id)
+      if (idx >= 0 && rects[idx]) {
+        const r = rects[idx]
+        const dx = (touch.clientX || 0) - r.left
+        const dy = (touch.clientY || 0) - r.top
+        this.setData({ dragGhost: { id, x: r.left, y: r.top, w: r.width, h: r.height, dx, dy } })
+      }
+    })
+  },
+
+  // 拖拽移动，计算目标插入位置（按可见列表顺序）
+  onDragMove(e) {
+    if (!this.data.isEditMode || !this.data.draggingWidgetId) return
+    const touches = e.touches || []
+    if (!touches.length) return
+    const y = touches[0].clientY
+    const x = touches[0].clientX
+    const rects = this.data.dragRects || []
+    if (!rects.length) return
+    // 找到距离最近的卡片中心点索引
+    let nearestIdx = 0
+    let nearestDist = Infinity
+    rects.forEach((r, idx) => {
+      const cy = r.top + r.height / 2
+      const d = Math.abs(y - cy)
+      if (d < nearestDist) { nearestDist = d; nearestIdx = idx }
+    })
+    this.setData({ dragTargetVisibleIndex: nearestIdx })
+    // 更新拖拽浮层位置
+    const g = this.data.dragGhost
+    if (g) {
+      const nx = x - (g.dx || 0)
+      const ny = y - (g.dy || 0)
+      this.setData({ dragGhost: { ...g, x: nx, y: ny } })
+    }
+  },
+
+  // 拖拽结束，重排顺序并持久化
+  onDragEnd() {
+    if (!this.data.isEditMode || !this.data.draggingWidgetId) return
+    const id = this.data.draggingWidgetId
+    const vis = this.getVisibleWidgets()
+    const fromIdx = vis.indexOf(id)
+    const toIdx = this.data.dragTargetVisibleIndex
+    this.setData({ draggingWidgetId: null, dragTargetVisibleIndex: -1, dragRects: [], dragGhost: null })
+    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return
+    // 生成新的可见顺序
+    const newVisible = vis.filter(v => v !== id)
+    newVisible.splice(toIdx, 0, id)
+    // 保留隐藏项在末尾，保持其相对顺序
+    const hidden = (this.data.homeWidgets || []).filter(w => this.data.hiddenWidgetsMap && this.data.hiddenWidgetsMap[w])
+    const newOrder = [...newVisible, ...hidden]
+    this.setData({ homeWidgets: newOrder })
+    this.saveHomeWidgetsOrder(newOrder)
+    wx.vibrateShort && wx.vibrateShort()
   },
 
   // 生成首页健康状态文案，保证单/多行均对齐

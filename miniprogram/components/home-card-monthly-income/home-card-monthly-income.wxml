@@ -1,0 +1,7 @@
+<view class="stat-card" bindtap="onTap">
+  <view class="stat-icon-container purple">
+    <image class="stat-icon-img" src="/images/remix/ri-wallet-fill-purple.png" mode="widthFix" />
+  </view>
+  <view class="stat-value purple-text">¥{{amount || 0}}</view>
+  <view class="stat-label">本月收入</view>
+</view>

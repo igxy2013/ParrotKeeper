@@ -219,18 +219,45 @@
   text-align: left;
 }
 
-.empty-state { 
-  margin-top: 40rpx; 
-  text-align: center; 
-  color: #6b7280; 
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 80rpx 40rpx;
 }
-.empty-icon { 
-  font-size: 56rpx; 
-  margin-bottom: 12rpx;
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 32rpx;
 }
-.empty-text { 
-  font-size: 26rpx; 
-  margin-bottom: 20rpx;
+
+.empty-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16rpx;
+}
+
+.empty-subtitle {
+  font-size: 28rpx;
+  color: #6b7280;
+  margin-bottom: 40rpx;
+}
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 40rpx;
+}
+
+.btn-primary {
+  background: #d946ef;
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  padding: 24rpx 48rpx;
+  font-size: 28rpx;
+  font-weight: 500;
 }
 
 /* 统一头部按钮样式 */
@@ -254,23 +281,6 @@
 .header-btn-icon-img {
   width: 36rpx;
   height: 36rpx;
-}
-
-.btn { 
-  border-radius: 9999rpx; 
-  border: none;
-  outline: none;
-}
-.btn-primary { 
-  background: #8b5cf6; 
-  color: #ffffff; 
-}
-.btn-large { 
-  padding: 20rpx 28rpx; 
-  font-size: 28rpx; 
-}
-.mt-20 { 
-  margin-top: 20rpx; 
 }
 
 /* 头像容器与集群样式（与其它记录页保持一致） */

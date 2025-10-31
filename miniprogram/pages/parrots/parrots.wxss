@@ -454,7 +454,7 @@
   color: #ffffff;
   border: none;
   border-radius: 48rpx;
-  padding: 32rpx 64rpx;
+  padding:24rpx 200rpx;
   font-size: 32rpx;
   font-weight: bold;
   box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.3);
@@ -467,7 +467,7 @@
 }
 
 .empty-btn-text {
-  color: #1f2937;
+  color: #ffffffff;
   font-size: 32rpx;
   font-weight: bold;
 }

@@ -99,14 +99,18 @@
       </block>
     </view>
 
-    <!-- Empty State -->
-    <view class="empty" wx:if="{{displayRecords.length === 0 && !loading}}">
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{displayRecords.length === 0 && !loading}}">
       <view class="empty-icon">🧹</view>
-      <text class="empty-text" wx:if="{{isLogin}}">暂无{{selectedFilter}}记录</text>
-      <text class="empty-text" wx:else>请先登录查看记录</text>
-      <button class="btn btn-primary" wx:if="{{isLogin && hasOperationPermission}}" bindtap="addCleaningRecord">添加清洁记录</button>
+      <text class="empty-text">暂无清洁记录</text>
+        <view class="empty-subtitle">开始记录您的清洁过程</view>
+      <view class="btn-primary" bindtap="addCleaningRecord">添加清洁记录</view>
     </view>
 
-    <view class="loading" wx:if="{{loading}}">加载中...</view>
+      <!-- 加载状态 -->
+      <view class="loading-state" wx:if="{{loading}}">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
   </scroll-view>
 </view>

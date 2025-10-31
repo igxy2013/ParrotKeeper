@@ -1,0 +1,7 @@
+<view class="stat-card" bindtap="onTap">
+  <view class="stat-icon-container emerald">
+    <image class="stat-icon-img" src="/images/remix/ri-heart-fill-emerald.png" mode="widthFix" />
+  </view>
+  <view class="stat-value emerald-text">{{count || 0}}</view>
+  <view class="stat-label">我的鹦鹉</view>
+</view>

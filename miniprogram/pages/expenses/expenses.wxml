@@ -103,8 +103,10 @@
 
       <!-- 空状态 -->
       <view class="empty-state" wx:if="{{!loading && filteredRecords.length === 0}}">
-        <image class="empty-icon-img" src="/images/remix/ri-wallet-fill-purple.png" mode="widthFix" />
-        <text class="empty-text">暂无记录</text>
+        <image class="empty-icon-img" src="/images/remix/wallet-fill-orange.png" mode="widthFix" />
+        <text class="empty-text">暂无收支记录</text>
+        <view class="empty-subtitle">开始记录您的收支情况</view>
+        <view class="btn-primary" bindtap="onShowAddRecord">添加收支记录</view>
       </view>
         </view>
       </view>

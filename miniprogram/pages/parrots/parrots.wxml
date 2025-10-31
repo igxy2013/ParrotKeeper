@@ -132,7 +132,7 @@
       <text class="empty-subtitle" wx:if="{{isLogin}}">点击下方按钮添加您的第一只鹦鹉</text>
       <text class="empty-subtitle" wx:else>登录后可以管理您的鹦鹉档案</text>
       <view class="empty-btn" wx:if="{{isLogin}}" bindtap="addParrot">
-        <text class="empty-btn-text">添加鹦鹉</text>
+        <view class="empty-btn-text">添加鹦鹉</view>
       </view>
     </view>
   </view>

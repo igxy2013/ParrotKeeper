@@ -4,7 +4,11 @@
     "notification-center": "/components/notification-center/notification-center",
     "bottom-nav": "/components/bottom-nav/bottom-nav",
     "expense-modal": "/components/expense-modal/expense-modal",
-    "parrot-modal": "/components/parrot-modal/parrot-modal"
+    "parrot-modal": "/components/parrot-modal/parrot-modal",
+    "home-card-parrots": "/components/home-card-parrots/home-card-parrots",
+    "home-card-feeding-today": "/components/home-card-feeding-today/home-card-feeding-today",
+    "home-card-monthly-income": "/components/home-card-monthly-income/home-card-monthly-income",
+    "home-card-monthly-expense": "/components/home-card-monthly-expense/home-card-monthly-expense"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "鹦鹉管家AI",

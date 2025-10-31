@@ -1,0 +1,47 @@
+/* 使用页面共享样式 */
+/* 组件本地样式，避免依赖页面WXSS的样式隔离问题 */
+.stat-card {
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08);
+  padding: 48rpx;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+}
+
+.stat-card:active {
+  transform: translateY(4rpx) scale(0.98);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon-container {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+}
+
+.stat-icon-container.blue { background: rgba(33, 150, 243, 0.1); }
+
+.stat-icon-img { width: 40rpx; height: 40rpx; display: block; }
+
+.stat-value { 
+  font-size: 52rpx; 
+  font-weight: bold; 
+  margin-bottom: 8rpx; 
+  display: block;
+  text-align: left;
+}
+.stat-label { 
+  font-size: 28rpx; 
+  color: #666666; 
+  font-weight: 400;
+  text-align: left;
+}
+
+.blue-text { color: #2196F3; }

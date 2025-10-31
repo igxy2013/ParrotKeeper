@@ -671,3 +671,37 @@
   overflow: hidden;
   background-color: #f3f4f6;
 }
+
+/* 空状态（参考健康检查记录页面） */
+.empty-state {
+  text-align: center;
+  padding: 80rpx 40rpx;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 32rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16rpx;
+}
+
+.empty-subtitle {
+  font-size: 28rpx;
+  color: #6b7280;
+  margin-bottom: 40rpx;
+}
+
+.btn-primary {
+  background: #fb923c; /* 与健康页面一致的主色 */
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  padding: 24rpx 48rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+}

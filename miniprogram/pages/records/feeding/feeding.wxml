@@ -134,6 +134,13 @@
           </view>
         </view>
       </view>
+      <!-- 空状态（参考健康检查记录页面） -->
+      <view class="empty-state" wx:if="{{filteredRecords.length === 0}}">
+        <view class="empty-icon">🍽️</view>
+        <view class="empty-text">暂无喂食记录</view>
+        <view class="empty-subtitle">开始记录您的喂食情况</view>
+        <view class="btn-primary" bindtap="showAddForm">添加喂食记录</view>
+      </view>
     </view>
   </view>
 
