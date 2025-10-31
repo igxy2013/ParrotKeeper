@@ -403,9 +403,9 @@
               <text class="parrot-species">{{item.species_name}}</text>
             </view>
             <view class="status-pills">
-              <view class="status-pill pill-{{item.health_status}}">
-                <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
-                <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
+              <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
+                <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
+                <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
               </view>
             </view>
           </view>
@@ -431,9 +431,9 @@
               <text class="parrot-species">{{item.species_name}}</text>
             </view>
             <view class="status-pills">
-              <view class="status-pill pill-{{item.health_status}}">
-                <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
-                <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
+              <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
+                <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
+                <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
               </view>
             </view>
           </view>
@@ -574,9 +574,9 @@
             <text class="parrot-species">{{item.species_name}}</text>
           </view>
           <view class="status-pills">
-            <view class="status-pill pill-{{item.health_status}}">
-              <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
-              <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
+            <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
+              <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
+              <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
             </view>
           </view>
         </view>
@@ -614,9 +614,9 @@
             <text class="parrot-species">{{item.species_name}}</text>
           </view>
           <view class="status-pills">
-            <view class="status-pill pill-{{item.health_status}}">
-              <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
-              <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
+            <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
+              <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
+              <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
             </view>
           </view>
         </view>

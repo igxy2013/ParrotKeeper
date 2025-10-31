@@ -269,42 +269,29 @@
 
 .parrot-status-tags {
   display: flex;
-  gap: 16rpx;
+  gap: 18rpx;
   flex-wrap: wrap;
 }
 
-.status-tag {
+/* 统一健康徽章样式，与列表页一致 */
+.health-badge {
+  font-size: 18rpx;
+  font-weight: 600;
   padding: 8rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 20rpx;
-  font-weight: 500;
-  margin-right: 12rpx;
-  margin-bottom: 8rpx;
+  border-radius: 24rpx;
+  color: #ffffff;
 }
-
-.status-tag.health-healthy {
-  background: #bfdbfe;
-  color: #1d4ed8;
+.health-badge.health-healthy {
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
 }
-
-.status-tag.health-sick {
-  background: #fecaca;
-  color: #dc2626;
+.health-badge.health-sick {
+  background: linear-gradient(135deg, #f44336 0%, #EF5350 100%);
 }
-
-.status-tag.health-recovering {
-  background: #fed7aa;
-  color: #ea580c;
+.health-badge.health-recovering {
+  background: linear-gradient(135deg, #FF9800 0%, #FFB74D 100%);
 }
-
-.status-tag.health-observation {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.mood-tag {
-  background: #fef3c7;
-  color: #d97706;
+.health-badge.health-observation {
+  background: linear-gradient(135deg, #2196F3 0%, #42A5F5 100%);
 }
 
 /* 快速操作按钮 - 优化样式匹配参考APP */

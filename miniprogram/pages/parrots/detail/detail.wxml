@@ -32,11 +32,8 @@
           <view class="parrot-name">{{parrot.name}}</view>
           <view class="parrot-species">{{parrot.species_name}}</view>
           <view class="parrot-status-tags">
-            <view class="status-tag health-{{parrot.health_status || 'healthy'}}">
-              {{healthStatusText || '健康'}}
-            </view>
-            <view class="status-tag mood-tag">
-              {{parrot.mood || '活泼'}}
+            <view class="health-badge health-{{parrot.current_health_status || parrot.health_status || 'healthy'}}">
+              {{parrot.current_health_status_text || healthStatusText || '健康'}}
             </view>
           </view>
         </view>
@@ -148,7 +145,7 @@
               <image 
                 class="parrot-photo" 
                 src="{{parrot.photo_url}}" 
-                mode="aspectFill"
+                mode="aspectFit"
                 bindtap="previewPhoto"
               />
             </view>

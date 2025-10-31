@@ -152,7 +152,18 @@ const app = getApp()
         data: { limit: 100 }
       })
       if (res.success) {
-        const allParrots = res.data.parrots || []
+        // 统一解析头像/照片URL，并提供默认头像兜底，保持与“我的鹦鹉”页一致
+        const allParrotsRaw = res.data.parrots || []
+        const allParrots = allParrotsRaw.map(p => {
+          const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+          const photoUrl = app.resolveUploadUrl(p.photo_url)
+          const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
+            gender: p.gender,
+            species_name: speciesName,
+            name: p.name
+          })
+          return { ...p, photo_url: photoUrl, avatar_url: avatarUrl }
+        })
         
         // 过滤雄性鹦鹉（包括性别未知的）
         const maleParrots = allParrots.filter(parrot => 
@@ -204,7 +215,7 @@ const app = getApp()
           'pellet': '颗粒',
           'fruit': '水果',
           'vegetable': '蔬菜',
-          'supplement': '营养补充',
+          'supplement': '保健品',
           'milk_powder': '奶粉'
         }
         

@@ -37,15 +37,42 @@ def get_overview():
         # 鹦鹉总数
         total_parrots = len([pid for pid in parrot_ids if Parrot.query.get(pid) and Parrot.query.get(pid).is_active])
         
-        # 健康状态统计
-        health_stats = db.session.query(
-            Parrot.health_status,
-            func.count(Parrot.id).label('count')
-        ).filter(Parrot.id.in_(parrot_ids), Parrot.is_active == True).group_by(Parrot.health_status).all()
-        
-        health_status = {status: 0 for status in ['healthy', 'sick', 'recovering']}
-        for status, count in health_stats:
-            health_status[status] = count
+        # 健康状态统计（统一：按每只鹦鹉最近健康记录的 health_status 计算；无记录视为 healthy）
+        # 子查询：每只鹦鹉最近一条健康记录的日期
+        latest_health_subq = db.session.query(
+            HealthRecord.parrot_id.label('parrot_id'),
+            func.max(HealthRecord.record_date).label('max_date')
+        ).join(Parrot, HealthRecord.parrot_id == Parrot.id).filter(
+            Parrot.id.in_(parrot_ids),
+            Parrot.is_active == True
+        ).group_by(HealthRecord.parrot_id).subquery()
+
+        # 统计最近健康记录的状态分布
+        latest_health_stats = db.session.query(
+            HealthRecord.health_status,
+            func.count(HealthRecord.parrot_id).label('count')
+        ).join(
+            latest_health_subq,
+            and_(
+                HealthRecord.parrot_id == latest_health_subq.c.parrot_id,
+                HealthRecord.record_date == latest_health_subq.c.max_date
+            )
+        ).group_by(HealthRecord.health_status).all()
+
+        # 初始化包含 observation 的状态字典
+        health_status = {status: 0 for status in ['healthy', 'sick', 'recovering', 'observation']}
+        latest_count_sum = 0
+        for status, count in latest_health_stats:
+            latest_count_sum += count or 0
+            if status in health_status:
+                health_status[status] = count
+            else:
+                # 兼容未知状态，全部计入 healthy（理论上不会发生）
+                health_status['healthy'] += count or 0
+
+        # 无健康记录的鹦鹉默认 healthy
+        missing_count = max(0, total_parrots - latest_count_sum)
+        health_status['healthy'] += missing_count
         
         # 本月支出（包括用户个人支出和团队共享鹦鹉的支出）
         current_month = date.today().replace(day=1)

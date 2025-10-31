@@ -27,7 +27,7 @@
         <text class="welcome-greeting">{{greeting}}，{{userInfo.nickname || userInfo.username || '鹦鹉爱好者'}}！</text>
         <text class="welcome-message">今天也要好好照顾小家伙们哦</text>
         <view class="status-indicator">
-          <view class="status-dot {{overview.health_status && (overview.health_status.sick > 0 || overview.health_status.recovering > 0) ? 'status-dot-warning' : 'status-dot-healthy'}}"></view>
+          <view class="status-dot {{overview.health_status && (overview.health_status.sick > 0 || overview.health_status.recovering > 0 || overview.health_status.observation > 0) ? 'status-dot-warning' : 'status-dot-healthy'}}"></view>
           <view class="status-text">{{overview_status_text}}</view>
         </view>
 </view>
@@ -78,7 +78,7 @@
         <image class="parrot-mini-avatar" src="{{item.photo_url || item.avatar_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
           <text class="parrot-mini-name">{{item.name}}</text>
           <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
-          <view class="parrot-mini-badge {{item.health_status}}">{{item.health_text || '健康'}}</view>
+        <view class="health-badge health-{{item.current_health_status || 'healthy'}}">{{item.current_health_status_text || '健康'}}</view>
         </view>
       </view>
     </view>

@@ -287,6 +287,7 @@ Page({
         if (hs.healthy > 0) parts.push(`${hs.healthy}只鹦鹉状态良好`)
         if (hs.sick > 0) parts.push(`${hs.sick}只鹦鹉生病`)
         if (hs.recovering > 0) parts.push(`${hs.recovering}只鹦鹉恢复中`)
+        if (hs.observation > 0) parts.push(`${hs.observation}只鹦鹉观察中`)
         if (parts.length > 0) return parts.join('，')
       }
       // 回退：仅显示总数良好
@@ -309,7 +310,6 @@ Page({
       if (res.success) {
         const parrots = (res.data.parrots || []).map(p => {
           const speciesName = p.species && p.species.name ? p.species.name : (p.species_name || '')
-          const healthTextMap = { healthy: '健康', sick: '生病', recovering: '康复中', observation: '观察中', excellent: '优秀' }
           const photoUrl = app.resolveUploadUrl(p.photo_url)
           const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
             gender: p.gender,
@@ -319,7 +319,8 @@ Page({
           return {
             ...p,
             species_name: speciesName,
-            health_text: healthTextMap[p.health_status] || '健康',
+            // 统一使用后端最近健康状态文本
+            health_text: p.current_health_status_text || '健康',
             photo_url: photoUrl,
             avatar_url: avatarUrl
           }

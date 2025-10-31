@@ -23,6 +23,9 @@ class ParrotSchema(SQLAlchemyAutoSchema):
     species = fields.Nested(ParrotSpeciesSchema, dump_only=True)
     species_name = fields.Method('get_species_name', dump_only=True)
     age_days = fields.Method('get_age_days', dump_only=True)
+    # 统一健康状态：从最近的健康检查记录获取；若无则默认健康
+    current_health_status = fields.Method('get_current_health_status', dump_only=True)
+    current_health_status_text = fields.Method('get_current_health_status_text', dump_only=True)
     
     def get_species_name(self, obj):
         return obj.species.name if obj.species else None
@@ -32,6 +35,25 @@ class ParrotSchema(SQLAlchemyAutoSchema):
             from datetime import date
             return (date.today() - obj.birth_date).days
         return None
+
+    def get_current_health_status(self, obj):
+        try:
+            # 最近健康检查记录的健康状态；若无记录则返回 'healthy'
+            latest = HealthRecord.query.filter_by(parrot_id=obj.id)\
+                .order_by(HealthRecord.record_date.desc()).first()
+            return (latest.health_status if latest and latest.health_status else 'healthy')
+        except Exception:
+            return 'healthy'
+
+    def get_current_health_status_text(self, obj):
+        status = self.get_current_health_status(obj)
+        status_map = {
+            'healthy': '健康',
+            'sick': '生病',
+            'recovering': '康复中',
+            'observation': '观察中'
+        }
+        return status_map.get(status, '健康')
 
 class FeedTypeSchema(SQLAlchemyAutoSchema):
     class Meta:

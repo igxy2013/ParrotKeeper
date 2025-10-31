@@ -82,11 +82,12 @@
         <view class="parrot-info">
           <view class="parrot-header">
             <text class="parrot-name">{{item.name}}</text>
-            <view class="health-badge health-{{item.health_status}}">
-              <text wx:if="{{item.health_status === 'healthy'}}">健康</text>
-              <text wx:elif="{{item.health_status === 'sick'}}">生病</text>
-              <text wx:elif="{{item.health_status === 'recovering'}}">康复中</text>
-              <text wx:else="{{item.health_status === 'observation'}}">观察中</text>
+            <view class="health-badge health-{{item.current_health_status || item.health_status}}">
+              <text wx:if="{{(item.current_health_status || item.health_status) === 'healthy'}}">健康</text>
+              <text wx:elif="{{(item.current_health_status || item.health_status) === 'sick'}}">生病</text>
+              <text wx:elif="{{(item.current_health_status || item.health_status) === 'recovering'}}">康复中</text>
+              <text wx:elif="{{(item.current_health_status || item.health_status) === 'observation'}}">观察中</text>
+              <text wx:else>健康</text>
             </view>
           </view>
           <text class="parrot-species">{{item.species_name}} • {{item.age_days ? item.age_days + '天' : '未知'}} • {{item.weight ? (item.weight % 1 === 0 ? item.weight : item.weight.toFixed(1)) + 'g' : ''}}</text>
