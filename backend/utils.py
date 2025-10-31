@@ -82,15 +82,24 @@ def remove_background(image_path):
                 # 检查是否是API密钥无效的错误
                 if 'auth_failed' in str(err_json):
                     print("检测到API密钥无效，切换到本地BRIA-RMBG模型处理")
-                    return remove_background_with_rembg(image_path)
+                    result = remove_background_with_rembg(image_path)
+                    if result:
+                        return result
             except Exception:
                 print(f"背景移除失败: HTTP {resp.status_code}")
             # 当API调用失败时，尝试使用本地BRIA-RMBG模型
-            return remove_background_with_rembg(image_path)
+            result = remove_background_with_rembg(image_path)
+            if result:
+                return result
     except Exception as e:
         print(f"背景移除异常: {str(e)}")
         # 当API调用出现异常时，尝试使用本地BRIA-RMBG模型
-        return remove_background_with_rembg(image_path)
+        result = remove_background_with_rembg(image_path)
+        if result:
+            return result
+    
+    # 如果所有方法都失败，返回None
+    return None
 
 def remove_background_with_rembg(image_path):
     """使用rembg库和BRIA-RMBG模型移除图片背景"""
@@ -104,14 +113,35 @@ def remove_background_with_rembg(image_path):
         name, _ = os.path.splitext(image_path)
         output_path = f"{name}_no_bg_rembg.png"
 
-        # 创建BRIA-RMBG模型会话，使用正确的模型名称
-        session = new_session("bria-rmbg")
+        # 预处理图像以减少内存使用
+        # 打开图像并调整大小（如果过大）
+        with Image.open(image_path) as img:
+            # 如果图像宽度或高度超过1024像素，则缩小
+            max_size = 1024
+            if img.width > max_size or img.height > max_size:
+                img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+                # 保存调整后的图像
+                resized_path = f"{name}_resized.jpg"
+                img.save(resized_path, "JPEG", quality=85)
+                image_path = resized_path
+
+        # 尝试使用更轻量级的模型
+        try:
+            session = new_session("bria-rmbg")
+        except Exception:
+            # 如果BRIA-RMBG模型无法加载，尝试使用u2net（更轻量级）
+            session = new_session("u2net")
         
-        # 使用rembg处理图片
+        # 使用rembg处理图片，添加内存优化参数
         with open(image_path, 'rb') as input_file:
             input_data = input_file.read()
-            # 使用会话处理图片
-            output_data = remove(input_data, session=session)
+            # 添加参数以减少内存使用
+            output_data = remove(
+                input_data, 
+                session=session,
+                only_mask=False,
+                alpha_matting=False
+            )
             
         # 保存处理后的图片
         with open(output_path, 'wb') as output_file:
