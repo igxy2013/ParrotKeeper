@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense, UserStatistics
+from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense, Income, UserStatistics
 from utils import login_required, success_response, error_response
 from team_utils import get_accessible_parrots
-from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode
+from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode, get_accessible_income_ids_by_mode
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_
 
@@ -55,6 +55,15 @@ def get_overview():
             and_(
                 Expense.id.in_(expense_ids),
                 Expense.expense_date >= current_month
+            )
+        ).scalar() or 0
+
+        # 本月收入（包括用户个人收入和团队共享鹦鹉的收入）
+        income_ids = get_accessible_income_ids_by_mode(user)
+        monthly_income = db.session.query(func.sum(Income.amount)).filter(
+            and_(
+                Income.id.in_(income_ids),
+                Income.income_date >= current_month
             )
         ).scalar() or 0
         
@@ -111,7 +120,7 @@ def get_overview():
             'total_parrots': total_parrots,
             'health_status': health_status,
             'monthly_expense': float(monthly_expense),
-            'monthly_income': 0.0,  # 添加本月收入字段，暂时设为0
+            'monthly_income': float(monthly_income),
             'monthly_feeding': monthly_feeding,
             'monthly_health_checks': monthly_health_checks,
             'stats_views': user_stats.stats_views,  # 添加统计查看次数
