@@ -1,14 +1,23 @@
 // app.js
+const { notificationManager } = require('./utils/notification.js')
+
 App({
   globalData: {
     userInfo: null,
     openid: null,
-    //baseUrl: 'https://bimai.xyz', // 后端API地址
-    baseUrl: 'http://192.168.0.80:5085', // 后端API地址
-    //baseUrl: 'https://acbim.cn:5075', // 后端API地址
+    // 动态设置，默认正式环境，开发工具中自动切换为本地
+    baseUrl: 'https://bimai.xyz', // 后端API地址（默认正式环境）
+    //baseUrl: 'https://acbim.cn', // 后端API地址（默认正式环境）
+    //baseUrl: 'https://aixbim.cn', // 后端API地址（默认正式环境）
+    //baseUrl: 'http://192.168.0.80:5090', // 后端API地址（默认开发环境，与 .env 端口一致）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
-    appVersion: '1.0.0' // 小程序版本号（通过微信API动态获取）
+    needRefresh: false, // 页面数据刷新标志（模式变更时触发）
+    appVersion: '1.0.0', // 小程序版本号（通过微信API动态获取）
+    notificationManager, // 全局通知管理器
+    notificationUpdateCallback: null, // 通知更新回调
+    platformInfo: { isIOS: false, system: '' },
+    useIconFont: true // 是否启用图标字体（iOS优先启用，统一兼容）
   },
 
   // 初始化小程序版本号
@@ -26,10 +35,56 @@ App({
     }
   },
 
+  // 通过后端API获取版本号
+  fetchServerVersion() {
+    this.request({ url: '/api/health' })
+      .then(res => {
+        if (res && res.success && res.version) {
+          this.globalData.appVersion = res.version
+          console.log('从后端API获取版本号:', res.version)
+        }
+      })
+      .catch(err => {
+        console.warn('获取后端版本号失败:', err)
+      })
+  },
+
+  // 设置用户模式（个人/团队），持久化并通知页面刷新
+  setUserMode(mode) {
+    if (mode !== 'personal' && mode !== 'team') {
+      console.warn('无效的用户模式:', mode)
+      return
+    }
+    const prev = this.globalData.userMode
+    if (prev === mode) {
+      // 模式未变化，但仍确保持久化
+      try { wx.setStorageSync('userMode', mode) } catch(_) {}
+      return
+    }
+
+    this.globalData.userMode = mode
+    this.globalData.needRefresh = true
+    try { wx.setStorageSync('userMode', mode) } catch(_) {}
+
+    // 登录状态下通知后端更新用户模式（便于持久化）
+    if (this.globalData.openid) {
+      this.request({
+        url: '/api/auth/profile',
+        method: 'PUT',
+        data: { user_mode: mode }
+      }).catch(err => {
+        console.warn('更新后端用户模式失败:', err)
+      })
+    }
+  },
+
   onLaunch() {
     console.log('小程序启动')
     
-    // 获取小程序真实版本号
+    // 先初始化平台与后端地址，再请求后端版本
+    this.initPlatformInfo()
+    // 获取版本号：优先后端API，其次微信API
+    this.fetchServerVersion()
     this.initAppVersion()
     
     // 检查登录状态
@@ -61,6 +116,93 @@ App({
     this.globalData.isLogin = !!(this.globalData.openid && this.globalData.userInfo)
     if (this.globalData.isLogin) {
       console.log('检测到已登录状态')
+    }
+
+    // 全局启用分享菜单（好友和朋友圈）
+    try {
+      wx.showShareMenu({
+        withShareTicket: true,
+        menus: ['shareAppMessage', 'shareTimeline']
+      })
+    } catch (e) {
+      console.warn('启用分享菜单失败:', e)
+    }
+  },
+
+  // 初始化平台信息与图标策略
+  initPlatformInfo() {
+    try {
+      // 使用新接口优先获取设备/应用信息，旧接口作为兼容兜底
+      const deviceInfo = wx.getDeviceInfo ? wx.getDeviceInfo() : {}
+      const appBaseInfo = wx.getAppBaseInfo ? wx.getAppBaseInfo() : {}
+      const systemStr = (deviceInfo.system || appBaseInfo.system || '').toLowerCase()
+      const isIOS = systemStr.indexOf('ios') !== -1
+      this.globalData.platformInfo = { isIOS, system: deviceInfo.system || appBaseInfo.system || '' }
+      // iOS 强制启用图标字体（更稳定），其它平台也启用，必要时可用本地/远程字体兜底
+      this.globalData.useIconFont = true
+      console.log('平台信息:', this.globalData.platformInfo, 'useIconFont:', this.globalData.useIconFont)
+    } catch (e) {
+      console.warn('获取系统信息失败，使用默认设置', e)
+      this.globalData.platformInfo = { isIOS: false, system: '' }
+      this.globalData.useIconFont = true
+    }
+  },
+
+
+  // 解析后端上传图片的URL：支持相对路径与完整URL
+  resolveUploadUrl(path) {
+    if (!path) return ''
+    const str = String(path)
+    // 若是完整URL，且包含 /uploads/，则统一重写到当前 baseUrl，避免跨域失效
+    if (/^https?:\/\//.test(str)) {
+      // 如果是生产域名 bimai.xyz 的绝对地址，保持原样，避免在本地将其重写为本地 baseUrl 导致 404
+      if (/^https?:\/\/([^.]*\.)?bimai\.xyz\//.test(str)) {
+        return str
+      }
+      // 其他包含 /uploads/ 的绝对路径，按当前 baseUrl 统一
+      const m = str.match(/\/uploads\/(.+)$/)
+      if (m && m[1]) {
+        const suffix = m[1].replace(/^images\/?/, '')
+        return this.globalData.baseUrl + '/uploads/' + suffix
+      }
+      return str
+    }
+    // 保留本地静态资源：以 /images/ 开头的路径为小程序内置资源，直接返回
+    if (/^\/?images\//.test(str)) {
+      return str.startsWith('/') ? str : '/' + str
+    }
+    // 兼容后端上传路径：去掉前导的 /uploads/images 或 /uploads
+    const normalized = str
+      .replace(/^\/?uploads\/?images\/?/, '')
+      .replace(/^\/?uploads\/?/, '')
+    return this.globalData.baseUrl + '/uploads/' + normalized
+  },
+
+  // 基于性别/品种生成本地默认彩色头像（稳定且无需网络）
+  getDefaultAvatarForParrot(parrot) {
+    try {
+      const paletteAll = ['green', 'blue', 'red', 'yellow', 'purple', 'orange']
+      const warm = ['red', 'yellow', 'orange', 'purple']
+      const cool = ['blue', 'green']
+      const gender = (parrot && parrot.gender) || 'unknown'
+      const speciesName = (parrot && (parrot.species_name || (parrot.species && parrot.species.name) || parrot.name || '')) || ''
+      // 计算稳定索引：基于品种/名称字符串哈希
+      let hash = 0
+      for (let i = 0; i < speciesName.length; i++) {
+        hash = (hash + speciesName.charCodeAt(i)) % 9973
+      }
+      if (gender === 'male') {
+        const idx = hash % cool.length
+        return `/images/parrot-avatar-${cool[idx]}.svg`
+      } else if (gender === 'female') {
+        const idx = hash % warm.length
+        return `/images/parrot-avatar-${warm[idx]}.svg`
+      } else {
+        const idx = hash % paletteAll.length
+        return `/images/parrot-avatar-${paletteAll[idx]}.svg`
+      }
+    } catch (_) {
+      return '/images/parrot-avatar-green.svg'
     }
   },
 
@@ -120,6 +262,7 @@ App({
     wx.removeStorageSync('openid')
     wx.removeStorageSync('userInfo')
     wx.removeStorageSync('userMode') // 清除用户模式存储
+    try { wx.removeStorageSync('pref_language') } catch (_) {}
   },
 
   // 检查登录状态
@@ -154,8 +297,9 @@ App({
         header['X-User-Mode'] = this.globalData.userMode
       }
       
+      const apiBase = this.globalData.baseUrl || ''
       wx.request({
-        url: this.globalData.baseUrl + url,
+        url: apiBase + url,
         method,
         data,
         header: {
@@ -194,11 +338,16 @@ App({
       title,
       mask: true
     })
+    // 标记已显示，避免未配对的隐藏调用
+    this._loadingShown = true
   },
 
   // 隐藏加载提示
   hideLoading() {
-    wx.hideLoading()
+    if (this._loadingShown) {
+      wx.hideLoading()
+      this._loadingShown = false
+    }
   },
 
   // 显示成功提示
@@ -257,6 +406,31 @@ App({
       .replace('HH', hour)
       .replace('mm', minute)
       .replace('ss', second)
+  },
+
+  // 格式化相对时间（精确到分钟）
+  formatRelativeTime(date) {
+    if (!date) return ''
+    
+    const now = new Date()
+    const target = new Date(date)
+    const diffMs = now - target
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    
+    if (diffMinutes < 1) {
+      return '刚刚'
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes}分钟前`
+    } else if (diffHours < 24) {
+      return `${diffHours}小时前`
+    } else if (diffDays < 7) {
+      return `${diffDays}天前`
+    } else {
+      // 超过一周显示具体日期
+      return this.formatDateTime(date, 'MM-DD HH:mm')
+    }
   },
 
   // 计算年龄

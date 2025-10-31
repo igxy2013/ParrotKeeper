@@ -1,0 +1,127 @@
+<!--pages/breeding/breeding.wxml-->
+<view class="page-container">
+  <!-- 自定义导航栏 -->
+  <app-header 
+    title="繁殖记录" 
+    subtitle="专业繁殖管理助手"
+    showBack="{{true}}"
+  >
+    <view slot="actions" class="header-btn" bindtap="showAddForm">
+      <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
+    </view>
+  </app-header>
+
+  <view class="page-content">
+    <!-- 游客模式提示 -->
+    <view wx:if="{{!isLogin}}" class="guest-tip">
+      <text class="tip-text">🥚 繁殖记录功能需要登录使用</text>
+      <text class="tip-subtitle">登录后可以记录和管理您的鹦鹉繁殖信息</text>
+    </view>
+
+    <!-- 状态筛选（与健康页面的过滤器保持一致） -->
+    <view wx:if="{{isLogin}}" class="filter-section">
+      <scroll-view class="chip-scroll" scroll-x="true">
+        <view 
+          class="chip {{selectedStatus === item ? 'active' : ''}}"
+          wx:for="{{statusOptions}}" 
+          wx:key="*this"
+          bindtap="selectStatus"
+          data-status="{{item}}"
+        >
+          <text class="option-text">{{item}}</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 概览统计（与喂食页面统计卡片设计对齐） -->
+    <view wx:if="{{isLogin}}" class="summary-card rounded-3xl p-6 shadow-xl">
+      <text class="summary-title text-lg font-bold">繁殖统计</text>
+      <view class="summary-grid summary-grid-2">
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.totalPairs}}</text>
+          <text class="summary-label text-sm text-white-80">总繁殖对数</text>
+        </view>
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.successfulHatching}}</text>
+          <text class="summary-label text-sm text-white-80">成功孵化</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 繁殖记录列表 -->
+    <view wx:if="{{isLogin}}" class="records-section">
+      <view class="record-list" wx:if="{{filteredRecords.length > 0}}">
+        <view 
+          class="record-card" 
+          wx:for="{{filteredRecords}}" 
+          wx:key="id"
+          bindtap="viewRecordDetail"
+          data-record="{{item}}"
+        >
+          <view class="record-header">
+            <view class="record-info">
+              <text class="parrot-pair">{{item.parrotPair}}</text>
+              <view class="status-badge {{item.statusClass}}">
+                <text class="status-text">{{item.status}}</text>
+              </view>
+            </view>
+            <view class="header-right">
+              <view class="record-date">
+                <text class="date-text">{{item.createdAt}}</text>
+              </view>
+              <view wx:if="{{hasOperationPermission}}" class="action-buttons">
+                <view class="action-btn edit-btn" bindtap="editRecord" data-id="{{item.id}}">
+                  <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
+                </view>
+                <view class="action-btn delete-btn" bindtap="deleteRecord" data-id="{{item.id}}">
+                  <image class="action-icon-img" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view class="record-details">
+            <view class="detail-grid">
+              <view class="detail-item">
+                <text class="detail-label">筑巢日期</text>
+                <text class="detail-value">{{item.nestingDate || '-'}}</text>
+              </view>
+              <view class="detail-item">
+                <text class="detail-label">产蛋日期</text>
+                <text class="detail-value">{{item.layingDate || '-'}}</text>
+              </view>
+              <view class="detail-item">
+                <text class="detail-label">孵化日期</text>
+                <text class="detail-value">{{item.hatchingDate || '-'}}</text>
+              </view>
+              <view class="detail-item">
+                <text class="detail-label">孵化率</text>
+                <text class="detail-value">{{item.hatchingRate}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view wx:if="{{item.notes}}" class="record-notes">
+            <text class="notes-text">{{item.notes}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{filteredRecords.length === 0 && !loading}}">
+        <view class="empty-icon">🥚</view>
+        <view class="empty-text">暂无繁殖记录</view>
+        <view class="empty-subtitle">开始记录您的鹦鹉繁殖过程</view>
+        <view class="btn-primary" bindtap="showAddForm">添加繁殖记录</view>
+      </view>
+
+      <!-- 加载状态 -->
+      <view class="loading-state" wx:if="{{loading}}">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
+    </view>
+  </view>
+
+
+</view>

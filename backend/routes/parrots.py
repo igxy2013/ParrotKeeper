@@ -164,6 +164,11 @@ def create_parrot():
         if species_id == '':
             species_id = None
         
+        # 处理体重字段，空字符串转换为None
+        weight = data.get('weight')
+        if weight == '' or weight is None:
+            weight = None
+        
         parrot = Parrot(
             user_id=user.id,
             name=data['name'],
@@ -172,7 +177,7 @@ def create_parrot():
             birth_date=birth_date,
             acquisition_date=acquisition_date,
             color=data.get('color'),
-            weight=data.get('weight'),
+            weight=weight,
             health_status=data.get('health_status', 'healthy'),
             photo_url=data.get('photo_url'),
             avatar_url=data.get('avatar_url'),
@@ -253,11 +258,16 @@ def update_parrot(parrot_id):
         if 'color' in data:
             parrot.color = data['color']
         if 'weight' in data:
-            parrot.weight = data['weight']
+            weight = data['weight']
+            if weight == '' or weight is None:
+                parrot.weight = None
+            else:
+                parrot.weight = weight
         if 'health_status' in data:
             parrot.health_status = data['health_status']
         if 'photo_url' in data:
-            parrot.photo_url = data['photo_url']
+            # 空字符串表示清空照片
+            parrot.photo_url = None if (data['photo_url'] == '' or data['photo_url'] is None) else data['photo_url']
         if 'avatar_url' in data:
             parrot.avatar_url = data['avatar_url']
         if 'notes' in data:

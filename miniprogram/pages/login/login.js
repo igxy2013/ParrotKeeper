@@ -5,6 +5,7 @@ Page({
     canLogin: true,
     username: '',
     password: '',
+    showPassword: false,
     selectedMode: 'personal' // 默认选择个人模式
   },
 
@@ -92,14 +93,11 @@ Page({
         
         console.log('账号登录成功，用户:', user, '模式:', selectedMode)
         
-        wx.showToast({
-          title: '登录成功',
-          icon: 'success'
-        })
-        
+        wx.showToast({ title: '登录成功', icon: 'success' })
+        // 成功后直接跳转到首页，避免返回栈为空导致不跳转
         setTimeout(() => {
-          wx.navigateBack()
-        }, 1500)
+          wx.reLaunch({ url: '/pages/index/index' })
+        }, 300)
       } else {
         wx.showToast({
           title: response.message || '登录失败',
@@ -128,14 +126,16 @@ Page({
   async onWechatLogin() {
     try {
       await app.login()
-      wx.showToast({
-        title: '登录成功',
-        icon: 'success'
-      })
-      
+      // 将页面选择的模式应用到全局（便于后续请求携带 X-User-Mode）
+      const { selectedMode } = this.data
+      if (selectedMode && app.setUserMode) {
+        app.setUserMode(selectedMode)
+      }
+      wx.showToast({ title: '登录成功', icon: 'success' })
+      // 使用重启跳转到首页
       setTimeout(() => {
-        wx.navigateBack()
-      }, 1500)
+        wx.reLaunch({ url: '/pages/index/index' })
+      }, 300)
     } catch (error) {
       console.error('微信登录失败:', error)
       wx.showToast({
@@ -143,5 +143,10 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  // 切换密码显隐
+  togglePasswordVisibility() {
+    this.setData({ showPassword: !this.data.showPassword })
   }
 })

@@ -1,2 +1,10 @@
 <!--pages/teams/members/members.wxml-->
-<text>pages/teams/members/members.wxml</text>
+<view class="container">
+  <app-header title="团队成员" subtitle="该页面已移除" showBack="{{true}}"></app-header>
+  <view class="page-content">
+    <view class="empty-tip">
+      <text class="empty-text">该页面已废弃，请返回上一页</text>
+    </view>
+  </view>
+ </view>
+

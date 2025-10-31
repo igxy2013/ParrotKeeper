@@ -1,2 +1,4 @@
-<!--pages/statistics/overview/overview.wxml-->
-<text>pages/statistics/overview/overview.wxml</text>
+<!-- pages/statistics/overview/overview.wxml -->
+<view class="page-container">
+  <text>该统计概览子页面未使用，请返回上一页。</text>
+</view>

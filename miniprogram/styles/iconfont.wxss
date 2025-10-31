@@ -1,0 +1,47 @@
+/* 基础 iconfont 引入与使用说明
+   - 本地字体：将 remixicon.ttf 放入 /miniprogram/assets/fonts/remixicon.ttf
+   - 远程回退：使用 CDN 作为兜底（网络需可访问）
+*/
+
+@font-face {
+  font-family: 'RemixIcon';
+  src: url('/assets/fonts/remixicon.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* 远程兜底（如本地不存在字体文件时） */
+@font-face {
+  font-family: 'RemixIcon';
+  src: url('https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* 通用图标样式 */
+.ri {
+  font-family: 'RemixIcon';
+  font-style: normal;
+  font-weight: normal;
+  display: inline-block;
+  line-height: 1;
+  speak: none;
+}
+
+/* 尺寸预设（可按需使用） */
+.ri-24 { font-size: 24rpx; }
+.ri-32 { font-size: 32rpx; }
+.ri-40 { font-size: 40rpx; }
+.ri-48 { font-size: 48rpx; }
+.ri-white { color: #ffffff; }
+.ri-emerald { color: #26A69A; }
+.ri-orange { color: #FF9800; }
+.ri-blue { color: #2196F3; }
+.ri-purple { color: #9C27B0; }
+
+/* 具体图标映射说明：
+   - RemixIcon 的具体图标类及码点通常在其 CSS 中定义（如 .ri-restaurant-fill:before { content: "\fXXX" }）
+   - 由于 WXSS 不支持远程 @import，这里仅提供基础字体与通用类。
+   - 建议后续将 remixicon.css 的所需图标映射片段复制到本地 WXSS。
+*/
+

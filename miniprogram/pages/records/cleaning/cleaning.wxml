@@ -1,2 +1,112 @@
-<!--pages/records/cleaning/cleaning.wxml-->
-<text>pages/records/cleaning/cleaning.wxml</text>
+<!-- pages/records/cleaning/cleaning.wxml -->
+<view class="cleaning-page">
+  <!-- 通用头部组件 -->
+  <app-header title="清洁记录" subtitle="鹦鹉清洁护理管理" showBack="{{true}}" theme="blue">
+    <view slot="actions" class="header-btn" bindtap="addCleaningRecord">
+      <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
+    </view>
+  </app-header>
+
+  <!-- Content -->
+  <scroll-view class="content" scroll-y="true">
+    <!-- Filter Chips (aligned with feeding page design) -->
+    <view class="filter-section">
+      <scroll-view scroll-x="true" class="chip-scroll">
+        <block wx:for="{{filterOptions}}" wx:key="*this">
+          <view class="chip {{selectedFilter === item ? 'active' : ''}}" bindtap="selectFilter" data-filter="{{item}}">
+            <text class="chip-text">{{item}}</text>
+          </view>
+        </block>
+      </scroll-view>
+    </view>
+    <!-- Summary Card (aligned with feeding stats design) -->
+    <view class="summary-card rounded-3xl p-6 shadow-xl">
+      <text class="summary-title text-lg font-bold">清洁统计</text>
+      <view class="summary-grid">
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.weeklyCount}}</text>
+          <text class="summary-label text-sm text-white-80">本周清洁</text>
+        </view>
+        <view class="summary-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.uniqueTypes}}</text>
+          <text class="summary-label text-sm text-white-80">清洁类型</text>
+        </view>
+        <view class="summary-metric last-metric">
+          <text class="summary-value text-2xl font-bold">{{stats.lastTimeText || '—'}}</text>
+          <text class="summary-label text-sm text-white-80">最近一次</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Cleaning Records -->
+    <view class="list" wx:if="{{displayRecords.length > 0}}">
+      <block wx:for="{{displayRecords}}" wx:key="id">
+        <view class="card">
+          <view class="card-left">
+            <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
+              <view class="avatar-cluster">
+                <block wx:for="{{item.parrot_avatars}}" wx:for-item="avatar" wx:for-index="idx" wx:key="*this">
+                  <view wx:if="{{idx < 3}}" class="cluster-item pos-{{idx}} count-{{item.parrot_avatars.length >= 3 ? 3 : item.parrot_avatars.length}}">
+                    <image src="{{avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFit" />
+                  </view>
+                </block>
+              </view>
+            </block>
+            <block wx:elif="{{item.parrot_avatars && item.parrot_avatars.length === 1}}">
+              <view class="single-avatar">
+                <image src="{{item.parrot_avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFit" />
+              </view>
+            </block>
+            <block wx:else>
+              <view class="single-avatar">
+                <image src="/images/default-parrot.png" class="cluster-img" mode="aspectFit" />
+              </view>
+            </block>
+          </view>
+          <view class="card-right">
+            <view class="card-head">
+              <view class="info">
+                <text class="name">{{item.parrot_name}}</text>
+                <text class="type-badge">{{item.cleaning_type_text || item.cleaning_type}}</text>
+              </view>
+              <view class="head-right">
+                <view class="time">{{item.cleaning_time_formatted}}</view>
+                <!-- 编辑和删除按钮 -->
+                <view class="action-buttons" wx:if="{{hasOperationPermission}}">
+                  <view class="action-btn edit-btn" bindtap="editRecord" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-cleaning-type-ids="{{item.cleaning_type_ids}}">
+                    <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
+                  </view>
+                  <view class="action-btn delete-btn" bindtap="deleteRecord" data-id="{{item.id}}">
+                    <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
+                  </view>
+                </view>
+              </view>
+            </view>
+
+            <view class="card-body">
+        <view class="detail" wx:if="{{item.description}}">
+          <text class="value">{{item.description}}</text>
+        </view>
+        <view class="detail" wx:if="{{item.notes}}">
+          <text class="value">{{item.notes}}</text>
+        </view>
+        <view class="detail" wx:if="{{isTeamMode && item.created_by_username}}">
+          <text class="value">{{item.created_by_username}}</text>
+        </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty" wx:if="{{displayRecords.length === 0 && !loading}}">
+      <view class="empty-icon">🧹</view>
+      <text class="empty-text" wx:if="{{isLogin}}">暂无{{selectedFilter}}记录</text>
+      <text class="empty-text" wx:else>请先登录查看记录</text>
+      <button class="btn btn-primary" wx:if="{{isLogin && hasOperationPermission}}" bindtap="addCleaningRecord">添加清洁记录</button>
+    </view>
+
+    <view class="loading" wx:if="{{loading}}">加载中...</view>
+  </scroll-view>
+</view>

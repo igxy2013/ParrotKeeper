@@ -1,4 +1,5 @@
 /**app.wxss**/
+@import "/styles/iconfont.wxss";
 .container {
   height: 100%;
   display: flex;
@@ -485,4 +486,31 @@ page {
 .flex-column {
   display: flex;
   flex-direction: column;
+}
+
+/* ===== 通用工具类（跨页面复用） ===== */
+/* 字体颜色与权重 */
+.text-white { color: #ffffff; }
+.text-white-80 { color: rgba(255, 255, 255, 0.8); }
+.font-bold { font-weight: 700; }
+.font-medium { font-weight: 500; }
+
+/* 字号体系（对齐喂食页） */
+.text-xs { font-size: 24rpx; }
+.text-sm { font-size: 28rpx; }
+.text-lg { font-size: 36rpx; }
+.text-2xl { font-size: 48rpx; }
+
+/* 卡片容器通用样式 */
+.rounded-2xl { border-radius: 32rpx; }
+.rounded-3xl { border-radius: 48rpx; }
+.p-6 { padding: 48rpx; }
+.shadow-xl { box-shadow: 0 28rpx 70rpx -24rpx rgba(0, 0, 0, 0.28); }
+.bg-white-80 { background-color: rgba(255, 255, 255, 0.96); }
+.backdrop-blur-sm { backdrop-filter: blur(8rpx); }
+
+/* 响应式调整（与喂食页一致） */
+@media (max-width: 750rpx) {
+  .text-lg { font-size: 32rpx; }
+  .text-2xl { font-size: 40rpx; }
 }

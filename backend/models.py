@@ -23,6 +23,7 @@ class User(db.Model):
     # 关系
     parrots = db.relationship('Parrot', backref='owner', lazy=True, cascade='all, delete-orphan')
     expenses = db.relationship('Expense', backref='user', lazy=True, cascade='all, delete-orphan')
+    incomes = db.relationship('Income', backref='user', lazy=True, cascade='all, delete-orphan')
     reminders = db.relationship('Reminder', backref='user', lazy=True, cascade='all, delete-orphan')
 
 class ParrotSpecies(db.Model):
@@ -67,6 +68,7 @@ class Parrot(db.Model):
     health_records = db.relationship('HealthRecord', backref='parrot', lazy=True, cascade='all, delete-orphan')
     cleaning_records = db.relationship('CleaningRecord', backref='parrot', lazy=True, cascade='all, delete-orphan')
     expenses = db.relationship('Expense', backref='parrot', lazy=True)
+    incomes = db.relationship('Income', backref='parrot', lazy=True)
     reminders = db.relationship('Reminder', backref='parrot', lazy=True, cascade='all, delete-orphan')
 
 class FeedType(db.Model):
@@ -110,10 +112,12 @@ class HealthRecord(db.Model):
     weight = db.Column(db.Numeric(5, 2))
     temperature = db.Column(db.Numeric(4, 1))
     symptoms = db.Column(db.Text)
+    notes = db.Column(db.Text)
     treatment = db.Column(db.Text)
     medication = db.Column(db.String(255))
     vet_name = db.Column(db.String(100))
     cost = db.Column(db.Numeric(8, 2))
+    image_urls = db.Column(db.Text)  # JSON 数组，记录照片URL列表
     record_date = db.Column(db.DateTime, default=datetime.utcnow)
     next_checkup_date = db.Column(db.Date)
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
@@ -175,6 +179,19 @@ class Expense(db.Model):
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Income(db.Model):
+    __tablename__ = 'incomes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
+    category = db.Column(db.Enum('breeding_sale', 'bird_sale', 'service', 'competition', 'other'))
+    amount = db.Column(db.Numeric(8, 2), nullable=False)
+    description = db.Column(db.String(255))
+    income_date = db.Column(db.Date, default=date.today)
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Reminder(db.Model):
     __tablename__ = 'reminders'
     
@@ -190,3 +207,73 @@ class Reminder(db.Model):
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ReminderLog(db.Model):
+    __tablename__ = 'reminder_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reminder_id = db.Column(db.Integer, db.ForeignKey('reminders.id'), nullable=False)
+    sent_date = db.Column(db.Date, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # 每个提醒每天只能记录一次，避免重复推送
+    __table_args__ = (db.UniqueConstraint('reminder_id', 'sent_date', name='unique_reminder_daily_log'),)
+
+class Achievement(db.Model):
+    __tablename__ = 'achievements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(50), unique=True, nullable=False)  # 成就唯一标识
+    title = db.Column(db.String(100), nullable=False)  # 成就标题
+    description = db.Column(db.String(255), nullable=False)  # 成就描述
+    icon = db.Column(db.String(50), nullable=False)  # 图标名称
+    color = db.Column(db.String(20), default='blue')  # 背景颜色
+    condition_type = db.Column(db.Enum('parrot_count', 'feeding_count', 'health_check_count', 'stats_view_count'), nullable=False)  # 条件类型
+    target_value = db.Column(db.Integer, nullable=False)  # 目标值
+    is_active = db.Column(db.Boolean, default=True)  # 是否启用
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 关系
+    user_achievements = db.relationship('UserAchievement', backref='achievement', lazy=True, cascade='all, delete-orphan')
+
+class UserAchievement(db.Model):
+    __tablename__ = 'user_achievements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    achievement_id = db.Column(db.Integer, db.ForeignKey('achievements.id'), nullable=False)
+    unlocked_at = db.Column(db.DateTime, default=datetime.utcnow)  # 解锁时间
+    current_progress = db.Column(db.Integer, default=0)  # 当前进度
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 唯一约束：每个用户每个成就只能有一条记录
+    __table_args__ = (db.UniqueConstraint('user_id', 'achievement_id', 'team_id', name='unique_user_achievement'),)
+
+class UserStatistics(db.Model):
+    __tablename__ = 'user_statistics'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    stats_views = db.Column(db.Integer, default=0)  # 统计页面查看次数
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 唯一约束：每个用户每个团队只能有一条统计记录
+    __table_args__ = (db.UniqueConstraint('user_id', 'team_id', name='unique_user_statistics'),)
+
+class Feedback(db.Model):
+    __tablename__ = 'feedbacks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    contact = db.Column(db.String(255))
+    image_urls = db.Column(db.Text)  # 存储为JSON字符串数组
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 关系
+    user = db.relationship('User', backref='feedbacks', lazy=True)

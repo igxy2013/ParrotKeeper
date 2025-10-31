@@ -13,7 +13,8 @@ Page({
       weight: '',
       health_status: 'healthy',
       photo_url: '',
-      avatar_url: '/images/parrot-avatar-green.svg', // 默认头像
+      processed_photo_url: '', // 添加抠图后的图片URL
+      avatar_url: '/images/parrot-avatar-green.svg', // 默认头像（当前仅提供 SVG 资源）
       notes: '',
       parrot_number: '',
       ring_number: ''
@@ -158,7 +159,7 @@ Page({
             weight: parrot.weight ? String(parrot.weight) : '',
             health_status: parrot.health_status || 'healthy',
             photo_url: parrot.photo_url || '',
-            avatar_url: parrot.avatar_url || '/images/parrot-avatar-green.svg', // 从数据库加载头像
+            avatar_url: parrot.avatar_url || '/images/parrot-avatar-green.svg', // 从数据库加载头像（当前仅提供 SVG 资源）
             notes: parrot.notes || '',
             parrot_number: parrot.parrot_number || '',
             ring_number: parrot.ring_number || ''
@@ -315,38 +316,111 @@ Page({
     })
   },
 
-  // 上传照片
+  // 上传照片并自动抠图
   async uploadPhoto(filePath) {
     try {
-      app.showLoading('上传中...')
+      app.showLoading('上传并处理中...')
       
       const uploadRes = await new Promise((resolve, reject) => {
         wx.uploadFile({
-          url: app.globalData.baseUrl + '/api/upload/image',
+          url: app.globalData.baseUrl + '/api/image/remove-background',
           filePath: filePath,
-          name: 'file',
+          name: 'image',
           header: {
             'X-OpenID': app.globalData.openid
           },
-          success: resolve,
-          fail: reject
+          success: (res) => {
+            console.log('上传响应:', res)
+            if (res.statusCode === 200) {
+              resolve(res)
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}: ${res.data}`))
+            }
+          },
+          fail: (err) => {
+            console.error('上传请求失败:', err)
+            reject(err)
+          }
         })
       })
       
+      console.log('解析响应数据:', uploadRes.data)
       const result = JSON.parse(uploadRes.data)
-      if (result.success) {
-        // 将相对路径转换为完整URL
-        const fullUrl = app.globalData.baseUrl + '/uploads/' + result.data.url
+      
+      if (result.original_url) {
+        // 设置原图和抠图后的图片URL
         this.setData({
-          'formData.photo_url': fullUrl
+          'formData.photo_url': result.original_url
         })
-        app.showSuccess('上传成功')
+        
+        if (result.processed_url) {
+          this.setData({
+            'formData.processed_photo_url': result.processed_url
+          })
+          app.showSuccess('上传成功，已自动抠图')
+        } else {
+          wx.showModal({
+            title: '温馨提示',
+            content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+            showCancel: false
+          })
+        }
+      } else if (result.error) {
+        wx.showModal({
+          title: '温馨提示',
+          content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+          showCancel: false
+        })
+        return
       } else {
-        throw new Error(result.message)
+        wx.showModal({
+          title: '温馨提示',
+          content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+          showCancel: false
+        })
+        return
       }
     } catch (error) {
       console.error('上传照片失败:', error)
-      app.showError('上传照片失败')
+      wx.showModal({
+        title: '温馨提示',
+        content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+        showCancel: false
+      })
+    } finally {
+      app.hideLoading()
+    }
+  },
+
+  // 手动对已上传图片进行抠图
+  async processExistingImage() {
+    if (!this.data.formData.photo_url) {
+      app.showError('请先上传图片')
+      return
+    }
+    
+    try {
+      app.showLoading('抠图处理中...')
+      
+      const res = await app.request({
+        url: '/api/image/process-existing',
+        method: 'POST',
+        data: {
+          image_path: this.data.formData.photo_url
+        }
+      })
+      
+      if (res.processed_url) {
+        this.setData({
+          'formData.processed_photo_url': res.processed_url
+        })
+        app.showSuccess('抠图处理成功')
+      } else {
+        throw new Error(res.error || '抠图处理失败')
+      }
+    } catch (error) {
+      console.error('抠图处理失败:', error)
+      app.showError('抠图处理失败')
     } finally {
       app.hideLoading()
     }
@@ -418,9 +492,14 @@ Page({
         submitData.weight = parseFloat(submitData.weight)
       }
       
-      // 移除空字段（但保留parrot_number和ring_number，允许它们为空字符串）
+      // 移除空字段：保留可为空字符串的字段（包括 photo_url 用于清空照片）
       Object.keys(submitData).forEach(key => {
-        if (submitData[key] === '' && key !== 'parrot_number' && key !== 'ring_number') {
+        if (
+          submitData[key] === '' &&
+          key !== 'parrot_number' &&
+          key !== 'ring_number' &&
+          key !== 'photo_url'
+        ) {
           delete submitData[key]
         }
       })

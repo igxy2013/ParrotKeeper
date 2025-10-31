@@ -1,101 +1,107 @@
 <!--pages/records/add-record/add-record.wxml-->
 <view class="page-container">
-  <form bindsubmit="submitForm">
-    <!-- 记录类型 -->
-    <view class="form-section">
-      <view class="section-title">记录类型</view>
-      
-      <view class="type-selector">
-        <view 
-          class="type-item {{recordType === 'feeding' ? 'active' : ''}}"
-          bindtap="selectType"
-          data-type="feeding"
-        >
-          <view class="type-icon">🍽️</view>
-          <text class="type-text">喂食记录</text>
-        </view>
-        <view 
-          class="type-item {{recordType === 'cleaning' ? 'active' : ''}}"
-          bindtap="selectType"
-          data-type="cleaning"
-        >
-          <view class="type-icon">🧹</view>
-          <text class="type-text">清洁记录</text>
-        </view>
-        <view 
-          class="type-item {{recordType === 'health' ? 'active' : ''}}"
-          bindtap="selectType"
-          data-type="health"
-        >
-          <view class="type-icon">🏥</view>
-          <text class="type-text">健康检查</text>
-        </view>
-        <view 
-          class="type-item {{recordType === 'breeding' ? 'active' : ''}}"
-          bindtap="selectType"
-          data-type="breeding"
-        >
-          <view class="type-icon">🥚</view>
-          <text class="type-text">繁殖记录</text>
-        </view>
-      </view>
-    </view>
+  <!-- 使用项目通用顶部导航组件 -->
+  <app-header title="{{(recordId ? '编辑' : '添加') + (recordType === 'feeding' ? '喂食' : recordType === 'cleaning' ? '清洁' : recordType === 'health' ? '健康' : recordType === 'breeding' ? '繁殖' : '') + '记录'}}" subtitle="记录鹦鹉的日常护理" showBack="{{true}}" theme="blue">
+  </app-header>
 
-    <!-- 基本信息 -->
-    <view class="form-section">
-      <view class="section-title">基本信息</view>
-      
-      <view class="form-item">
-        <text class="form-label required">选择鹦鹉</text>
-        <view class="form-picker" bindtap="showParrotPicker">
-          <text class="picker-text {{formData.parrot_ids.length > 0 ? '' : 'placeholder'}}">
-            {{selectedParrotNames || (recordType === 'health' ? '请选择鹦鹉（单选）' : '请选择鹦鹉（可多选）')}}
-          </text>
-          <text class="picker-arrow">▼</text>
+  <view class="form-content">
+    <form bindsubmit="submitForm">
+      <!-- 记录类型 -->
+      <view class="form-section">
+        <view class="section-title">记录类型</view>
+        
+        <view class="type-selector">
+          <view 
+            class="type-item feeding {{recordType === 'feeding' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type="feeding"
+          >
+            <image class="type-icon-img" src="/images/remix/ri-restaurant-fill-orange.png" mode="aspectFit"></image>
+            <text class="type-text">喂食记录</text>
+          </view>
+          <view 
+            class="type-item cleaning {{recordType === 'cleaning' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type="cleaning"
+          >
+            <image class="type-icon-img" src="/images/remix/ri-calendar-fill-blue.png" mode="aspectFit"></image>
+            <text class="type-text">清洁记录</text>
+          </view>
+          <view 
+            class="type-item health {{recordType === 'health' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type="health"
+          >
+            <image class="type-icon-img" src="/images/remix/ri-heart-fill-purple.png" mode="aspectFit"></image>
+            <text class="type-text">健康检查</text>
+          </view>
+          <view 
+            class="type-item breeding {{recordType === 'breeding' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type="breeding"
+          >
+            <image class="type-icon-img" src="/images/remix/ri-book-fill-green.png" mode="aspectFit"></image>
+            <text class="type-text">繁殖记录</text>
+          </view>
         </view>
       </view>
-      
-      <view class="form-item">
-        <text class="form-label required">记录时间</text>
-        <view class="datetime-picker">
-          <picker 
-            mode="date" 
-            value="{{formData.record_date}}" 
-            bindchange="onDateChange"
-            end="{{today}}"
-          >
-            <view class="picker-item">
-              <text class="picker-text {{formData.record_date ? '' : 'placeholder'}}">
-                {{formData.record_date || '选择日期'}}
-              </text>
-            </view>
-          </picker>
-          <picker 
-            mode="time" 
-            value="{{formData.record_time}}" 
-            bindchange="onTimeChange"
-          >
-            <view class="picker-item">
-              <text class="picker-text {{formData.record_time ? '' : 'placeholder'}}">
-                {{formData.record_time || '选择时间'}}
-              </text>
-            </view>
-          </picker>
-        </view>
-      </view>
-    </view>
 
-    <!-- 喂食记录特有字段 -->
-    <view class="form-section" wx:if="{{recordType === 'feeding'}}">
-      <view class="section-title">喂食详情</view>
-      
-      <view class="form-item">
-        <text class="form-label">食物类型</text>
-        <view class="form-picker" bindtap="showFeedTypePicker">
-          <text class="picker-text {{formData.food_types.length > 0 ? '' : 'placeholder'}}">
-            {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
+      <!-- 基本信息 -->
+      <view class="form-section">
+        <view class="section-title">基本信息</view>
+        
+        <view class="form-item">
+          <text class="form-label required">选择鹦鹉</text>
+          <view class="form-picker" bindtap="showParrotPicker">
+            <text class="picker-text {{formData.parrot_ids.length > 0 ? '' : 'placeholder'}}">
+              {{selectedParrotNames || (recordType === 'health' ? '请选择鹦鹉（单选）' : '请选择鹦鹉（可多选）')}}
+            </text>
+            <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+          </view>
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label required">记录时间</text>
+          <view class="datetime-picker">
+            <picker 
+              mode="date" 
+              value="{{formData.record_date}}" 
+              bindchange="onDateChange"
+              end="{{today}}"
+            >
+              <view class="picker-item">
+                <text class="picker-text {{formData.record_date ? '' : 'placeholder'}}">
+                  {{formData.record_date || '选择日期'}}
+                </text>
+              </view>
+            </picker>
+            <picker 
+              mode="time" 
+              value="{{formData.record_time}}" 
+              bindchange="onTimeChange"
+            >
+              <view class="picker-item">
+                <text class="picker-text {{formData.record_time ? '' : 'placeholder'}}">
+                  {{formData.record_time || '选择时间'}}
+                </text>
+                <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </view>
+
+      <!-- 喂食记录特有字段 -->
+      <view class="form-section" wx:if="{{recordType === 'feeding'}}">
+        <view class="section-title">喂食详情</view>
+        
+        <view class="form-item">
+          <text class="form-label">食物类型</text>
+          <view class="form-picker" bindtap="showFeedTypePicker">
+            <text class="picker-text {{formData.food_types.length > 0 ? '' : 'placeholder'}}">
+              {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
           </text>
-          <text class="picker-arrow">▼</text>
+          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
         </view>
       </view>
       
@@ -138,10 +144,10 @@
       <view class="form-item">
         <text class="form-label required">清洁类型</text>
         <view class="form-picker" bindtap="showCleaningTypePicker">
-          <text class="picker-text {{formData.cleaning_type ? '' : 'placeholder'}}">
+          <text class="picker-text {{selectedCleaningTypeNames ? '' : 'placeholder'}}">
             {{selectedCleaningTypeNames || '请选择清洁类型'}}
           </text>
-          <text class="picker-arrow">▼</text>
+          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
         </view>
       </view>
       
@@ -174,17 +180,7 @@
         />
       </view>
       
-      <view class="form-item">
-        <text class="form-label">体温 (°C)</text>
-        <input 
-          class="form-input" 
-          placeholder="请输入体温" 
-          value="{{formData.temperature}}"
-          bindinput="onInputChange"
-          data-field="temperature"
-          type="digit"
-        />
-      </view>
+
       
       <view class="form-item">
         <text class="form-label">健康状态</text>
@@ -192,7 +188,7 @@
           <text class="picker-text {{formData.health_status ? '' : 'placeholder'}}">
             {{healthStatusText || '请选择健康状态'}}
           </text>
-          <text class="picker-arrow">▼</text>
+          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
         </view>
       </view>
     </view>
@@ -328,7 +324,9 @@
               class="photo-delete" 
               bindtap="deletePhoto"
               data-index="{{index}}"
-            >×</view>
+            >
+              <image class="photo-delete-icon" src="/images/remix/delete-bin-line-gray.png" mode="aspectFit"></image>
+            </view>
           </view>
           
           <view 
@@ -336,12 +334,12 @@
             wx:if="{{formData.photos.length < 3}}"
             bindtap="choosePhoto"
           >
-            <text class="add-icon">+</text>
+            <image class="add-photo-icon" src="/images/remix/ri-add-fill-emerald.png" mode="aspectFit"></image>
           </view>
         </view>
         
         <view class="upload-area" wx:else bindtap="choosePhoto">
-          <view class="upload-icon">📷</view>
+          <image class="upload-icon-img" src="/images/remix/ri-camera-line-gray.png" mode="aspectFit"></image>
           <text class="upload-text">添加照片</text>
           <text class="upload-tip">最多可添加3张照片</text>
         </view>
@@ -390,38 +388,61 @@
       <view class="modal-close" bindtap="hideParrotPicker">×</view>
     </view>
     <view class="modal-body">
-      <view class="parrot-list">
-        <view 
-          class="parrot-item {{item.selected ? 'selected' : ''}}" 
-          wx:for="{{parrotList}}" 
-          wx:key="id"
-          bindtap="selectParrot"
-          data-id="{{item.id}}"
-          data-name="{{item.name}}"
-        >
-          <view class="parrot-avatar">
-            <image 
-              class="parrot-image" 
-              src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" 
-              mode="aspectFill"
-            />
-          </view>
-          <view class="parrot-info">
-            <view class="name-section">
-              <text class="parrot-name">{{item.name}}</text>
-              <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
+      <!-- 健康记录：单选 -->
+      <radio-group wx:if="{{recordType === 'health'}}" bindchange="onParrotRadioChange">
+        <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
+          <view class="parrot-left">
+            <view class="parrot-avatar">
+              <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFit" />
             </view>
-            <text class="parrot-species">{{item.species_name}}</text>
-          </view>
-          <view class="status-pills">
-            <view class="status-pill pill-{{item.health_status}}">
-              <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
-              <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
+            <view class="parrot-info">
+              <view class="name-section">
+                <text class="parrot-name">{{item.name}}</text>
+                <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
+              </view>
+              <text class="parrot-species">{{item.species_name}}</text>
+            </view>
+            <view class="status-pills">
+              <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
+                <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
+                <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
+              </view>
             </view>
           </view>
-          <view class="selection-indicator" wx:if="{{item.selected}}">✓</view>
-        </view>
-      </view>
+          <view class="parrot-right">
+            <radio class="parrot-radio" value="{{item.id}}" checked="{{item.selected}}" />
+            <image class="check-icon-img" wx:if="{{item.selected}}" src="{{checkIconSrc}}" mode="aspectFit" />
+          </view>
+        </label>
+      </radio-group>
+
+      <!-- 其他记录类型：多选 -->
+      <checkbox-group wx:else bindchange="onParrotChange">
+        <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
+          <view class="parrot-left">
+            <view class="parrot-avatar">
+              <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFit" />
+            </view>
+            <view class="parrot-info">
+              <view class="name-section">
+                <text class="parrot-name">{{item.name}}</text>
+                <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
+              </view>
+              <text class="parrot-species">{{item.species_name}}</text>
+            </view>
+            <view class="status-pills">
+              <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
+                <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
+                <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="parrot-right">
+            <checkbox class="parrot-checkbox" value="{{item.id}}" checked="{{item.selected}}" />
+            <image class="check-icon-img" wx:if="{{item.selected}}" src="{{checkIconSrc}}" mode="aspectFit" />
+          </view>
+        </label>
+      </checkbox-group>
     </view>
     <view class="modal-footer" wx:if="{{recordType !== 'health'}}">
       <button class="confirm-btn" bindtap="confirmParrotSelection">确定</button>
@@ -437,18 +458,13 @@
       <text class="modal-close" bindtap="hideCleaningTypePicker">×</text>
     </view>
     <view class="modal-body">
-      <view class="cleaning-type-list">
-        <view 
-          class="cleaning-type-item {{item.selected ? 'selected' : ''}}" 
-          wx:for="{{cleaningTypeList}}" 
-          wx:key="id"
-          data-type="{{item.id}}"
-          bindtap="selectCleaningType"
-        >
+      <checkbox-group bindchange="onCleaningTypeChange">
+        <label class="cleaning-type-item" wx:for="{{cleaningTypeList}}" wx:key="id">
           <text class="cleaning-type-name">{{item.name}}</text>
-          <text class="cleaning-type-check" wx:if="{{item.selected}}">✓</text>
-        </view>
-      </view>
+          <checkbox class="cleaning-checkbox" value="{{item.id}}" checked="{{item.selected}}" />
+          <image class="check-icon-img" wx:if="{{item.selected}}" src="{{checkIconSrc}}" mode="aspectFit" />
+        </label>
+      </checkbox-group>
     </view>
     <view class="modal-footer">
       <button class="confirm-btn" bindtap="confirmCleaningTypeSelection">确定</button>
@@ -470,10 +486,10 @@
         wx:key="id"
         bindtap="selectFeedType"
         data-id="{{item.id}}"
-        data-name="{{item.name}}"
+        data-name="{{item.displayName || item.name}}"
       >
         <view class="feed-type-info">
-          <text class="feed-type-name">{{item.name}}</text>
+          <text class="feed-type-name">{{item.displayName || item.name}}</text>
           <view class="feed-type-details">
             <text class="feed-type-brand">{{item.brand}}</text>
             <text class="feed-type-type">{{item.typeText}}</text>
@@ -496,40 +512,36 @@
       <view class="modal-close" bindtap="hideHealthStatusPicker">×</view>
     </view>
     <view class="modal-body">
-      <view class="status-list">
-        <view 
-          class="status-item" 
-          bindtap="selectHealthStatus"
-          data-status="healthy"
-        >
-          <view class="status-indicator healthy"></view>
-          <text class="status-text">健康</text>
-        </view>
-        <view 
-          class="status-item" 
-          bindtap="selectHealthStatus"
-          data-status="sick"
-        >
-          <view class="status-indicator sick"></view>
-          <text class="status-text">生病</text>
-        </view>
-        <view 
-          class="status-item" 
-          bindtap="selectHealthStatus"
-          data-status="recovering"
-        >
-          <view class="status-indicator recovering"></view>
-          <text class="status-text">康复中</text>
-        </view>
-        <view 
-          class="status-item" 
-          bindtap="selectHealthStatus"
-          data-status="observation"
-        >
-          <view class="status-indicator observation"></view>
-          <text class="status-text">观察中</text>
-        </view>
-      </view>
+      <radio-group bindchange="onHealthStatusChange">
+        <label class="status-item">
+          <view class="status-left">
+            <view class="status-indicator healthy"></view>
+            <text class="status-text">健康</text>
+          </view>
+          <radio class="status-radio" value="healthy" checked="{{formData.health_status === 'healthy'}}" />
+        </label>
+        <label class="status-item">
+          <view class="status-left">
+            <view class="status-indicator sick"></view>
+            <text class="status-text">生病</text>
+          </view>
+          <radio class="status-radio" value="sick" checked="{{formData.health_status === 'sick'}}" />
+        </label>
+        <label class="status-item">
+          <view class="status-left">
+            <view class="status-indicator recovering"></view>
+            <text class="status-text">康复中</text>
+          </view>
+          <radio class="status-radio" value="recovering" checked="{{formData.health_status === 'recovering'}}" />
+        </label>
+        <label class="status-item">
+          <view class="status-left">
+            <view class="status-indicator observation"></view>
+            <text class="status-text">观察中</text>
+          </view>
+          <radio class="status-radio" value="observation" checked="{{formData.health_status === 'observation'}}" />
+        </label>
+      </radio-group>
     </view>
   </view>
 </view>
@@ -552,7 +564,7 @@
           bindtap="selectMaleParrot"
         >
           <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" />
+            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFit" />
           </view>
           <view class="parrot-info">
             <view class="name-section">
@@ -562,15 +574,16 @@
             <text class="parrot-species">{{item.species_name}}</text>
           </view>
           <view class="status-pills">
-            <view class="status-pill pill-{{item.health_status}}">
-              <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
-              <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
+            <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
+              <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
+              <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
             </view>
           </view>
         </view>
       </view>
     </view>
   </view>
+</view>
 </view>
 
 <!-- 雌性鹦鹉选择弹窗 -->
@@ -591,7 +604,7 @@
           bindtap="selectFemaleParrot"
         >
           <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.svg'}}" />
+            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFit" />
           </view>
           <view class="parrot-info">
             <view class="name-section">
@@ -601,9 +614,9 @@
             <text class="parrot-species">{{item.species_name}}</text>
           </view>
           <view class="status-pills">
-            <view class="status-pill pill-{{item.health_status}}">
-              <text class="pill-icon">{{item.health_status === 'healthy' ? '✓' : item.health_status === 'sick' ? '!' : item.health_status === 'recovering' ? '↗' : '👁'}}</text>
-              <text class="pill-text">{{item.health_status === 'healthy' ? '健康' : item.health_status === 'sick' ? '生病' : item.health_status === 'recovering' ? '康复中' : '观察中'}}</text>
+            <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
+              <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
+              <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
             </view>
           </view>
         </view>

@@ -2,7 +2,7 @@
 团队模式数据过滤工具函数
 基于数据的团队标识进行过滤，而非创建者身份
 """
-from models import db, User, Parrot, Expense, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord
+from models import db, User, Parrot, Expense, Income, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord
 from team_models import Team, TeamMember
 from sqlalchemy import and_, or_
 
@@ -94,6 +94,31 @@ def get_accessible_expense_ids_by_mode(user):
     
     if expense_ids:
         return [eid[0] for eid in expense_ids]
+    else:
+        return []
+
+def get_accessible_income_ids_by_mode(user):
+    """根据用户模式获取可访问的收入ID列表"""
+    if hasattr(user, 'user_mode') and user.user_mode == 'team':
+        # 团队模式：只显示团队数据（team_id = current_team_id）
+        if user.current_team_id:
+            income_ids = db.session.query(Income.id).filter(
+                Income.team_id == user.current_team_id
+            ).all()
+        else:
+            # 如果没有当前团队，返回空列表
+            return []
+    else:
+        # 个人模式：只显示个人数据（team_id IS NULL AND user_id = 当前用户ID）
+        income_ids = db.session.query(Income.id).filter(
+            and_(
+                Income.team_id.is_(None),
+                Income.user_id == user.id
+            )
+        ).all()
+    
+    if income_ids:
+        return [iid[0] for iid in income_ids]
     else:
         return []
 

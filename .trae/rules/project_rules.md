@@ -1,1 +1,7 @@
-不要修改后端API地址，https://bimai.xyz是正确的API地址。
+
+
+# 数据库配置
+DB_HOST=192.168.0.60
+DB_PORT=3306
+DB_USER=mysql
+DB_PASSWORD=12345678

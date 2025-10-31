@@ -1,10 +1,16 @@
 <!--pages/records/records.wxml-->
 <view class="page-container">
-  <!-- 游客模式提示 -->
-  <view wx:if="{{!isLogin}}" class="guest-tip">
-    <text class="tip-text">📝 记录功能需要登录使用</text>
-    <text class="tip-subtitle">登录后可以记录和查看您的鹦鹉护理记录</text>
-  </view>
+  <app-header title="养殖记录" subtitle="专业鹦鹉护理助手">
+    <view slot="actions" wx:if="{{isLogin && hasOperationPermission}}" class="header-btn" bindtap="addRecord">
+      <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
+    </view>
+  </app-header>
+  <view class="page-content">
+    <!-- 游客模式提示 -->
+    <view wx:if="{{!isLogin}}" class="guest-tip">
+      <text class="tip-text">📝 记录功能需要登录使用</text>
+      <text class="tip-subtitle">登录后可以记录和查看您的鹦鹉护理记录</text>
+    </view>
 
   <!-- 标签页切换 -->
   <view class="tab-bar">
@@ -49,10 +55,10 @@
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-feed-type-ids="{{item.feed_type_ids}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">✏️</text>
+              <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">🗑️</text>
+              <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
         </view>
@@ -87,6 +93,27 @@
     <view class="record-list" wx:if="{{healthRecords.length > 0}}">
       <view class="record-card" wx:for="{{healthRecords}}" wx:key="id">
         <view class="record-header">
+          <view class="avatar-cell">
+            <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
+              <view class="avatar-cluster">
+                <block wx:for="{{item.parrot_avatars}}" wx:for-index="idx" wx:for-item="avatar" wx:key="*this">
+                  <view wx:if="{{idx < 3}}" class="cluster-item pos-{{idx}} count-{{item.parrot_avatars.length >= 3 ? 3 : item.parrot_avatars.length}}">
+                    <image src="{{avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+                  </view>
+                </block>
+              </view>
+            </block>
+            <block wx:elif="{{item.parrot_avatars && item.parrot_avatars.length === 1}}">
+              <view class="single-avatar">
+                <image src="{{item.parrot_avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+              </view>
+            </block>
+            <block wx:else>
+              <view class="single-avatar">
+                <image src="/images/default-parrot.png" class="cluster-img" mode="aspectFill" />
+              </view>
+            </block>
+          </view>
           <view class="record-info">
             <text class="record-title">{{item.parrot_name}}</text>
             <text class="record-time">{{item.record_date_formatted}}</text>
@@ -95,10 +122,10 @@
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">✏️</text>
+              <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">🗑️</text>
+              <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
         </view>
@@ -112,10 +139,7 @@
             <text class="detail-label">体重：</text>
             <text class="detail-value">{{item.weight}} g</text>
           </view>
-          <view class="record-detail" wx:if="{{item.temperature}}">
-            <text class="detail-label">体温：</text>
-            <text class="detail-value">{{item.temperature}} °C</text>
-          </view>
+          
           <view class="record-detail" wx:if="{{item.notes}}">
             <text class="detail-label">备注：</text>
             <text class="detail-value">{{item.notes}}</text>
@@ -137,6 +161,27 @@
     <view class="record-list" wx:if="{{cleaningRecords.length > 0}}">
       <view class="record-card" wx:for="{{cleaningRecords}}" wx:key="id">
         <view class="record-header">
+          <view class="avatar-cell">
+            <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
+              <view class="avatar-cluster">
+                <block wx:for="{{item.parrot_avatars}}" wx:for-index="idx" wx:for-item="avatar" wx:key="*this">
+                  <view wx:if="{{idx < 3}}" class="cluster-item pos-{{idx}} count-{{item.parrot_avatars.length >= 3 ? 3 : item.parrot_avatars.length}}">
+                    <image src="{{avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+                  </view>
+                </block>
+              </view>
+            </block>
+            <block wx:elif="{{item.parrot_avatars && item.parrot_avatars.length === 1}}">
+              <view class="single-avatar">
+                <image src="{{item.parrot_avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+              </view>
+            </block>
+            <block wx:else>
+              <view class="single-avatar">
+                <image src="/images/default-parrot.png" class="cluster-img" mode="aspectFill" />
+              </view>
+            </block>
+          </view>
           <view class="record-info">
             <text class="record-title">{{item.parrot_name}}</text>
             <text class="record-time">{{item.cleaning_time_formatted}}</text>
@@ -145,10 +190,10 @@
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-cleaning-type-ids="{{item.cleaning_type_ids}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">✏️</text>
+              <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">🗑️</text>
+              <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
         </view>
@@ -183,6 +228,27 @@
     <view class="record-list" wx:if="{{breedingRecords.length > 0}}">
       <view class="record-card" wx:for="{{breedingRecords}}" wx:key="id">
         <view class="record-header">
+          <view class="avatar-cell">
+            <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
+              <view class="avatar-cluster">
+                <block wx:for="{{item.parrot_avatars}}" wx:for-index="idx" wx:for-item="avatar" wx:key="*this">
+                  <view wx:if="{{idx < 3}}" class="cluster-item pos-{{idx}} count-{{item.parrot_avatars.length >= 3 ? 3 : item.parrot_avatars.length}}">
+                    <image src="{{avatar || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" />
+                  </view>
+                </block>
+              </view>
+            </block>
+            <block wx:elif="{{item.parrot_avatars && item.parrot_avatars.length === 1}}">
+              <view class="single-avatar">
+                <image src="{{item.parrot_avatar || '/images/default-parrot.png'}}" class="w-full h-full object-cover" mode="aspectFill" />
+              </view>
+            </block>
+            <block wx:else>
+              <view class="single-avatar">
+                <image src="/images/default-parrot.png" class="w-full h-full object-cover" mode="aspectFill" />
+              </view>
+            </block>
+          </view>
           <view class="record-info">
             <text class="record-title">{{item.male_parrot_name}} × {{item.female_parrot_name}}</text>
             <text class="record-time">{{item.mating_date_formatted}}</text>
@@ -191,10 +257,10 @@
           </view>
           <view class="record-actions">
             <view class="action-btn" bindtap="editRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">✏️</text>
+              <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
             <view class="action-btn" bindtap="deleteRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
-              <text class="action-icon">🗑️</text>
+              <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
         </view>
@@ -259,6 +325,76 @@
   </view>
 </view>
 
+<!-- 鹦鹉筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showParrotModal}}" bindtap="hideParrotFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择鹦鹉</text>
+      <view class="modal-close" bindtap="hideParrotFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option {{selectedParrot === '' ? 'selected' : ''}}" bindtap="selectParrot" data-parrot="">
+        <text class="option-text">全部鹦鹉</text>
+        <text class="option-check" wx:if="{{selectedParrot === ''}}">✓</text>
+      </view>
+      <view class="filter-option {{selectedParrot === item.name ? 'selected' : ''}}" wx:for="{{parrots}}" wx:key="id" bindtap="selectParrot" data-parrot="{{item.name}}">
+        <text class="option-text">{{item.name}}</text>
+        <text class="option-check" wx:if="{{selectedParrot === item.name}}">✓</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 添加记录模态弹窗 -->
+<view class="modal-overlay" wx:if="{{showAddRecordModal}}" bindtap="hideAddRecordModal">
+  <view class="modal-content add-record-modal" catchtap="stopModalPropagation">
+    <view class="modal-header">
+      <text class="modal-title">添加{{modalRecordType === 'feeding' ? '喂食' : modalRecordType === 'health' ? '健康' : modalRecordType === 'cleaning' ? '清洁' : '繁殖'}}记录</text>
+      <view class="modal-close" bindtap="hideAddRecordModal">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="quick-add-options">
+        <view class="quick-option" bindtap="quickAddRecord">
+          <view class="option-icon">⚡</view>
+          <view class="option-content">
+            <text class="option-title">快速记录</text>
+
+
+            <text class="option-desc">使用默认设置快速添加记录</text>
+          </view>
+        </view>
+        <view class="quick-option" bindtap="navigateToAddRecord">
+          <view class="option-icon">📝</view>
+          <view class="option-content">
+            <text class="option-title">详细记录</text>
+            <text class="option-desc">填写完整的记录信息</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 鹦鹉筛选弹窗 -->
+<view class="modal-overlay" wx:if="{{showParrotModal}}" bindtap="hideParrotFilter">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择鹦鹉</text>
+      <view class="modal-close" bindtap="hideParrotFilter">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="filter-option {{!selectedParrotId ? 'selected' : ''}}" bindtap="selectParrot" data-id="" data-name="">
+        <text class="option-text">全部鹦鹉</text>
+        <text class="option-check" wx:if="{{!selectedParrotId}}">✓</text>
+      </view>
+      <view class="filter-option {{selectedParrotId === item.id ? 'selected' : ''}}" wx:for="{{parrotsList}}" wx:key="id" bindtap="selectParrot" data-id="{{item.id}}" data-name="{{item.name}}">
+        <text class="option-text">{{item.name}}</text>
+        <text class="option-check" wx:if="{{selectedParrotId === item.id}}">✓</text>
+      </view>
+    </view>
+  </view>
+</view>
+
 <!-- 日期筛选弹窗 -->
 <view class="modal-overlay" wx:if="{{showDateModal}}" bindtap="hideDateFilter">
   <view class="modal-content" catchtap="stopPropagation">
@@ -286,3 +422,4 @@
     </view>
   </view>
 </view>
+  </view>

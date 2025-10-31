@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense
+from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense, Income, UserStatistics
 from utils import login_required, success_response, error_response
 from team_utils import get_accessible_parrots
-from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode
+from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode, get_accessible_income_ids_by_mode
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_
 
@@ -15,21 +15,64 @@ def get_overview():
     try:
         user = request.current_user
         
+        # 记录统计页面查看次数
+        team_id = getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+        user_stats = UserStatistics.query.filter_by(user_id=user.id, team_id=team_id).first()
+        if not user_stats:
+            user_stats = UserStatistics(user_id=user.id, team_id=team_id, stats_views=1)
+            db.session.add(user_stats)
+        else:
+            user_stats.stats_views += 1
+            user_stats.updated_at = datetime.utcnow()
+        
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"[WARNING] 更新统计查看次数失败: {str(e)}")
+        
         # 根据用户模式获取可访问的鹦鹉ID
         parrot_ids = get_accessible_parrot_ids_by_mode(user)
         
         # 鹦鹉总数
         total_parrots = len([pid for pid in parrot_ids if Parrot.query.get(pid) and Parrot.query.get(pid).is_active])
         
-        # 健康状态统计
-        health_stats = db.session.query(
-            Parrot.health_status,
-            func.count(Parrot.id).label('count')
-        ).filter(Parrot.id.in_(parrot_ids), Parrot.is_active == True).group_by(Parrot.health_status).all()
-        
-        health_status = {status: 0 for status in ['healthy', 'sick', 'recovering']}
-        for status, count in health_stats:
-            health_status[status] = count
+        # 健康状态统计（统一：按每只鹦鹉最近健康记录的 health_status 计算；无记录视为 healthy）
+        # 子查询：每只鹦鹉最近一条健康记录的日期
+        latest_health_subq = db.session.query(
+            HealthRecord.parrot_id.label('parrot_id'),
+            func.max(HealthRecord.record_date).label('max_date')
+        ).join(Parrot, HealthRecord.parrot_id == Parrot.id).filter(
+            Parrot.id.in_(parrot_ids),
+            Parrot.is_active == True
+        ).group_by(HealthRecord.parrot_id).subquery()
+
+        # 统计最近健康记录的状态分布
+        latest_health_stats = db.session.query(
+            HealthRecord.health_status,
+            func.count(HealthRecord.parrot_id).label('count')
+        ).join(
+            latest_health_subq,
+            and_(
+                HealthRecord.parrot_id == latest_health_subq.c.parrot_id,
+                HealthRecord.record_date == latest_health_subq.c.max_date
+            )
+        ).group_by(HealthRecord.health_status).all()
+
+        # 初始化包含 observation 的状态字典
+        health_status = {status: 0 for status in ['healthy', 'sick', 'recovering', 'observation']}
+        latest_count_sum = 0
+        for status, count in latest_health_stats:
+            latest_count_sum += count or 0
+            if status in health_status:
+                health_status[status] = count
+            else:
+                # 兼容未知状态，全部计入 healthy（理论上不会发生）
+                health_status['healthy'] += count or 0
+
+        # 无健康记录的鹦鹉默认 healthy
+        missing_count = max(0, total_parrots - latest_count_sum)
+        health_status['healthy'] += missing_count
         
         # 本月支出（包括用户个人支出和团队共享鹦鹉的支出）
         current_month = date.today().replace(day=1)
@@ -39,6 +82,15 @@ def get_overview():
             and_(
                 Expense.id.in_(expense_ids),
                 Expense.expense_date >= current_month
+            )
+        ).scalar() or 0
+
+        # 本月收入（包括用户个人收入和团队共享鹦鹉的收入）
+        income_ids = get_accessible_income_ids_by_mode(user)
+        monthly_income = db.session.query(func.sum(Income.amount)).filter(
+            and_(
+                Income.id.in_(income_ids),
+                Income.income_date >= current_month
             )
         ).scalar() or 0
         
@@ -95,8 +147,10 @@ def get_overview():
             'total_parrots': total_parrots,
             'health_status': health_status,
             'monthly_expense': float(monthly_expense),
+            'monthly_income': float(monthly_income),
             'monthly_feeding': monthly_feeding,
             'monthly_health_checks': monthly_health_checks,
+            'stats_views': user_stats.stats_views,  # 添加统计查看次数
             'today_records': {
                 'feeding': today_feeding,
                 'cleaning': today_cleaning

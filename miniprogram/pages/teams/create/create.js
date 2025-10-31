@@ -78,7 +78,7 @@ Page({
       // 调用创建团队API
       const response = await new Promise((resolve, reject) => {
         wx.request({
-          url: 'https://bimai.xyz/api/teams/create',
+          url: `${getApp().globalData.baseUrl}/api/teams/create`,
           method: 'POST',
           header: {
             'Authorization': `Bearer ${wx.getStorageSync('token')}`,

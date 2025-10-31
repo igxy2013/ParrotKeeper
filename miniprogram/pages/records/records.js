@@ -24,17 +24,21 @@ Page({
     // 弹窗状态
     showParrotModal: false,
     showDateModal: false,
+    showAddRecordModal: false, // 添加记录模态弹窗
+    modalRecordType: 'feeding', // 模态弹窗中的记录类型
     
     // 加载状态
     loading: false,
     
     // 分页
     page: 1,
-    hasMore: true
+    hasMore: true,
+    menuRightPadding: 0
   },
 
   // 页面显示时检查登录并加载
   onShow() {
+    this.computeMenuRightPadding()
     this.checkLoginAndLoad()
   },
 
@@ -205,17 +209,64 @@ Page({
         return this.aggregateFeedingRecords(records)
       case 'cleaning':
         return this.aggregateCleaningRecords(records)
-      case 'health':
-      case 'breeding':
-        return records.map(r => ({
-          ...r,
-          feeding_time_formatted: r.feeding_time ? app.formatDateTime(r.feeding_time) : '',
-          record_date_formatted: r.record_date ? app.formatDateTime(r.record_date) : '',
-          cleaning_time_formatted: r.cleaning_time ? app.formatDateTime(r.cleaning_time) : '',
-          mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
-          egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
-          hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
-        }))
+      case 'health': {
+        const list = Array.isArray(records) ? records : []
+        const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
+        return list.map(r => {
+          const formatted = {
+            ...r,
+            feeding_time_formatted: r.feeding_time ? app.formatDateTime(r.feeding_time) : '',
+            record_date_formatted: r.record_date ? app.formatDateTime(r.record_date) : '',
+            cleaning_time_formatted: r.cleaning_time ? app.formatDateTime(r.cleaning_time) : '',
+            mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
+            egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
+            hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
+          }
+          const pid = r.parrot_id || (r.parrot && r.parrot.id)
+          const p = r.parrot || allParrots.find(x => (pid && x.id === pid) || (r.parrot_name && x.name === r.parrot_name))
+          let avatar = null
+          if (p) {
+            const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
+            const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
+            avatar = resolvedPhoto || resolvedAvatar
+            if (!avatar) {
+              const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+              avatar = app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
+            }
+          } else {
+            // 未找到鹦鹉对象时，以名称兜底彩色头像
+            avatar = app.getDefaultAvatarForParrot({ name: r.parrot_name })
+          }
+          return {
+            ...formatted,
+            parrot_avatar: avatar,
+            parrot_avatars: avatar ? [avatar] : []
+          }
+        })
+      }
+      case 'breeding': {
+        const list = Array.isArray(records) ? records : []
+        const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
+        return list.map(r => {
+          const formatted = {
+            ...r,
+            mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
+            egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
+            hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
+          }
+          // 取公母两只鹦鹉头像
+          const male = r.male_parrot || allParrots.find(x => (r.male_parrot_id && x.id === r.male_parrot_id) || (r.male_parrot_name && x.name === r.male_parrot_name))
+          const female = r.female_parrot || allParrots.find(x => (r.female_parrot_id && x.id === r.female_parrot_id) || (r.female_parrot_name && x.name === r.female_parrot_name))
+          const maleAvatar = male ? (male.photo_url || male.avatar_url) : null
+          const femaleAvatar = female ? (female.photo_url || female.avatar_url) : null
+          const parrot_avatars = [maleAvatar, femaleAvatar].filter(Boolean)
+          return {
+            ...formatted,
+            parrot_avatars,
+            parrot_avatar: parrot_avatars[0] || null
+          }
+        })
+      }
       default:
         return records
     }
@@ -276,6 +327,7 @@ Page({
   // 聚合清洁记录以支持多选显示
   aggregateCleaningRecords(records) {
     const groupedRecords = {}
+    const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
     
     // 按时间、备注、描述分组
     records.forEach((record) => {
@@ -289,7 +341,8 @@ Page({
           cleaning_type_names: [],
           parrot_ids: [],
           cleaning_type_ids: [],
-          record_ids: []
+          record_ids: [],
+          parrot_avatar_map: {}
         }
       }
       
@@ -298,6 +351,15 @@ Page({
         if (!groupedRecords[key].parrot_names.includes(record.parrot.name)) {
           groupedRecords[key].parrot_names.push(record.parrot.name)
           groupedRecords[key].parrot_ids.push(record.parrot.id)
+        }
+        const pid = record.parrot.id
+        let pavatar = record.parrot.photo_url || record.parrot.avatar_url
+        if (!pavatar && pid) {
+          const p = allParrots.find(x => x.id === pid || (record.parrot.name && x.name === record.parrot.name))
+          pavatar = p ? (p.photo_url || p.avatar_url) : null
+        }
+        if (pid && pavatar && !groupedRecords[key].parrot_avatar_map[pid]) {
+          groupedRecords[key].parrot_avatar_map[pid] = pavatar
         }
       }
       
@@ -319,11 +381,22 @@ Page({
     })
     
     // 生成显示文本
-    const result = Object.values(groupedRecords).map(item => ({
-      ...item,
-      parrot_name: item.parrot_names.join('、'),
-      cleaning_type_text: item.cleaning_type_names.join('、')
-    }))
+    const result = Object.values(groupedRecords).map(item => {
+      const parrot_avatars = (item.parrot_ids || []).map(pid => {
+        if (item.parrot_avatar_map[pid]) return item.parrot_avatar_map[pid]
+        const p = allParrots.find(x => x.id === pid)
+        return p ? (p.photo_url || p.avatar_url) : null
+      }).filter(Boolean)
+      const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : null
+      return {
+        ...item,
+        parrot_name: item.parrot_names.join('、'),
+        cleaning_type_text: item.cleaning_type_names.join('、'),
+        parrot_avatars,
+        parrot_avatar: firstAvatar,
+        parrot_count: item.parrot_ids.length
+      }
+    })
     
     // 保持与后端排序一致（按时间倒序）
     result.sort((a, b) => new Date(b.cleaning_time) - new Date(a.cleaning_time))
@@ -387,47 +460,55 @@ Page({
 
   // 添加记录
   addRecord() {
-    const urlMap = {
-      'feeding': '/pages/records/add-record/add-record?type=feeding',
-      'health': '/pages/records/add-record/add-record?type=health',
-      'cleaning': '/pages/records/add-record/add-record?type=cleaning',
-      'breeding': '/pages/records/add-record/add-record?type=breeding'
-    }
-    
-    wx.navigateTo({
-      url: urlMap[this.data.activeTab]
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: this.data.activeTab
     })
+  },
+
+  // 顶部返回按钮：优先返回上一页，无历史时回首页
+  goBack() {
+    const pages = getCurrentPages()
+    if (pages && pages.length > 1) {
+      wx.navigateBack({ delta: 1 })
+    } else {
+      if (wx.switchTab) {
+        wx.switchTab({ url: '/pages/index/index' })
+      } else {
+        wx.redirectTo({ url: '/pages/index/index' })
+      }
+    }
   },
 
   // 添加喂食记录
   addFeedingRecord() {
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=feeding'
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: 'feeding'
     })
   },
 
   // 添加健康记录
   addHealthRecord() {
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=health'
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: 'health'
     })
   },
 
   // 添加清洁记录
   addCleaningRecord() {
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=cleaning'
+    this.setData({
+      showAddRecordModal: true,
+      modalRecordType: 'cleaning'
     })
   },
 
   // 添加繁殖记录
   addBreedingRecord() {
-    // 确保切换到繁殖记录标签页
     this.setData({
-      activeTab: 'breeding'
-    })
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=breeding'
+      showAddRecordModal: true,
+      modalRecordType: 'breeding'
     })
   },
 
@@ -512,5 +593,109 @@ Page({
   onPullDownRefresh() {
     this.loadRecords(true)
       .finally(() => wx.stopPullDownRefresh())
+  },
+
+  // 关闭添加记录模态弹窗
+  hideAddRecordModal() {
+    this.setData({
+      showAddRecordModal: false,
+      modalRecordType: ''
+    });
+  },
+
+  // 阻止模态弹窗内容区域的点击事件冒泡
+  stopModalPropagation() {
+    // 阻止点击模态框内容时关闭模态框
+  },
+
+  // 从模态弹窗导航到添加记录页面
+  navigateToAddRecord() {
+    const type = this.data.modalRecordType;
+    this.hideAddRecordModal();
+    wx.navigateTo({
+      url: `/pages/records/add-record/add-record?type=${type}`
+    });
+  },
+
+  // 快速添加记录
+  async quickAddRecord() {
+    const type = this.data.modalRecordType;
+    const currentTime = new Date();
+    const dateStr = currentTime.toISOString().split('T')[0];
+    const timeStr = currentTime.toTimeString().split(' ')[0].substring(0, 5);
+    
+    try {
+      wx.showLoading({
+        title: '添加中...',
+        mask: true
+      });
+
+      // 构建快速记录数据
+      const recordData = {
+        record_type: type,
+        record_date: dateStr,
+        record_time: timeStr,
+        parrot_ids: this.data.selectedParrotId ? [this.data.selectedParrotId] : [],
+        notes: `快速${type === 'feeding' ? '喂食' : type === 'health' ? '健康检查' : type === 'cleaning' ? '清洁' : '繁殖'}记录`
+      };
+
+      // 根据记录类型添加默认字段
+      if (type === 'feeding') {
+        recordData.food_types = [];
+        recordData.amount = '';
+      } else if (type === 'cleaning') {
+        recordData.cleaning_type = '';
+        recordData.description = '常规清洁';
+      } else if (type === 'health') {
+        recordData.weight = '';
+        recordData.health_status = 'healthy';
+      } else if (type === 'breeding') {
+        recordData.breeding_stage = '';
+        recordData.egg_count = '';
+      }
+
+      const response = await wx.request({
+        url: `${getApp().globalData.apiUrl}/api/records`,
+        method: 'POST',
+        header: {
+          'Authorization': `Bearer ${wx.getStorageSync('token')}`,
+          'Content-Type': 'application/json'
+        },
+        data: recordData
+      });
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        wx.hideLoading();
+        wx.showToast({
+          title: '添加成功',
+          icon: 'success'
+        });
+        this.hideAddRecordModal();
+        this.loadRecords(); // 刷新记录列表
+      } else {
+        throw new Error('添加失败');
+      }
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({
+        title: '添加失败',
+        icon: 'error'
+      });
+      console.error('快速添加记录失败:', error);
+    }
+  },
+
+  computeMenuRightPadding() {
+    try {
+      const win = wx.getWindowInfo ? wx.getWindowInfo() : {}
+      const rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+      if (win && rect && typeof win.windowWidth === 'number') {
+        const rightGap = win.windowWidth - rect.right
+        const menuRightPadding = rightGap + rect.width + 8
+        this.setData({ menuRightPadding })
+      }
+    } catch (e) {
+      this.setData({ menuRightPadding: 0 })
+    }
   }
 })

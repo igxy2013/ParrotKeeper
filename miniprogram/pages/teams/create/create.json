@@ -1,5 +1,10 @@
 {
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
   "navigationBarTitleText": "创建团队",
   "enablePullDownRefresh": false,
-  "backgroundColor": "#f5f5f5"
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
 }

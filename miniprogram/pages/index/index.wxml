@@ -1,112 +1,164 @@
 <!--pages/index/index.wxml-->
 <view class="page-container">
-  <!-- 头部欢迎区域 -->
-  <view class="header-section">
-    <view class="welcome-card">
-      <view class="welcome-text">
-        <text class="greeting">{{greeting}}</text>
-        <text class="username">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
-      </view>
-      <view class="weather-info" wx:if="{{weather}}">
-        <text class="temperature">{{weather.temperature}}°C</text>
-        <text class="weather-desc">{{weather.description}}</text>
-      </view>
+  <!-- 顶部导航统一为组件 -->
+  <app-header title="鹦鹉管家" subtitle="专业鹦鹉护理助手">
+    <view slot="actions" class="header-action-btn" bindtap="openNotifications">
+  <image class="header-action-icon" src="{{iconPaths.headerNotification}}" mode="aspectFit" binderror="handleIconError" data-key="headerNotification" />
+      <view class="header-action-badge" wx:if="{{unreadCount > 0}}"></view>
     </view>
-  </view>
+  </app-header>
 
-  <!-- 快速统计 -->
-  <view class="stats-section">
+  <notification-center 
+    visible="{{showNotifications}}" 
+    notifications="{{notifications}}"
+    bind:close="closeNotifications"
+    bind:markAllRead="markAllNotificationsRead"
+    bind:clearAll="clearAllNotifications"
+    bind:itemTap="handleNotificationTap"
+  />
+
+  <!-- 主要内容区域 -->
+  <view class="main-content">
+    <!-- 欢迎卡片 -->
+    <view class="welcome-card">
+      <view class="welcome-bg-circle circle-1"></view>
+      <view class="welcome-bg-circle circle-2"></view>
+      <view class="welcome-content">
+        <text class="welcome-greeting">{{greeting}}，{{userInfo.nickname || userInfo.username || '鹦鹉爱好者'}}！</text>
+        <text class="welcome-message">今天也要好好照顾小家伙们哦</text>
+        <view class="status-indicator">
+          <view class="status-dot {{overview.health_status && (overview.health_status.sick > 0 || overview.health_status.recovering > 0 || overview.health_status.observation > 0) ? 'status-dot-warning' : 'status-dot-healthy'}}"></view>
+          <view class="status-text">{{overview_status_text}}</view>
+        </view>
+</view>
+<!-- 自定义底部导航 -->
+<bottom-nav active="index" />
+    </view>
+
+    <!-- 统计数据网格 -->
     <view class="stats-grid">
-      <view class="stat-item" bindtap="navigateToParrots">
-        <view class="stat-number">{{overview.total_parrots || 0}}</view>
+      <view class="stat-card" bindtap="navigateToParrots">
+        <view class="stat-icon-container emerald">
+        <image class="stat-icon-img" src="{{iconPaths.statsHeart}}" mode="widthFix" binderror="handleIconError" data-key="statsHeart"/>
+        </view>
+        <view class="stat-value emerald-text">{{overview.total_parrots || 0}}</view>
         <view class="stat-label">我的鹦鹉</view>
       </view>
-      <view class="stat-item" bindtap="navigateToRecords">
-        <view class="stat-number">{{overview.today_records.feeding || 0}}</view>
+      <view class="stat-card" bindtap="navigateToFeedingRecords">
+        <view class="stat-icon-container orange">
+        <image class="stat-icon-img" src="{{iconPaths.statsFeeding}}" mode="widthFix" binderror="handleIconError" data-key="statsFeeding"/>
+        </view>
+        <view class="stat-value orange-text">{{overview.today_records.feeding || 0}}</view>
         <view class="stat-label">今日喂食</view>
       </view>
-      <view class="stat-item">
-        <view class="stat-number">{{overview.health_status.healthy || 0}}</view>
-        <view class="stat-label">健康鹦鹉</view>
+      <view class="stat-card" bindtap="goToExpenseManagement">
+        <view class="stat-icon-container purple">
+        <image class="stat-icon-img" src="{{iconPaths.statsIncome}}" mode="widthFix" binderror="handleIconError" data-key="statsIncome"/>
+        </view>
+        <view class="stat-value purple-text">¥{{overview.monthly_income || 0}}</view>
+        <view class="stat-label">本月收入</view>
       </view>
-      <view class="stat-item">
-        <view class="stat-number">¥{{overview.monthly_expense || 0}}</view>
+      <view class="stat-card" bindtap="goToExpenseManagement">
+        <view class="stat-icon-container blue">
+        <image class="stat-icon-img" src="{{iconPaths.statsExpense}}" mode="widthFix" binderror="handleIconError" data-key="statsExpense"/>
+        </view>
+        <view class="stat-value blue-text">¥{{overview.monthly_expense || 0}}</view>
         <view class="stat-label">本月支出</view>
       </view>
     </view>
-  </view>
 
-  <!-- 快速操作 -->
-  <view class="quick-actions">
-    <view class="card">
+    <!-- 我的鹦鹉卡片 -->
+    <view class="my-parrots-card" wx:if="{{myParrots.length > 0}}">
+      <view class="card-header">
+      <text class="card-title"><image class="inline-title-icon" src="{{iconPaths.myParrotsTitleHeart}}" mode="widthFix" binderror="handleIconError" data-key="myParrotsTitleHeart"/> 我的鹦鹉</text>
+        <text class="more-link" bindtap="navigateToParrots">查看全部 →</text>
+      </view>
+      <view class="parrot-card-list">
+        <view class="parrot-mini-card" wx:for="{{myParrots}}" wx:key="id" data-id="{{item.id}}" bindtap="openParrotDetail">
+        <image class="parrot-mini-avatar" src="{{item.photo_url || item.avatar_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
+          <text class="parrot-mini-name">{{item.name}}</text>
+          <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
+        <view class="health-badge health-{{item.current_health_status || 'healthy'}}">{{item.current_health_status_text || '健康'}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快速操作区域 -->
+    <view class="quick-actions-card">
       <view class="card-header">
         <text class="card-title">快速操作</text>
       </view>
-      <view class="card-content">
-        <view class="action-grid">
-          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickFeeding">
-            <view class="action-icon">🍎</view>
-            <text class="action-text">快速<br/>喂食</text>
+      <view class="actions-grid">
+        <view class="action-item feeding {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToFeedingRecords">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.quickFeeding}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickFeeding"/>
           </view>
-          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
-            <view class="action-icon">🧽</view>
-            <text class="action-text">清洁<br/>记录</text>
+          <text class="action-label">喂食记录</text>
+        </view>
+        <view class="action-item training {{!isLogin ? 'disabled' : ''}}" bindtap="quickCleaning">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.quickCleaning}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickCleaning"/>
           </view>
-          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickHealth">
-            <view class="action-icon">🏥</view>
-            <text class="action-text">健康<br/>检查</text>
+          <text class="action-label">清洁记录</text>
+        </view>
+        <view class="action-item health {{!isLogin ? 'disabled' : ''}}" bindtap="quickHealth">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.quickHealth}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickHealth"/>
           </view>
-          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickBreeding">
-            <view class="action-icon">💕</view>
-            <text class="action-text">繁殖<br/>记录</text>
+          <text class="action-label">健康检查</text>
+        </view>
+        <view class="action-item add-expense {{!isLogin ? 'disabled' : ''}}" bindtap="quickBreeding">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.quickBreeding}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickBreeding"/>
           </view>
-          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="addParrot">
-            <view class="action-icon">➕</view>
-            <text class="action-text">添加<br/>鹦鹉</text>
+    <text class="action-label">繁殖记录</text>
+        </view>
+        <view class="action-item add {{!isLogin ? 'disabled' : ''}}" bindtap="addParrot">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.addParrot}}" mode="widthFix" binderror="handleIconError" data-key="actions.addParrot"/>
           </view>
-          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="quickExpense">
-            <view class="action-icon">💰</view>
-            <text class="action-text">添加<br/>支出</text>
+          <text class="action-label">添加鹦鹉</text>
+        </view>
+        <view class="action-item expenses {{!isLogin ? 'disabled' : ''}}" bindtap="quickExpense">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.quickExpense}}" mode="widthFix" binderror="handleIconError" data-key="actions.quickExpense"/>
           </view>
-          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="goToExpenseManagement">
-            <view class="action-icon">📊</view>
-            <text class="action-text">管理<br/>支出</text>
+          <text class="action-label">添加收支</text>
+        </view>
+        <view class="action-item management {{!isLogin ? 'disabled' : ''}}" bindtap="goToExpenseManagement">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.expenseMgmt}}" mode="widthFix" binderror="handleIconError" data-key="actions.expenseMgmt"/>
           </view>
-          <view class="action-item {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToRecords">
-            <view class="action-icon">📒</view>
-            <text class="action-text">查看<br/>记录</text>
+          <text class="action-label">收支管理</text>
+        </view>
+        <view class="action-item statistics {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToStatistics">
+          <view class="action-icon-wrapper">
+        <image class="action-icon-img" src="{{iconPaths.actions.statistics}}" mode="widthFix" binderror="handleIconError" data-key="actions.statistics"/>
           </view>
+          <text class="action-label">数据统计</text>
         </view>
       </view>
     </view>
-  </view>
 
-  <!-- 最近记录 -->
-  <view class="recent-records" wx:if="{{recentRecords.length > 0}}">
-    <view class="card">
+    <!-- 最近活动 -->
+    <view class="recent-activity-card" wx:if="{{recentRecords.length > 0}}">
       <view class="card-header">
         <text class="card-title">最近活动</text>
-        <text class="more-link" bindtap="viewAllRecords">查看全部</text>
       </view>
-      <view class="card-content">
-        <view class="record-list">
-          <view class="record-item" data-type="{{item.type}}" wx:for="{{recentRecords}}" wx:key="id">
-            <view class="record-icon">
-              <text wx:if="{{item.type === 'feeding'}}">🍎</text>
-              <text wx:elif="{{item.type === 'health'}}">🏥</text>
-              <text wx:elif="{{item.type === 'cleaning'}}">🧽</text>
-              <text wx:elif="{{item.type === 'breeding'}}">💕</text>
-            </view>
-            <view class="record-content">
-              <view class="record-title">{{item.title}}</view>
-              <view class="record-subtitle">{{item.parrot_name}} · {{item.time}}</view>
-            </view>
-            <view class="record-dot"></view>
+      <view class="activity-list">
+        <view class="activity-item {{item.type === 'feeding' ? 'orange-theme' : (item.type === 'health' ? 'green-theme' : (item.type === 'cleaning' ? 'blue-theme' : 'purple-theme'))}}" 
+              wx:for="{{recentRecords}}" wx:key="id" wx:if="{{index < 3}}">
+          <view class="activity-icon-container">
+        <image class="activity-icon-img" src="{{item.iconPath}}" mode="widthFix" binderror="handleActivityIconError" data-index="{{index}}" />
           </view>
+          <view class="activity-content">
+            <text class="activity-title">给{{item.parrot_name}}{{item.title}}</text>
+            <text class="activity-subtitle">{{item.timeText || item.time}}</text>
+          </view>
+          <view class="activity-dot {{item.type === 'feeding' ? 'orange' : (item.type === 'health' ? 'green' : (item.type === 'cleaning' ? 'blue' : 'purple'))}}"></view>
         </view>
       </view>
     </view>
-  </view>
 
   <!-- 健康提醒 -->
   <view class="health-alerts" wx:if="{{healthAlerts.length > 0}}">
@@ -117,25 +169,43 @@
       <view class="card-content">
         <view class="alert-list">
           <view class="alert-item" wx:for="{{healthAlerts}}" wx:key="id">
-            <view class="alert-icon">⚠️</view>
+      <view class="alert-icon"><image class="alert-icon-img" src="{{iconPaths.alertInfo}}" mode="widthFix" binderror="handleIconError" data-key="alertInfo"/></view>
             <view class="alert-content">
               <view class="alert-title">{{item.title}}</view>
               <view class="alert-subtitle">{{item.description}}</view>
             </view>
           </view>
-        </view>
       </view>
     </view>
   </view>
+</view>
 
-  <!-- 登录提示 -->
-  <view class="login-prompt" wx:if="{{!isLogin}}">
-    <view class="card">
-      <view class="card-content">
-        <view class="login-icon">🦜</view>
-        <view class="login-text">欢迎使用鹦鹉管家</view>
-        <view class="login-subtitle">请先登录以使用完整功能</view>
-        <button class="btn btn-primary btn-large mt-30" bindtap="handleLogin">微信快速登录</button>
+<!-- 统一使用通用弹窗组件：添加鹦鹉 -->
+<parrot-modal 
+  visible="{{showAddParrotModal}}"
+  mode="add"
+  parrotTypes="{{parrotTypes}}"
+  speciesList="{{speciesList}}"
+  bind:cancel="closeAddParrotModal"
+  bind:submit="submitNewParrotFromComponent"
+/>
+
+<!-- 添加收支记录弹窗组件 -->
+<expense-modal 
+  visible="{{showAddExpenseModal}}" 
+  modalTopOffsetPx="{{modalTopOffsetPx}}"
+  modalBottomOffsetPx="{{modalBottomOffsetPx}}"
+  bind:close="closeAddExpenseModal"
+  bind:success="onExpenseSuccess"
+/>
+
+    <!-- 登录提示 -->
+    <view class="login-prompt-card" wx:if="{{!isLogin}}">
+      <view class="login-content">
+      <view class="login-icon"><image class="login-icon-img" src="{{iconPaths.defaultParrot}}" mode="widthFix" binderror="handleIconError" data-key="defaultParrot"/></view>
+        <text class="login-title">欢迎使用鹦鹉管家</text>
+        <text class="login-subtitle">请先登录以使用完整功能</text>
+        <button class="login-btn" bindtap="handleLogin">微信快速登录</button>
       </view>
     </view>
   </view>

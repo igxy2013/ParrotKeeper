@@ -1,0 +1,61 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 金刚鹦鹉 - 特点：大型，色彩鲜艳，蓝红配色 -->
+  
+  <!-- 身体 -->
+  <ellipse cx="100" cy="125" rx="40" ry="50" fill="#FF4500" stroke="#DC143C" stroke-width="1"/>
+  
+  <!-- 胸部 -->
+  <ellipse cx="100" cy="110" rx="32" ry="30" fill="#FF6347"/>
+  
+  <!-- 头部 -->
+  <circle cx="100" cy="70" r="28" fill="#4169E1" stroke="#0000CD" stroke-width="1"/>
+  
+  <!-- 头顶蓝色区域 -->
+  <ellipse cx="100" cy="55" rx="25" ry="15" fill="#0000FF"/>
+  
+  <!-- 面部白色区域 -->
+  <ellipse cx="100" cy="75" rx="20" ry="18" fill="#F8F8FF"/>
+  
+  <!-- 喙 (大型弯曲) -->
+  <path d="M100 88 Q90 95 95 105 Q100 100 105 105 Q110 95 100 88" fill="#2F4F4F"/>
+  <path d="M100 88 Q95 92 100 96 Q105 92 100 88" fill="#696969"/>
+  
+  <!-- 眼睛 -->
+  <circle cx="88" cy="70" r="5" fill="#000"/>
+  <circle cx="112" cy="70" r="5" fill="#000"/>
+  <circle cx="89" cy="68" r="2" fill="#FFF"/>
+  <circle cx="113" cy="68" r="2" fill="#FFF"/>
+  
+  <!-- 左翅膀 (蓝色) -->
+  <ellipse cx="70" cy="120" rx="18" ry="40" fill="#4169E1" stroke="#0000CD" stroke-width="1"/>
+  <ellipse cx="70" cy="120" rx="12" ry="30" fill="#6495ED"/>
+  <!-- 翅膀羽毛纹理 -->
+  <path d="M60 100 Q65 110 60 120 Q65 130 60 140" stroke="#0000CD" stroke-width="1" fill="none"/>
+  <path d="M65 105 Q70 115 65 125 Q70 135 65 145" stroke="#0000CD" stroke-width="1" fill="none"/>
+  
+  <!-- 右翅膀 (蓝色) -->
+  <ellipse cx="130" cy="120" rx="18" ry="40" fill="#4169E1" stroke="#0000CD" stroke-width="1"/>
+  <ellipse cx="130" cy="120" rx="12" ry="30" fill="#6495ED"/>
+  <!-- 翅膀羽毛纹理 -->
+  <path d="M140 100 Q135 110 140 120 Q135 130 140 140" stroke="#0000CD" stroke-width="1" fill="none"/>
+  <path d="M135 105 Q130 115 135 125 Q130 135 135 145" stroke="#0000CD" stroke-width="1" fill="none"/>
+  
+  <!-- 尾巴 (长而鲜艳) -->
+  <ellipse cx="100" cy="175" rx="15" ry="35" fill="#FF4500" stroke="#DC143C" stroke-width="1"/>
+  <ellipse cx="95" cy="175" rx="8" ry="30" fill="#4169E1"/>
+  <ellipse cx="105" cy="175" rx="8" ry="30" fill="#FFD700"/>
+  
+  <!-- 腿部 (较粗壮) -->
+  <rect x="90" y="170" width="4" height="18" fill="#2F4F4F"/>
+  <rect x="106" y="170" width="4" height="18" fill="#2F4F4F"/>
+  
+  <!-- 爪子 (大型) -->
+  <path d="M88 188 L85 192 M90 188 L87 192 M92 188 L95 192 M94 188 L97 192" 
+        stroke="#2F4F4F" stroke-width="2" fill="none"/>
+  <path d="M104 188 L101 192 M106 188 L103 192 M108 188 L111 192 M110 188 L113 192" 
+        stroke="#2F4F4F" stroke-width="2" fill="none"/>
+        
+  <!-- 面部羽毛线条 -->
+  <path d="M85 82 Q90 85 85 88" stroke="#4169E1" stroke-width="1" fill="none"/>
+  <path d="M115 82 Q110 85 115 88" stroke="#4169E1" stroke-width="1" fill="none"/>
+</svg>

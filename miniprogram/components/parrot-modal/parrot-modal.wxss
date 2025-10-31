@@ -1,0 +1,83 @@
+/* 复用 pages/parrots 中的弹窗样式，做组件内复制以保障隔离 */
+.modal-overlay {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8rpx);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 700rpx;
+  max-height: 82vh;
+  background: #ffffff;
+  border-radius: 48rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.18);
+  font-family: 'Microsoft YaHei','PingFang SC','Hiragino Sans GB','Heiti SC','SimHei',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans',sans-serif;
+  /* 避开微信右上角胶囊按钮，整体下移一点 */
+  margin-top: 96rpx;
+}
+
+.modal-header-gradient {
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  padding: 24rpx 32rpx;
+  position: relative;
+}
+.modal-header-row { display: flex; align-items: center; justify-content: space-between; }
+.modal-title { color: #ffffff; font-size: 36rpx; font-weight: bold; }
+.modal-close-btn { width: 56rpx; height: 56rpx; border-radius: 50%; background: rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; position:absolute; top:16rpx; right:16rpx; }
+.modal-close-icon { color: #ffffff; font-size: 32rpx; }
+/* 图片版关闭图标尺寸 */
+.modal-close-icon-img { width: 32rpx; height: 32rpx; }
+
+.modal-scroll { max-height: calc(82vh - 240rpx); }
+.form-section { padding: 32rpx; }
+.form-item { margin-bottom: 24rpx; }
+.form-label { display:block; font-size:26rpx; color:#374151; font-weight:600; margin-bottom:12rpx; }
+.label-icon { color:#10B981; margin-right:12rpx; }
+/* 图片版标签图标尺寸 */
+.label-icon-img { width: 28rpx; height: 28rpx; margin-right: 12rpx; }
+
+.text-input { width:100%; box-sizing:border-box; padding: 0 24rpx; border:2rpx solid #e5e7eb; border-radius:32rpx; font-size:26rpx; height:88rpx; }
+.text-input:focus { border-color:#26A69A; background:#ffffff; }
+.textarea-input { width:100%; box-sizing:border-box; padding:24rpx; border:2rpx solid #e5e7eb; border-radius:32rpx; font-size:26rpx; min-height:160rpx; }
+
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:24rpx; }
+.picker-wrapper { position:relative; }
+.picker-display { display:flex; align-items:center; justify-content:space-between; padding:24rpx; border:2rpx solid #e5e7eb; border-radius:32rpx; font-size:26rpx; background:#ffffff; }
+.picker-arrow { color:#9CA3AF; }
+/* 图片版下拉箭头尺寸 */
+.picker-arrow-img { width: 28rpx; height: 28rpx; }
+
+.gender-row { display:flex; gap:16rpx; }
+.gender-btn { flex:1; text-align:center; padding:20rpx; border-radius:24rpx; font-size:26rpx; border:2rpx solid transparent; }
+.gender-male { background:#f1f5ff; color:#1e40af; }
+.gender-male.active { background:#dbeafe; border-color:#93c5fd; color:#1e3a8a; }
+.gender-female { background:#fff1f5; color:#9d174d; }
+.gender-female.active { background:#ffe4e6; border-color:#f9a8d4; color:#831843; }
+
+.modal-footer { display:flex; gap:12rpx; padding:20rpx 28rpx; border-top:2rpx solid #f3f4f6; background:#f9fafb; }
+.btn-secondary, .btn-primary { flex:1; padding:18rpx 24rpx; border-radius:28rpx; font-size:26rpx; }
+.btn-secondary { background:#e5e7eb; color:#374151; }
+.btn-primary { background: linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4); color:#ffffff; }
+.btn-primary.is-disabled { opacity:0.5; }
+
+.photo-upload { padding:16rpx 0; }
+.photo-preview { position:relative; width:220rpx; height:220rpx; border-radius:24rpx; overflow:hidden; }
+.preview-image { width:100%; height:100%; }
+.photo-actions { position:absolute; top:12rpx; right:12rpx; display:flex; gap:12rpx; }
+.action-btn { width:60rpx; height:60rpx; background:rgba(0,0,0,0.55); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.action-icon { color:#fff; font-size:28rpx; }
+/* 图片版操作图标尺寸 */
+.action-icon-img { width: 28rpx; height: 28rpx; }
+.upload-area { display:flex; flex-direction:column; align-items:center; justify-content:center; width:220rpx; height:220rpx; border:2rpx dashed #d1d5db; border-radius:24rpx; background:#f9fafb; }
+.upload-icon { font-size:48rpx; }
+.upload-text { margin-top:12rpx; color:#6b7280; font-size:24rpx; }
+/* 图片版上传图标尺寸 */
+.upload-icon-img { width: 48rpx; height: 48rpx; }

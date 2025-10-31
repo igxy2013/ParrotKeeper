@@ -1,7 +1,84 @@
 /* pages/parrots/detail/detail.wxss */
+
+/* 页面容器 - 浅色渐变背景，匹配参考APP */
 .page-container {
-  background-color: #f5f5f5;
+  background: linear-gradient(135deg, #dbeafe 0%, #ffffff 50%, #dcfce7 100%);
   min-height: 100vh;
+  position: relative;
+}
+
+/* 自定义头部 - 匹配参考APP的绿色渐变 */
+.page-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: linear-gradient(90deg, #10b981 0%, #14b8a6 50%, #06b6d4 100%);
+  backdrop-filter: blur(20rpx);
+  padding: 88rpx 32rpx 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  flex: 1;
+}
+.aitext{
+  font-size: 30rpx;
+  font-weight: 500;
+  color:#8b5cf6
+}
+.back-btn {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10rpx);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.back-icon {
+  font-size: 36rpx;
+  color: white;
+  font-weight: bold;
+}
+
+/* 图片版返回图标尺寸（与通用头部一致） */
+.back-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.title-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
 }
 
 /* 加载状态 */
@@ -11,13 +88,14 @@
   align-items: center;
   justify-content: center;
   height: 60vh;
+  padding-top: 200rpx;
 }
 
 .loading-spinner {
   width: 60rpx;
   height: 60rpx;
-  border: 4rpx solid #f3f3f3;
-  border-top: 4rpx solid #4CAF50;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+  border-top: 4rpx solid #ffffff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -30,386 +108,705 @@
 .loading-text {
   margin-top: 20rpx;
   font-size: 28rpx;
-  color: #666;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-/* 头部照片区域 */
-.photo-section {
-  background: white;
-  padding: 40rpx;
+/* 主内容容器 - 调整间距匹配参考APP */
+.content-container {
+  padding: 48rpx 32rpx 48rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 48rpx;
+}
+
+/* 鹦鹉信息卡片 - 优化样式匹配参考APP */
+.parrot-info-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20rpx);
+  border-radius: 48rpx;
+  padding: 48rpx;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.1);
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.parrot-main-info {
   display: flex;
   align-items: center;
-  gap: 30rpx;
+  gap: 32rpx;
+  margin-bottom: 32rpx;
+  position: relative;
 }
 
-.photo-container {
+.parrot-avatar-wrapper {
   position: relative;
-  width: 200rpx;
-  height: 200rpx;
-  border-radius: 20rpx;
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 24rpx;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
 }
 
-.parrot-photo {
+.parrot-avatar {
   width: 100%;
   height: 100%;
 }
 
-.photo-overlay {
+.parrot-details {
+  flex: 1;
+}
+
+/* 菜单按钮样式 */
+.menu-btn {
   position: absolute;
-  top: 10rpx;
-  right: 10rpx;
-}
-
-.status-badge {
-  padding: 8rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 24rpx;
-  color: white;
-  font-weight: 500;
-}
-
-.status-badge.status-healthy {
-  background: #4CAF50;
-}
-
-.status-badge.status-sick {
-  background: #f44336;
-}
-
-.status-badge.status-recovering {
-  background: #ff9800;
-}
-
-.status-badge.status-observation {
-  background: #2196f3;
-}
-
-.basic-info {
-  flex: 1;
-}
-
-.parrot-name {
-  font-size: 40rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10rpx;
-}
-
-.parrot-species {
-  font-size: 28rpx;
-  color: #666;
-  margin-bottom: 15rpx;
-}
-
-.parrot-gender {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.gender-icon {
-  font-size: 32rpx;
-  color: #4CAF50;
-}
-
-.gender-text {
-  font-size: 26rpx;
-  color: #666;
-}
-
-/* 信息区域 */
-.info-sections {
-  padding: 20rpx;
-}
-
-.info-section {
-  background: white;
-  border-radius: 16rpx;
-  margin-bottom: 20rpx;
-  overflow: hidden;
-}
-
-.section-title {
-  padding: 30rpx 30rpx 20rpx;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
-  border-bottom: 1rpx solid #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.view-all {
-  font-size: 26rpx;
-  color: #4CAF50;
-  font-weight: normal;
-}
-
-/* 信息列表 */
-.info-list {
-  padding: 20rpx 0;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 30rpx;
-  border-bottom: 1rpx solid #f8f8f8;
-}
-
-.info-item:last-child {
-  border-bottom: none;
-}
-
-.info-label {
-  font-size: 28rpx;
-  color: #666;
-  width: 200rpx;
-  flex-shrink: 0;
-}
-
-.info-value {
-  font-size: 28rpx;
-  color: #333;
-  flex: 1;
-  text-align: right;
-}
-
-.health-status {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10rpx;
-}
-
-.status-indicator {
-  width: 20rpx;
-  height: 20rpx;
-  border-radius: 50%;
-}
-
-.status-indicator.status-healthy {
-  background: #4CAF50;
-}
-
-.status-indicator.status-sick {
-  background: #f44336;
-}
-
-.status-indicator.status-recovering {
-  background: #ff9800;
-}
-
-.status-indicator.status-observation {
-  background: #2196f3;
-}
-
-.status-text {
-  font-size: 28rpx;
-  color: #333;
-}
-
-/* 统计网格 */
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30rpx;
-  padding: 30rpx;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-number {
-  font-size: 48rpx;
-  font-weight: 600;
-  color: #4CAF50;
-  margin-bottom: 10rpx;
-}
-
-.stat-label {
-  font-size: 24rpx;
-  color: #666;
-}
-
-/* 备注内容 */
-.notes-content {
-  padding: 30rpx;
-}
-
-.notes-text {
-  font-size: 28rpx;
-  color: #333;
-  line-height: 1.6;
-}
-
-/* 记录列表 */
-.records-list {
-  padding: 20rpx 0;
-}
-
-.record-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 20rpx 30rpx;
-  border-bottom: 1rpx solid #f8f8f8;
-}
-
-.record-item:last-child {
-  border-bottom: none;
-}
-
-.record-type {
+  top: 0;
+  right: 0;
   width: 60rpx;
   height: 60rpx;
   border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20rpx;
-  flex-shrink: 0;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  border: 2rpx solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
-.record-type.type-feeding {
-  background: #e8f5e8;
+.menu-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 1);
 }
 
-.record-type.type-cleaning {
-  background: #e3f2fd;
-}
-
-.record-type.type-health_check {
-  background: #fff3e0;
-}
-
-.type-icon {
-  font-size: 24rpx;
-}
-
-.record-content {
-  flex: 1;
-}
-
-.record-title {
+.menu-icon {
   font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
-  margin-bottom: 8rpx;
-}
-
-.record-time {
-  font-size: 24rpx;
-  color: #999;
-  margin-bottom: 8rpx;
-}
-
-.record-notes {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.4;
-}
-
-/* 操作按钮 */
-.action-buttons {
-  padding: 20rpx;
-  padding-bottom: 40rpx;
-}
-
-.action-row {
+  color: #6b7280;
+  font-weight: bold;
+  line-height: 1;
   display: flex;
-  gap: 20rpx;
-  margin-bottom: 20rpx;
-}
-
-.action-row:last-child {
-  margin-bottom: 0;
-}
-
-.action-btn {
-  flex: 1;
-  height: 100rpx;
-  border-radius: 16rpx;
-  border: none;
-  display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
-  font-size: 24rpx;
-  color: white;
-  position: relative;
-  overflow: hidden;
 }
+/* 图片版菜单图标尺寸 */
+.menu-icon-img { width: 28rpx; height: 28rpx; }
 
-.action-btn::after {
-  content: '';
-  position: absolute;
+/* 菜单遮罩层样式 */
+.menu-overlay {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.1);
+  z-index: 999;
+  background: transparent;
+}
+
+/* 弹出菜单样式 */
+.popup-menu {
+  position: absolute;
+  top: 70rpx;
+  right: 0;
+  background: white;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+  border: 2rpx solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transform: translateY(-10rpx) scale(0.95);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  min-width: 200rpx;
 }
 
-.action-btn:active::after {
+.popup-menu.show {
   opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
-.action-btn.feeding {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
-  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 32rpx;
+  transition: background-color 0.2s ease;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
 }
 
-.action-btn.cleaning {
-  background: linear-gradient(135deg, #2196f3, #1976d2);
-  box-shadow: 0 4rpx 12rpx rgba(33, 150, 243, 0.3);
+.menu-item:last-child {
+  border-bottom: none;
 }
 
-.action-btn.health {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
+.menu-item:active {
+  background: rgba(0, 0, 0, 0.05);
 }
 
-.action-btn.edit {
-  background: linear-gradient(135deg, #9c27b0, #7b1fa2);
-  box-shadow: 0 4rpx 12rpx rgba(156, 39, 176, 0.3);
+.menu-item.delete-item:active {
+  background: rgba(244, 67, 54, 0.1);
 }
 
-.action-btn.records {
-  background: linear-gradient(135deg, #607d8b, #455a64);
-  box-shadow: 0 4rpx 12rpx rgba(96, 125, 139, 0.3);
+.menu-item-icon {
+  font-size: 28rpx;
 }
 
-.action-btn.delete {
-  background: linear-gradient(135deg, #f44336, #d32f2f);
-  box-shadow: 0 4rpx 12rpx rgba(244, 67, 54, 0.3);
+.menu-item-text {
+  font-size: 28rpx;
+  color: #374151;
+  font-weight: 500;
 }
 
-.btn-icon {
-  font-size: 32rpx;
+.delete-item .menu-item-text {
+  color: #dc2626;
 }
 
-.btn-text {
+.parrot-name {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8rpx;
+}
+
+.parrot-species {
+  font-size: 28rpx;
+  color: #6b7280;
+  margin-bottom: 16rpx;
+}
+
+.parrot-status-tags {
+  display: flex;
+  gap: 18rpx;
+  flex-wrap: wrap;
+}
+
+/* 统一健康徽章样式，与列表页一致 */
+.health-badge {
+  font-size: 18rpx;
+  font-weight: 600;
+  padding: 8rpx 16rpx;
+  border-radius: 24rpx;
+  color: #ffffff;
+}
+.health-badge.health-healthy {
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+}
+.health-badge.health-sick {
+  background: linear-gradient(135deg, #f44336 0%, #EF5350 100%);
+}
+.health-badge.health-recovering {
+  background: linear-gradient(135deg, #FF9800 0%, #FFB74D 100%);
+}
+.health-badge.health-observation {
+  background: linear-gradient(135deg, #2196F3 0%, #42A5F5 100%);
+}
+
+/* 快速操作按钮 - 优化样式匹配参考APP */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24rpx;
+  margin-bottom: 48rpx;
+}
+
+.action-btn {
+  padding: 24rpx 16rpx;
+  border-radius: 32rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  transition: all 0.3s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+.action-icon {
+  font-size: 40rpx;
+  margin-bottom: 4rpx;
+}
+
+/* 统一为图片化图标样式，与首页保持一致的尺寸 */
+.action-icon-wrapper {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  background: #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.action-btn:active .action-icon-wrapper {
+  transform: scale(1.05);
+}
+
+.action-icon-img { width: 44rpx; height: 44rpx; }
+
+.action-text {
   font-size: 24rpx;
   font-weight: 500;
 }
 
-/* 照片显示区域 */
-.photo-display {
-  text-align: center;
-  padding: 20rpx;
+.feeding-btn {
+  background: linear-gradient(135deg, #FFF4DF, #FEE8BF);
+  color: #ea580c;
 }
 
-.detail-photo {
-  width: 300rpx;
-  height: 300rpx;
+.feeding-btn:hover {
+  background: linear-gradient(135deg, #fed7aa, #fb923c);
+}
+
+.health-btn {
+  background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+  color: #7c3aed;
+}
+
+.health-btn:hover {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+}
+
+.cleaning-btn {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #2563eb;
+}
+
+.cleaning-btn:hover {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.breeding-btn {
+  background: linear-gradient(135deg, #E9FFF4, #D7F8E7);
+  color: #059669;
+}
+
+.breeding-btn:hover {
+  background: linear-gradient(135deg, #dcfce7, #a7f3d0);
+}
+
+.training-btn {
+  background: linear-gradient(135deg, #faf5ff, #e9d5ff);
+  color: #9333ea;
+}
+
+.training-btn:hover {
+  background: linear-gradient(135deg, #e9d5ff, #c4b5fd);
+}
+
+.photo-btn {
+  background: linear-gradient(135deg, #fdf2f8, #fce7f3);
+  color: #ec4899;
+}
+
+.photo-btn:hover {
+  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+}
+
+.last-feed-info {
+  font-size: 24rpx;
+  color: #6b7280;
+  text-align: center;
+  padding: 16rpx;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(16, 185, 129, 0.1);
+}
+
+.last-fed-text {
+  font-size: 24rpx;
+  color: #6b7280;
+  margin-bottom: 8rpx;
+}
+
+.last-fed-time {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* 选项卡容器 - 优化样式匹配参考APP */
+.tabs-container {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20rpx);
+  border-radius: 48rpx;
+  overflow: hidden;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.1);
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.tabs-bar {
+  display: flex;
+  background: rgba(249, 250, 251, 0.5);
+  padding: 0;
+}
+
+.tab-item {
+  flex: 1;
+  padding: 32rpx 24rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tab-item.active {
+  background: white;
+  color: #10b981;
+  box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.15);
+  border-bottom: 4rpx solid #10b981;
+}
+
+.tab-content {
+  padding: 48rpx;
+}
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+
+/* 信息网格 - 优化样式匹配参考APP */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32rpx;
+  margin-bottom: 32rpx;
+}
+
+.info-grid-item {
+  border-radius: 32rpx;
+  padding: 32rpx 24rpx;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-grid-item.type-info {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.info-grid-item.age-info {
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+}
+
+.info-grid-item.gender-info {
+  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+}
+
+.info-grid-item.color-info {
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+}
+
+.info-grid-item.weight-info {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+}
+
+.info-grid-item.number-info {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+/* 脚环号信息样式 */
+.info-grid-item.ring-info {
+  background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+  border-left: 4px solid #ea580c;
+}
+
+.ring-info .grid-label {
+  color: #ea580c;
+}
+
+/* 入住日期信息样式 */
+.info-grid-item.admission-info {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-left: 4px solid #0ea5e9;
+}
+
+.admission-info .grid-label {
+  color: #0ea5e9;
+}
+
+.grid-label {
+  font-size: 24rpx;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.type-info .grid-label {
+  color: #2563eb;
+}
+
+.age-info .grid-label {
+  color: #7c3aed;
+}
+
+.gender-info .grid-label {
+  color: #ec4899;
+}
+
+.color-info .grid-label {
+  color: #8b5cf6;
+}
+
+.weight-info .grid-label {
+  color: #16a34a;
+}
+
+.number-info .grid-label {
+  color: #d97706;
+}
+
+.admission-info .grid-label {
+  color: #0ea5e9;
+}
+
+.grid-value {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* 特征卡片 - 优化样式匹配参考APP */
+.characteristics-card {
+  background: linear-gradient(90deg, #fed7aa, #fef3c7);
+  border-radius: 32rpx;
+  padding: 40rpx;
+  border: 2rpx solid rgba(251, 146, 60, 0.2);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+  padding-left: 8rpx;
+}
+
+.card-icon {
+  font-size: 28rpx;
+}
+/* 卡片头部图标尺寸（PNG） */
+.card-icon-img { width: 32rpx; height: 32rpx; }
+
+.card-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #ea580c;
+}
+
+/* 卡片右侧操作区域与图标尺寸 */
+.card-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+.card-action-icon-img {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.characteristics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.characteristic-item {
+  font-size: 28rpx;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* 备注信息样式 */
+.notes-content {
+  display: flex;
+  flex-direction: column;
+  padding-left: 8rpx;
+}
+
+.notes-text {
+  font-size: 28rpx;
+  color: #374151;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notes-empty {
+  font-size: 28rpx;
+  color: #9ca3af;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* 记录列表 - 优化样式匹配参考APP */
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+
+.record-item {
+  border-radius: 32rpx;
+  padding: 32rpx;
+  position: relative;
+  overflow: hidden;
+  border: 2rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.feeding-record {
+  background: linear-gradient(90deg, #fed7aa, rgba(251, 146, 60, 0.5));
+  border-color: rgba(251, 146, 60, 0.2);
+}
+
+.health-record {
+  background: linear-gradient(90deg, #bbf7d0, rgba(34, 197, 94, 0.5));
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.training-record {
+  background: linear-gradient(90deg, #e0e7ff, rgba(139, 92, 246, 0.5));
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.record-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.record-food, .record-skill {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.record-amount, .record-date {
+  font-size: 24rpx;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.health-status-badge, .progress-badge {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+}
+
+.status-excellent, .progress-expert {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-good, .progress-good {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-fair, .progress-fair {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-poor, .progress-beginner {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.record-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16rpx;
+}
+
+.record-time, .record-duration {
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.record-details {
+  display: flex;
+  gap: 24rpx;
+  margin: 16rpx 0;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.detail-label {
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.detail-value {
+  font-size: 24rpx;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.record-notes {
+  font-size: 26rpx;
+  color: #374151;
+  line-height: 1.5;
+  margin-top: 16rpx;
+  padding: 16rpx;
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 12rpx;
-  border: 2rpx solid #e5e5e5;
+  border: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+/* 空状态提示 */
+.empty-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 40rpx;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+  opacity: 0.6;
+}
+/* 空态图片图标尺寸（PNG） */
+.empty-icon-img { width: 60rpx; height: 60rpx; }
+
+.empty-text {
+  font-size: 28rpx;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* 响应式设计 */
+@media (max-width: 750rpx) {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .quick-actions {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .parrot-main-info {
+    flex-direction: column;
+    text-align: center;
+  }
 }

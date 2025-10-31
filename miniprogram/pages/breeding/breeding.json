@@ -1,0 +1,11 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "繁殖记录",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50,
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
+}

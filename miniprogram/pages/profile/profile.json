@@ -1,5 +1,10 @@
 {
-  "usingComponents": {},
+  "usingComponents": { 
+    "app-header": "/components/app-header/app-header", 
+    "bottom-nav": "/components/bottom-nav/bottom-nav",
+    "notification-center": "/components/notification-center/notification-center"
+  },
+  "navigationStyle": "custom",
   "navigationBarTitleText": "个人中心",
   "navigationBarBackgroundColor": "#4CAF50",
   "navigationBarTextStyle": "white",

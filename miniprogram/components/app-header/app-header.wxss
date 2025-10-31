@@ -1,0 +1,99 @@
+.ah-app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  padding: 16rpx 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.25);
+}
+
+/* 橙色主题（喂食页面使用） */
+.ah-theme-orange {
+  background: linear-gradient(90deg, #fb923c 0%, #fbbf24 50%, #facc15 100%);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(251, 146, 60, 0.35);
+}
+
+/* 新增：蓝色主题（清洁记录） */
+.ah-theme-blue {
+  background: linear-gradient(90deg, #60a5fa 0%, #38bdf8 50%, #22d3ee 100%);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(56, 189, 248, 0.35);
+}
+
+/* 新增：紫色主题（繁殖记录） */
+.ah-theme-purple {
+  background: linear-gradient(90deg, #a78bfa 0%, #c084fc 50%, #d946ef 100%);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(167, 139, 250, 0.35);
+}
+
+/* 新增：粉色主题（清洁记录按钮对应的粉色） */
+.ah-theme-pink {
+  background: linear-gradient(90deg, #f472b6 0%, #fb7185 50%, #f43f5e 100%);
+  box-shadow: 0 20rpx 50rpx -24rpx rgba(244, 113, 181, 0.35);
+}
+
+.ah-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ah-header-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.ah-back-btn {
+  width: 72rpx;
+  height: 72rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12rpx);
+}
+
+.ah-back-icon {
+  font-size: 36rpx;
+  color: #ffffff;
+}
+
+/* 统一返回图标图片尺寸 */
+.ah-back-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.ah-app-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ah-app-title {
+  color: #ffffff;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.ah-app-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 24rpx;
+}
+
+.ah-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+/* 插槽内容样式 */
+.ah-header-right .header-action {
+  display: flex;
+  align-items: center;
+}
+
+.ah-header-right .header-icon {
+  width: 36rpx;
+  height: 36rpx;
+}

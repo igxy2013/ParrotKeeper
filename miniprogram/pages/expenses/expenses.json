@@ -1,5 +1,12 @@
 {
-  "navigationBarTitleText": "支出管理",
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header",
+    "expense-modal": "/components/expense-modal/expense-modal"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "收支管理",
   "enablePullDownRefresh": true,
-  "onReachBottomDistance": 50
+  "onReachBottomDistance": 50,
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
 }

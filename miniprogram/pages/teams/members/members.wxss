@@ -1,0 +1,5 @@
+.container { padding: 20rpx; }
+.page-content { padding: 20rpx; }
+.empty-tip { text-align: center; padding: 40rpx 20rpx; color: #6b7280; }
+.empty-text { font-size: 26rpx; }
+

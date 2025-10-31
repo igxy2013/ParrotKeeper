@@ -1,0 +1,40 @@
+<view class="page-container">
+  <app-header title="帮助反馈" subtitle="提交问题与建议" showBack="true"></app-header>
+  <view class="page-content">
+    <view class="form-section">
+      <view class="section-title">反馈内容</view>
+      <textarea 
+        class="form-textarea" 
+        placeholder="请描述您遇到的问题或建议（必填，最多500字）"
+        value="{{form.content}}"
+        maxlength="500"
+        bindinput="onInput"
+        data-field="content"
+      />
+      <view class="char-count">{{form.content.length}}/500</view>
+    </view>
+
+    <view class="form-section">
+      <view class="section-title">相关截图（可选，最多3张）</view>
+      <view class="photo-upload">
+        <view class="photo-list">
+          <block wx:for="{{photos}}" wx:key="index">
+            <view class="photo-item">
+              <image class="preview-image" src="{{item.url || item.tempPath}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}" />
+              <view class="delete-btn" bindtap="removePhoto" data-index="{{index}}">×</view>
+            </view>
+          </block>
+          <view class="upload-area" wx:if="{{photos.length < 3}}" bindtap="choosePhoto">
+            <view class="upload-icon">📷</view>
+            <text class="upload-text">添加截图</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-actions">
+      <button class="btn-primary {{!canSubmit ? 'is-disabled' : ''}}" disabled="{{!canSubmit}}" bindtap="submitFeedback">提交反馈</button>
+    </view>
+  </view>
+  <bottom-nav active="profile" />
+</view>

@@ -22,10 +22,21 @@ def login():
         session_data = get_wechat_session(code)
         if not session_data:
             return error_response('登录失败，请重试')
-        
+
+        # 如果微信返回错误码，直接将错误信息透出
+        if isinstance(session_data, dict) and session_data.get('errcode'):
+            errmsg = session_data.get('errmsg', '未知错误')
+            # 针对配置缺失的情况提供更友好的提示
+            if session_data.get('errcode') == 'NO_APP_CONFIG':
+                return error_response('服务端未配置微信AppID/Secret，请先配置后重试')
+            return error_response(f'微信登录失败: {errmsg}')
+
         openid = session_data.get('openid')
         session_key = session_data.get('session_key')
-        
+
+        if not openid:
+            return error_response('微信登录失败：缺少openid')
+
         # 查找或创建用户
         user = User.query.filter_by(openid=openid).first()
         

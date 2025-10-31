@@ -1,0 +1,12 @@
+{
+  "usingComponents": { 
+    "app-header": "/components/app-header/app-header",
+    "bottom-nav": "/components/bottom-nav/bottom-nav"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "应用设置",
+  "navigationBarBackgroundColor": "#4CAF50",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f8f9ff",
+  "enablePullDownRefresh": false
+}
