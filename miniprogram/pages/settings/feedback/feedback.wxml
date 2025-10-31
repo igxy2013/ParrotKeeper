@@ -15,17 +15,6 @@
     </view>
 
     <view class="form-section">
-      <view class="section-title">联系方式（可选）</view>
-      <input 
-        class="form-input" 
-        placeholder="邮箱/微信/手机号（选填，用于联系反馈处理）"
-        value="{{form.contact}}"
-        bindinput="onInput"
-        data-field="contact"
-      />
-    </view>
-
-    <view class="form-section">
       <view class="section-title">相关截图（可选，最多3张）</view>
       <view class="photo-upload">
         <view class="photo-list">

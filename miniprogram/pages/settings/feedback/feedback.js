@@ -4,8 +4,7 @@ const app = getApp()
 Page({
   data: {
     form: {
-      content: '',
-      contact: ''
+      content: ''
     },
     photos: [], // { tempPath, url }
     canSubmit: false
@@ -90,7 +89,6 @@ Page({
         method: 'POST',
         data: {
           content: this.data.form.content.trim(),
-          contact: this.data.form.contact.trim(),
           image_urls
         }
       })
@@ -98,7 +96,7 @@ Page({
       if (res && res.success) {
         app.showSuccess('反馈已提交，感谢您的宝贵意见！')
         // 清空表单
-        this.setData({ form: { content: '', contact: '' }, photos: [], canSubmit: false })
+        this.setData({ form: { content: '' }, photos: [], canSubmit: false })
       } else {
         throw new Error(res && res.message ? res.message : '提交失败')
       }
