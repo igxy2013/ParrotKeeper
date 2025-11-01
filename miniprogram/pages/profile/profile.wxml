@@ -6,23 +6,17 @@
   <view class="user-card" wx:if="{{isLogin}}">
     <view class="card-background"></view>
     <view class="user-avatar">
-        <view class="avatar-container" bindtap="chooseAvatarPhoto" wx:if="{{isEditingNickname}}">
+        <view class="avatar-container" bindtap="chooseAvatarPhoto">
           <image 
-            class="avatar-image editable" 
+            class="avatar-image {{isEditingNickname ? 'editable' : ''}}" 
             src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
             mode="aspectFill"
           />
-          <view class="avatar-edit-overlay">
+          <view class="avatar-edit-overlay" wx:if="{{isEditingNickname}}">
             <image class="edit-icon-img" src="{{iconPaths.cameraLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="cameraLine" catchtap="chooseAvatarPhoto" />
             <text class="avatar-edit-text">点击更换</text>
           </view>
         </view>
-      <image 
-        class="avatar-image" 
-        src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
-        mode="aspectFill"
-        wx:else
-      />
     </view>
     <view class="user-info">
       <view class="nickname-display">

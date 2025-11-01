@@ -60,6 +60,11 @@
 
 .avatar-container {
   position: relative;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  overflow: hidden; /* 确保覆盖层裁剪与头像一致，消除边缘错位 */
+  display: inline-block; /* 与图片尺寸对齐，避免容器尺寸波动 */
 }
 
 .avatar-edit-overlay {

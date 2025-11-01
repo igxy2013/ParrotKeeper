@@ -94,6 +94,27 @@ def get_overview():
             )
         ).scalar() or 0
         
+        # 总喂食次数（与今日、本月口径保持一致：按 feeding_time、notes、amount 聚合计数）
+        total_feedings = db.session.query(
+            FeedingRecord.feeding_time,
+            FeedingRecord.notes,
+            FeedingRecord.amount
+        ).join(Parrot).filter(
+            and_(
+                Parrot.id.in_(parrot_ids),
+                Parrot.is_active == True
+            )
+        ).group_by(
+            FeedingRecord.feeding_time,
+            FeedingRecord.notes,
+            FeedingRecord.amount
+        ).count() or 0
+
+        # 总健康检查次数（按健康记录条目计数）
+        total_checkups = db.session.query(func.count(HealthRecord.id)).filter(
+            HealthRecord.parrot_id.in_(parrot_ids)
+        ).scalar() or 0
+
         # 今日记录数
         today = date.today()
         today_feeding = db.session.query(
@@ -148,6 +169,8 @@ def get_overview():
             'health_status': health_status,
             'monthly_expense': float(monthly_expense),
             'monthly_income': float(monthly_income),
+            'total_feedings': total_feedings,
+            'total_checkups': total_checkups,
             'monthly_feeding': monthly_feeding,
             'monthly_health_checks': monthly_health_checks,
             'stats_views': user_stats.stats_views,  # 添加统计查看次数
