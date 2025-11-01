@@ -78,7 +78,7 @@
   justify-content: space-between;
   padding: 16rpx 20rpx;
 }
-.dropdown-item text { font-size: 24rpx; color: #374151; }
+.dropdown-item .item-text { font-size: 24rpx; color: #374151; }
 .check-icon { font-size: 24rpx; color: #10b981; }
 .chart-wrapper {
   width: 100%;

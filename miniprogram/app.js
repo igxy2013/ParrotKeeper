@@ -471,8 +471,16 @@ App({
     return userInfo.teamRole === 'owner' || userInfo.teamRole === 'admin'
   },
 
+  // 检查是否为超级管理员
+  isSuperAdmin() {
+    const userInfo = this.globalData.userInfo
+    return !!(userInfo && userInfo.role === 'super_admin')
+  },
+
   // 检查用户是否有操作权限（增删改）
   hasOperationPermission() {
+    // 超级管理员始终拥有操作权限
+    if (this.isSuperAdmin()) return true
     return this.isTeamAdmin()
   }
 })

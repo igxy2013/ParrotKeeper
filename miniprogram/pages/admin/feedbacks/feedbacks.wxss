@@ -1,0 +1,13 @@
+.page-container { min-height: 100vh; background: #f8f9fa; }
+.page-content { padding: 20rpx; }
+.no-access, .empty, .loading { color: #6b7280; text-align: center; padding: 40rpx 0; }
+.feedback-item { background: #fff; border-radius: 20rpx; padding: 20rpx; margin-bottom: 20rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); }
+.row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10rpx; }
+.nickname { font-size: 30rpx; color: #111827; font-weight: 600; }
+.time { font-size: 24rpx; color: #6b7280; }
+.content { font-size: 28rpx; color: #374151; margin: 6rpx 0 10rpx; }
+.contact { font-size: 24rpx; color: #6b7280; }
+.images { display: flex; gap: 8rpx; margin-top: 10rpx; flex-wrap: wrap; }
+.img { width: 160rpx; height: 160rpx; border-radius: 8rpx; background: #f3f4f6; }
+.actions { margin-top: 12rpx; display: flex; justify-content: flex-end; }
+.btn-danger { background-color: #ef4444; color: #fff; border: none; }

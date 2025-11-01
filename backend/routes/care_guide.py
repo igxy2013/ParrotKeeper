@@ -111,11 +111,35 @@ def get_care_guide():
 
 @care_guide_bp.route('', methods=['POST'])
 def update_care_guide():
-    # 简单安全控制：需要提供管理密钥
+    # 允许两种方式：1）提供有效管理密钥；2）已登录且为超级管理员
     expected_key = (current_app.config.get('CARE_GUIDE_ADMIN_KEY')
                     or os.environ.get('CARE_GUIDE_ADMIN_KEY'))
     admin_key = request.headers.get('X-Admin-Key', '')
-    if not expected_key or admin_key != expected_key:
+
+    authorized = False
+    # 方式一：管理密钥
+    if expected_key and admin_key == expected_key:
+        authorized = True
+    else:
+        # 方式二：超级管理员（需要请求头携带 X-OpenID）
+        try:
+            from models import User
+            openid = request.headers.get('X-OpenID')
+            user = None
+            if openid:
+                user = User.query.filter_by(openid=openid).first()
+                if not user and openid.startswith('account_'):
+                    try:
+                        user_id = int(openid.replace('account_', ''))
+                        user = User.query.filter_by(id=user_id, login_type='account').first()
+                    except ValueError:
+                        user = None
+            if user and getattr(user, 'role', 'user') == 'super_admin':
+                authorized = True
+        except Exception:
+            authorized = False
+
+    if not authorized:
         return error_response('无权限更新护理指南', 403)
 
     data = request.get_json() or {}

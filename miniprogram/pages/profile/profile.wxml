@@ -81,9 +81,9 @@
           <view class="mode-pill {{userMode === 'team' ? 'active' : ''}}" data-mode="team" bindtap="chooseUserMode">团队模式</view>
         </view>
     </view>
-  </view>
 
-<!-- 已移除头像选择弹窗：编辑模式下点击头像直接上传 -->
+
+
 
 <!-- 在用户信息卡片后新增统计网格 -->
 <view class="stats-grid" wx:if="{{isLogin}}">
@@ -376,7 +376,36 @@
     </block>
   </view>
 </view>
-
+    <!-- 后台管理卡片（仅超级管理员可见，样式对齐功能菜单） -->
+<view class="menu-card" wx:if="{{isSuperAdmin}}">
+      <view class="section-title">
+        <image class="section-icon-img" src="{{iconPaths.sectionSettings}}" mode="aspectFit" binderror="onProfileIconError" data-key="sectionSettings" />
+        <text>后台管理</text>
+      </view>
+      <view class="menu-list">
+        <view class="menu-item" bindtap="goAdminFeedbacks">
+          <view class="menu-item-icon bg-amber">
+            <image class="menu-item-icon-img" src="{{iconPaths.feedbackLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="feedbackLine" />
+          </view>
+          <view class="menu-item-content">
+            <view class="menu-item-title">反馈管理</view>
+            <view class="menu-item-desc">查看与处理用户反馈</view>
+          </view>
+          <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
+        </view>
+        <view class="menu-item" bindtap="goAdminCareGuideEditor">
+          <view class="menu-item-icon bg-green">
+            <image class="menu-item-icon-img" src="{{iconPaths.editLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine" />
+          </view>
+          <view class="menu-item-content">
+            <view class="menu-item-title">护理指南编辑</view>
+            <view class="menu-item-desc">编辑护理指南配置</view>
+          </view>
+          <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
+        </view>
+      </view>
+    </view>
+</view>
 <!-- 版本信息模块 -->
 <view class="version-card">
 <image class="version-logo-img" src="/images/logo.png" mode="aspectFit" />

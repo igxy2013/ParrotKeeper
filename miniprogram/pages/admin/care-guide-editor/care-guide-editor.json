@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "护理指南编辑",
+  "enablePullDownRefresh": false,
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
+}

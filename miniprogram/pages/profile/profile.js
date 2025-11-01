@@ -4,6 +4,7 @@ Page({
   data: {
     isLogin: false,
     userInfo: {},
+    isSuperAdmin: false,
     joinDate: '',
     roleDisplay: '',
     points: 0,
@@ -82,8 +83,17 @@ Page({
       userFill: '/images/remix/ri-user-fill.png',
       arrowRight: '/images/remix/arrow-right-s-line.png',
       addLine: '/images/remix/ri-add-line.png',
-      infoLine: '/images/remix/information-line.png'
+      infoLine: '/images/remix/information-line.png',
+      feedbackLine: '/images/remix/feedback-line.png'
     }
+  },
+
+  // —— 后台管理导航 ——
+  goAdminFeedbacks() {
+    wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' })
+  },
+  goAdminCareGuideEditor() {
+    wx.navigateTo({ url: '/pages/admin/care-guide-editor/care-guide-editor' })
   },
 
   onLoad() {
@@ -428,23 +438,52 @@ Page({
     wx.showToast({ title: '已打开客服会话', icon: 'none' });
   },
 
-  // 初始化用户信息
-  initUser() {
+  // 初始化用户信息（并从后端刷新）
+  async initUser() {
     const app = getApp();
     const isLogin = !!app.globalData.openid;
     const userInfo = app.globalData.userInfo || {};
-    // 角色显示：优先使用后端提供的自定义称谓，其次映射团队角色
-    const roleDisplay = userInfo.roleTitle || (app.isTeamAdmin() ? '管理员' : '成员');
-    // 积分显示：优先 points，其次 score，最后回退 0
     const points = (typeof userInfo.points === 'number' ? userInfo.points :
                     typeof userInfo.score === 'number' ? userInfo.score : 0);
     this.setData({
       isLogin,
       userInfo,
+      isSuperAdmin: (userInfo.role === 'super_admin'),
       joinDate: app.formatDate(userInfo.created_at || Date.now()),
-      roleDisplay,
+      roleDisplay: this.mapRoleDisplay(userInfo),
       points,
     });
+
+    // 若已登录，则尝试从后端获取最新的用户信息（包含role等字段）
+    if (isLogin) {
+      try {
+        const res = await app.request({ url: '/api/auth/profile', method: 'GET' });
+        if (res && res.success && res.data) {
+          const serverUser = res.data || {};
+          const merged = { ...userInfo, ...serverUser };
+          // 更新全局与本地缓存
+          app.globalData.userInfo = merged;
+          try { wx.setStorageSync('userInfo', merged); } catch (_) {}
+          // 更新页面显示
+          this.setData({
+            userInfo: merged,
+            isSuperAdmin: (merged.role === 'super_admin'),
+            roleDisplay: this.mapRoleDisplay(merged),
+            joinDate: app.formatDate(merged.created_at || Date.now()),
+          });
+        }
+      } catch (e) {
+        console.warn('刷新用户信息失败:', e);
+      }
+    }
+  },
+
+  // 将后端角色枚举映射为展示文案
+  mapRoleDisplay(userInfo) {
+    const role = (userInfo && userInfo.role) || 'user';
+    if (role === 'super_admin') return '超级管理员';
+    if (role === 'admin') return '管理员';
+    return '普通用户';
   },
 
   // 偏好读取

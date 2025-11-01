@@ -78,11 +78,11 @@ def create_team():
         db.session.add(team)
         db.session.flush()  # 获取team.id
         
-        # 创建团队成员记录（创建者自动成为owner）
+        # 创建团队成员记录（创建者自动成为管理员 admin）
         team_member = TeamMember(
             team_id=team.id,
             user_id=user.id,
-            role='owner',
+            role='admin',
             permissions={'all': True}
         )
         
@@ -98,7 +98,7 @@ def create_team():
             'name': team.name,
             'description': team.description,
             'invite_code': invite_code,
-            'role': 'owner'
+            'role': 'admin'
         }, '团队创建成功')
         
     except Exception as e:
@@ -345,18 +345,19 @@ def change_member_role(team_id, user_id):
         if new_role not in ['member', 'admin']:
             return error_response('无效的角色类型')
         
-        # 检查操作权限（只有owner可以修改角色）
+        # 检查操作权限（只有管理员可以修改角色）
         operator_member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
-        if not operator_member or operator_member.role != 'owner':
-            return error_response('只有团队创建者可以修改成员角色', 403)
+        if not operator_member or operator_member.role != 'admin':
+            return error_response('只有团队管理员可以修改成员角色', 403)
         
         # 查找要修改的成员
         target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
         if not target_member:
             return error_response('成员不存在')
         
-        # 不能修改团队创建者的角色
-        if target_member.role == 'owner':
+        # 不能修改团队创建者的角色（根据team.owner_id识别创建者）
+        team = operator_member.team
+        if target_member.user_id == team.owner_id:
             return error_response('不能修改团队创建者的角色')
         
         # 修改角色
@@ -421,8 +422,9 @@ def leave_team(team_id):
         if not member:
             return error_response('您不是该团队成员')
         
-        # 团队创建者不能离开团队
-        if member.role == 'owner':
+        # 团队创建者不能离开团队（根据team.owner_id识别创建者）
+        team = member.team
+        if member.user_id == team.owner_id:
             return error_response('团队创建者不能离开团队，请先转让团队或删除团队')
         
         # 离开团队

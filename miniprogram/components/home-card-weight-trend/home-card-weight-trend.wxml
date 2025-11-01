@@ -18,11 +18,11 @@
         </view>
         <view class="dropdown-menu" wx:if="{{showParrotDropdown}}">
           <view class="dropdown-item" catchtap="selectParrot" data-id="" data-name="">
-            <text>全部鹦鹉</text>
+            <text class="item-text">全部鹦鹉</text>
             <text class="check-icon">{{!selectedParrotId ? '✓' : ''}}</text>
           </view>
           <view class="dropdown-item" wx:for="{{series}}" wx:key="parrot_id" catchtap="selectParrot" data-id="{{item.parrot_id}}" data-name="{{item.parrot_name}}">
-            <text>{{item.parrot_name}}</text>
+            <text class="item-text">{{item.parrot_name}}</text>
             <text class="check-icon">{{selectedParrotId == item.parrot_id ? '✓' : ''}}</text>
           </view>
         </view>

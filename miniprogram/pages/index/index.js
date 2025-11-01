@@ -971,15 +971,13 @@ Page({
                 success: (res) => {
                   console.log('快速登录接口响应', res);
                   if (res.data.success) {
-                    const responseUserInfo = res.data.data.user;
+                    const responseUserInfo = res.data.data.user || {};
                     
-                    // 构建用户信息对象，使用默认头像
-                    const userInfo = {
-                      nickname: responseUserInfo.nickname,
-                      avatar_url: '/images/default-avatar.png', // 强制使用默认头像
-                      openid: responseUserInfo.openid,
-                      created_at: responseUserInfo.created_at
-                    };
+                    // 使用后端完整的用户信息，保留角色等字段；仅在缺失时回退默认头像
+                    const userInfo = { ...responseUserInfo };
+                    if (!userInfo.avatar_url) {
+                      userInfo.avatar_url = '/images/default-avatar.png';
+                    }
                     
                     // 存储用户信息和openid
                     wx.setStorageSync('userInfo', userInfo);

@@ -1,0 +1,16 @@
+<view class="page-container">
+  <app-header title="护理指南编辑" subtitle="编辑结构化配置或快速更新" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">该页面仅限超级管理员访问</view>
+    </block>
+    <block wx:else>
+      <view class="tips">建议按 JSON 结构编辑，提交后将覆盖服务器配置。</view>
+      <textarea class="editor" value="{{rawJson}}" bindinput="onInput" maxlength="-1" placeholder="粘贴或编辑护理指南JSON（需包含 sections 数组）" />
+      <view class="actions">
+        <button class="btn btn-secondary" bindtap="loadConfig">重新加载</button>
+        <button class="btn btn-primary" bindtap="submitConfig">提交更新</button>
+      </view>
+    </block>
+  </view>
+</view>

@@ -14,6 +14,8 @@ class User(db.Model):
     nickname = db.Column(db.String(100))
     avatar_url = db.Column(db.String(255))
     phone = db.Column(db.String(20))
+    # 用户角色：super_admin、admin、user；默认普通用户
+    role = db.Column(db.Enum('super_admin', 'admin', 'user'), default='user', nullable=False)
     login_type = db.Column(db.Enum('wechat', 'account'), default='wechat')  # 登录类型
     user_mode = db.Column(db.Enum('personal', 'team'), default='personal')  # 用户模式：个人模式或团队模式
     current_team_id = db.Column(db.Integer, nullable=True)  # 当前选中的团队，暂时移除外键约束

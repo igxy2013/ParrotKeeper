@@ -1,0 +1,38 @@
+<view class="page-container">
+  <app-header title="反馈管理" subtitle="查看与删除用户反馈" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">该页面仅限超级管理员访问</view>
+    </block>
+    <block wx:else>
+      <block wx:if="{{loading}}">
+        <view class="loading">加载中...</view>
+      </block>
+      <block wx:else>
+        <block wx:if="{{feedbacks.length}}">
+          <block wx:for="{{feedbacks}}" wx:key="id">
+            <view class="feedback-item">
+              <view class="row">
+                <text class="nickname">{{item.user_nickname || ('用户' + item.user_id)}}</text>
+                <text class="time">{{formatTime(item.created_at)}}</text>
+              </view>
+              <view class="content">{{item.content}}</view>
+              <view class="contact" wx:if="{{item.contact}}">联系方式：{{item.contact}}</view>
+              <view class="images" wx:if="{{item.image_urls && item.image_urls.length}}">
+                <block wx:for="{{item.image_urls}}" wx:key="{{index}}">
+                  <image class="img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-src="{{item}}" />
+                </block>
+              </view>
+              <view class="actions">
+                <button class="btn btn-danger" size="mini" bindtap="deleteFeedback" data-id="{{item.id}}">删除</button>
+              </view>
+            </view>
+          </block>
+        </block>
+        <block wx:else>
+          <view class="empty">暂无反馈</view>
+        </block>
+      </block>
+    </block>
+  </view>
+</view>

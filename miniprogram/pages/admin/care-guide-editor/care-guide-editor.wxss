@@ -1,0 +1,8 @@
+.page-container { min-height: 100vh; background: #f8f9fa; }
+.page-content { padding: 20rpx; }
+.no-access { color: #6b7280; text-align: center; padding: 40rpx 0; }
+.tips { font-size: 24rpx; color: #6b7280; margin-bottom: 10rpx; }
+.editor { width: 100%; min-height: 500rpx; background: #fff; border: 1rpx solid #e5e7eb; border-radius: 16rpx; padding: 20rpx; font-size: 26rpx; color: #111827; }
+.actions { margin-top: 16rpx; display: flex; gap: 16rpx; }
+.btn-primary { background-color: #10b981; color: #fff; border: none; }
+.btn-secondary { background-color: #e5e7eb; color: #111827; border: none; }

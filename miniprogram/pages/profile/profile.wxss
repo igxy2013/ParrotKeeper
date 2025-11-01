@@ -1929,3 +1929,23 @@ button.menu-item::after { border: none; }
 .theme-dark .member-role { background: rgba(255,255,255,0.12); color: #e5e7eb; }
 
 /* 护理指南弹窗 */
+/* Admin management styles */
+.admin-actions {
+  margin-top: 16rpx;
+}
+.admin-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-top: 1rpx solid #f0f0f0;
+}
+.admin-item:first-child {
+  border-top: none;
+}
+.admin-item-title {
+  font-size: 30rpx;
+  color: #111827;
+}
+.theme-dark .admin-item { border-top-color: #374151; }
+.theme-dark .admin-item-title { color: #f3f4f6; }

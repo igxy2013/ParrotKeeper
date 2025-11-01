@@ -6,6 +6,13 @@
   ],
   "subpackages": [
     {
+      "root": "pages/admin",
+      "pages": [
+        "feedbacks/feedbacks",
+        "care-guide-editor/care-guide-editor"
+      ]
+    },
+    {
       "root": "pages/parrots",
       "pages": [
         "parrots",
