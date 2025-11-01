@@ -1,0 +1,106 @@
+/* 组件样式，沿用统计卡片视觉 */
+.stat-card {
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08);
+  padding: 32rpx;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.stat-card.large {
+  /* 上下 40rpx，左右 48rpx，与其它卡片一致 */
+  padding: 40rpx 48rpx;
+}
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  margin-bottom: 12rpx;
+}
+.header-left { display: flex; align-items: center; gap: 14rpx; }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.stat-icon-container {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 行内布局时去掉底部外边距 */
+  margin-bottom: 0;
+  background: rgba(16, 185, 129, 0.1);
+}
+.stat-icon-img {
+  width: 40rpx; height: 40rpx; display: block;
+}
+.stat-label {
+  font-size: 28rpx;
+  color: #666666;
+  /* 行内标题不需要底部间距 */
+  margin-bottom: 0;
+}
+.avg-meta { display: flex; align-items: baseline; gap: 8rpx; }
+.meta-label { font-size: 22rpx; color: #6b7280; }
+.meta-value { font-size: 26rpx; font-weight: 700; color: #1f2937; }
+
+.parrot-selector { position: relative; }
+.selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 12rpx;
+  border-radius: 24rpx;
+  background: #f3f4f6;
+}
+.selector-text { font-size: 24rpx; color: #374151; }
+.selector-arrow-img { width: 24rpx; height: 24rpx; }
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8rpx;
+  min-width: 220rpx;
+  background: #ffffff;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 16rpx rgba(0,0,0,0.08);
+  z-index: 10;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 20rpx;
+}
+.dropdown-item text { font-size: 24rpx; color: #374151; }
+.check-icon { font-size: 24rpx; color: #10b981; }
+.chart-wrapper {
+  width: 100%;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx 20rpx;
+  margin-top: 16rpx;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+}
+.legend-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  margin-right: 8rpx;
+}
+.legend-name {
+  font-size: 24rpx;
+  color: #444;
+}

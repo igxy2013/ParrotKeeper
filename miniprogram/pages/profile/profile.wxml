@@ -6,17 +6,17 @@
   <view class="user-card" wx:if="{{isLogin}}">
     <view class="card-background"></view>
     <view class="user-avatar">
-      <view class="avatar-container" bindtap="toggleAvatarEdit" wx:if="{{isEditingNickname}}">
-        <image 
-          class="avatar-image editable" 
-          src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
-          mode="aspectFill"
-        />
-        <view class="avatar-edit-overlay">
-          <image class="edit-icon-img" src="{{iconPaths.cameraLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="cameraLine" />
-          <text class="avatar-edit-text">点击选择</text>
+        <view class="avatar-container" bindtap="chooseAvatarPhoto" wx:if="{{isEditingNickname}}">
+          <image 
+            class="avatar-image editable" 
+            src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
+            mode="aspectFill"
+          />
+          <view class="avatar-edit-overlay">
+            <image class="edit-icon-img" src="{{iconPaths.cameraLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="cameraLine" catchtap="chooseAvatarPhoto" />
+            <text class="avatar-edit-text">点击更换</text>
+          </view>
         </view>
-      </view>
       <image 
         class="avatar-image" 
         src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
@@ -42,8 +42,8 @@
           maxlength="20"
         />
         <view class="edit-actions">
-          <button class="save-btn" bindtap="saveNickname">保存</button>
           <button class="cancel-btn" bindtap="cancelNicknameEdit">取消</button>
+          <button class="save-btn" bindtap="saveNickname">保存</button>
         </view>
       </view>
       <view class="info-row">
@@ -83,32 +83,7 @@
     </view>
   </view>
 
-<!-- 头像选择弹窗 -->
-<view class="modal-overlay" wx:if="{{showAvatarModal}}" bindtap="hideAvatarModal">
-  <view class="modal-container avatar-modal" catchtap="preventClose">
-    <view class="modal-header">
-      <text class="modal-title">选择头像</text>
-        <view class="modal-close" bindtap="hideAvatarModal"><image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" /></view>
-    </view>
-    <view class="modal-body">
-      <view class="avatar-options">
-        <view class="avatar-option" 
-              wx:for="{{avatarOptions}}" 
-              wx:key="index"
-              bindtap="selectAvatar"
-              data-avatar="{{item}}">
-          <image class="option-avatar {{selectedAvatar === item ? 'selected' : ''}}" 
-                 src="{{item}}" 
-                 mode="aspectFill" />
-        </view>
-      </view>
-    </view>
-    <view class="modal-footer">
-      <button class="btn btn-secondary" bindtap="hideAvatarModal">取消</button>
-      <button class="btn btn-primary" bindtap="confirmAvatarChange" disabled="{{!selectedAvatar}}">确认选择</button>
-    </view>
-  </view>
-</view>
+<!-- 已移除头像选择弹窗：编辑模式下点击头像直接上传 -->
 
 <!-- 在用户信息卡片后新增统计网格 -->
 <view class="stats-grid" wx:if="{{isLogin}}">

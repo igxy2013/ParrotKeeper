@@ -1,0 +1,41 @@
+<view class="stat-card large" bindtap="onTap">
+  <view class="stat-header">
+    <view class="header-left">
+      <view class="stat-icon-container emerald">
+        <image class="stat-icon-img" src="/images/remix/ri-scales-fill-green.png" mode="widthFix" />
+      </view>
+      <view class="stat-label">体重趋势</view>
+    </view>
+    <view class="header-right" catchtap="toggleParrotDropdown">
+      <view class="avg-meta">
+        <text class="meta-label">平均体重</text>
+        <text class="meta-value">{{weightAvgChart || '--'}}</text>
+      </view>
+      <view class="parrot-selector" catchtap="toggleParrotDropdown">
+        <view class="selector-wrapper">
+          <text class="selector-text">{{selectedParrotName || '全部鹦鹉'}}</text>
+          <image class="selector-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix" />
+        </view>
+        <view class="dropdown-menu" wx:if="{{showParrotDropdown}}">
+          <view class="dropdown-item" catchtap="selectParrot" data-id="" data-name="">
+            <text>全部鹦鹉</text>
+            <text class="check-icon">{{!selectedParrotId ? '✓' : ''}}</text>
+          </view>
+          <view class="dropdown-item" wx:for="{{series}}" wx:key="parrot_id" catchtap="selectParrot" data-id="{{item.parrot_id}}" data-name="{{item.parrot_name}}">
+            <text>{{item.parrot_name}}</text>
+            <text class="check-icon">{{selectedParrotId == item.parrot_id ? '✓' : ''}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="chart-wrapper">
+    <canvas type="2d" id="homeWeightCanvas" style="width: 100%; height: 280rpx;"></canvas>
+  </view>
+  <view class="legend" wx:if="{{displaySeries.length > 0}}">
+    <view class="legend-item" wx:for="{{displaySeries}}" wx:key="parrot_id">
+      <view class="legend-dot" style="background-color: {{item.color}};"></view>
+      <text class="legend-name">{{item.parrot_name}}</text>
+    </view>
+  </view>
+</view>

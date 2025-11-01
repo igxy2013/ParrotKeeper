@@ -32,18 +32,7 @@ Page({
     isEditingNickname: false,
     editNickname: '',
 
-    // 头像
-    showAvatarModal: false,
-    avatarOptions: [
-      '/images/default-avatar.png',
-      '/images/parrot-avatar-green.png',
-      '/images/parrot-avatar-blue.png',
-      '/images/parrot-avatar-orange.png',
-      '/images/parrot-avatar-purple.png',
-      '/images/parrot-avatar-red.png',
-      '/images/parrot-avatar-yellow.png'
-    ],
-    selectedAvatar: '',
+    // 头像（直接点击上传，无弹窗）
 
     // 应用设置
     notificationsEnabled: false,
@@ -80,7 +69,7 @@ Page({
     // PNG 图标（静态，失败自动回退为 SVG）
     iconPaths: {
       headerNotification: '/images/remix/ri-notification-3-line-white.png',
-      cameraLine: '/images/remix/ri-camera-line.png',
+      cameraLine: '/images/remix/ri-camera.png',
       editLine: '/images/remix/edit-line.png',
       editLine_white: '/images/remix/edit-line-white.png',
       loginAvatar: '/images/parrot-avatar-green.png',
@@ -796,30 +785,66 @@ Page({
   },
   cancelNicknameEdit() { this.setData({ isEditingNickname: false }); },
 
-  toggleAvatarEdit() { this.setData({ showAvatarModal: true }); },
-  hideAvatarModal() { this.setData({ showAvatarModal: false }); },
-  selectAvatar(e) { this.setData({ selectedAvatar: e.currentTarget.dataset.avatar }); },
-  async confirmAvatarChange() {
+  // 直接选择并上传头像
+  async chooseAvatarPhoto() {
     const app = getApp();
-    const url = this.data.selectedAvatar;
-    if (!url) return;
     try {
-      const res = await app.request({ url: '/api/auth/profile', method: 'PUT', data: { avatar_url: url } });
-      if (res && res.success) {
-        const serverUser = res.data || {};
-        const userInfo = { ...this.data.userInfo, ...(serverUser || {}), avatar_url: (serverUser.avatar_url || url) };
-        this.setData({ userInfo, showAvatarModal: false });
+      const chooseRes = await wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: ['album', 'camera']
+      });
+      if (!chooseRes || !chooseRes.tempFiles || !chooseRes.tempFiles.length) {
+        return;
+      }
+      const filePath = chooseRes.tempFiles[0].tempFilePath || chooseRes.tempFiles[0].tempFilePath || chooseRes.tempFiles[0].filePath;
+
+      app.showLoading('正在上传头像...');
+      const uploadRes = await new Promise((resolve, reject) => {
+        wx.uploadFile({
+          url: (app.globalData.baseUrl || '') + '/api/upload/image',
+          filePath,
+          name: 'file',
+          formData: { category: 'avatars' },
+          header: {
+            'X-OpenID': app.globalData.openid || '',
+            'X-User-Mode': app.globalData.userMode || 'personal'
+          },
+          success: (res) => resolve(res),
+          fail: (err) => reject(err)
+        });
+      });
+
+      app.hideLoading();
+
+      if (uploadRes.statusCode !== 200) {
+        return wx.showToast({ title: '上传失败', icon: 'none' });
+      }
+      let payload = {};
+      try { payload = JSON.parse(uploadRes.data || '{}'); } catch (_) { payload = {}; }
+      if (!payload || !payload.success || !payload.data || !payload.data.url) {
+        return wx.showToast({ title: (payload && payload.message) || '上传失败', icon: 'none' });
+      }
+
+      const resolvedUrl = app.resolveUploadUrl(payload.data.url);
+      // 立即调用后端更新头像
+      const updateRes = await app.request({ url: '/api/auth/profile', method: 'PUT', data: { avatar_url: resolvedUrl } });
+      if (updateRes && updateRes.success) {
+        const serverUser = updateRes.data || {};
+        const userInfo = { ...this.data.userInfo, ...(serverUser || {}), avatar_url: (serverUser.avatar_url || resolvedUrl) };
+        this.setData({ userInfo });
         try {
           app.globalData.userInfo = userInfo;
           wx.setStorageSync('userInfo', userInfo);
         } catch (_) {}
         wx.showToast({ title: '头像已更新', icon: 'none' });
       } else {
-        wx.showToast({ title: (res && res.message) || '头像更新失败', icon: 'none' });
+        wx.showToast({ title: (updateRes && updateRes.message) || '头像更新失败', icon: 'none' });
       }
-    } catch (err) {
-      console.warn('更新头像失败:', err);
-      wx.showToast({ title: '网络或服务器错误', icon: 'none' });
+    } catch (e) {
+      app.hideLoading();
+      console.error('选择或上传头像失败:', e);
+      wx.showToast({ title: '操作失败，请重试', icon: 'none' });
     }
   },
 

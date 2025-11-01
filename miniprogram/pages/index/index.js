@@ -41,8 +41,13 @@ Page({
       { id: 'parrots', name: '我的鹦鹉', icon: '/images/remix/ri-heart-fill-green.png' },
       { id: 'feeding_today', name: '今日喂食', icon: '/images/remix/ri-restaurant-fill-orange.png' },
       { id: 'monthly_income', name: '月收入', icon: '/images/remix/ri-money-dollar-circle-fill-purple.png' },
-      { id: 'monthly_expense', name: '月支出', icon: '/images/remix/ri-shopping-bag-fill-blue.png' }
+      { id: 'monthly_expense', name: '月支出', icon: '/images/remix/ri-shopping-bag-fill-blue.png' },
+      // 新增：可添加的体重趋势大卡
+      { id: 'weight_trend', name: '体重趋势', icon: '/images/chart.png' }
     ],
+
+    // 新增：首页体重趋势数据
+    homeWeightSeries: [],
 
     // 添加鹦鹉弹窗&表单
     showAddParrotModal: false,
@@ -280,7 +285,8 @@ Page({
         this.loadOverview(),
         this.loadRecentRecords(),
         this.loadHealthAlerts(),
-        this.loadMyParrots() // 新增：加载我的鹦鹉（最多三只）
+        this.loadMyParrots(), // 首页-我的鹦鹉
+        this.loadHomeWeightTrends() // 首页-体重趋势数据
       ])
     } catch (error) {
       console.error('加载数据失败:', error)
@@ -350,9 +356,10 @@ Page({
     try {
       const stored = wx.getStorageSync('homeWidgetsOrder')
       const defaults = ['parrots','feeding_today','monthly_income','monthly_expense']
+      const validIds = (this.data.availableWidgets || []).map(w => w.id)
       if (Array.isArray(stored)) {
-        // 过滤无效项并补齐缺失项
-        const valid = stored.filter(id => defaults.includes(id))
+        // 过滤为所有可用组件ID中的有效项
+        const valid = stored.filter(id => validIds.includes(id))
         const missing = defaults.filter(id => !valid.includes(id))
         const ordered = [...valid, ...missing]
         this.setData({ homeWidgets: ordered })
@@ -428,11 +435,21 @@ Page({
   // 添加卡片（从隐藏列表中移除）
   addWidget(e) {
     const widgetId = e.currentTarget.dataset.widget
+    // 情况1：已在隐藏列表 -> 从隐藏中移除，恢复显示
     if (this.data.hiddenWidgets.includes(widgetId)) {
       const newHiddenWidgets = this.data.hiddenWidgets.filter(id => id !== widgetId)
       this.setData({ hiddenWidgets: newHiddenWidgets })
       this.saveHiddenWidgets(newHiddenWidgets)
       this.updateHiddenWidgetsMap()
+      this.setData({ availableWidgetsToAdd: this.getAvailableWidgetsToAdd() })
+    } else {
+      // 情况2：不在隐藏列表，可能是新卡片 -> 加入首页顺序并持久化
+      if (!(this.data.homeWidgets || []).includes(widgetId)) {
+        const newOrder = [...(this.data.homeWidgets || []), widgetId]
+        this.setData({ homeWidgets: newOrder })
+        this.saveHomeWidgetsOrder(newOrder)
+      }
+      // 刷新可添加列表
       this.setData({ availableWidgetsToAdd: this.getAvailableWidgetsToAdd() })
     }
   },
@@ -455,7 +472,9 @@ Page({
   // 获取可添加的卡片列表（被隐藏的卡片）
   getAvailableWidgetsToAdd() {
     const map = this.data.hiddenWidgetsMap || {}
-    return this.data.availableWidgets.filter(widget => !!map[widget.id])
+    const current = this.data.homeWidgets || []
+    // 可添加：当前被隐藏的，或尚未加入首页顺序的新卡
+    return (this.data.availableWidgets || []).filter(widget => !!map[widget.id] || !current.includes(widget.id))
   },
 
   // 计算当前可见卡片（用于拖拽排序）
@@ -563,13 +582,14 @@ Page({
     }
   },
 
-  // 新增：加载首页-我的鹦鹉（最多三只）
+  // 新增：加载首页-我的鹦鹉（横向展示全部）
   async loadMyParrots() {
     try {
       const res = await app.request({
         url: '/api/parrots',
         method: 'GET',
-        data: { page: 1, limit: 3, sort_by: 'created_desc' }
+        // 使用后端分页参数 per_page，获取尽可能多的鹦鹉
+        data: { page: 1, per_page: 100, sort_by: 'created_at', sort_order: 'desc' }
       })
       if (res.success) {
         const parrots = (res.data.parrots || []).map(p => {
@@ -589,10 +609,27 @@ Page({
             avatar_url: avatarUrl
           }
         })
-        this.setData({ myParrots: parrots.slice(0, 3) })
+        // 展示全部供横向滑动
+        this.setData({ myParrots: parrots })
       }
     } catch (error) {
       console.error('加载我的鹦鹉失败:', error)
+    }
+  },
+
+  // 新增：加载首页体重趋势数据（简化为最近30天）
+  async loadHomeWeightTrends() {
+    try {
+      const res = await app.request({
+        url: '/api/statistics/weight-trends',
+        method: 'GET',
+        data: { days: 30 }
+      })
+      if (res.success && Array.isArray(res.data && res.data.series)) {
+        this.setData({ homeWeightSeries: res.data.series })
+      }
+    } catch (err) {
+      console.error('加载首页体重趋势失败:', err)
     }
   },
 

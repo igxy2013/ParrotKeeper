@@ -51,6 +51,9 @@
         <block wx:elif="{{dragGhost.id === 'monthly_expense'}}">
           <home-card-monthly-expense amount="{{overview.monthly_expense || 0}}" />
         </block>
+        <block wx:elif="{{dragGhost.id === 'weight_trend'}}">
+          <home-card-weight-trend series="{{homeWeightSeries}}" />
+        </block>
       </view>
       <!-- 编辑模式顶部工具栏 -->
       <view wx:if="{{isEditMode}}" class="edit-toolbar">
@@ -61,7 +64,7 @@
       <block wx:if="{{isEditMode}}">
         <view class="widget-container wiggle" catchtouchmove="blockTouchMove">
           <view wx:for="{{homeWidgets}}" wx:key="*this" wx:if="{{!hiddenWidgetsMap[item]}}"
-                class="widget-wrapper" data-id="{{item}}" style="{{draggingWidgetId === item ? 'opacity:0.35' : ''}}"
+                class="{{item === 'weight_trend' ? 'widget-wrapper full-row' : 'widget-wrapper'}}" data-id="{{item}}" style="{{draggingWidgetId === item ? 'opacity:0.35' : ''}}"
                 bindtouchstart="onDragStart" bindtouchmove="onDragMove" bindtouchend="onDragEnd">
             <block wx:if="{{item === 'parrots'}}">
               <home-card-parrots count="{{overview.total_parrots || 0}}" bind:tap="navigateToParrots" />
@@ -74,6 +77,9 @@
             </block>
             <block wx:elif="{{item === 'monthly_expense'}}">
               <home-card-monthly-expense amount="{{overview.monthly_expense || 0}}" bind:tap="goToExpenseManagement" />
+            </block>
+            <block wx:elif="{{item === 'weight_trend'}}">
+              <home-card-weight-trend series="{{homeWeightSeries}}" bind:tap="navigateToStatistics" />
             </block>
             
             <view wx:if="{{isEditMode}}" class="remove-btn" bindtap="removeWidget" data-widget="{{item}}">
@@ -85,7 +91,7 @@
       <block wx:else>
         <view class="widget-container">
           <view wx:for="{{homeWidgets}}" wx:key="*this" wx:if="{{!hiddenWidgetsMap[item]}}"
-                class="widget-wrapper" data-id="{{item}}"
+                class="{{item === 'weight_trend' ? 'widget-wrapper full-row' : 'widget-wrapper'}}" data-id="{{item}}"
                 bindtouchstart="onDragStart" bindtouchmove="onDragMove" bindtouchend="onDragEnd">
             <block wx:if="{{item === 'parrots'}}">
               <home-card-parrots count="{{overview.total_parrots || 0}}" bind:tap="navigateToParrots" />
@@ -98,6 +104,9 @@
             </block>
             <block wx:elif="{{item === 'monthly_expense'}}">
               <home-card-monthly-expense amount="{{overview.monthly_expense || 0}}" bind:tap="goToExpenseManagement" />
+            </block>
+            <block wx:elif="{{item === 'weight_trend'}}">
+              <home-card-weight-trend series="{{homeWeightSeries}}" bind:tap="navigateToStatistics" />
             </block>
             
             <view wx:if="{{isEditMode}}" class="remove-btn" bindtap="removeWidget" data-widget="{{item}}">
@@ -136,14 +145,16 @@
       <text class="card-title"><image class="inline-title-icon" src="{{iconPaths.myParrotsTitleHeart}}" mode="widthFix" binderror="handleIconError" data-key="myParrotsTitleHeart"/> 我的鹦鹉</text>
         <text class="more-link" bindtap="navigateToParrots">查看全部 →</text>
       </view>
-      <view class="parrot-card-list">
-        <view class="parrot-mini-card" wx:for="{{myParrots}}" wx:key="id" data-id="{{item.id}}" bindtap="openParrotDetail">
-        <image class="parrot-mini-avatar" src="{{item.photo_url || item.avatar_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
-          <text class="parrot-mini-name">{{item.name}}</text>
-          <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
-        <view class="health-badge health-{{item.current_health_status || 'healthy'}}">{{item.current_health_status_text || '健康'}}</view>
+      <scroll-view class="parrot-card-scroll" scroll-x="true" enable-flex="true" scroll-with-animation="true">
+        <view class="parrot-card-row">
+          <view class="parrot-mini-card" wx:for="{{myParrots}}" wx:key="id" data-id="{{item.id}}" bindtap="openParrotDetail">
+            <image class="parrot-mini-avatar" src="{{item.photo_url || item.avatar_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
+            <text class="parrot-mini-name">{{item.name}}</text>
+            <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
+            <view class="health-badge health-{{item.current_health_status || 'healthy'}}">{{item.current_health_status_text || '健康'}}</view>
+          </view>
         </view>
-      </view>
+      </scroll-view>
     </view>
 
     <!-- 快速操作区域 -->
