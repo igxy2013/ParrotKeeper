@@ -374,6 +374,17 @@
         </view>
       </block>
     </block>
+    <!-- 公告中心：放入功能菜单卡片，普通用户可见 -->
+    <view class="menu-item" bindtap="goAnnouncementsCenter">
+      <view class="menu-item-icon bg-blue">
+        <image class="menu-item-icon-img" src="{{iconPaths.infoLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="infoLine" />
+      </view>
+      <view class="menu-item-content">
+        <view class="menu-item-title">公告中心</view>
+        <view class="menu-item-desc">查看系统公告历史</view>
+      </view>
+      <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
+    </view>
   </view>
 </view>
     <!-- 后台管理卡片（仅超级管理员可见，样式对齐功能菜单） -->
@@ -403,6 +414,27 @@
           </view>
           <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
         </view>
+        <view class="menu-item" bindtap="goAdminUserRole">
+          <view class="menu-item-icon bg-gray">
+            <image class="menu-item-icon-img" src="{{iconPaths.userLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="userLine" />
+          </view>
+          <view class="menu-item-content">
+            <view class="menu-item-title">用户与角色管理</view>
+            <view class="menu-item-desc">查看用户、分配或调整角色</view>
+          </view>
+          <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
+        </view>
+        <view class="menu-item" bindtap="goAdminAnnouncements">
+          <view class="menu-item-icon bg-indigo">
+            <image class="menu-item-icon-img" src="{{iconPaths.infoLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="infoLine" />
+          </view>
+          <view class="menu-item-content">
+            <view class="menu-item-title">系统公告发布</view>
+            <view class="menu-item-desc">创建公告、设置投放范围与时效</view>
+          </view>
+          <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
+        </view>
+        
       </view>
     </view>
 </view>

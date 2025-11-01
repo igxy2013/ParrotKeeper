@@ -1,0 +1,39 @@
+<view class="page-container">
+  <app-header title="公告中心" subtitle="查看系统公告历史" showBack="true"></app-header>
+  <view class="page-content">
+    <view class="tips" wx:if="{{loading}}">加载中...</view>
+    <block wx:if="{{!loading}}">
+      <block wx:if="{{announcements.length === 0}}">
+        <view class="empty">暂无已发布公告</view>
+      </block>
+      <block wx:else>
+        <view class="list">
+          <block wx:for="{{announcements}}" wx:key="id">
+            <view class="ann-item" bindtap="openAnnouncementDetail" data-id="{{item.id}}">
+              <view class="ann-title">{{item.title}}</view>
+              <view class="ann-meta">{{item.created_at_display}}</view>
+              <view class="ann-preview">{{item.content.slice(0, 60)}}{{item.content.length > 60 ? '…' : ''}}</view>
+            </view>
+          </block>
+        </view>
+        <view class="load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
+        <view class="no-more" wx:if="{{!hasMore && announcements.length > 0}}">已全部加载</view>
+      </block>
+    </block>
+  </view>
+
+  <!-- 公告详情弹窗 -->
+  <block wx:if="{{showDetailModal && currentAnnouncement}}">
+    <view class="modal-overlay" bindtap="closeAnnouncementDetail"></view>
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">{{currentAnnouncement.title}}</text>
+        <view class="modal-close" bindtap="closeAnnouncementDetail"><text class="modal-close-text">×</text></view>
+      </view>
+      <view class="modal-body">
+        <view class="modal-time">{{currentAnnouncement.created_at_display}}</view>
+        <view class="modal-text">{{currentAnnouncement.content}}</view>
+      </view>
+    </view>
+  </block>
+</view>

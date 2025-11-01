@@ -8,6 +8,23 @@
     </view>
   </app-header>
 
+  <!-- 公告弹窗（首页展示） -->
+  <block wx:if="{{showAnnouncementModal && latestAnnouncement}}">
+    <view class="announcement-modal-overlay" bindtap="closeAnnouncementModal"></view>
+    <view class="announcement-modal" catchtap="stopPropagation">
+      <view class="announcement-modal-header">
+        <view class="announcement-modal-title">系统公告</view>
+        <view class="announcement-modal-close" bindtap="closeAnnouncementModal">
+          <text class="announcement-modal-close-text">×</text>
+        </view>
+      </view>
+      <view class="announcement-modal-body">
+        <view class="announcement-modal-h1">{{latestAnnouncement.title}}</view>
+        <view class="announcement-modal-content">{{latestAnnouncement.content}}</view>
+      </view>
+    </view>
+  </block>
+
   <notification-center 
     visible="{{showNotifications}}" 
     notifications="{{notifications}}"

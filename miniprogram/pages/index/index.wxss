@@ -1266,6 +1266,91 @@
   text-align: center;
 }
 
+/* 公告横幅样式 */
+.announcement-banner {
+  margin: 16rpx;
+  padding: 20rpx;
+  background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+  color: #fff;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 8rpx 20rpx rgba(99, 102, 241, 0.25);
+}
+.announcement-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  width: 86%;
+}
+.announcement-title {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.announcement-desc {
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+.announcement-close {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+}
+.announcement-close-img {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.announcement-close-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #fff;
+  line-height: 48rpx;
+}
+
+/* 公告弹窗样式 */
+.announcement-modal-overlay {
+  position: fixed;
+  z-index: 900;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(2rpx);
+}
+.announcement-modal {
+  position: fixed;
+  z-index: 901;
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%);
+  width: 86%;
+  max-height: 60vh;
+  background: rgba(255,255,255,0.92);
+  border-radius: 24rpx;
+  box-shadow: 0 24rpx 60rpx rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+.announcement-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  color: #fff;
+}
+.announcement-modal-title { font-size: 28rpx; font-weight: 700; }
+.announcement-modal-close { width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.2); }
+.announcement-modal-close-text { font-size: 32rpx; font-weight: 600; color: #fff; line-height: 48rpx; }
+.announcement-modal-body { padding: 24rpx; }
+.announcement-modal-h1 { font-size: 28rpx; font-weight: 600; color: #111827; margin-bottom: 10rpx; }
+.announcement-modal-content { font-size: 26rpx; color: #374151; line-height: 1.6; max-height: 42vh; overflow-y: auto; }
+/* 保留发布时格式：换行与空格 */
+.announcement-modal-content { white-space: pre-wrap; word-break: break-word; }
+
 /* 统计卡片空状态样式 */
 .empty-widgets-placeholder {
   margin-top: 24rpx;

@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "公告中心",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
+}

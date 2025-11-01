@@ -1,0 +1,24 @@
+.page-container { min-height: 100vh; background: #f8f9fa; }
+.page-content { padding: 24rpx; }
+.tips { color: #6b7280; margin: 16rpx 0; }
+.empty { color: #9ca3af; padding: 40rpx 0; text-align: center; }
+
+.list { display: flex; flex-direction: column; gap: 12rpx; }
+.ann-item { background: #fff; border-radius: 14rpx; padding: 16rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.03); }
+.ann-title { font-size: 28rpx; color: #111827; font-weight: 600; }
+.ann-meta { font-size: 22rpx; color: #6b7280; margin-top: 4rpx; }
+.ann-preview { font-size: 24rpx; color: #374151; margin-top: 8rpx; }
+
+.load-more { margin: 16rpx 0; text-align: center; color: #4f46e5; }
+.no-more { margin: 12rpx 0; text-align: center; color: #9ca3af; }
+
+/* 详情弹窗样式 */
+.modal-overlay { position: fixed; z-index: 900; inset: 0; background: rgba(17,24,39,0.5); backdrop-filter: blur(2rpx); }
+.modal-content { position: fixed; z-index: 901; left: 50%; top: 18%; transform: translateX(-50%); width: 86%; max-height: 60vh; background: rgba(255,255,255,0.96); border-radius: 24rpx; box-shadow: 0 24rpx 60rpx rgba(0,0,0,0.2); overflow: hidden; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20rpx 24rpx; background: linear-gradient(90deg,#4f46e5,#6366f1); color: #fff; }
+.modal-title { font-size: 28rpx; font-weight: 700; }
+.modal-close { width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.2); }
+.modal-close-text { font-size: 32rpx; font-weight: 600; color: #fff; line-height: 48rpx; }
+.modal-body { padding: 24rpx; }
+.modal-time { font-size: 22rpx; color: #6b7280; margin-bottom: 10rpx; }
+.modal-text { font-size: 26rpx; color: #374151; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 42vh; overflow-y: auto; }

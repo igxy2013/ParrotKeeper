@@ -9,7 +9,9 @@
       "root": "pages/admin",
       "pages": [
         "feedbacks/feedbacks",
-        "care-guide-editor/care-guide-editor"
+        "care-guide-editor/care-guide-editor",
+        "user-role/user-role",
+        "announcements/announcements"
       ]
     },
     {
@@ -69,6 +71,13 @@
       "root": "pages/care-guide",
       "pages": [
         "care-guide"
+      ]
+    }
+    ,
+    {
+      "root": "pages/announcements",
+      "pages": [
+        "center/center"
       ]
     }
   ],

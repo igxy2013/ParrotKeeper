@@ -95,6 +95,16 @@ Page({
   goAdminCareGuideEditor() {
     wx.navigateTo({ url: '/pages/admin/care-guide-editor/care-guide-editor' })
   },
+  goAdminUserRole() {
+    wx.navigateTo({ url: '/pages/admin/user-role/user-role' })
+  },
+  goAdminAnnouncements() {
+    wx.navigateTo({ url: '/pages/admin/announcements/announcements' })
+  },
+
+  goAnnouncementsCenter() {
+    wx.navigateTo({ url: '/pages/announcements/center/center' })
+  },
 
   onLoad() {
     this.initUser();
@@ -147,6 +157,8 @@ Page({
         } catch (_) {}
       }, 60000);
     } catch (_) {}
+    // 拉取公告并注入通知（避免重复）
+    this.fetchPublishedAnnouncementsAndInject()
   },
 
   onHide() {
@@ -417,6 +429,32 @@ Page({
     const app = getApp();
     const notificationManager = app.globalData.notificationManager;
     notificationManager.markAllNotificationsRead();
+  },
+
+  // 拉取已发布公告并注入通知中心
+  async fetchPublishedAnnouncementsAndInject() {
+    const app = getApp()
+    try {
+      const res = await app.request({ url: '/api/announcements', method: 'GET', data: { limit: 5 } })
+      if (!res || !res.success) return
+      const list = (res.data && res.data.announcements) || []
+      if (!Array.isArray(list) || list.length === 0) return
+      let seen = []
+      try { seen = wx.getStorageSync('seen_announcements') || [] } catch (_) {}
+      const nm = app.globalData.notificationManager
+      const newIds = []
+      list.forEach(a => {
+        if (!seen.includes(a.id)) {
+          nm.addLocalNotification('system', `系统公告：${a.title}`, (a.content || '').slice(0, 80))
+          newIds.push(a.id)
+        }
+      })
+      if (newIds.length > 0) {
+        try { wx.setStorageSync('seen_announcements', [...seen, ...newIds]) } catch (_) {}
+      }
+    } catch (e) {
+      console.warn('获取公告失败', e)
+    }
   },
 
   clearAllNotifications() {

@@ -280,6 +280,19 @@ class Feedback(db.Model):
     # 关系
     user = db.relationship('User', backref='feedbacks', lazy=True)
 
+class Announcement(db.Model):
+    __tablename__ = 'announcements'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    status = db.Column(db.Enum('draft', 'published'), default='published')
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # 关系
+    created_by = db.relationship('User', backref='announcements', lazy=True)
+
 class UserSetting(db.Model):
     __tablename__ = 'user_settings'
 

@@ -18,6 +18,8 @@ from datetime import datetime, date
 from routes.care_guide import care_guide_bp
 from routes.feedback import feedback_bp
 from routes.settings import settings_bp
+from routes.admin import admin_bp
+from routes.announcements import announcements_bp
 import os
 
 def create_app(config_name=None):
@@ -50,6 +52,8 @@ def create_app(config_name=None):
     app.register_blueprint(reminders_bp)
     app.register_blueprint(feedback_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(announcements_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
@@ -105,6 +109,12 @@ def create_app(config_name=None):
 
     # 初始化并启动定时任务（服务端订阅消息推送）
     init_scheduler(app)
+
+    # 确保数据库表已创建（包含新增模型）
+    try:
+        init_db(app)
+    except Exception as e:
+        print(f'初始化数据库失败或已存在: {str(e)}')
 
     return app
 

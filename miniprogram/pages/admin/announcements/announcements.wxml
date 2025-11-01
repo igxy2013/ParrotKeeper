@@ -1,0 +1,66 @@
+<view class="page-container">
+  <app-header title="系统公告发布" subtitle="创建公告与设定投放" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">该页面仅限超级管理员访问</view>
+    </block>
+    <block wx:else>
+      <view class="form">
+        <view class="form-item">
+          <text class="form-label">公告标题</text>
+          <input class="form-input" placeholder="请输入公告标题" value="{{title}}" bindinput="onTitleInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">公告内容</text>
+          <textarea class="form-textarea" placeholder="请输入公告内容" value="{{content}}" bindinput="onContentInput" maxlength="-1" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">状态</text>
+          <picker mode="selector" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange">
+            <view class="form-picker">{{statusOptions[statusIndex]}}</view>
+          </picker>
+        </view>
+        <view class="form-actions">
+          <button class="create-btn" bindtap="submitAnnouncement">{{editingId ? '保存修改' : '创建公告'}}</button>
+          <block wx:if="{{editingId}}">
+            <view class="cancel-edit-wrap">
+              <button class="cancel-edit-btn" bindtap="cancelEdit">
+                <image src="/images/remix/close-line.png" class="cancel-edit-icon" mode="aspectFit" />
+                <text class="cancel-edit-text">取消编辑</text>
+              </button>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <view class="tips" wx:if="{{loading}}">加载中...</view>
+
+      <view class="list" wx:if="{{!loading}}">
+        <view class="list-title">历史公告</view>
+        <block wx:if="{{announcements.length === 0}}">
+          <view class="empty">暂无公告</view>
+        </block>
+        <block wx:else>
+          <view class="ann-item" wx:for="{{announcements}}" wx:key="id">
+            <view class="ann-info">
+              <text class="ann-title">{{item.title}}</text>
+              <text class="ann-meta">{{item.created_at_display}} · {{item.status === 'published' ? '已发布' : '草稿'}}</text>
+            </view>
+            <view class="ann-actions">
+              <view class="action-buttons">
+                <block wx:if="{{item.status === 'draft'}}">
+                  <view class="action-btn edit-btn" bindtap="startEditAnnouncement" data-id="{{item.id}}">
+                    <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
+                  </view>
+                </block>
+                <view class="action-btn delete-btn" bindtap="deleteAnnouncement" data-id="{{item.id}}">
+                  <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
+                </view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </block>
+  </view>
+</view>

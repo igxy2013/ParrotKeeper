@@ -24,6 +24,9 @@ Page({
     showNotifications: false,
     notifications: [],
     unreadCount: 0,
+    // 公告弹窗
+    showAnnouncementModal: false,
+    latestAnnouncement: null,
     // 新增：首页卡片自定义
     homeWidgets: ['parrots','feeding_today','monthly_income','monthly_expense'],
     // 隐藏的卡片列表与映射
@@ -206,6 +209,8 @@ Page({
         } catch (_) {}
       }, 60000);
     } catch (_) {}
+    // 拉取公告并注入通知与弹窗
+    this.fetchPublishedAnnouncementsAndInject()
     // 无论是否登录都可以浏览首页，但只有登录用户才加载个人数据
     if (this.data.isLogin) {
       // 检查是否需要刷新数据（模式切换后）
@@ -1523,6 +1528,45 @@ Page({
     return {
       title: '鹦鹉管家AI - 智能养鸟助手'
     }
+  },
+
+  // 拉取已发布公告并注入通知中心/弹窗
+  async fetchPublishedAnnouncementsAndInject() {
+    try {
+      const res = await app.request({ url: '/api/announcements', method: 'GET', data: { limit: 5 } })
+      if (!res || !res.success) return
+      const list = (res.data && res.data.announcements) || []
+      if (!Array.isArray(list) || list.length === 0) {
+        this.setData({ showAnnouncementModal: false, latestAnnouncement: null })
+        return
+      }
+
+      // 弹窗显示最新一条
+      const latest = list[0]
+      this.setData({ latestAnnouncement: latest, showAnnouncementModal: true })
+
+      // 通知注入，避免重复：记录已注入的公告ID
+      let seen = []
+      try { seen = wx.getStorageSync('seen_announcements') || [] } catch (_) {}
+      const nm = app.globalData.notificationManager
+      const newIds = []
+      list.forEach(a => {
+        if (!seen.includes(a.id)) {
+          nm.addLocalNotification('system', `系统公告：${a.title}`, (a.content || '').slice(0, 80))
+          newIds.push(a.id)
+        }
+      })
+      if (newIds.length > 0) {
+        try { wx.setStorageSync('seen_announcements', [...seen, ...newIds]) } catch (_) {}
+      }
+    } catch (e) {
+      // 静默失败，不影响首页
+      console.warn('获取公告失败', e)
+    }
+  },
+
+  // 关闭公告弹窗
+  closeAnnouncementModal() {
+    this.setData({ showAnnouncementModal: false })
   }
 })
-

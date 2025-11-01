@@ -1,0 +1,47 @@
+<view class="page-container">
+  <app-header title="用户与角色管理" subtitle="查看用户与分配角色" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">该页面仅限超级管理员访问</view>
+    </block>
+    <block wx:else>
+      <view class="search-bar">
+        <input class="search-input" placeholder="按昵称/用户名/手机号 搜索" placeholder-class="search-placeholder" value="{{q}}" bindinput="onSearchInput" />
+        <view class="search-actions">
+          <button class="btn btn-primary" size="mini" bindtap="doSearch">搜索</button>
+          <button class="btn btn-secondary" size="mini" bindtap="clearSearch">清空</button>
+        </view>
+      </view>
+
+      <view wx:if="{{loading}}" class="tips">加载中...</view>
+
+      <view class="count-grid" wx:if="{{!loading}}">
+        <text>总用户 {{totalCount}} 人</text>
+        <text>管理员 {{adminCount}} 人</text>
+        <text>普通用户 {{userCount}} 人</text>
+      </view>
+
+      <block wx:if="{{!loading && users.length === 0}}">
+        <view class="empty">暂无用户</view>
+      </block>
+
+      <block wx:if="{{!loading && users.length > 0}}">
+        <view class="user-list">
+          <view class="user-item" wx:for="{{users}}" wx:key="id">
+            <image class="avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+            <view class="info">
+              <text class="name">{{item.nickname || item.username || ('用户' + item.id)}}</text>
+              <text class="meta">{{item.phone || ''}}</text>
+            </view>
+            <picker mode="selector" range="{{roleDisplay}}" value="{{item.selectedIndex}}" bindchange="changeRole" data-index="{{index}}">
+              <view class="role-picker">
+                <text class="role-label">角色</text>
+                <text class="role-chip">{{item.displayRole}}</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </block>
+    </block>
+  </view>
+</view>
