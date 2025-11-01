@@ -1541,9 +1541,12 @@ Page({
         return
       }
 
-      // 弹窗显示最新一条
+      // 弹窗显示最新一条；若用户已关闭过该条公告，则不再弹出
       const latest = list[0]
-      this.setData({ latestAnnouncement: latest, showAnnouncementModal: true })
+      let dismissed = []
+      try { dismissed = wx.getStorageSync('dismissed_announcements') || [] } catch (_) {}
+      const shouldShowModal = !dismissed.includes(latest.id)
+      this.setData({ latestAnnouncement: latest, showAnnouncementModal: shouldShowModal })
 
       // 通知注入，避免重复：记录已注入的公告ID
       let seen = []
@@ -1568,5 +1571,14 @@ Page({
   // 关闭公告弹窗
   closeAnnouncementModal() {
     this.setData({ showAnnouncementModal: false })
+    // 记录已关闭的公告ID，避免再次进入首页重复弹出同一条
+    const latest = this.data.latestAnnouncement
+    if (latest && latest.id) {
+      let dismissed = []
+      try { dismissed = wx.getStorageSync('dismissed_announcements') || [] } catch (_) {}
+      if (!dismissed.includes(latest.id)) {
+        try { wx.setStorageSync('dismissed_announcements', [...dismissed, latest.id]) } catch (_) {}
+      }
+    }
   }
 })
