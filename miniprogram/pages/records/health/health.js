@@ -13,6 +13,7 @@ Page({
 
     // 记录数据
     healthRecords: [],
+    displayRecords: [],
     loading: false,
 
     // 概览统计
@@ -20,7 +21,10 @@ Page({
       healthyCount: 0,
       attentionCount: 0,
       checkCount: 0
-    }
+    },
+
+    // 概览筛选：'' | 'healthy' | 'attention'
+    activeOverviewFilter: ''
   },
 
   onLoad(options) {
@@ -145,7 +149,9 @@ Page({
           }
         })
         this.setData({ healthRecords: mapped })
+        // 更新概览与展示列表
         this.computeOverview(mapped)
+        this.updateDisplayRecords()
       }
     } catch (e) {
       console.error('加载健康记录失败:', e)
@@ -155,22 +161,38 @@ Page({
     }
   },
 
-  // 计算概览统计
-  computeOverview(records) {
-    let healthyCount = 0
-    let attentionCount = 0
-    const checkCount = records.length
-
-    // 以鹦鹉ID聚合，取每只鹦鹉最新一条记录的健康状态
+  // 计算每只鹦鹉的最新健康状态映射
+  computeLatestStatusMap(records) {
     const latestByParrot = {}
+    const getKey = (r) => {
+      if (r.parrot_id !== undefined && r.parrot_id !== null && r.parrot_id !== '') {
+        return `id:${String(r.parrot_id)}`
+      }
+      const name = r.parrot_name || (r.parrot && r.parrot.name) || ''
+      if (name) {
+        return `name:${String(name).trim().toLowerCase()}`
+      }
+      return `u:${String(r.id)}`
+    }
+
     records.forEach(record => {
-      const key = record.parrot_id || record.parrot_name || `unknown-${record.id}`
+      const key = getKey(record)
       const ts = record.record_date_raw ? new Date(record.record_date_raw).getTime() : 0
       const prev = latestByParrot[key]
       if (!prev || ts >= prev.ts) {
         latestByParrot[key] = { status: record.health_status, ts }
       }
     })
+    return latestByParrot
+  },
+
+  // 计算概览统计
+  computeOverview(records) {
+    let healthyCount = 0
+    let attentionCount = 0
+    const checkCount = records.length
+
+    const latestByParrot = this.computeLatestStatusMap(records)
 
     Object.values(latestByParrot).forEach(({ status }) => {
       if (status === 'healthy') {
@@ -189,6 +211,56 @@ Page({
     })
   },
 
+  // 概览点击筛选
+  onOverviewTap(e) {
+    const { filter } = e.currentTarget.dataset
+    const current = this.data.activeOverviewFilter
+    // 点击相同筛选则取消筛选
+    const nextFilter = current === filter ? '' : filter
+    this.setData({ activeOverviewFilter: nextFilter })
+    this.updateDisplayRecords()
+  },
+
+  // 清除概览筛选
+  clearOverviewFilter() {
+    if (!this.data.activeOverviewFilter) return
+    this.setData({ activeOverviewFilter: '' })
+    this.updateDisplayRecords()
+  },
+
+  // 根据 activeOverviewFilter 更新展示列表
+  updateDisplayRecords() {
+    const { healthRecords, activeOverviewFilter } = this.data
+    if (!activeOverviewFilter) {
+      this.setData({ displayRecords: healthRecords })
+      return
+    }
+
+    const latestMap = this.computeLatestStatusMap(healthRecords)
+    // 收集满足筛选的鹦鹉键集合
+    const allowedKeys = new Set(Object.keys(latestMap).filter(k => {
+      const status = latestMap[k].status
+      if (activeOverviewFilter === 'healthy') return status === 'healthy'
+      if (activeOverviewFilter === 'attention') return status === 'sick' || status === 'observation' || status === 'recovering'
+      return true
+    }))
+
+    const getKey = (r) => {
+      if (r.parrot_id !== undefined && r.parrot_id !== null && r.parrot_id !== '') {
+        return `id:${String(r.parrot_id)}`
+      }
+      const name = r.parrot_name || (r.parrot && r.parrot.name) || ''
+      if (name) {
+        return `name:${String(name).trim().toLowerCase()}`
+      }
+      return `u:${String(r.id)}`
+    }
+
+    const filtered = healthRecords.filter(r => allowedKeys.has(getKey(r)))
+
+    this.setData({ displayRecords: filtered })
+  },
+
   // 切换鹦鹉筛选
   switchParrot(e) {
     const { id, name } = e.currentTarget.dataset
@@ -196,6 +268,8 @@ Page({
       selectedParrotId: id,
       selectedParrotName: name
     })
+    // 切换鹦鹉时清空概览筛选以避免误导
+    this.setData({ activeOverviewFilter: '' })
     this.loadHealthRecords()
   },
 

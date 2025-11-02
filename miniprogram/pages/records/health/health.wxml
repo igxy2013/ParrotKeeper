@@ -30,14 +30,19 @@
       <!-- 健康概览卡片 -->
       <view class="overview-card rounded-3xl p-6 shadow-xl">
         <text class="overview-title text-lg font-bold">健康概览</text>
+        <!-- 当前筛选标签提示 -->
+        <view wx:if="{{activeOverviewFilter}}" class="overview-filter-tag" bindtap="clearOverviewFilter">
+          <text class="tag-text">{{activeOverviewFilter === 'healthy' ? '筛选：健康鹦鹉' : (activeOverviewFilter === 'attention' ? '筛选：需关注' : '')}}</text>
+          <text class="tag-close">×</text>
+        </view>
         <view class="overview-grid">
-          <view class="metric">
-            <text class="metric-value text-2xl font-bold">{{overview.healthyCount}}</text>
-            <text class="metric-label text-sm text-white-80">健康鹦鹉</text>
+          <view class="metric {{activeOverviewFilter === 'healthy' ? 'selected' : ''}}">
+            <text class="metric-value text-2xl font-bold clickable" bindtap="onOverviewTap" data-filter="healthy">{{overview.healthyCount}}</text>
+            <text class="metric-label text-sm text-white-80" bindtap="onOverviewTap" data-filter="healthy">健康鹦鹉</text>
           </view>
-          <view class="metric">
-            <text class="metric-value text-2xl font-bold">{{overview.attentionCount}}</text>
-            <text class="metric-label text-sm text-white-80">需关注</text>
+          <view class="metric {{activeOverviewFilter === 'attention' ? 'selected' : ''}}">
+            <text class="metric-value text-2xl font-bold clickable" bindtap="onOverviewTap" data-filter="attention">{{overview.attentionCount}}</text>
+            <text class="metric-label text-sm text-white-80" bindtap="onOverviewTap" data-filter="attention">需关注</text>
           </view>
           <view class="metric">
             <text class="metric-value text-2xl font-bold">{{overview.checkCount}}</text>
@@ -47,8 +52,8 @@
       </view>
 
       <!-- 记录列表 -->
-      <view class="record-list" wx:if="{{healthRecords.length > 0}}">
-        <view class="record-card" wx:for="{{healthRecords}}" wx:key="id">
+      <view class="record-list" wx:if="{{displayRecords.length > 0}}">
+        <view class="record-card" wx:for="{{displayRecords}}" wx:key="id">
           <view class="record-header">
             <view class="avatar-cell">
               <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
@@ -100,7 +105,7 @@
         </view>
       </view>
       <!-- 空状态 -->
-      <view class="empty-state" wx:if="{{healthRecords.length === 0 && !loading}}">
+      <view class="empty-state" wx:if="{{displayRecords.length === 0 && !loading}}">
         <view class="empty-icon">🏥</view>
         <view class="empty-text">暂无健康记录</view>
         <view class="empty-subtitle">开始记录您的健康检查过程</view>
