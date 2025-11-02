@@ -221,10 +221,17 @@ Page({
         endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
         break
       case '本周':
+        // 周一开始，限制在当月范围内，以避免跨月导致“本周”总额大于“本月”
         const dayOfWeek = now.getDay()
         const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) // 周一开始
-        startDate = new Date(now.getFullYear(), now.getMonth(), diff)
-        endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000)
+        const rawWeekStart = new Date(now.getFullYear(), now.getMonth(), diff)
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        // 周起始取当周周一与当月1号的较晚者
+        startDate = rawWeekStart < monthStart ? monthStart : rawWeekStart
+        // 结束取“明天”与当月结束的较早者（严格小于结束日）
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+        endDate = tomorrow < monthEnd ? tomorrow : monthEnd
         break
       case '本月':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1)

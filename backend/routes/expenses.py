@@ -49,7 +49,8 @@ def get_expenses():
         if end_date:
             try:
                 end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                query = query.filter(Expense.expense_date <= end_dt.date())
+                # 结束日期按前端约定为“下一天/下月第一天”，这里使用严格小于以避免多算一天
+                query = query.filter(Expense.expense_date < end_dt.date())
             except ValueError:
                 pass
         
@@ -338,7 +339,8 @@ def get_incomes():
         if end_date:
             try:
                 end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                query = query.filter(Income.income_date <= end_dt.date())
+                # 结束日期按前端约定为“下一天/下月第一天”，这里使用严格小于以避免多算一天
+                query = query.filter(Income.income_date < end_dt.date())
             except ValueError:
                 pass
         
@@ -383,6 +385,80 @@ def get_incomes():
         
     except Exception as e:
         return error_response(f'获取收入列表失败: {str(e)}')
+
+@expenses_bp.route('/summary', methods=['GET'])
+@login_required
+def get_expenses_summary():
+    """获取收支汇总统计（支持时间范围与类别过滤，个人/团队模式权限）"""
+    try:
+        user = request.current_user
+        record_type = request.args.get('record_type', '全部')  # '全部' | '收入' | '支出'
+        category = request.args.get('category', '')
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
+
+        # 可访问ID集合（按模式）
+        accessible_expense_ids = get_accessible_expense_ids_by_mode(user)
+        accessible_income_ids = get_accessible_income_ids_by_mode(user)
+
+        # 解析日期范围
+        start_dt = None
+        end_dt = None
+        if start_date:
+            try:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                start_dt = None
+        if end_date:
+            try:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
+            except ValueError:
+                end_dt = None
+
+        # 类别集合，用于区分支出/收入类别
+        expense_categories = {'food', 'medical', 'toys', 'cage', 'baby_bird', 'breeding_bird', 'other'}
+        income_categories = {'breeding_sale', 'bird_sale', 'service', 'competition', 'other'}
+
+        # 计算支出总额
+        total_expense = 0.0
+        if record_type in ('全部', '支出') and accessible_expense_ids:
+            q_expense = Expense.query.with_entities(func.coalesce(func.sum(Expense.amount), 0)).\
+                filter(Expense.id.in_(accessible_expense_ids))
+            if start_dt:
+                q_expense = q_expense.filter(Expense.expense_date >= start_dt)
+            if end_dt:
+                q_expense = q_expense.filter(Expense.expense_date < end_dt)
+            if category:
+                # 仅当传入类别属于支出类别时才应用到支出查询
+                if category in expense_categories:
+                    q_expense = q_expense.filter(Expense.category == category)
+            total_expense = float(q_expense.scalar() or 0)
+
+        # 计算收入总额
+        total_income = 0.0
+        if record_type in ('全部', '收入') and accessible_income_ids:
+            q_income = Income.query.with_entities(func.coalesce(func.sum(Income.amount), 0)).\
+                filter(Income.id.in_(accessible_income_ids))
+            if start_dt:
+                q_income = q_income.filter(Income.income_date >= start_dt)
+            if end_dt:
+                q_income = q_income.filter(Income.income_date < end_dt)
+            if category:
+                # 仅当传入类别属于收入类别时才应用到收入查询
+                if category in income_categories:
+                    q_income = q_income.filter(Income.category == category)
+            total_income = float(q_income.scalar() or 0)
+
+        net_income = float(total_income - total_expense)
+
+        return success_response({
+            'totalExpense': total_expense,
+            'totalIncome': total_income,
+            'netIncome': net_income
+        })
+
+    except Exception as e:
+        return error_response(f'获取收支汇总失败: {str(e)}')
 
 @expenses_bp.route('/incomes', methods=['POST'])
 @login_required
