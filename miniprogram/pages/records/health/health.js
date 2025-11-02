@@ -37,6 +37,11 @@ Page({
     })
   },
 
+  // 供返回后主动刷新调用
+  refreshData() {
+    this.loadHealthRecords(true)
+  },
+
   // 检查登录状态
   checkLoginStatus() {
     const isLogin = app.globalData.isLogin

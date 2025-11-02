@@ -832,10 +832,19 @@ const app = getApp()
   // 输入框变更
   onInputChange: function(e) {
     const field = e.currentTarget.dataset.field
-    const value = e.detail.value
-    this.setData({
-      [`formData.${field}`]: value
-    })
+    let value = e.detail.value
+    // 体重输入：限制格式与范围提示
+    if (field === 'weight') {
+      value = String(value || '').replace(/[^\d.]/g, '')
+      const parts = value.split('.')
+      if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('')
+      if (parts[1] && parts[1].length > 2) value = parts[0] + '.' + parts[1].substring(0, 2)
+      const num = Number(value)
+      if (value && (!isFinite(num) || num <= 0 || num >= 1000)) {
+        wx.showToast({ title: '体重需在 0–999.99 g', icon: 'none' })
+      }
+    }
+    this.setData({ [`formData.${field}`]: value })
     this.validateForm()
   },
 
@@ -984,6 +993,16 @@ const app = getApp()
         break
       case 'health':
         ok = ok && formData.parrot_ids && formData.parrot_ids.length > 0
+        // 体重范围校验（如填写）
+        if (ok) {
+          const s = String(formData.weight || '').trim()
+          if (s) {
+            const n = Number(s)
+            if (!isFinite(n) || n <= 0 || n >= 1000) {
+              ok = false
+            }
+          }
+        }
         break
       case 'breeding':
         ok = ok && !!formData.male_parrot_id && !!formData.female_parrot_id && !!formData.mating_date
@@ -1143,6 +1162,16 @@ const app = getApp()
         const isEdit = !!recordId
         const url = isEdit ? `/api/records/${recordId}` : '/api/records'
         const method = isEdit ? 'PUT' : 'POST'
+        // 体重前置校验，避免后端报错
+        const sWeight = String(formData.weight || '').trim()
+        if (sWeight) {
+          const n = Number(sWeight)
+          if (!isFinite(n) || n <= 0 || n >= 1000) {
+            app.showError('体重需在 0–999.99 g 范围内')
+            this.setData({ submitting: false })
+            return
+          }
+        }
         // 将空字符串转换为 null，并解析为数字
         const toNumberOrNull = (v) => {
           const s = String(v || '').trim()
@@ -1150,14 +1179,17 @@ const app = getApp()
           const n = Number(s)
           return isNaN(n) ? null : n
         }
-        const payload = {
+        const commonHealth = {
           ...baseCommon,
           type: 'health',
-          record_date: timeStr,
-          parrot_id: (formData.parrot_ids && formData.parrot_ids[0]) || '',
           weight: toNumberOrNull(formData.weight),
           health_status: formData.health_status
         }
+        // 后端 health 新增接口期望 parrot_ids 列表，record_date 为 YYYY-MM-DD
+        // 编辑接口期望 record_date 为 YYYY-MM-DD HH:MM:SS，不支持修改鹦鹉
+        const payload = isEdit
+          ? { ...commonHealth, record_date: timeStr }
+          : { ...commonHealth, record_date: formData.record_date, parrot_ids: (formData.parrot_ids || []).map(id => Number(id)) }
         const res = await app.request({ url, method, data: payload })
         if (!res.success) throw new Error(res.message || '保存失败')
       } else if (recordType === 'breeding') {

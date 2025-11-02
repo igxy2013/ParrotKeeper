@@ -35,6 +35,22 @@ def _normalize_amount(amount):
         # 转换失败，返回None
         return None
 
+
+def _validate_weight(weight_value):
+    """校验体重范围与格式，返回错误消息字符串或None"""
+    if weight_value is None:
+        return None
+    try:
+        w = float(weight_value)
+    except (ValueError, TypeError):
+        return '体重格式不正确'
+    if w <= 0:
+        return '体重必须大于0'
+    # 与数据库 Numeric(5,2) 保持一致，最大 999.99
+    if w >= 1000:
+        return '体重超出范围（0–999.99 g）'
+    return None
+
 def add_feeding_record_internal(data):
     """内部函数：添加喂食记录"""
     try:
@@ -112,9 +128,14 @@ def add_health_record_internal(data):
         cost = _normalize_amount(data.get('cost'))
         image_urls = data.get('photos', [])
         next_checkup_date_str = data.get('next_checkup_date', '')
-        
+
         if not parrot_ids:
             return error_response('请选择鹦鹉')
+
+        # 体重校验（如填写）
+        weight_error = _validate_weight(weight)
+        if weight_error:
+            return error_response(weight_error)
         
         # 解析记录日期
         if not record_date_str:
@@ -603,6 +624,9 @@ def update_health_record_internal(record_id, data):
     if 'description' in data:
         record.description = data['description']
     if 'weight' in data:
+        weight_error = _validate_weight(data['weight'])
+        if weight_error:
+            return error_response(weight_error)
         record.weight = data['weight']
     if 'temperature' in data:
         record.temperature = data['temperature']
