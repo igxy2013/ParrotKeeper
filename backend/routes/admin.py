@@ -110,7 +110,8 @@ def list_announcements():
                 'content': a.content,
                 'status': a.status,
                 'created_at': a.created_at.isoformat() if a.created_at else None,
-                'created_by_user_id': a.created_by_user_id
+                'created_by_user_id': a.created_by_user_id,
+                'scheduled_at': a.scheduled_at.isoformat() if getattr(a, 'scheduled_at', None) else None
             })
         return success_response({'announcements': data})
     except Exception as e:
@@ -134,10 +135,21 @@ def create_announcement():
             return error_response('标题不能为空')
         if not content:
             return error_response('内容不能为空')
-        if status not in {'draft', 'published'}:
+        if status not in {'draft', 'published', 'scheduled'}:
             return error_response('无效状态')
+        # 处理定时发布时间
+        scheduled_at = None
+        if status == 'scheduled':
+            sa = body.get('scheduled_at')
+            if not sa:
+                return error_response('定时发布需提供发布时间')
+            try:
+                from datetime import datetime
+                scheduled_at = datetime.fromisoformat(sa)
+            except Exception:
+                return error_response('发布时间格式无效，应为ISO时间')
 
-        ann = Announcement(title=title, content=content, status=status, created_by_user_id=user.id)
+        ann = Announcement(title=title, content=content, status=status, created_by_user_id=user.id, scheduled_at=scheduled_at)
         db.session.add(ann)
         db.session.commit()
 
@@ -146,7 +158,8 @@ def create_announcement():
             'title': ann.title,
             'content': ann.content,
             'status': ann.status,
-            'created_at': ann.created_at.isoformat() if ann.created_at else None
+            'created_at': ann.created_at.isoformat() if ann.created_at else None,
+            'scheduled_at': ann.scheduled_at.isoformat() if ann.scheduled_at else None
         }, '公告已创建')
     except Exception as e:
         db.session.rollback()
@@ -166,8 +179,8 @@ def update_announcement(ann_id):
         if not ann:
             return error_response('公告不存在', 404)
 
-        # 已发布公告不允许直接编辑
-        if ann.status != 'draft':
+        # 已发布公告不允许直接编辑；草稿与定时可编辑
+        if ann.status == 'published':
             return error_response('已发布公告不可编辑', 400)
 
         body = request.get_json() or {}
@@ -187,9 +200,21 @@ def update_announcement(ann_id):
 
         if 'status' in body:
             status = (body.get('status') or '').strip()
-            if status not in {'draft', 'published'}:
+            if status not in {'draft', 'published', 'scheduled'}:
                 return error_response('无效状态')
             ann.status = status
+
+        # 允许更新/设定定时发布时间
+        if 'scheduled_at' in body:
+            sa = body.get('scheduled_at')
+            if sa:
+                try:
+                    from datetime import datetime
+                    ann.scheduled_at = datetime.fromisoformat(sa)
+                except Exception:
+                    return error_response('发布时间格式无效，应为ISO时间')
+            else:
+                ann.scheduled_at = None
 
         db.session.commit()
 
@@ -198,7 +223,8 @@ def update_announcement(ann_id):
             'title': ann.title,
             'content': ann.content,
             'status': ann.status,
-            'created_at': ann.created_at.isoformat() if ann.created_at else None
+            'created_at': ann.created_at.isoformat() if ann.created_at else None,
+            'scheduled_at': ann.scheduled_at.isoformat() if ann.scheduled_at else None
         }, '公告已更新')
     except Exception as e:
         db.session.rollback()

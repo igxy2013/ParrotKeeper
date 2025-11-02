@@ -38,9 +38,9 @@
 
       <!-- 清洁 -->
       <block wx:if="{{recordType === 'cleaning'}}">
-        <view class="row" wx:if="{{record.cleaning_type_name || record.cleaning_type}}">
+        <view class="row" wx:if="{{record.cleaning_type_text || record.cleaning_type_name || record.cleaning_type}}">
           <text class="label">清洁类型</text>
-          <text class="value">{{record.cleaning_type_name || record.cleaning_type}}</text>
+          <text class="value">{{record.cleaning_type_text || record.cleaning_type_name || record.cleaning_type}}</text>
         </view>
         <view class="row" wx:if="{{record.description}}">
           <text class="label">描述</text>
@@ -54,9 +54,9 @@
           <text class="label">体重</text>
           <text class="value">{{record.weight}}</text>
         </view>
-        <view class="row" wx:if="{{record.health_status}}">
+        <view class="row" wx:if="{{record.health_status_text || record.health_status}}">
           <text class="label">健康状态</text>
-          <text class="value">{{record.health_status}}</text>
+          <text class="value">{{record.health_status_text || record.health_status}}</text>
         </view>
       </block>
 

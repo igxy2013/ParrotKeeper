@@ -37,7 +37,10 @@ Component({
     clearAll() { this.triggerEvent('clearAll') },
     onItemTap(e) {
       const id = e.currentTarget.dataset.id
-      this.triggerEvent('itemTap', { id })
+      const index = e.currentTarget.dataset.index
+      const list = this.data.notifications || []
+      const item = typeof index !== 'undefined' ? list[index] : null
+      this.triggerEvent('itemTap', { id, item })
     },
     noop() {},
     onOverlayTap() { this.triggerEvent('close') }

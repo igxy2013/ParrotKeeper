@@ -15,11 +15,26 @@
           <textarea class="form-textarea" placeholder="请输入公告内容" value="{{content}}" bindinput="onContentInput" maxlength="-1" />
         </view>
         <view class="form-item">
-          <text class="form-label">状态</text>
+          <text class="form-label">发布类型</text>
           <picker mode="selector" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange">
             <view class="form-picker">{{statusOptions[statusIndex]}}</view>
           </picker>
         </view>
+        <!-- 定时发布时间选择，仅当选择“定时发布”显示 -->
+        <block wx:if="{{statusValues[statusIndex] === 'scheduled'}}">
+          <view class="form-item">
+            <text class="form-label">发布时间（日期）</text>
+            <picker mode="date" value="{{scheduledDate}}" start="{{today}}" bindchange="onScheduledDateChange">
+              <view class="form-picker">{{scheduledDate || '请选择日期'}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="form-label">发布时间（时间）</text>
+            <picker mode="time" value="{{scheduledTime}}" start="00:00" end="23:59" bindchange="onScheduledTimeChange">
+              <view class="form-picker">{{scheduledTime || '请选择时间'}}</view>
+            </picker>
+          </view>
+        </block>
         <view class="form-actions">
           <button class="create-btn" bindtap="submitAnnouncement">{{editingId ? '保存修改' : '创建公告'}}</button>
           <block wx:if="{{editingId}}">
@@ -44,7 +59,10 @@
           <view class="ann-item" wx:for="{{announcements}}" wx:key="id">
             <view class="ann-info">
               <text class="ann-title">{{item.title}}</text>
-              <text class="ann-meta">{{item.created_at_display}} · {{item.status === 'published' ? '已发布' : '草稿'}}</text>
+              <text class="ann-meta">
+                {{item.created_at_display}} ·
+                {{item.status === 'published' ? '已发布' : (item.status === 'scheduled' ? ('定时发布 ' + (item.scheduled_at ? item.scheduled_at.replace('T',' ').slice(0,16) : '')) : '草稿')}}
+              </text>
             </view>
             <view class="ann-actions">
               <view class="action-buttons">

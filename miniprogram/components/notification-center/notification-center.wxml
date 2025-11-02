@@ -9,7 +9,7 @@
       </view>
     </view>
     <view class="nc-list">
-      <view class="nc-item" wx:for="{{notifications}}" wx:key="id" bindtap="onItemTap" data-id="{{item.id}}">
+      <view class="nc-item" wx:for="{{notifications}}" wx:key="id" bindtap="onItemTap" data-id="{{item.id}}" data-index="{{index}}">
         <view class="nc-icon {{item.type}}">
           <text class="nc-icon-text">{{item.type === 'health' ? '♥' : (item.type === 'feeding' ? '🍎' : (item.type === 'system' ? '🔔' : '📣'))}}</text>
         </view>

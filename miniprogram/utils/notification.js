@@ -159,8 +159,8 @@ class NotificationManager {
     }
   }
 
-  // 添加本地通知
-  addLocalNotification(type, title, description, parrotName = '', time = '') {
+  // 添加本地通知（支持附加数据）
+  addLocalNotification(type, title, description, parrotName = '', time = '', extra = null) {
     try {
       const notifications = this.getLocalNotifications()
       const newNotification = {
@@ -173,6 +173,18 @@ class NotificationManager {
         unread: true,
         createdAt: new Date().toISOString()
       }
+      // 合并附加数据（如 announcementId、route 等）
+      if (extra && typeof extra === 'object') {
+        Object.keys(extra).forEach(k => {
+          // 仅当键未占用或明确需要覆盖时进行赋值
+          if (typeof newNotification[k] === 'undefined') {
+            newNotification[k] = extra[k]
+          } else {
+            // 避免覆盖核心字段，允许同名但不同用途字段通过前缀传入
+            // 使用保守策略：不覆盖已有字段
+          }
+        })
+      }
       
       notifications.unshift(newNotification)
       
@@ -184,7 +196,7 @@ class NotificationManager {
       wx.setStorageSync(this.LOCAL_NOTIFICATIONS_KEY, notifications)
       this.updateUnreadCount()
       this.triggerUpdateCallback()
-      
+
       console.log('本地通知已添加:', newNotification)
     } catch (error) {
       console.error('添加本地通知失败:', error)

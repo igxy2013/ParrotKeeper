@@ -265,8 +265,28 @@ def init_scheduler(app):
                     except Exception as e:
                         print(f"定时推送异常: {str(e)}")
 
-        # 每分钟执行一次，检测当前分钟是否有到点提醒
+        # 定时发布系统公告任务：每分钟检查一次
+        def publish_scheduled_announcements():
+            from models import Announcement
+            from datetime import datetime
+            with app.app_context():
+                now = datetime.now()
+                try:
+                    due = Announcement.query.filter_by(status='scheduled').all()
+                    count = 0
+                    for a in due:
+                        if a.scheduled_at and a.scheduled_at <= now:
+                            a.status = 'published'
+                            count += 1
+                    if count > 0:
+                        db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    print(f'发布定时公告失败: {e}')
+
+        # 每分钟执行一次，检测当前分钟是否有到点提醒与公告
         scheduler.add_job(push_due_reminders, 'cron', second=0)
+        scheduler.add_job(publish_scheduled_announcements, 'cron', second=10)
         scheduler.start()
         print('APScheduler 已启动')
     except Exception as e:

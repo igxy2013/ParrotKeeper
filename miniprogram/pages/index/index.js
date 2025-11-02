@@ -1340,10 +1340,17 @@ Page({
   },
 
   handleNotificationTap(e) {
-    const { id } = e.detail || {}
+    const { id, item } = e.detail || {}
     const app = getApp()
     const notificationManager = app.globalData.notificationManager
     notificationManager.markNotificationRead(id)
+    // 系统公告通知：跳转到公告中心并打开对应公告
+    if (item && item.type === 'system' && item.announcementId) {
+      try {
+        wx.navigateTo({ url: `/pages/announcements/center/center?id=${item.announcementId}` })
+        this.setData({ showNotifications: false })
+      } catch (_) {}
+    }
   },
 
 
@@ -1566,7 +1573,14 @@ Page({
       const newIds = []
       list.forEach(a => {
         if (!seen.includes(a.id)) {
-          nm.addLocalNotification('system', `系统公告：${a.title}`, (a.content || '').slice(0, 80))
+          nm.addLocalNotification(
+            'system',
+            `系统公告：${a.title}`,
+            (a.content || '').slice(0, 80),
+            '',
+            '',
+            { announcementId: a.id }
+          )
           newIds.push(a.id)
         }
       })

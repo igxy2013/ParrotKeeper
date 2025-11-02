@@ -29,4 +29,3 @@ def list_published_announcements():
     except Exception as e:
         # 公共接口返回统一结构但不泄露内部错误细节
         return success_response({'announcements': []}, message=f'获取公告失败: {str(e)}')
-

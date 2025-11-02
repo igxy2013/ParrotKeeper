@@ -69,6 +69,38 @@ Page({
       // 照片字段兼容处理：优先使用后端提供的 photos；否则尝试从 image_urls 解析
       record.photos = this.normalizePhotos(record);
 
+      // 清洁类型与健康状态中文映射
+      try {
+        if (type === 'cleaning') {
+          const cleaningTypeMap = {
+            cage: '笼子清洁',
+            toys: '玩具清洁',
+            perches: '栖木清洁',
+            food_water: '食物和水清洁',
+            disinfection: '消毒',
+            water_change: '饮用水更换',
+            water_bowl_clean: '水碗清洁'
+          };
+          const raw = record.cleaning_type || record.cleaning_type_name || '';
+          if (!record.cleaning_type_text) {
+            record.cleaning_type_text = cleaningTypeMap[raw] || record.cleaning_type_name || raw;
+          }
+        } else if (type === 'health') {
+          const healthStatusMap = {
+            healthy: '健康',
+            sick: '生病',
+            recovering: '康复中',
+            observation: '观察中'
+          };
+          const raw = record.health_status || '';
+          if (!record.health_status_text) {
+            record.health_status_text = healthStatusMap[raw] || raw;
+          }
+        }
+      } catch (e) {
+        // 映射失败时忽略，保持原值
+      }
+
       this.setData({
         record,
         displayTime,
