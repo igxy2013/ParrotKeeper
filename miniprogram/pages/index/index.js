@@ -701,17 +701,25 @@ Page({
         const feedingAgg = this.aggregateRecentFeeding(res.data.feeding || [])
         feedingAgg.forEach(item => allRecords.push(item))
         
-        // 处理健康记录（保持非聚合）
+        // 处理健康记录（保持非聚合，类型转中文）
         if (res.data.health && Array.isArray(res.data.health)) {
+          const healthTypeMap = {
+            checkup: '健康检查',
+            illness: '疾病记录',
+            treatment: '治疗护理',
+            vaccination: '疫苗接种',
+            weight: '体重称量'
+          }
           res.data.health.forEach(record => {
             const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
-            const recordType = record.record_type || '健康检查'
+            const typeKey = (record.record_type || '').toLowerCase()
+            const recordTypeText = healthTypeMap[typeKey] || '健康检查'
             // 兼容后端返回：优先 record_date，兜底 created_at
             const rawTime = record.record_date || record.created_at
             const dt = this.parseServerTime(rawTime)
             allRecords.push({
               id: `health_${record.id}`,
-              title: `进行了${recordType}`,
+              title: `进行了${recordTypeText}`,
               type: 'health',
               parrot_name: parrotName,
               timeValue: dt ? dt.toISOString() : rawTime,

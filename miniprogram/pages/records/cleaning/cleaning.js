@@ -213,11 +213,12 @@ Page({
       }
     })
     result.sort((a, b) => {
-      const da = this.parseServerTime(b.timeValue || b.cleaning_time)
-      const db = this.parseServerTime(a.timeValue || a.cleaning_time)
-      const ma = da ? da.getTime() : 0
-      const mb = db ? db.getTime() : 0
-      return ma - mb
+      const ta = this.parseServerTime(a.timeValue || a.cleaning_time)
+      const tb = this.parseServerTime(b.timeValue || b.cleaning_time)
+      const ma = ta ? ta.getTime() : 0
+      const mb = tb ? tb.getTime() : 0
+      // 按时间倒序，最近的在前
+      return mb - ma
     })
     return result
   },
@@ -274,12 +275,24 @@ Page({
   // 编辑记录
   editRecord(e) {
     const { id, ids, parrotIds, cleaningTypeIds } = e.currentTarget.dataset;
+    // 兜底：如果没有单个 id，但有记录ID集合，则取首个
+    let derivedId = id
+    if ((derivedId === undefined || derivedId === null || !String(derivedId).length) && ids !== undefined && ids !== null) {
+      if (Array.isArray(ids) && ids.length) {
+        derivedId = ids[0]
+      } else {
+        const s = String(ids)
+        if (s.length) {
+          derivedId = s.split(',')[0]
+        }
+      }
+    }
     const parts = [];
     const joinValue = (v) => Array.isArray(v) ? v.join(',') : String(v);
     parts.push('mode=edit');
     parts.push('type=cleaning');
-    if (id !== undefined && id !== null && String(id).length) {
-      parts.push('id=' + encodeURIComponent(String(id)));
+    if (derivedId !== undefined && derivedId !== null && String(derivedId).length) {
+      parts.push('id=' + encodeURIComponent(String(derivedId)));
     }
     if (ids !== undefined && ids !== null && String(joinValue(ids)).length) {
       parts.push('record_ids=' + encodeURIComponent(joinValue(ids)));

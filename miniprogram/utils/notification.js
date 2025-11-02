@@ -20,6 +20,8 @@ class NotificationManager {
       cleaningReminder: true,
       medicationReminder: true,
       breedingReminder: true,
+      // 是否在用户添加记录时发送订阅消息（默认关闭）
+      sendSubscriptionOnAdd: false,
       // 每日提醒时间（本地展示用）
       feedingReminderTime: '08:00',
       cleaningReminderTime: '18:00',
@@ -405,7 +407,7 @@ class NotificationManager {
       )
       
       // 发送订阅消息
-      if (this.TEMPLATE_IDS.feeding) {
+      if (settings.sendSubscriptionOnAdd && this.TEMPLATE_IDS.feeding) {
         this.sendSubscriptionMessage(this.TEMPLATE_IDS.feeding, {
           content: `${parrotName} 的喂食记录已成功记录`,
           time: this.formatTime(feedingTime),
@@ -430,7 +432,7 @@ class NotificationManager {
       )
       
       // 发送订阅消息
-      if (this.TEMPLATE_IDS.health) {
+      if (settings.sendSubscriptionOnAdd && this.TEMPLATE_IDS.health) {
         this.sendSubscriptionMessage(this.TEMPLATE_IDS.health, {
           content: `${parrotName} 的健康检查记录已成功添加`,
           time: this.formatTime(checkTime),
@@ -455,7 +457,7 @@ class NotificationManager {
       )
       
       // 发送订阅消息
-      if (this.TEMPLATE_IDS.cleaning) {
+      if (settings.sendSubscriptionOnAdd && this.TEMPLATE_IDS.cleaning) {
         this.sendSubscriptionMessage(this.TEMPLATE_IDS.cleaning, {
           content: `${parrotName} 的清洁记录已成功记录`,
           time: this.formatTime(cleaningTime),
@@ -480,7 +482,7 @@ class NotificationManager {
       )
       
       // 发送订阅消息
-      if (this.TEMPLATE_IDS.medication) {
+      if (settings.sendSubscriptionOnAdd && this.TEMPLATE_IDS.medication) {
         this.sendSubscriptionMessage(this.TEMPLATE_IDS.medication, {
           content: `${parrotName} 的用药记录已成功记录`,
           time: this.formatTime(medicationTime),
@@ -505,7 +507,7 @@ class NotificationManager {
       )
       
       // 发送订阅消息
-      if (this.TEMPLATE_IDS.breeding) {
+      if (settings.sendSubscriptionOnAdd && this.TEMPLATE_IDS.breeding) {
         this.sendSubscriptionMessage(this.TEMPLATE_IDS.breeding, {
           content: `${parrotNames} 的繁殖记录已成功记录`,
           time: this.formatTime(breedingTime),

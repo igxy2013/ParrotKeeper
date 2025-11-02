@@ -378,7 +378,12 @@ const app = getApp()
           parrot_ids: parrotId ? [parseInt(parrotId)] : [],
           record_date: dateStr,
           record_time: timeStr,
-          notes: record.notes || '',
+          // 确保为字符串，避免 null/非字符串导致绑定异常
+          notes: (function(n){
+            if (typeof n === 'string') return n
+            if (n === null || n === undefined) return ''
+            try { return String(n) } catch(_) { return '' }
+          })(record.notes),
           photos: (function(p){
             if (Array.isArray(p)) return p;
             if (typeof p === 'string') {
@@ -399,7 +404,12 @@ const app = getApp()
           
           // 清洁记录字段
           cleaning_type: record.cleaning_type || '',
-          description: record.description || '',
+          // 确保为字符串，避免 null/非字符串导致绑定异常
+          description: (function(d){
+            if (typeof d === 'string') return d
+            if (d === null || d === undefined) return ''
+            try { return String(d) } catch(_) { return '' }
+          })(record.description),
           
           // 繁殖记录字段
           male_parrot_id: maleParrotId ? String(maleParrotId) : '',
@@ -1139,6 +1149,10 @@ const app = getApp()
         if (recordId) {
           // 编辑模式：检查是否有多个记录ID需要处理
           const hasBatchIds = Array.isArray(prefillRecordIds) && prefillRecordIds.length > 1
+          // 为清洁类型计算有效值：若用户未更改，则沿用预填类型
+          const effectiveCleaningTypes = (Array.isArray(formData.cleaning_types) && formData.cleaning_types.length > 0)
+            ? formData.cleaning_types
+            : (this.data.prefillCleaningTypeIds || [])
           
           if (hasBatchIds) {
             // 聚合编辑：需要处理多个记录ID的情况
@@ -1150,7 +1164,7 @@ const app = getApp()
               record_ids: prefillRecordIds, // 传递所有相关记录ID
               record_time: timeStr,
               parrot_ids: formData.parrot_ids,
-              cleaning_types: formData.cleaning_types || [],
+              cleaning_types: effectiveCleaningTypes,
               description: formData.description
             }
             const res = await app.request({ url, method, data: payload })
@@ -1164,7 +1178,7 @@ const app = getApp()
               type: 'cleaning',
               cleaning_time: timeStr,
               parrot_ids: formData.parrot_ids,
-              cleaning_types: formData.cleaning_types || [],
+              cleaning_types: effectiveCleaningTypes,
               description: formData.description
             }
             const res = await app.request({ url, method, data: payload })
