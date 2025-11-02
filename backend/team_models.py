@@ -11,6 +11,7 @@ class Team(db.Model):
     description = db.Column(db.Text)  # 团队描述
     invite_code = db.Column(db.String(20), unique=True, nullable=False)  # 邀请码
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 团队创建者
+    avatar_url = db.Column(db.String(255))  # 团队头像URL
     is_active = db.Column(db.Boolean, default=True)  # 团队是否激活
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

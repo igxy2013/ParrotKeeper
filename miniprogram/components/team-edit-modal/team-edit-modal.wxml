@@ -1,0 +1,41 @@
+<!--components/team-edit-modal/team-edit-modal.wxml-->
+<view class="modal-overlay" wx:if="{{visible}}" bindtap="onOverlayTap">
+  <view class="modal-container">
+    <view class="modal-header">
+      <text class="modal-title">编辑团队信息</text>
+      <view class="modal-close" bindtap="onClose">
+        <image class="modal-close-icon" src="/images/remix/close-line.png" mode="aspectFit" />
+      </view>
+    </view>
+    <view class="modal-body">
+      <!-- 团队头像上传 -->
+      <view class="form-group">
+        <text class="form-label">团队头像</text>
+        <view class="avatar-upload">
+          <image class="avatar-preview" wx:if="{{formData.avatar_url}}" src="{{formData.avatar_url}}" mode="aspectFill" bindtap="previewAvatar" />
+          <view class="avatar-placeholder" wx:else bindtap="chooseAvatar">
+            <text class="placeholder-text">+</text>
+          </view>
+          <view class="avatar-actions" wx:if="{{formData.avatar_url}}">
+            <button class="action-btn preview-btn" bindtap="previewAvatar">预览</button>
+            <button class="action-btn delete-btn" bindtap="deleteAvatar">删除</button>
+          </view>
+          <button class="upload-btn" bindtap="chooseAvatar">上传头像</button>
+        </view>
+      </view>
+      
+      <view class="form-group">
+        <text class="form-label">团队名称</text>
+        <input class="form-input" placeholder="请输入团队名称" value="{{formData.name}}" bindinput="onNameInput" maxlength="20" focus="{{visible}}" disabled="{{false}}" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">团队描述</text>
+        <textarea class="form-textarea" placeholder="团队简介（可选）" value="{{formData.description}}" bindinput="onDescInput" maxlength="100" disabled="{{false}}" />
+      </view>
+    </view>
+    <view class="modal-footer">
+      <button class="btn btn-secondary" bindtap="onClose">取消</button>
+      <button class="btn btn-primary" bindtap="onSubmit">保存</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "团队管理",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header",
+    "bottom-nav": "/components/bottom-nav/bottom-nav",
+    "team-edit-modal": "/components/team-edit-modal/team-edit-modal"
+  }
+}

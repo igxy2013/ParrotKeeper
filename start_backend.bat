@@ -49,12 +49,8 @@ if %errorlevel% neq 0 (
 :: Load .env into environment variables (simple KEY=VALUE parser)
 if exist ".env" (
     echo [INFO] Loading .env configuration...
-    for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
-        set "_key=%%A"
-        setlocal enabledelayedexpansion
-        set "_first=!_key:~0,1!"
-        endlocal & set "_first=%_first%"
-        if not "%_key%"=="" if not "%_first%"=="#" (
+    for /f "usebackq eol=# tokens=1,2 delims== " %%A in (".env") do (
+        if not "%%A"=="" if not "%%B"=="" (
             set "%%A=%%B"
         )
     )

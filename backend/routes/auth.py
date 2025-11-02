@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User
 from schemas import user_schema
 from utils import get_wechat_session, success_response, error_response
+from datetime import date, datetime
 import re
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -71,12 +72,28 @@ def login():
             if user_info.get('avatarUrl'):
                 user.avatar_url = user_info.get('avatarUrl')
         
+        # 每日签到积分逻辑
+        today = date.today()
+        checkin_bonus = 0
+        if not user.last_checkin_date or user.last_checkin_date < today:
+            # 今天还没有签到，增加1积分
+            user.points = (user.points or 0) + 1
+            user.last_checkin_date = today
+            checkin_bonus = 1
+        
         db.session.commit()
         
-        return success_response({
+        response_data = {
             'user': user_schema.dump(user),
             'session_key': session_key
-        }, '登录成功')
+        }
+        
+        # 如果获得了签到积分，在消息中提示
+        message = '登录成功'
+        if checkin_bonus > 0:
+            message = f'登录成功，获得签到积分 {checkin_bonus} 分！'
+        
+        return success_response(response_data, message)
         
     except Exception as e:
         db.session.rollback()
@@ -165,11 +182,25 @@ def account_login():
         
         # 更新用户模式
         user.user_mode = mode
+        
+        # 每日签到积分逻辑
+        today = date.today()
+        checkin_bonus = 0
+        if not user.last_checkin_date or user.last_checkin_date < today:
+            # 今天还没有签到，增加1积分
+            user.points = (user.points or 0) + 1
+            user.last_checkin_date = today
+            checkin_bonus = 1
+        
         db.session.commit()
+        
+        message = '登录成功'
+        if checkin_bonus > 0:
+            message = f'登录成功，获得签到积分 {checkin_bonus} 分！'
         
         return success_response({
             'user': user_schema.dump(user)
-        }, '登录成功')
+        }, message)
         
     except Exception as e:
         db.session.rollback()

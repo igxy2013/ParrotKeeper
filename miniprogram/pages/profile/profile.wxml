@@ -26,6 +26,12 @@
         </view>
       </view>
       <text class="user-role">{{roleDisplay}}</text>
+      <!-- 团队信息显示（仅团队模式） -->
+      <view class="team-info-row" wx:if="{{userMode === 'team' && (currentTeamName || teamInfo.name)}}">
+        <text class="team-name-label">团队：</text>
+        <text class="team-name-value">{{currentTeamName || teamInfo.name}}</text>
+        <text class="team-role-badge">{{teamRoleDisplay}}</text>
+      </view>
       <view class="nickname-edit" wx:if="{{isEditingNickname}}">
         <input 
           class="nickname-edit-input" 
@@ -107,47 +113,89 @@
 <!-- 团队信息弹窗 -->
 <view class="modal-overlay" wx:if="{{showTeamInfoModal}}" bindtap="hideTeamInfoModal">
   <view class="modal-container team-info-modal" catchtap="preventClose">
-    <view class="modal-header">
-      <text class="modal-title">当前团队</text>
-      <view class="modal-close" bindtap="hideTeamInfoModal"><image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" /></view>
+    <view class="modal-header team-modal-header">
+      <view class="modal-header-content">
+        <view class="modal-icon-wrapper">
+          <image class="modal-icon-img" src="{{iconPaths.userLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="userLine" />
+        </view>
+        <text class="modal-title">当前团队</text>
+      </view>
+      <view class="modal-close" bindtap="hideTeamInfoModal">
+        <image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" />
+      </view>
     </view>
-    <view class="modal-body">
-      <view class="team-info-section">
-        <text class="team-name">{{currentTeamName || '未加入团队'}}</text>
-        <text class="team-desc">{{teamInfo.description || '暂无团队描述'}}</text>
-        <text>成员数：{{teamInfo.member_count || 0}}</text>
-        <text>角色：{{teamInfo.user_role || teamInfo.role || '成员'}}</text>
-        <text>邀请码：{{teamInfo.invite_code || '暂无'}}</text>
-        <view class="members-section">
-          <text class="section-title">成员列表</text>
-          <block wx:if="{{teamInfo.members && teamInfo.members.length}}">
+    <view class="modal-body team-modal-body">
+      <!-- 团队基本信息卡片 -->
+      <view class="team-basic-card">
+        <view class="team-header-info">
+          <text class="team-name-large">{{currentTeamName || '未加入团队'}}</text>
+          <view class="team-role-tag" wx:if="{{teamInfo.user_role || teamInfo.role}}">
+            <text class="team-role-text">{{teamRoleDisplay || '团队成员'}}</text>
+          </view>
+        </view>
+        <text class="team-desc-text" wx:if="{{teamInfo.description}}">{{teamInfo.description}}</text>
+        <view class="team-stats-row">
+          <view class="team-stat-item">
+            <text class="team-stat-label">成员</text>
+            <text class="team-stat-value">{{teamInfo.member_count || 0}}</text>
+          </view>
+          <view class="team-stat-divider"></view>
+          <view class="team-stat-item">
+            <text class="team-stat-label">邀请码</text>
+            <text class="team-stat-value invite-code" wx:if="{{teamInfo.invite_code}}">{{teamInfo.invite_code}}</text>
+            <text class="team-stat-value invite-code-empty" wx:else>暂无</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 成员列表区域 -->
+      <view class="members-section-card">
+        <view class="members-section-header">
+          <text class="members-section-title">成员列表</text>
+          <text class="members-count" wx:if="{{teamInfo.members && teamInfo.members.length > 0}}">{{teamInfo.members.length}}人</text>
+        </view>
+        <block wx:if="{{teamInfo.members && teamInfo.members.length > 0}}">
+          <view class="members-list">
             <block wx:for="{{teamInfo.members}}" wx:key="id">
-              <view class="member-row">
-                <image class="member-avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
-                <view class="member-info">
-                  <text class="member-name">{{item.nickname}}</text>
-                  <text class="member-role">{{item.role}}</text>
+              <view class="member-card">
+                <view class="member-card-left">
+                  <image class="member-avatar-large" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+                  <view class="member-info-group">
+                    <view class="member-name-row">
+                      <text class="member-name-large">{{item.nickname}}</text>
+                      <view class="member-role-badge-small {{item.role === 'owner' ? 'role-owner' : (item.role === 'admin' ? 'role-admin' : 'role-member')}}">
+                        <text class="member-role-text-small">{{item.role === 'owner' ? '所有者' : (item.role === 'admin' ? '管理员' : '成员')}}</text>
+                      </view>
+                    </view>
+                  </view>
                 </view>
-                <view class="member-actions" wx:if="{{isTeamAdmin && item.role !== 'owner'}}">
-                  <button class="btn btn-secondary" size="mini" data-user-id="{{item.id}}" bindtap="changeMemberRole">{{item.role === 'admin' ? '设为成员' : '设为管理员'}}</button>
-                  <button class="btn btn-danger" size="mini" data-user-id="{{item.id}}" bindtap="removeMember">移除</button>
+                <view class="member-actions-group" wx:if="{{isTeamAdmin && item.role !== 'owner'}}">
+                  <button class="member-action-btn btn-role" size="mini" data-user-id="{{item.id}}" bindtap="changeMemberRole">
+                    {{item.role === 'admin' ? '设为成员' : '设为管理员'}}
+                  </button>
+                  <button class="member-action-btn btn-remove" size="mini" data-user-id="{{item.id}}" bindtap="removeMember">移除</button>
                 </view>
               </view>
             </block>
-          </block>
-          <block wx:else>
-            <text class="empty-text">暂无成员</text>
-          </block>
-        </view>
+          </view>
+        </block>
+        <block wx:else>
+          <view class="empty-members">
+            <text class="empty-members-text">暂无成员</text>
+          </view>
+        </block>
       </view>
     </view>
-    <view class="modal-footer">
-      <button class="btn btn-secondary" bindtap="copyInviteCode" disabled="{{!(teamInfo && teamInfo.invite_code)}}">复制邀请码</button>
-      <button class="btn btn-danger" bindtap="confirmLeaveTeam" wx:if="{{teamInfo && (teamInfo.user_role || teamInfo.role) !== 'owner'}}">退出团队</button>
-      <button class="btn btn-primary" bindtap="hideTeamInfoModal">知道了</button>
+    <view class="modal-footer team-modal-footer">
+      <button class="btn btn-secondary btn-modal" bindtap="copyInviteCode" disabled="{{!(teamInfo && teamInfo.invite_code)}}">
+        <text wx:if="{{teamInfo && teamInfo.invite_code}}">复制邀请码</text>
+        <text wx:else>邀请码不可用</text>
+      </button>
+      <button class="btn btn-danger btn-modal" bindtap="confirmLeaveTeam" wx:if="{{teamInfo && (teamInfo.user_role || teamInfo.role) !== 'owner'}}">退出团队</button>
+      <button class="btn btn-primary btn-modal" bindtap="hideTeamInfoModal">关闭</button>
     </view>
   </view>
-  </view>
+</view>
 
 <!-- 加入团队弹窗 -->
 <view class="modal-overlay" wx:if="{{showJoinTeamModal}}" bindtap="hideJoinTeamModal">
@@ -196,80 +244,7 @@
 
 
 <!-- 团队管理弹窗 -->
-<view class="modal-overlay" wx:if="{{showTeamManageModal}}" bindtap="hideTeamManageModal">
-  <view class="modal-container manage-team-modal" catchtap="preventClose">
-    <view class="modal-header">
-      <text class="modal-title">团队管理</text>
-      <view class="modal-close" bindtap="hideTeamManageModal"><image class="modal-close-icon" src="{{iconPaths.closeLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="closeLine" /></view>
-    </view>
-    <view class="modal-body">
-      <view class="cards-grid">
-        <!-- 基本信息卡片 -->
-        <view class="card">
-          <view class="card-header">
-            <text class="card-title">基本信息</text>
-          </view>
-          <view class="card-content">
-            <view class="form-row">
-              <text class="form-label">团队名称</text>
-              <input class="form-input" placeholder="请输入团队名称" value="{{editTeamName}}" bindinput="onEditTeamNameInput" maxlength="20" />
-            </view>
-            <view class="form-row">
-              <text class="form-label">团队描述</text>
-              <textarea class="form-textarea" placeholder="团队简介（可选）" value="{{editTeamDesc}}" bindinput="onEditTeamDescInput" maxlength="100" />
-            </view>
-          </view>
-        </view>
-
-        <!-- 邀请码卡片 -->
-        <view class="card">
-          <view class="card-header">
-            <text class="card-title">邀请码</text>
-          </view>
-          <view class="card-content">
-            <view class="invite-row">
-              <text>当前邀请码：{{teamInfo.invite_code || '暂无'}}</text>
-              <button class="btn btn-secondary" size="mini" bindtap="copyInviteCode" disabled="{{!(teamInfo && teamInfo.invite_code)}}">复制邀请码</button>
-            </view>
-          </view>
-        </view>
-
-        <!-- 成员管理卡片 -->
-        <view class="card">
-          <view class="card-header">
-            <text class="card-title">成员管理</text>
-          </view>
-          <view class="card-content">
-            <block wx:if="{{teamInfo.members && teamInfo.members.length}}">
-              <block wx:for="{{teamInfo.members}}" wx:key="id">
-                <view class="member-row">
-                  <image class="member-avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
-                  <view class="member-info">
-                    <text class="member-name">{{item.nickname}}</text>
-                    <text class="member-role">{{item.role}}</text>
-                  </view>
-                  <view class="member-actions" wx:if="{{isTeamAdmin && item.role !== 'owner'}}">
-                    <button class="btn btn-secondary" size="mini" data-user-id="{{item.id}}" data-role="admin" bindtap="changeMemberRole" disabled="{{item.role === 'admin'}}">设为管理员</button>
-                    <button class="btn btn-secondary" size="mini" data-user-id="{{item.id}}" data-role="member" bindtap="changeMemberRole" disabled="{{item.role === 'member'}}">设为成员</button>
-                    <button class="btn btn-danger" size="mini" data-user-id="{{item.id}}" bindtap="removeMember">移除</button>
-                  </view>
-                </view>
-              </block>
-            </block>
-            <block wx:else>
-              <text class="empty-text">暂无成员</text>
-            </block>
-          </view>
-        </view>
-      </view>
-    </view>
-    <view class="modal-footer">
-      <button class="btn btn-primary" bindtap="confirmUpdateTeam" disabled="{{!isTeamAdmin || !editTeamName}}">保存更新</button>
-      <button class="btn" bindtap="hideTeamManageModal">关闭</button>
-    </view>
-  </view>
-  
-</view>
+<!-- 团队管理弹窗已迁移为页面：/pages/teams/manage/manage -->
 
 <!-- 团队协作模块（仅团队模式显示） -->
 <view class="team-card" wx:if="{{isLogin && userMode === 'team'}}">
@@ -289,33 +264,33 @@
       </view>
       <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
     </view>
-    <view class="team-item theme-green" bindtap="onTeamItemTap" data-action="join">
+    <view class="team-item theme-green {{(teamInfo.id || currentTeamName) ? 'disabled' : ''}}" bindtap="onTeamItemTap" data-action="join">
       <view class="team-item-icon">
         <image class="team-item-icon-img" src="{{iconPaths.addLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="addLine" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">加入团队</view>
-        <view class="team-item-desc">通过邀请码加入团队</view>
+        <view class="team-item-desc">{{(teamInfo.id || currentTeamName) ? '请先退出当前团队' : '通过邀请码加入团队'}}</view>
       </view>
       <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
     </view>
-    <view class="team-item theme-purple" bindtap="onTeamItemTap" data-action="create">
+    <view class="team-item theme-purple {{(teamInfo.id || currentTeamName) ? 'disabled' : ''}}" bindtap="onTeamItemTap" data-action="create">
       <view class="team-item-icon">
         <image class="team-item-icon-img" src="{{iconPaths.userFill}}" mode="aspectFit" binderror="onProfileIconError" data-key="userFill" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">创建团队</view>
-        <view class="team-item-desc">创建新的团队并邀请成员</view>
+        <view class="team-item-desc">{{(teamInfo.id || currentTeamName) ? '请先退出当前团队' : '创建新的团队并邀请成员'}}</view>
       </view>
       <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
     </view>
-    <view class="team-item theme-orange" bindtap="onTeamItemTap" data-action="manage">
+    <view class="team-item theme-orange {{!teamInfo.id && !currentTeamName ? 'disabled' : ''}}" bindtap="onTeamItemTap" data-action="manage" wx:if="{{isTeamOwner}}">
       <view class="team-item-icon">
         <image class="team-item-icon-img" src="{{iconPaths.sectionSettings}}" mode="aspectFit" binderror="onProfileIconError" data-key="sectionSettings" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">团队管理</view>
-        <view class="team-item-desc">管理团队成员和设置</view>
+        <view class="team-item-desc">{{teamInfo.id || currentTeamName ? '管理团队成员和设置' : '请先加入或创建团队'}}</view>
       </view>
       <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
     </view>

@@ -235,6 +235,17 @@ App({
                     wx.setStorageSync('openid', response.data.user.openid)
                     wx.setStorageSync('userInfo', response.data.user)
                     
+                    // 如果返回的消息中包含签到信息，显示提示
+                    if (response.message && response.message.includes('签到积分')) {
+                      setTimeout(() => {
+                        wx.showToast({
+                          title: response.message,
+                          icon: 'success',
+                          duration: 2000
+                        })
+                      }, 500)
+                    }
+                    
                     resolve(response.data.user)
                   } else {
                     reject(new Error(response.message))

@@ -1,0 +1,92 @@
+<view class="page-container">
+  <app-header title="团队管理" subtitle="管理团队信息与成员" showBack="{{true}}"></app-header>
+  <view class="page-content">
+    <!-- 团队信息概览 -->
+    <view class="card info-card">
+      <view class="card-content info-overview">
+        <view class="info-left">
+          <!-- 添加团队头像显示 -->
+          <image class="team-avatar" src="{{teamInfo.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+          <view class="info-text">
+            <text class="info-name">{{teamInfo.name || '未命名团队'}}</text>
+            <text class="info-desc">{{teamInfo.description || '暂无描述'}}</text>
+            <view class="info-meta">
+              <text class="tag">{{currentRoleDisplay || (isTeamOwner ? '创建者' : (isTeamAdmin ? '管理员' : '成员'))}}</text>
+              <text class="meta-text">成员 {{members.length || 0}}</text>
+              <text class="meta-text">邀请码 {{teamInfo.invite_code || '—'}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="info-actions">
+          <!-- 编辑按钮改成remix PNG图标按钮 -->
+          <button class="icon-btn" bindtap="showEditModal">
+            <image class="icon-img" src="/images/remix/edit-line.png" mode="aspectFit" />
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 移除基本信息卡片 -->
+
+    <!-- 邀请码 -->
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">团队邀请码</text>
+      </view>
+      <view class="card-content">
+        <view class="invite-row">
+          <text class="invite-code">{{teamInfo.invite_code || '暂无'}}</text>
+          <button class="btn btn-secondary small" bindtap="copyInviteCode" disabled="{{!teamInfo.invite_code}}">复制</button>
+        </view>
+        <text class="tips">使用邀请码让成员加入团队</text>
+      </view>
+    </view>
+
+    <!-- 成员管理 -->
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">成员管理</text>
+      </view>
+      <view class="card-content">
+        <block wx:if="{{members && members.length}}">
+          <view class="member-item" wx:for="{{members}}" wx:key="id">
+            <image class="avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+            <view class="member-info">
+              <text class="name">{{item.nickname || '未命名'}}</text>
+              <text class="role">角色：{{item.role_display}}</text>
+            </view>
+            <view class="member-actions">
+              <button class="btn small" bindtap="changeMemberRole" data-user-id="{{item.id}}" disabled="{{!isTeamOwner || item.role === 'owner'}}">修改角色</button>
+              <button class="btn btn-danger small" bindtap="removeMember" data-user-id="{{item.id}}" disabled="{{!isTeamOwner || item.role === 'owner'}}">移除</button>
+            </view>
+          </view>
+        </block>
+        <block wx:else>
+          <view class="empty">暂无成员</view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 操作 -->
+    <view class="card">
+      <view class="card-header">
+        <text class="card-title">其他操作</text>
+      </view>
+      <view class="card-content">
+        <view class="btn-row">
+          <button class="btn btn-secondary" bindtap="confirmLeaveTeam" disabled="{{isTeamOwner}}">离开团队</button>
+          <button class="btn btn-danger" bindtap="confirmDissolveTeam" wx:if="{{isTeamOwner}}">解散团队</button>
+        </view>
+      </view>
+    </view>
+  </view>
+  <bottom-nav active="profile" />
+</view>
+
+<!-- 添加团队编辑弹窗 -->
+<team-edit-modal 
+  visible="{{showEditModal}}" 
+  team-info="{{teamInfo}}"
+  bind:close="hideEditModal"
+  bind:submit="handleEditSubmit"
+/>

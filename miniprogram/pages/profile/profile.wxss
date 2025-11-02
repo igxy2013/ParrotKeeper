@@ -120,6 +120,41 @@
   line-height: 1.25;
 }
 
+/* 团队信息行 */
+.team-info-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.team-name-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.team-name-value {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.team-role-badge {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1rpx solid rgba(255, 255, 255, 0.35);
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  backdrop-filter: blur(8rpx);
+  margin-left: 4rpx;
+}
+
 .edit-nickname-btn {
   display: flex;
   align-items: center;
@@ -743,7 +778,7 @@
 
 .btn {
   flex: 1;
-  padding: 20rpx;
+  padding: 6rpx 12rpx;
   border-radius: 10rpx;
   text-align: center;
   font-size: 28rpx;
@@ -1729,6 +1764,34 @@
 .theme-dark .team-item.theme-purple .team-item-icon,
 .theme-dark .team-item.theme-orange .team-item-icon { background: rgba(255,255,255,0.08); }
 
+/* 团队管理菜单禁用状态 */
+.team-item.disabled {
+  opacity: 0.6;
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+
+.team-item.disabled .team-item-icon {
+  filter: grayscale(100%);
+  opacity: 0.6;
+}
+
+.team-item.disabled .team-item-title,
+.team-item.disabled .team-item-desc {
+  color: #9ca3af;
+}
+
+.team-item.disabled:active {
+  transform: none;
+  background: inherit;
+}
+
+/* 深色主题下的禁用状态 */
+.theme-dark .team-item.disabled .team-item-title,
+.theme-dark .team-item.disabled .team-item-desc {
+  color: #6b7280;
+}
+
 /* 团队占位样式 */
 .team-placeholder { padding: 20rpx; text-align: center; color: #6b7280; }
 .team-placeholder .placeholder-title { font-size: 28rpx; font-weight: 700; color: #111827; margin-bottom: 8rpx; }
@@ -1894,6 +1957,14 @@ button.menu-item::after { border: none; }
   max-width: 640rpx;
   box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.12);
   overflow: hidden;
+  position: relative;
+}
+
+/* 团队信息弹窗特殊样式 */
+.team-info-modal.modal-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
 }
 
 /* 团队管理弹窗尺寸与滚动 */
@@ -1954,3 +2025,400 @@ button.menu-item::after { border: none; }
 }
 .theme-dark .admin-item { border-top-color: #374151; }
 .theme-dark .admin-item-title { color: #f3f4f6; }
+
+/* ========== 优化后的团队信息弹窗样式 ========== */
+/* 团队弹窗头部优化 */
+.team-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 32rpx 24rpx;
+  border-bottom: 1rpx solid #f0f2f5;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.modal-header-content {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.modal-icon-wrapper {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 12rpx;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-icon-img {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.team-modal-header .modal-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.team-modal-header .modal-close {
+  position: static;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.team-modal-header .modal-close:active {
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(0.95);
+}
+
+.team-modal-header .modal-close-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+/* 团队弹窗内容区域 */
+.team-modal-body {
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 团队基本信息卡片 */
+.team-basic-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-bottom: 1rpx solid #f0f2f5;
+  padding: 32rpx;
+}
+
+.team-header-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.team-name-large {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #111827;
+  flex: 1;
+  min-width: 0;
+}
+
+.team-role-tag {
+  display: inline-block;
+  padding: 8rpx 16rpx;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.25);
+}
+
+.team-role-text {
+  font-size: 22rpx;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.team-desc-text {
+  font-size: 26rpx;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 24rpx;
+}
+
+.team-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #e5e7eb;
+}
+
+.team-stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.team-stat-label {
+  font-size: 24rpx;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.team-stat-value {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #111827;
+}
+
+.team-stat-value.invite-code {
+  font-family: 'Courier New', monospace;
+  font-size: 28rpx;
+  color: #3b82f6;
+  letter-spacing: 2rpx;
+}
+
+.team-stat-value.invite-code-empty {
+  font-size: 26rpx;
+  color: #9ca3af;
+}
+
+.team-stat-divider {
+  width: 1rpx;
+  height: 48rpx;
+  background: #e5e7eb;
+}
+
+/* 成员列表卡片 */
+.members-section-card {
+  padding: 32rpx;
+  background: #ffffff;
+}
+
+.members-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.members-section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #111827;
+}
+
+.members-count {
+  font-size: 24rpx;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+/* 成员卡片 */
+.member-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border: 1rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  transition: all 0.2s ease;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.member-card-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.member-avatar-large {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  border: 3rpx solid #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.member-info-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.member-name-large {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #111827;
+}
+
+.member-role-badge-small {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+}
+
+.member-role-badge-small.role-owner {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+}
+
+.member-role-badge-small.role-admin {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+}
+
+.member-role-badge-small.role-member {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.member-role-text-small {
+  font-size: 20rpx;
+}
+
+.member-actions-group {
+  display: flex;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.member-action-btn {
+  padding: 12rpx 20rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.member-action-btn.btn-role {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+}
+
+.member-action-btn.btn-role:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+.member-action-btn.btn-remove {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+}
+
+.member-action-btn.btn-remove:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+/* 空成员状态 */
+.empty-members {
+  padding: 60rpx 20rpx;
+  text-align: center;
+}
+
+.empty-members-text {
+  font-size: 26rpx;
+  color: #9ca3af;
+}
+
+/* 弹窗底部 */
+.team-modal-footer {
+  padding: 24rpx 32rpx;
+  border-top: 1rpx solid #f0f2f5;
+  background: #ffffff;
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.btn-modal {
+  flex: 1;
+  min-width: 140rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-modal:active {
+  transform: scale(0.97);
+}
+
+.btn-modal[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 暗色主题适配 */
+.theme-dark .team-modal-header {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+
+.theme-dark .team-modal-header .modal-title {
+  color: #e5e7eb;
+}
+
+.theme-dark .team-basic-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+
+.theme-dark .team-name-large {
+  color: #e5e7eb;
+}
+
+.theme-dark .team-desc-text {
+  color: #9ca3af;
+}
+
+.theme-dark .team-stat-label {
+  color: #6b7280;
+}
+
+.theme-dark .team-stat-value {
+  color: #e5e7eb;
+}
+
+.theme-dark .team-stat-divider {
+  background: rgba(255,255,255,0.1);
+}
+
+.theme-dark .members-section-title {
+  color: #e5e7eb;
+}
+
+.theme-dark .members-count {
+  color: #9ca3af;
+}
+
+.theme-dark .member-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border-color: rgba(255,255,255,0.1);
+}
+
+.theme-dark .member-name-large {
+  color: #e5e7eb;
+}
+
+.theme-dark .team-modal-footer {
+  background: rgba(255,255,255,0.03);
+  border-top-color: rgba(255,255,255,0.1);
+}

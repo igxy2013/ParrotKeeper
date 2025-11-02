@@ -71,6 +71,7 @@ def create_team():
         team = Team(
             name=data['name'],
             description=data.get('description', ''),
+            avatar_url=data.get('avatar_url', ''),
             invite_code=invite_code,
             owner_id=user.id
         )
@@ -78,11 +79,11 @@ def create_team():
         db.session.add(team)
         db.session.flush()  # 获取team.id
         
-        # 创建团队成员记录（创建者自动成为管理员 admin）
+        # 创建团队成员记录（创建者自动成为创建者 owner）
         team_member = TeamMember(
             team_id=team.id,
             user_id=user.id,
-            role='admin',
+            role='owner',
             permissions={'all': True}
         )
         
@@ -97,8 +98,9 @@ def create_team():
             'id': team.id,
             'name': team.name,
             'description': team.description,
+            'avatar_url': team.avatar_url,
             'invite_code': invite_code,
-            'role': 'admin'
+            'role': 'owner'
         }, '团队创建成功')
         
     except Exception as e:
@@ -156,6 +158,7 @@ def get_team_detail(team_id):
             'id': team.id,
             'name': team.name,
             'description': team.description,
+            'avatar_url': team.avatar_url,
             'invite_code': team.invite_code,
             'owner_id': team.owner_id,
             'member_count': len(members),
@@ -345,10 +348,10 @@ def change_member_role(team_id, user_id):
         if new_role not in ['member', 'admin']:
             return error_response('无效的角色类型')
         
-        # 检查操作权限（只有管理员可以修改角色）
+        # 检查操作权限（仅团队创建者可修改成员角色）
         operator_member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
-        if not operator_member or operator_member.role != 'admin':
-            return error_response('只有团队管理员可以修改成员角色', 403)
+        if not operator_member or operator_member.role != 'owner':
+            return error_response('只有团队创建者可以修改成员角色', 403)
         
         # 查找要修改的成员
         target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
@@ -380,10 +383,10 @@ def remove_team_member(team_id, user_id):
     try:
         user = request.current_user
         
-        # 检查操作权限（只有owner和admin可以移除成员）
+        # 检查操作权限（仅团队创建者可移除成员）
         operator_member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
-        if not operator_member or operator_member.role not in ['owner', 'admin']:
-            return error_response('您没有权限执行此操作', 403)
+        if not operator_member or operator_member.role != 'owner':
+            return error_response('只有团队创建者可以移除成员', 403)
         
         # 查找要移除的成员
         target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
@@ -544,10 +547,10 @@ def update_team(team_id):
         user = request.current_user
         data = request.get_json()
         
-        # 检查用户是否是团队管理员
+        # 检查用户是否是团队创建者
         member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
-        if not member or member.role not in ['owner', 'admin']:
-            return error_response('只有团队管理员可以修改团队信息', 403)
+        if not member or member.role != 'owner':
+            return error_response('只有团队创建者可以修改团队信息', 403)
         
         team = member.team
         if not team.is_active:
@@ -563,15 +566,58 @@ def update_team(team_id):
         if 'description' in data:
             team.description = data.get('description', '')
         
+        # 更新团队头像
+        if 'avatar_url' in data:
+            team.avatar_url = data.get('avatar_url', '')
+        
         team.updated_at = datetime.utcnow()
         db.session.commit()
         
         return success_response({
             'id': team.id,
             'name': team.name,
-            'description': team.description
+            'description': team.description,
+            'avatar_url': team.avatar_url
         }, '团队信息更新成功')
         
     except Exception as e:
         db.session.rollback()
         return error_response(f'更新团队信息失败: {str(e)}')
+
+@teams_bp.route('/<int:team_id>', methods=['DELETE'])
+@login_required
+def dissolve_team(team_id):
+    """解散团队（仅创建者）"""
+    try:
+        user = request.current_user
+        # 验证操作者成员身份与创建者角色
+        operator_member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not operator_member or operator_member.role != 'owner':
+            return error_response('只有团队创建者可以解散团队', 403)
+
+        team = operator_member.team
+        if not team or not team.is_active:
+            return error_response('团队不存在', 404)
+
+        # 软删除团队
+        team.is_active = False
+        team.updated_at = datetime.utcnow()
+
+        # 失效所有成员资格并清理 current_team_id
+        team_members = TeamMember.query.filter_by(team_id=team_id, is_active=True).all()
+        for tm in team_members:
+            tm.is_active = False
+            if tm.user.current_team_id == team_id:
+                tm.user.current_team_id = None
+
+        # 失效共享鹦鹉记录（如存在）
+        team_parrots = TeamParrot.query.filter_by(team_id=team_id, is_active=True).all()
+        for tp in team_parrots:
+            tp.is_active = False
+
+        db.session.commit()
+
+        return success_response({'id': team_id}, '团队已解散')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'解散团队失败: {str(e)}')

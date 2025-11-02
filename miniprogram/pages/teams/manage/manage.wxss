@@ -1,0 +1,74 @@
+.page-container {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 100vh;
+  /* 为固定底部导航预留空间（含安全区） */
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
+}
+.page-content { padding: 20rpx; }
+.card { background: #fff; border-radius: 16rpx; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.06); margin-bottom: 20rpx; overflow: hidden; }
+.card-header { padding: 24rpx 28rpx; border-bottom: 2rpx solid #f0f0f0; }
+.card-title { font-size: 32rpx; font-weight: 600; color: #333; }
+.card-content { padding: 24rpx 28rpx; }
+
+/* 顶部信息卡片样式 */
+.info-card { background: rgba(255,255,255,0.95); }
+.info-overview { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.info-left { display: flex; align-items: center; gap: 20rpx; }
+.team-avatar { width: 120rpx; height: 120rpx; border-radius: 50%; background: #f0f0f0; border: 4rpx solid #e2e8f0; }
+.info-text { flex: 1; display: flex; flex-direction: column; gap: 8rpx; }
+.info-name { font-size: 36rpx; font-weight: 700; color: #111827; }
+.info-desc { font-size: 26rpx; color: #6b7280; }
+.info-meta { display: flex; align-items: center; gap: 12rpx; margin-top: 8rpx; }
+.tag { padding: 6rpx 16rpx; border-radius: 999rpx; background: #10b981; color: #fff; font-size: 22rpx; }
+.meta-text { font-size: 24rpx; color: #6b7280; }
+.info-actions { flex-shrink: 0; }
+
+/* 图标按钮样式 */
+.icon-btn {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+}
+
+.icon-btn:active {
+  opacity: 0.8;
+}
+
+.icon-img {
+  width: 36rpx;
+  height: 36rpx;
+  filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
+}
+
+.form-row { margin-bottom: 20rpx; }
+.form-label { display: block; font-size: 28rpx; color: #333; font-weight: 500; margin-bottom: 12rpx; }
+.form-input { width: 100%; height: 80rpx; padding: 0 20rpx; border: 2rpx solid #e0e0e0; border-radius: 10rpx; font-size: 28rpx; background: #fff; box-sizing: border-box; }
+.form-textarea { width: 100%; min-height: 120rpx; padding: 20rpx; border: 2rpx solid #e0e0e0; border-radius: 12rpx; font-size: 28rpx; background: #fff; box-sizing: border-box; }
+.form-input:focus, .form-textarea:focus { border-color: #10b981; outline: none; }
+
+.btn-row { display: flex; gap: 20rpx; }
+.btn { padding: 6rpx 24rpx; border-radius: 10rpx; font-size: 28rpx; background: #f5f5f5; color: #333; border: none; }
+.btn.small { padding: 6rpx 24rpx; font-size: 26rpx; }
+.btn-primary { background: #10b981; color: #fff; }
+.btn-secondary { background: #eef2f7; color: #333; }
+.btn-danger { background: #ff4d4f; color: #fff; }
+
+.invite-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.invite-code { font-size: 28rpx; color: #333; }
+.tips { font-size: 24rpx; color: #888; margin-top: 10rpx; }
+
+.member-item { display: flex; align-items: center; gap: 16rpx; padding: 16rpx 0; border-bottom: 2rpx solid #f5f5f5; }
+.member-item:last-child { border-bottom: none; }
+.avatar { width: 72rpx; height: 72rpx; border-radius: 50%; background: #f0f0f0; }
+.member-info { flex: 1; }
+.name { font-size: 28rpx; color: #333; }
+.role { font-size: 24rpx; color: #666; }
+.member-actions { display: flex; gap: 12rpx; }
+
+.empty { text-align: center; color: #999; font-size: 26rpx; padding: 30rpx 0; }
