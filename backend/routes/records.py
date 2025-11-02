@@ -5,7 +5,7 @@ from schemas import (feeding_record_schema, feeding_records_schema,
                     cleaning_record_schema, cleaning_records_schema,
                     breeding_record_schema, breeding_records_schema,
                     feed_types_schema)
-from utils import login_required, success_response, error_response, paginate_query
+from utils import login_required, success_response, error_response, add_user_points, paginate_query
 from team_mode_utils import (get_accessible_parrot_ids_by_mode, filter_records_by_mode, 
                             get_accessible_feeding_record_ids_by_mode, get_accessible_health_record_ids_by_mode,
                             get_accessible_cleaning_record_ids_by_mode, get_accessible_breeding_record_ids_by_mode)
@@ -26,10 +26,328 @@ def _normalize_amount(amount):
     
     # 尝试转换为数字
     try:
-        normalized = float(amount)
-        return normalized if normalized > 0 else None
+        # 先尝试整数
+        if isinstance(amount, str) and '.' not in amount:
+            return int(amount)
+        # 再尝试浮点数
+        return float(amount)
     except (ValueError, TypeError):
+        # 转换失败，返回None
         return None
+
+def add_feeding_record_internal(data):
+    """内部函数：添加喂食记录"""
+    try:
+        user = request.current_user
+        parrot_ids = data.get('parrot_ids', [])
+        feeding_time_str = data.get('feeding_time') or data.get('record_date', '')
+        notes = data.get('notes', '')
+        food_amounts = data.get('food_amounts', {})
+        photos = data.get('photos', [])
+        
+        if not parrot_ids:
+            return error_response('请选择鹦鹉')
+        
+        # 解析喂食时间
+        if not feeding_time_str:
+            feeding_time = datetime.now()
+        else:
+            try:
+                # 尝试解析完整的时间字符串
+                if 'T' in feeding_time_str:
+                    feeding_time = datetime.fromisoformat(feeding_time_str.replace('Z', '+00:00'))
+                else:
+                    # 假设是日期格式，添加默认时间
+                    feeding_time = datetime.strptime(feeding_time_str, '%Y-%m-%d')
+            except ValueError:
+                feeding_time = datetime.now()
+        
+        # 创建喂食记录
+        created_records = []
+        for parrot_id in parrot_ids:
+            # 验证鹦鹉是否属于当前用户（或团队共享）
+            accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+            if parrot_id not in accessible_parrot_ids:
+                continue
+                
+            record = FeedingRecord(
+                parrot_id=parrot_id,
+                feeding_time=feeding_time,
+                notes=notes,
+                created_by_user_id=user.id,
+                team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+            )
+            db.session.add(record)
+            created_records.append(record)
+        
+        db.session.commit()
+        
+        # 增加喂食记录积分（每日首次添加喂食记录获得1积分）
+        if created_records:
+            add_user_points(user.id, 1, 'feeding')
+        
+        return success_response({
+            'records': feeding_records_schema.dump(created_records)
+        }, '喂食记录添加成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'添加喂食记录失败: {str(e)}')
+
+def add_health_record_internal(data):
+    """内部函数：添加健康记录"""
+    try:
+        user = request.current_user
+        parrot_ids = data.get('parrot_ids', [])
+        record_date_str = data.get('record_date') or data.get('record_date', '')
+        record_type = data.get('record_type', 'checkup')
+        health_status = data.get('health_status', 'healthy')
+        description = data.get('description', '')
+        weight = _normalize_amount(data.get('weight'))
+        temperature = _normalize_amount(data.get('temperature'))
+        symptoms = data.get('symptoms', '')
+        treatment = data.get('treatment', '')
+        medication = data.get('medication', '')
+        vet_name = data.get('vet_name', '')
+        cost = _normalize_amount(data.get('cost'))
+        image_urls = data.get('photos', [])
+        next_checkup_date_str = data.get('next_checkup_date', '')
+        
+        if not parrot_ids:
+            return error_response('请选择鹦鹉')
+        
+        # 解析记录日期
+        if not record_date_str:
+            record_date = date.today()
+        else:
+            try:
+                record_date = datetime.strptime(record_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                record_date = date.today()
+        
+        # 解析下次检查日期
+        next_checkup_date = None
+        if next_checkup_date_str:
+            try:
+                next_checkup_date = datetime.strptime(next_checkup_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        # 创建健康记录
+        created_records = []
+        for parrot_id in parrot_ids:
+            # 验证鹦鹉是否属于当前用户（或团队共享）
+            accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+            if parrot_id not in accessible_parrot_ids:
+                continue
+                
+            record = HealthRecord(
+                parrot_id=parrot_id,
+                record_type=record_type,
+                health_status=health_status,
+                description=description,
+                weight=weight,
+                temperature=temperature,
+                symptoms=symptoms,
+                treatment=treatment,
+                medication=medication,
+                vet_name=vet_name,
+                cost=cost,
+                image_urls=','.join(image_urls) if image_urls else None,
+                record_date=record_date,
+                next_checkup_date=next_checkup_date,
+                created_by_user_id=user.id,
+                team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+            )
+            db.session.add(record)
+            created_records.append(record)
+        
+        db.session.commit()
+        
+        # 增加健康记录积分（每日首次添加健康记录获得1积分）
+        if created_records:
+            add_user_points(user.id, 1, 'health')
+        
+        return success_response({
+            'records': health_records_schema.dump(created_records)
+        }, '健康记录添加成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'添加健康记录失败: {str(e)}')
+
+def add_cleaning_record_internal(data):
+    """内部函数：添加清洁记录"""
+    try:
+        user = request.current_user
+        parrot_ids = data.get('parrot_ids', [])
+        cleaning_time_str = data.get('cleaning_time') or data.get('record_date', '')
+        cleaning_types = data.get('cleaning_types', [])
+        description = data.get('description', '')
+        photos = data.get('photos', [])
+        
+        if not parrot_ids:
+            return error_response('请选择鹦鹉')
+        
+        # 解析清洁时间
+        if not cleaning_time_str:
+            cleaning_time = datetime.now()
+        else:
+            try:
+                # 尝试解析完整的时间字符串
+                if 'T' in cleaning_time_str:
+                    cleaning_time = datetime.fromisoformat(cleaning_time_str.replace('Z', '+00:00'))
+                else:
+                    # 假设是日期格式，添加默认时间
+                    cleaning_time = datetime.strptime(cleaning_time_str, '%Y-%m-%d')
+            except ValueError:
+                cleaning_time = datetime.now()
+        
+        # 创建清洁记录
+        created_records = []
+        for parrot_id in parrot_ids:
+            # 验证鹦鹉是否属于当前用户（或团队共享）
+            accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+            if parrot_id not in accessible_parrot_ids:
+                continue
+                
+            # 为每种清洁类型创建一条记录
+            for cleaning_type in cleaning_types:
+                record = CleaningRecord(
+                    parrot_id=parrot_id,
+                    cleaning_type=cleaning_type,
+                    description=description,
+                    cleaning_time=cleaning_time,
+                    created_by_user_id=user.id,
+                    team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+                )
+                db.session.add(record)
+                created_records.append(record)
+        
+        db.session.commit()
+        
+        # 增加清洁记录积分（每日首次添加清洁记录获得1积分）
+        if created_records:
+            add_user_points(user.id, 1, 'cleaning')
+        
+        return success_response({
+            'records': cleaning_records_schema.dump(created_records)
+        }, '清洁记录添加成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'添加清洁记录失败: {str(e)}')
+
+def add_breeding_record_internal(data):
+    """内部函数：添加繁殖记录"""
+    try:
+        user = request.current_user
+        male_parrot_id = data.get('male_parrot_id')
+        female_parrot_id = data.get('female_parrot_id')
+        mating_date_str = data.get('mating_date', '')
+        egg_laying_date_str = data.get('egg_laying_date', '')
+        egg_count = data.get('egg_count', 0)
+        hatching_date_str = data.get('hatching_date', '')
+        chick_count = data.get('chick_count', 0)
+        success_rate = data.get('success_rate')
+        notes = data.get('notes', '')
+        
+        if not male_parrot_id or not female_parrot_id:
+            return error_response('请选择公鸟和母鸟')
+        
+        # 验证鹦鹉是否属于当前用户（或团队共享）
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        if male_parrot_id not in accessible_parrot_ids or female_parrot_id not in accessible_parrot_ids:
+            return error_response('选择的鹦鹉不在您的访问范围内')
+        
+        # 解析日期
+        mating_date = None
+        if mating_date_str:
+            try:
+                mating_date = datetime.strptime(mating_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        egg_laying_date = None
+        if egg_laying_date_str:
+            try:
+                egg_laying_date = datetime.strptime(egg_laying_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        hatching_date = None
+        if hatching_date_str:
+            try:
+                hatching_date = datetime.strptime(hatching_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        # 创建繁殖记录
+        record = BreedingRecord(
+            male_parrot_id=male_parrot_id,
+            female_parrot_id=female_parrot_id,
+            mating_date=mating_date,
+            egg_laying_date=egg_laying_date,
+            egg_count=egg_count,
+            hatching_date=hatching_date,
+            chick_count=chick_count,
+            success_rate=success_rate,
+            notes=notes,
+            created_by_user_id=user.id,
+            team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+        )
+        db.session.add(record)
+        db.session.commit()
+        
+        # 增加繁殖记录积分（每日首次添加繁殖记录获得1积分）
+        add_user_points(user.id, 1, 'breeding')
+        
+        return success_response({
+            'record': breeding_record_schema.dump(record)
+        }, '繁殖记录添加成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'添加繁殖记录失败: {str(e)}')
+
+# 通用记录添加接口
+@records_bp.route('', methods=['POST'])
+@login_required
+def add_record():
+    """通用记录添加接口"""
+    try:
+        data = request.get_json()
+        if not data:
+            return error_response('请求数据不能为空')
+        
+        record_type = data.get('type')
+        if not record_type:
+            return error_response('记录类型不能为空')
+        
+        # 根据记录类型调用相应的添加方法
+        if record_type == 'feeding':
+            # 前置清洗：将空字符串分量统一转换为None
+            amt = data.get('amount')
+            if isinstance(amt, str) and amt.strip() == '':
+                data['amount'] = None
+            fa = data.get('food_amounts')
+            if isinstance(fa, dict):
+                for k, v in list(fa.items()):
+                    if isinstance(v, str) and v.strip() == '':
+                        fa[k] = None
+                data['food_amounts'] = fa
+            return add_feeding_record_internal(data)
+        elif record_type == 'health':
+            return add_health_record_internal(data)
+        elif record_type == 'cleaning':
+            return add_cleaning_record_internal(data)
+        elif record_type == 'breeding':
+            return add_breeding_record_internal(data)
+        else:
+            return error_response('不支持的记录类型')
+            
+    except Exception as e:
+        return error_response(f'添加记录失败: {str(e)}')
 
 # 通用记录获取接口
 @records_bp.route('/<int:record_id>', methods=['GET'])
@@ -115,45 +433,6 @@ def update_record(record_id):
             
     except Exception as e:
         return error_response(f'更新记录失败: {str(e)}')
-
-# 通用记录添加接口
-@records_bp.route('', methods=['POST'])
-@login_required
-def add_record():
-    """通用记录添加接口"""
-    try:
-        data = request.get_json()
-        if not data:
-            return error_response('请求数据不能为空')
-        
-        record_type = data.get('type')
-        if not record_type:
-            return error_response('记录类型不能为空')
-        
-        # 根据记录类型调用相应的添加方法
-        if record_type == 'feeding':
-            # 前置清洗：将空字符串分量统一转换为None
-            amt = data.get('amount')
-            if isinstance(amt, str) and amt.strip() == '':
-                data['amount'] = None
-            fa = data.get('food_amounts')
-            if isinstance(fa, dict):
-                for k, v in list(fa.items()):
-                    if isinstance(v, str) and v.strip() == '':
-                        fa[k] = None
-                data['food_amounts'] = fa
-            return add_feeding_record_internal(data)
-        elif record_type == 'health':
-            return add_health_record_internal(data)
-        elif record_type == 'cleaning':
-            return add_cleaning_record_internal(data)
-        elif record_type == 'breeding':
-            return add_breeding_record_internal(data)
-        else:
-            return error_response('不支持的记录类型')
-            
-    except Exception as e:
-        return error_response(f'添加记录失败: {str(e)}')
 
 # 最近记录相关
 @records_bp.route('/recent', methods=['GET'])
@@ -506,137 +785,6 @@ def update_breeding_record_internal(record_id, data):
     
     return success_response(breeding_record_schema.dump(record), '更新成功')
 
-def add_feeding_record_internal(data):
-    """内部喂食记录添加方法"""
-    user = request.current_user
-    # 兜底清洗：将传入payload中的空字符串分量转为None
-    if 'amount' in data and isinstance(data['amount'], str) and data['amount'].strip() == '':
-        data['amount'] = None
-    if isinstance(data.get('food_amounts'), dict):
-        for k in list(data['food_amounts'].keys()):
-            v = data['food_amounts'][k]
-            if isinstance(v, str) and v.strip() == '':
-                data['food_amounts'][k] = None
-    
-    # 在团队模式下，只有管理员才能添加喂食记录
-    if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        if not user.current_team_id:
-            return error_response('请先选择团队', 400)
-        
-        # 检查用户是否是团队管理员
-        from team_models import TeamMember
-        member = TeamMember.query.filter_by(
-            team_id=user.current_team_id, 
-            user_id=user.id, 
-            is_active=True
-        ).first()
-        
-        if not member or member.role not in ['owner', 'admin']:
-            return error_response('只有团队管理员才能添加喂食记录', 403)
-    
-    # 支持多选鹦鹉
-    parrot_ids = data.get('parrot_ids', [])
-    if not parrot_ids:
-        # 兼容旧版本单选
-        parrot_id = data.get('parrot_id')
-        if parrot_id:
-            parrot_ids = [parrot_id]
-        else:
-            return error_response('请选择鹦鹉')
-    
-    # 支持多选食物类型
-    food_type_ids = data.get('food_types', [])
-    if not food_type_ids:
-        # 兼容旧版本单选
-        feed_type_id = data.get('feed_type_id')
-        if feed_type_id:
-            food_type_ids = [feed_type_id]
-    
-    # 验证所有鹦鹉是否属于当前用户
-    parrots = Parrot.query.filter(
-        Parrot.id.in_(parrot_ids), 
-        Parrot.user_id == user.id, 
-        Parrot.is_active == True
-    ).all()
-    
-    if len(parrots) != len(parrot_ids):
-        return error_response('部分鹦鹉不存在或无权限访问')
-    
-    # 处理喂食时间
-    feeding_time = datetime.utcnow()
-    if data.get('feeding_time'):
-        try:
-            feeding_time = datetime.strptime(data['feeding_time'], '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            return error_response('喂食时间格式错误')
-    
-    created_records = []
-    
-    # 支持每个食物类型独立分量：data.food_amounts = { feed_type_id: amount }
-    food_amounts = data.get('food_amounts') or {}
-    
-    # 为每个鹦鹉和每个食物类型组合创建记录
-    for parrot_id in parrot_ids:
-        if food_type_ids:
-            # 如果选择了食物类型，为每个食物类型创建记录
-            for food_type_id in food_type_ids:
-                # 分量优先从 food_amounts 里取；没有则回退到全局 amount
-                amount_value = None
-                if isinstance(food_amounts, dict):
-                    amount_value = food_amounts.get(str(food_type_id))
-                    if amount_value is None:
-                        amount_value = food_amounts.get(food_type_id)
-                if amount_value is None:
-                    amount_value = data.get('amount')
-                
-                # 规范化分量值
-                normalized_amount = _normalize_amount(amount_value)
-                # 单食物类型允许分量为空；多食物类型必须提供每项分量
-                if normalized_amount is None and len(food_type_ids) > 1:
-                    return error_response('请为每个食物类型填写分量', 400)
-                
-                record = FeedingRecord(
-                    parrot_id=parrot_id,
-                    feed_type_id=food_type_id,
-                    amount=normalized_amount,
-                    feeding_time=feeding_time,
-                    notes=data.get('notes'),
-                    created_by_user_id=user.id,
-                    team_id=user.current_team_id if user.user_mode == 'team' else None
-                )
-                db.session.add(record)
-                created_records.append(record)
-        else:
-            # 如果没有选择食物类型，只创建一条记录
-            # 分量取全局 amount；若传了 food_amounts 且仅一个值，也兼容取该值
-            amount_value = data.get('amount')
-            if amount_value is None and isinstance(food_amounts, dict) and len(food_amounts) == 1:
-                amount_value = next(iter(food_amounts.values()))
-            
-            # 规范化分量值
-            normalized_amount = _normalize_amount(amount_value)
-            if normalized_amount is None:
-                return error_response('请填写分量', 400)
-            
-            record = FeedingRecord(
-                parrot_id=parrot_id,
-                feed_type_id=None,
-                amount=normalized_amount,
-                feeding_time=feeding_time,
-                notes=data.get('notes'),
-                created_by_user_id=user.id,
-                team_id=user.current_team_id if user.user_mode == 'team' else None
-            )
-            db.session.add(record)
-            created_records.append(record)
-    
-    db.session.commit()
-    
-    return success_response({
-        'records': feeding_records_schema.dump(created_records),
-        'count': len(created_records)
-    }, f'成功添加{len(created_records)}条喂食记录')
-
 @records_bp.route('/feeding', methods=['POST'])
 @login_required
 def create_feeding_record():
@@ -794,82 +942,6 @@ def get_health_records():
     except Exception as e:
         return error_response(f'获取健康记录失败: {str(e)}')
 
-def add_health_record_internal(data):
-    """内部健康记录添加方法"""
-    user = request.current_user
-    
-    # 在团队模式下，只有管理员才能添加健康记录
-    if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        if not user.current_team_id:
-            return error_response('请先选择团队', 400)
-        
-        # 检查用户是否是团队管理员
-        from team_models import TeamMember
-        member = TeamMember.query.filter_by(
-            team_id=user.current_team_id, 
-            user_id=user.id, 
-            is_active=True
-        ).first()
-        
-        if not member or member.role not in ['owner', 'admin']:
-            return error_response('只有团队管理员才能添加健康记录', 403)
-    
-    parrot_id = data.get('parrot_id')
-    if not parrot_id:
-        return error_response('请选择鹦鹉')
-    
-    parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id, is_active=True).first()
-    if not parrot:
-        return error_response('鹦鹉不存在')
-    
-    # 处理记录时间
-    record_date = datetime.utcnow()
-    if data.get('record_date'):
-        try:
-            record_date = datetime.strptime(data['record_date'], '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            return error_response('记录时间格式错误')
-    
-    # 处理下次检查日期
-    next_checkup_date = None
-    if data.get('next_checkup_date'):
-        try:
-            next_checkup_date = datetime.strptime(data['next_checkup_date'], '%Y-%m-%d').date()
-        except ValueError:
-            return error_response('下次检查日期格式错误')
-    
-    record = HealthRecord(
-        parrot_id=parrot_id,
-        record_type=data.get('record_type'),
-        health_status=data.get('health_status'),
-        description=data.get('description'),
-        notes=data.get('notes'),
-        weight=data.get('weight'),
-        temperature=data.get('temperature'),
-        symptoms=data.get('symptoms'),
-        treatment=data.get('treatment'),
-        medication=data.get('medication'),
-        vet_name=data.get('vet_name'),
-        cost=data.get('cost'),
-        record_date=record_date,
-        next_checkup_date=next_checkup_date,
-        created_by_user_id=user.id,  # 记录创建者
-        team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
-    )
-    # 记录照片
-    try:
-        import json
-        photos = data.get('photos') or []
-        if isinstance(photos, list) and photos:
-            record.image_urls = json.dumps(photos, ensure_ascii=False)
-    except Exception:
-        pass
-    
-    db.session.add(record)
-    db.session.commit()
-    
-    return success_response(health_record_schema.dump(record), '添加成功')
-
 @records_bp.route('/health', methods=['POST'])
 @login_required
 def create_health_record():
@@ -959,96 +1031,6 @@ def get_cleaning_records():
         
     except Exception as e:
         return error_response(f'获取清洁记录失败: {str(e)}')
-
-def add_cleaning_record_internal(data):
-    """内部清洁记录添加方法"""
-    user = request.current_user
-    
-    # 在团队模式下，只有管理员才能添加清洁记录
-    if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        if not user.current_team_id:
-            return error_response('请先选择团队', 400)
-        
-        # 检查用户是否是团队管理员
-        from team_models import TeamMember
-        member = TeamMember.query.filter_by(
-            team_id=user.current_team_id, 
-            user_id=user.id, 
-            is_active=True
-        ).first()
-        
-        if not member or member.role not in ['owner', 'admin']:
-            return error_response('只有团队管理员才能添加清洁记录', 403)
-    
-    # 支持多选鹦鹉，同时保持向后兼容
-    parrot_ids = data.get('parrot_ids', [])
-    if not parrot_ids:
-        # 向后兼容单选
-        parrot_id = data.get('parrot_id')
-        if parrot_id:
-            parrot_ids = [parrot_id]
-    
-    if not parrot_ids:
-        return error_response('请选择鹦鹉')
-    
-    # 验证所有选中的鹦鹉
-    parrots = Parrot.query.filter(
-        Parrot.id.in_(parrot_ids),
-        Parrot.user_id == user.id,
-        Parrot.is_active == True
-    ).all()
-    
-    if len(parrots) != len(parrot_ids):
-        return error_response('部分鹦鹉不存在或无权限访问')
-    
-    # 处理清洁时间
-    cleaning_time = datetime.utcnow()
-    if data.get('cleaning_time'):
-        try:
-            cleaning_time = datetime.strptime(data['cleaning_time'], '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            return error_response('清洁时间格式错误')
-    
-    # 为每个选中的鹦鹉创建清洁记录
-    created_records = []
-    
-    # 支持多选清洁类型
-    cleaning_types = data.get('cleaning_types', [])
-    if not cleaning_types:
-        # 向后兼容单选
-        cleaning_type = data.get('cleaning_type')
-        if cleaning_type:
-            cleaning_types = [cleaning_type]
-    
-    # 如果没有选择清洁类型，使用空值
-    if not cleaning_types:
-        cleaning_types = [None]
-    
-    for parrot_id in parrot_ids:
-        for cleaning_type in cleaning_types:
-            # 处理空字符串的cleaning_type
-            if cleaning_type == '':
-                cleaning_type = None
-                
-            record = CleaningRecord(
-                parrot_id=parrot_id,
-                cleaning_type=cleaning_type,
-                description=data.get('description'),
-                cleaning_time=cleaning_time,
-                notes=data.get('notes'),
-                created_by_user_id=user.id,  # 记录创建者
-                team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
-            )
-            db.session.add(record)
-            created_records.append(record)
-    
-    db.session.commit()
-    
-    # 返回创建的记录
-    if len(created_records) == 1:
-        return success_response(cleaning_record_schema.dump(created_records[0]), '添加成功')
-    else:
-        return success_response(cleaning_records_schema.dump(created_records), f'成功添加{len(created_records)}条清洁记录')
 
 @records_bp.route('/cleaning/batch-update', methods=['PUT'])
 @login_required
@@ -1226,101 +1208,6 @@ def get_breeding_records():
         
     except Exception as e:
         return error_response(f'获取繁殖记录失败: {str(e)}')
-
-def add_breeding_record_internal(data):
-    """内部繁殖记录添加方法"""
-    try:
-        user = request.current_user
-        
-        # 在团队模式下，只有管理员才能添加繁殖记录
-        if hasattr(user, 'user_mode') and user.user_mode == 'team':
-            if not user.current_team_id:
-                return error_response('请先选择团队', 400)
-            
-            # 检查用户是否是团队管理员
-            from team_models import TeamMember
-            member = TeamMember.query.filter_by(
-                team_id=user.current_team_id, 
-                user_id=user.id, 
-                is_active=True
-            ).first()
-            
-            if not member or member.role not in ['owner', 'admin']:
-                return error_response('只有团队管理员才能添加繁殖记录', 403)
-        
-        # 验证必需字段
-        male_parrot_id = data.get('male_parrot_id')
-        female_parrot_id = data.get('female_parrot_id')
-        
-        if not male_parrot_id:
-            return error_response('雄性鹦鹉ID不能为空')
-        if not female_parrot_id:
-            return error_response('雌性鹦鹉ID不能为空')
-        if male_parrot_id == female_parrot_id:
-            return error_response('雄性和雌性鹦鹉不能是同一只')
-        
-        # 验证鹦鹉是否存在且属于当前用户
-        male_parrot = Parrot.query.filter_by(id=male_parrot_id, user_id=user.id).first()
-        female_parrot = Parrot.query.filter_by(id=female_parrot_id, user_id=user.id).first()
-        
-        if not male_parrot:
-            return error_response('雄性鹦鹉不存在')
-        if not female_parrot:
-            return error_response('雌性鹦鹉不存在')
-        
-        # 处理数值字段，将空字符串转换为适当的默认值
-        egg_count = data.get('egg_count')
-        if egg_count == '' or egg_count is None:
-            egg_count = 0
-        else:
-            try:
-                egg_count = int(egg_count)
-            except (ValueError, TypeError):
-                egg_count = 0
-        
-        chick_count = data.get('chick_count')
-        if chick_count == '' or chick_count is None:
-            chick_count = 0
-        else:
-            try:
-                chick_count = int(chick_count)
-            except (ValueError, TypeError):
-                chick_count = 0
-        
-        success_rate = data.get('success_rate')
-        if success_rate == '' or success_rate is None:
-            success_rate = None
-        else:
-            try:
-                success_rate = float(success_rate)
-            except (ValueError, TypeError):
-                success_rate = None
-        
-        # 创建繁殖记录
-        breeding_record = BreedingRecord(
-            male_parrot_id=male_parrot_id,
-            female_parrot_id=female_parrot_id,
-            mating_date=datetime.strptime(data.get('mating_date'), '%Y-%m-%d').date() if data.get('mating_date') else None,
-            egg_laying_date=datetime.strptime(data.get('egg_laying_date'), '%Y-%m-%d').date() if data.get('egg_laying_date') else None,
-            egg_count=egg_count,
-            hatching_date=datetime.strptime(data.get('hatching_date'), '%Y-%m-%d').date() if data.get('hatching_date') else None,
-            chick_count=chick_count,
-            success_rate=success_rate,
-            notes=data.get('notes', ''),
-            created_by_user_id=user.id,  # 记录创建者
-            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
-        )
-        
-        db.session.add(breeding_record)
-        db.session.commit()
-        
-        return success_response(breeding_record_schema.dump(breeding_record), '繁殖记录添加成功')
-        
-    except ValueError as e:
-        return error_response(f'日期格式错误: {str(e)}')
-    except Exception as e:
-        db.session.rollback()
-        return error_response(f'添加繁殖记录失败: {str(e)}')
 
 @records_bp.route('/breeding', methods=['POST'])
 @login_required

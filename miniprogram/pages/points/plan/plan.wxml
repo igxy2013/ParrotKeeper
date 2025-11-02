@@ -1,0 +1,21 @@
+<app-header title="积分计划" show-back="true" />
+
+<view class="page points-plan {{pageThemeClass}}">
+  <view class="intro">
+    <text>了解如何在鹦鹉管家中获得积分。</text>
+  </view>
+
+  <view class="rules">
+    <block wx:for="{{rules}}" wx:key="index">
+      <view class="rule-item">
+        <view class="rule-title">{{item.title}}</view>
+        <view class="rule-desc">{{item.desc}}</view>
+      </view>
+    </block>
+  </view>
+
+  <view class="tip">
+    <text>提示：积分用于激励良好的护理习惯，未来可能用于兑换徽章或权益。</text>
+  </view>
+</view>
+

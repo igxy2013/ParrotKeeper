@@ -31,6 +31,7 @@
             <image class="avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill"></image>
             <view class="info">
               <text class="name">{{item.nickname || item.username || ('用户' + item.id)}}</text>
+              <text class="meta">积分: {{item.points || 0}}</text>
               <text class="meta">{{item.phone || ''}}</text>
             </view>
             <picker mode="selector" range="{{roleDisplay}}" value="{{item.selectedIndex}}" bindchange="changeRole" data-index="{{index}}">

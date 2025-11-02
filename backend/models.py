@@ -28,7 +28,7 @@ class User(db.Model):
     parrots = db.relationship('Parrot', backref='owner', lazy=True, cascade='all, delete-orphan')
     expenses = db.relationship('Expense', backref='user', lazy=True, cascade='all, delete-orphan')
     incomes = db.relationship('Income', backref='user', lazy=True, cascade='all, delete-orphan')
-    reminders = db.relationship('Reminder', backref='user', lazy=True, cascade='all, delete-orphan')
+    reminders = db.relationship('Reminder', back_populates='user', lazy=True, cascade='all, delete-orphan')
 
 class ParrotSpecies(db.Model):
     __tablename__ = 'parrot_species'
@@ -73,7 +73,7 @@ class Parrot(db.Model):
     cleaning_records = db.relationship('CleaningRecord', backref='parrot', lazy=True, cascade='all, delete-orphan')
     expenses = db.relationship('Expense', backref='parrot', lazy=True)
     incomes = db.relationship('Income', backref='parrot', lazy=True)
-    reminders = db.relationship('Reminder', backref='parrot', lazy=True, cascade='all, delete-orphan')
+    reminders = db.relationship('Reminder', back_populates='parrot', lazy=True, cascade='all, delete-orphan')
 
 class FeedType(db.Model):
     __tablename__ = 'feed_types'
@@ -196,47 +196,19 @@ class Income(db.Model):
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class Reminder(db.Model):
-    __tablename__ = 'reminders'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
-    reminder_type = db.Column(db.Enum('feeding', 'cleaning', 'checkup', 'medication'))
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-    reminder_time = db.Column(db.Time)
-    frequency = db.Column(db.Enum('daily', 'weekly', 'monthly', 'once'), default='daily')
-    is_active = db.Column(db.Boolean, default=True)
-    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class ReminderLog(db.Model):
-    __tablename__ = 'reminder_logs'
-
-    id = db.Column(db.Integer, primary_key=True)
-    reminder_id = db.Column(db.Integer, db.ForeignKey('reminders.id'), nullable=False)
-    sent_date = db.Column(db.Date, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # 每个提醒每天只能记录一次，避免重复推送
-    __table_args__ = (db.UniqueConstraint('reminder_id', 'sent_date', name='unique_reminder_daily_log'),)
-
 class Achievement(db.Model):
     __tablename__ = 'achievements'
     
     id = db.Column(db.Integer, primary_key=True)
-    key = db.Column(db.String(50), unique=True, nullable=False)  # 成就唯一标识
-    title = db.Column(db.String(100), nullable=False)  # 成就标题
-    description = db.Column(db.String(255), nullable=False)  # 成就描述
-    icon = db.Column(db.String(50), nullable=False)  # 图标名称
-    color = db.Column(db.String(20), default='blue')  # 背景颜色
-    condition_type = db.Column(db.Enum('parrot_count', 'feeding_count', 'health_check_count', 'stats_view_count'), nullable=False)  # 条件类型
-    target_value = db.Column(db.Integer, nullable=False)  # 目标值
-    is_active = db.Column(db.Boolean, default=True)  # 是否启用
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    icon = db.Column(db.String(50))
+    color = db.Column(db.String(50))
+    condition_type = db.Column(db.Enum('parrot_count', 'feeding_count', 'health_check_count', 'stats_view_count'), nullable=False)
+    target_value = db.Column(db.Integer, nullable=False, default=0)
+    is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # 关系
     user_achievements = db.relationship('UserAchievement', backref='achievement', lazy=True, cascade='all, delete-orphan')
@@ -247,14 +219,65 @@ class UserAchievement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     achievement_id = db.Column(db.Integer, db.ForeignKey('achievements.id'), nullable=False)
-    unlocked_at = db.Column(db.DateTime, default=datetime.utcnow)  # 解锁时间
-    current_progress = db.Column(db.Integer, default=0)  # 当前进度
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    current_progress = db.Column(db.Integer, default=0)
+    unlocked_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 唯一约束：同一用户（及团队）每个成就只能解锁一次
+    __table_args__ = (db.UniqueConstraint('user_id', 'achievement_id', 'team_id', name='unique_user_achievement'),)
+
+class Reminder(db.Model):
+    __tablename__ = 'reminders'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    # 与业务一致的字段：类型、频率、启用、时间
+    reminder_type = db.Column(db.Enum('feeding', 'cleaning', 'checkup', 'medication', name='reminder_type_enum'))
+    frequency = db.Column(db.Enum('daily', 'weekly', 'monthly', 'once', name='reminder_frequency_enum'))
+    is_active = db.Column(db.Boolean, default=True)
+    reminder_time = db.Column(db.Time)
+    # 旧字段保留，兼容历史数据
+    remind_at = db.Column(db.DateTime)
+    is_repeated = db.Column(db.Boolean, default=False)
+    repeat_interval = db.Column(db.Enum('daily', 'weekly', 'monthly', 'yearly', name='repeat_interval_enum'))
+    is_completed = db.Column(db.Boolean, default=False)
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # 唯一约束：每个用户每个成就只能有一条记录
-    __table_args__ = (db.UniqueConstraint('user_id', 'achievement_id', 'team_id', name='unique_user_achievement'),)
+    # 关系
+    user = db.relationship('User', back_populates='reminders', lazy=True)
+    parrot = db.relationship('Parrot', back_populates='reminders', lazy=True)
+
+class ReminderLog(db.Model):
+    __tablename__ = 'reminder_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    reminder_id = db.Column(db.Integer, db.ForeignKey('reminders.id'), nullable=False)
+    sent_date = db.Column(db.Date, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 唯一约束：每条提醒每天只记录一次推送日志
+    __table_args__ = (db.UniqueConstraint('reminder_id', 'sent_date', name='unique_reminder_log'),)
+
+class UserSetting(db.Model):
+    __tablename__ = 'user_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    team_id = db.Column(db.Integer, nullable=True)
+    key = db.Column(db.String(100), nullable=False)
+    value = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'team_id', 'key', name='unique_user_setting_key'),)
+    
+    user = db.relationship('User', backref='settings', lazy=True)
 
 class UserStatistics(db.Model):
     __tablename__ = 'user_statistics'
@@ -268,6 +291,23 @@ class UserStatistics(db.Model):
     
     # 唯一约束：每个用户每个团队只能有一条统计记录
     __table_args__ = (db.UniqueConstraint('user_id', 'team_id', name='unique_user_statistics'),)
+
+class UserPointsRecord(db.Model):
+    """用户积分记录表，用于记录每日积分获取情况"""
+    __tablename__ = 'user_points_records'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    point_type = db.Column(db.String(50), nullable=False)  # 积分类型：'daily_visit', 'feeding', 'health', 'cleaning', 'breeding', 'expense'
+    points = db.Column(db.Integer, nullable=False)  # 获取的积分数量
+    record_date = db.Column(db.Date, default=date.today, nullable=False)  # 记录日期
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 唯一约束：每个用户每天每种积分类型只能有一条记录
+    __table_args__ = (db.UniqueConstraint('user_id', 'point_type', 'record_date', name='unique_user_points_record'),)
+    
+    # 关系
+    user = db.relationship('User', backref='points_records', lazy=True)
 
 class Feedback(db.Model):
     __tablename__ = 'feedbacks'
@@ -284,26 +324,13 @@ class Feedback(db.Model):
 
 class Announcement(db.Model):
     __tablename__ = 'announcements'
-
+    
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    status = db.Column(db.Enum('draft', 'published'), default='published')
-    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.Enum('draft', 'published'), default='draft')
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    
     # 关系
-    created_by = db.relationship('User', backref='announcements', lazy=True)
-
-class UserSetting(db.Model):
-    __tablename__ = 'user_settings'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    team_id = db.Column(db.Integer, nullable=True)
-    key = db.Column(db.String(100), nullable=False)
-    value = db.Column(db.Text, nullable=True)  # 存储JSON字符串
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    __table_args__ = (db.UniqueConstraint('user_id', 'team_id', 'key', name='unique_user_setting_key'),)
+    creator = db.relationship('User', backref='announcements', lazy=True)

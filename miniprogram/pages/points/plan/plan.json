@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "积分计划",
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": false
+}

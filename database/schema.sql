@@ -9,6 +9,8 @@ CREATE TABLE users (
     nickname VARCHAR(100) COMMENT '昵称',
     avatar_url VARCHAR(255) COMMENT '头像URL',
     phone VARCHAR(20) COMMENT '手机号',
+    points INT DEFAULT 0 NOT NULL COMMENT '用户积分',
+    last_checkin_date DATE COMMENT '最后签到日期',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -132,6 +134,20 @@ CREATE TABLE expenses (
     FOREIGN KEY (parrot_id) REFERENCES parrots(id) ON DELETE SET NULL
 );
 
+-- 收入记录表
+CREATE TABLE incomes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    parrot_id INT COMMENT '关联鹦鹉ID（可为空，表示通用收入）',
+    category ENUM('breeding_sale', 'bird_sale', 'service', 'competition', 'other') COMMENT '收入类别',
+    amount DECIMAL(8,2) NOT NULL COMMENT '金额',
+    description VARCHAR(255) COMMENT '描述',
+    income_date DATE DEFAULT (CURRENT_DATE) COMMENT '收入日期',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (parrot_id) REFERENCES parrots(id) ON DELETE SET NULL
+);
+
 -- 提醒设置表
 CREATE TABLE reminders (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -147,6 +163,49 @@ CREATE TABLE reminders (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (parrot_id) REFERENCES parrots(id) ON DELETE CASCADE
+);
+
+-- 用户统计表
+CREATE TABLE user_statistics (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    stats_views INT DEFAULT 0 COMMENT '统计页面查看次数',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_user_stats (user_id)
+);
+
+-- 用户积分记录表
+CREATE TABLE user_points_records (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    point_type VARCHAR(50) NOT NULL COMMENT '积分类型：checkin, daily_visit, feeding, health, cleaning, breeding, expense',
+    points INT NOT NULL COMMENT '获取的积分数量',
+    record_date DATE NOT NULL COMMENT '记录日期',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_user_points_record (user_id, point_type, record_date),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 用户反馈表
+CREATE TABLE feedbacks (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL COMMENT '反馈内容',
+    contact VARCHAR(255) COMMENT '联系方式',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 系统公告表
+CREATE TABLE announcements (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL COMMENT '公告标题',
+    content TEXT NOT NULL COMMENT '公告内容',
+    status ENUM('draft', 'published') DEFAULT 'draft' COMMENT '状态',
+    created_by_user_id INT COMMENT '创建者ID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 插入一些基础的鹦鹉品种数据

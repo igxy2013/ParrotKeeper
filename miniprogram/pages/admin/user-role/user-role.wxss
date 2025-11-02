@@ -19,6 +19,7 @@
 .info { flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
 .name { font-size: 30rpx; color: #0f172a; font-weight: 600; }
 .meta { font-size: 24rpx; color: #64748b; }
+.points { font-size: 24rpx; color: #f59e0b; font-weight: 600; }
 
 .role-picker { display: flex; align-items: center; gap: 12rpx; padding: 12rpx 16rpx; border: 1rpx solid #e5e7eb; border-radius: 20rpx; color: #111827; background: #f9fafb; }
 .role-label { font-size: 24rpx; color: #6b7280; }
@@ -30,6 +31,7 @@
 .theme-dark .user-item { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); box-shadow: none; }
 .theme-dark .name { color: #e5e7eb; }
 .theme-dark .meta { color: #9ca3af; }
+.theme-dark .points { color: #fbbf24; }
 .theme-dark .count { color: #9ca3af; }
 .theme-dark .count-grid { color: #9ca3af; }
 .theme-dark .role-picker { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #e5e7eb; }

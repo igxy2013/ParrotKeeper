@@ -6,6 +6,8 @@ from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageChops
 import io
+from models import db, User, UserPointsRecord
+from datetime import date, datetime
 
 def allowed_file(filename):
     """检查文件扩展名是否允许"""
@@ -43,49 +45,71 @@ def remove_background(image_path):
     """调用 remove.bg API 移除图片背景"""
     try:
         from flask import current_app
-        import requests
-
         api_key = current_app.config.get('REMOVE_BG_API_KEY')
-        api_url = current_app.config.get('REMOVE_BG_API_URL') or 'https://api.remove.bg/v1.0/removebg'
-
         if not api_key:
-            print('背景移除失败: 未配置 REMOVE_BG_API_KEY')
             return None
-
-        # 生成新的文件名（透明背景输出 PNG）
-        name, _ = os.path.splitext(image_path)
-        output_path = f"{name}_no_bg.png"
-
-        # 调用 remove.bg API
-        with open(image_path, 'rb') as f:
-            files = { 'image_file': f }
-            data = { 'size': 'auto', 'format': 'png' }
-            headers = { 'X-Api-Key': api_key }
-
-            resp = requests.post(api_url, files=files, data=data, headers=headers, timeout=60)
-
-        if resp.status_code == 200:
-            with open(output_path, 'wb') as out:
-                out.write(resp.content)
             
-            # 添加自动裁剪功能
-            cropped_path = auto_crop_image(output_path)
-            if cropped_path:
-                return cropped_path
-            else:
-                return output_path
-        else:
-            try:
-                err_json = resp.json()
-                print(f"背景移除失败: {err_json}")
-            except Exception:
-                print(f"背景移除失败: HTTP {resp.status_code}")
+        response = requests.post(
+            'https://api.remove.bg/v1.0/removebg',
+            files={'image_file': open(image_path, 'rb')},
+            data={'size': 'auto'},
+            headers={'X-Api-Key': api_key},
+        )
+        if response.status_code == 200:
+            # 保存处理后的图片
+            processed_filename = image_path.replace('.', '_processed.')
+            with open(processed_filename, 'wb') as f:
+                f.write(response.content)
+            return processed_filename
+        return None
     except Exception as e:
-        print(f"背景移除异常: {str(e)}")
-        # API 异常时不再进行本地回退
-    
-    # 如果所有方法都失败，返回None
-    return None
+        print(f"背景移除失败: {e}")
+        return None
+
+def add_user_points(user_id, points_to_add, point_type):
+    """为用户增加积分，避免同一天同一类型重复加分
+    point_type: 'checkin', 'daily_visit', 'feeding', 'health', 'cleaning', 'breeding', 'expense'
+    """
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return False
+            
+        today = date.today()
+        
+        # 检查今天是否已经获得过该类型的积分
+        existing_record = UserPointsRecord.query.filter_by(
+            user_id=user_id,
+            point_type=point_type,
+            record_date=today
+        ).first()
+        
+        if existing_record:
+            # 今天已经获得过该类型的积分
+            return False
+        
+        # 创建积分记录
+        points_record = UserPointsRecord(
+            user_id=user_id,
+            point_type=point_type,
+            points=points_to_add,
+            record_date=today
+        )
+        db.session.add(points_record)
+        
+        # 更新用户总积分
+        user.points = (user.points or 0) + points_to_add
+        
+        # 对于签到积分，更新最后签到日期
+        if point_type == 'checkin':
+            user.last_checkin_date = today
+            
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"增加用户积分失败: {e}")
+        return False
 
 def auto_crop_image(image_path):
     """自动裁剪图片，去除空白区域并将主体放大"""

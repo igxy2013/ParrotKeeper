@@ -85,6 +85,12 @@
       "pages": [
         "center/center"
       ]
+    },
+    {
+      "root": "pages/points",
+      "pages": [
+        "plan/plan"
+      ]
     }
   ],
     "entryPagePath": "pages/index/index",

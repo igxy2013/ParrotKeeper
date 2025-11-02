@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense, Income, UserStatistics
-from utils import login_required, success_response, error_response
+from utils import login_required, success_response, error_response, add_user_points
 from team_utils import get_accessible_parrots
 from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode, get_accessible_income_ids_by_mode
 from datetime import datetime, date, timedelta
@@ -15,7 +15,7 @@ def get_overview():
     try:
         user = request.current_user
         
-        # 记录统计页面查看次数
+        # 记录统计页面查看次数并增加访问积分
         team_id = getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
         user_stats = UserStatistics.query.filter_by(user_id=user.id, team_id=team_id).first()
         if not user_stats:
@@ -30,6 +30,9 @@ def get_overview():
         except Exception as e:
             db.session.rollback()
             print(f"[WARNING] 更新统计查看次数失败: {str(e)}")
+        
+        # 增加每日访问积分（每日首次访问首页获得1积分）
+        add_user_points(user.id, 1, 'daily_visit')
         
         # 根据用户模式获取可访问的鹦鹉ID
         parrot_ids = get_accessible_parrot_ids_by_mode(user)

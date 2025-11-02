@@ -1,0 +1,12 @@
+.page { padding: 24rpx; }
+.intro { margin: 20rpx 0; color: #4b5563; font-size: 26rpx; }
+.rules { display: flex; flex-direction: column; gap: 20rpx; }
+.rule-item { background: #ffffff; border: 1rpx solid #eef2f7; border-radius: 20rpx; padding: 24rpx; box-shadow: 0 4rpx 10rpx rgba(17, 24, 39, 0.06); }
+.rule-title { font-weight: 700; color: #111827; font-size: 28rpx; margin-bottom: 8rpx; }
+.rule-desc { color: #6b7280; font-size: 26rpx; }
+.tip { margin-top: 30rpx; color: #6b7280; font-size: 24rpx; }
+
+.theme-dark .rule-item { background: #1f2937; border-color: #374151; }
+.theme-dark .rule-title { color: #f9fafb; }
+.theme-dark .rule-desc, .theme-dark .intro, .theme-dark .tip { color: #d1d5db; }
+

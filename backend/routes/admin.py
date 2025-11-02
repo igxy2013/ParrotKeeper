@@ -44,6 +44,7 @@ def list_users():
                 'role': u.role,
                 'login_type': u.login_type,
                 'user_mode': u.user_mode,
+                'points': u.points,
                 'created_at': u.created_at.isoformat() if u.created_at else None
             })
 
