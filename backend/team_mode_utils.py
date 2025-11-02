@@ -5,6 +5,7 @@
 from models import db, User, Parrot, Expense, Income, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord
 from team_models import Team, TeamMember
 from sqlalchemy import and_, or_
+from sqlalchemy.orm import aliased
 
 def filter_parrots_by_mode(user, query):
     """根据用户模式过滤鹦鹉查询"""
@@ -134,13 +135,20 @@ def get_accessible_feeding_record_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL AND created_by_user_id = 当前用户ID）
-        record_ids = db.session.query(FeedingRecord.id).filter(
-            and_(
-                FeedingRecord.team_id.is_(None),
-                FeedingRecord.created_by_user_id == user.id
+        # 个人模式：基于鹦鹉归属的全部权限
+        # 仅当记录属于个人数据（record.team_id IS NULL），且对应鹦鹉属于当前用户且为个人鹦鹉（parrot.team_id IS NULL）
+        record_ids = (
+            db.session.query(FeedingRecord.id)
+            .join(Parrot, FeedingRecord.parrot_id == Parrot.id)
+            .filter(
+                and_(
+                    FeedingRecord.team_id.is_(None),
+                    Parrot.user_id == user.id,
+                    Parrot.team_id.is_(None)
+                )
             )
-        ).all()
+            .all()
+        )
     
     if record_ids:
         return [rid[0] for rid in record_ids]
@@ -159,13 +167,19 @@ def get_accessible_health_record_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL AND created_by_user_id = 当前用户ID）
-        record_ids = db.session.query(HealthRecord.id).filter(
-            and_(
-                HealthRecord.team_id.is_(None),
-                HealthRecord.created_by_user_id == user.id
+        # 个人模式：基于鹦鹉归属的全部权限
+        record_ids = (
+            db.session.query(HealthRecord.id)
+            .join(Parrot, HealthRecord.parrot_id == Parrot.id)
+            .filter(
+                and_(
+                    HealthRecord.team_id.is_(None),
+                    Parrot.user_id == user.id,
+                    Parrot.team_id.is_(None)
+                )
             )
-        ).all()
+            .all()
+        )
     
     if record_ids:
         return [rid[0] for rid in record_ids]
@@ -184,13 +198,19 @@ def get_accessible_cleaning_record_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL AND created_by_user_id = 当前用户ID）
-        record_ids = db.session.query(CleaningRecord.id).filter(
-            and_(
-                CleaningRecord.team_id.is_(None),
-                CleaningRecord.created_by_user_id == user.id
+        # 个人模式：基于鹦鹉归属的全部权限
+        record_ids = (
+            db.session.query(CleaningRecord.id)
+            .join(Parrot, CleaningRecord.parrot_id == Parrot.id)
+            .filter(
+                and_(
+                    CleaningRecord.team_id.is_(None),
+                    Parrot.user_id == user.id,
+                    Parrot.team_id.is_(None)
+                )
             )
-        ).all()
+            .all()
+        )
     
     if record_ids:
         return [rid[0] for rid in record_ids]
@@ -209,13 +229,25 @@ def get_accessible_breeding_record_ids_by_mode(user):
             # 如果没有当前团队，返回空列表
             return []
     else:
-        # 个人模式：只显示个人数据（team_id IS NULL AND created_by_user_id = 当前用户ID）
-        record_ids = db.session.query(BreedingRecord.id).filter(
-            and_(
-                BreedingRecord.team_id.is_(None),
-                BreedingRecord.created_by_user_id == user.id
+        # 个人模式：基于鹦鹉归属的全部权限
+        # 满足记录为个人数据，且雄鸟或雌鸟属于当前用户的个人鹦鹉
+        male = aliased(Parrot)
+        female = aliased(Parrot)
+        record_ids = (
+            db.session.query(BreedingRecord.id)
+            .join(male, BreedingRecord.male_parrot_id == male.id)
+            .join(female, BreedingRecord.female_parrot_id == female.id)
+            .filter(
+                and_(
+                    BreedingRecord.team_id.is_(None),
+                    or_(
+                        and_(male.user_id == user.id, male.team_id.is_(None)),
+                        and_(female.user_id == user.id, female.team_id.is_(None))
+                    )
+                )
             )
-        ).all()
+            .all()
+        )
     
     if record_ids:
         return [rid[0] for rid in record_ids]

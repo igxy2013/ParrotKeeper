@@ -73,6 +73,8 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     feed_type_name = fields.Method('get_feed_type_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
+    # 确保parrot_id字段被包含
+    parrot_id = fields.Integer(dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None

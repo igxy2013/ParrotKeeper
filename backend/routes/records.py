@@ -56,45 +56,119 @@ def add_feeding_record_internal(data):
     try:
         user = request.current_user
         parrot_ids = data.get('parrot_ids', [])
+        # 标准化ID为整数，避免字符串ID与整数集合对比失败
+        if isinstance(parrot_ids, list):
+            parrot_ids = [int(p) for p in parrot_ids if str(p).isdigit()]
+        elif parrot_ids is not None:
+            parrot_ids = [int(parrot_ids)] if str(parrot_ids).isdigit() else []
         feeding_time_str = data.get('feeding_time') or data.get('record_date', '')
         notes = data.get('notes', '')
-        food_amounts = data.get('food_amounts', {})
+        # 多食物类型与分量映射（key 可能为字符串或数字）
+        food_types = data.get('food_types') or []
+        food_amounts = data.get('food_amounts') or {}
         photos = data.get('photos', [])
         
         if not parrot_ids:
             return error_response('请选择鹦鹉')
+
+        # 读取所选鹦鹉的团队归属，确保记录的team_id与鹦鹉一致，避免列表过滤不到
+        parrots = Parrot.query.filter(Parrot.id.in_(parrot_ids)).all()
+        parrot_team_map = {p.id: p.team_id for p in parrots}
         
-        # 解析喂食时间
+        # 解析喂食时间（兼容 ISO、完整日期时间、仅日期）
         if not feeding_time_str:
             feeding_time = datetime.now()
         else:
-            try:
-                # 尝试解析完整的时间字符串
-                if 'T' in feeding_time_str:
-                    feeding_time = datetime.fromisoformat(feeding_time_str.replace('Z', '+00:00'))
-                else:
-                    # 假设是日期格式，添加默认时间
-                    feeding_time = datetime.strptime(feeding_time_str, '%Y-%m-%d')
-            except ValueError:
+            feeding_time = None
+            # ISO 格式，可能包含 'T' 与时区
+            if isinstance(feeding_time_str, str):
+                try:
+                    if 'T' in feeding_time_str:
+                        feeding_time = datetime.fromisoformat(feeding_time_str.replace('Z', '+00:00'))
+                    else:
+                        # 尝试完整日期时间
+                        try:
+                            feeding_time = datetime.strptime(feeding_time_str, '%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            try:
+                                feeding_time = datetime.strptime(feeding_time_str, '%Y-%m-%d %H:%M')
+                            except ValueError:
+                                # 仅日期，默认时间 00:00
+                                feeding_time = datetime.strptime(feeding_time_str, '%Y-%m-%d')
+                except Exception:
+                    feeding_time = datetime.now()
+            else:
                 feeding_time = datetime.now()
         
-        # 创建喂食记录
+        # 目标食物类型集合：优先使用 food_types；若为空，用 food_amounts 的键；兼容旧的单个 feed_type_id
+        if not food_types and isinstance(food_amounts, dict) and len(food_amounts) > 0:
+            food_types = [int(k) for k in food_amounts.keys() if str(k).isdigit()]
+        if not food_types and data.get('feed_type_id'):
+            food_types = [data.get('feed_type_id')]
+
+        # 创建喂食记录（支持多鹦鹉×多食物类型）
         created_records = []
+        skipped_parrot_ids = []
         for parrot_id in parrot_ids:
             # 验证鹦鹉是否属于当前用户（或团队共享）
             accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
             if parrot_id not in accessible_parrot_ids:
+                skipped_parrot_ids.append(parrot_id)
                 continue
-                
-            record = FeedingRecord(
-                parrot_id=parrot_id,
-                feeding_time=feeding_time,
-                notes=notes,
-                created_by_user_id=user.id,
-                team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
-            )
-            db.session.add(record)
-            created_records.append(record)
+            
+            # 如果选择了食物类型：逐项创建记录；否则创建一条无食物类型的记录
+            if food_types:
+                for food_type_id in food_types:
+                    # 计算分量：优先每类型，其次全局 amount
+                    amount_value = None
+                    if isinstance(food_amounts, dict):
+                        amount_value = food_amounts.get(str(food_type_id))
+                        if amount_value is None:
+                            amount_value = food_amounts.get(food_type_id)
+                    if amount_value is None:
+                        amount_value = data.get('amount')
+                    # 规范化分量
+                    normalized_amount = _normalize_amount(amount_value)
+                    # 多食物类型时必须提供每项分量
+                    if normalized_amount is None and len(food_types) > 1:
+                        return error_response('请为每个食物类型填写分量', 400)
+                    record = FeedingRecord(
+                        parrot_id=parrot_id,
+                        feed_type_id=food_type_id,
+                        amount=normalized_amount,
+                        feeding_time=feeding_time,
+                        notes=notes,
+                        created_by_user_id=user.id,
+                        team_id=parrot_team_map.get(parrot_id)
+                    )
+                    # 处理照片
+                    try:
+                        import json
+                        if isinstance(photos, list) and len(photos) > 0:
+                            record.image_urls = json.dumps(photos, ensure_ascii=False)
+                    except Exception:
+                        pass
+                    db.session.add(record)
+                    created_records.append(record)
+            else:
+                # 未选择食物类型，允许仅记录总用量或无分量
+                normalized_amount = _normalize_amount(data.get('amount'))
+                record = FeedingRecord(
+                    parrot_id=parrot_id,
+                    amount=normalized_amount,
+                    feeding_time=feeding_time,
+                    notes=notes,
+                    created_by_user_id=user.id,
+                    team_id=parrot_team_map.get(parrot_id)
+                )
+                try:
+                    import json
+                    if isinstance(photos, list) and len(photos) > 0:
+                        record.image_urls = json.dumps(photos, ensure_ascii=False)
+                except Exception:
+                    pass
+                db.session.add(record)
+                created_records.append(record)
         
         db.session.commit()
         
@@ -102,6 +176,14 @@ def add_feeding_record_internal(data):
         if created_records:
             add_user_points(user.id, 1, 'feeding')
         
+        # 如果没有创建任何记录，明确返回错误，避免误导用户
+        if not created_records:
+            # 所选鹦鹉均不可访问或无效
+            if skipped_parrot_ids and len(skipped_parrot_ids) == len(parrot_ids):
+                return error_response('所选鹦鹉不存在或无权限访问', 403)
+            # 兜底：出现其他原因导致未创建
+            return error_response('未能创建喂食记录，请检查输入或权限', 400)
+
         return success_response({
             'records': feeding_records_schema.dump(created_records)
         }, '喂食记录添加成功')
@@ -115,7 +197,12 @@ def add_health_record_internal(data):
     try:
         user = request.current_user
         parrot_ids = data.get('parrot_ids', [])
-        record_date_str = data.get('record_date') or data.get('record_date', '')
+        # 标准化ID为整数，避免字符串ID与整数集合对比失败
+        if isinstance(parrot_ids, list):
+            parrot_ids = [int(p) for p in parrot_ids if str(p).isdigit()]
+        elif parrot_ids is not None:
+            parrot_ids = [int(parrot_ids)] if str(parrot_ids).isdigit() else []
+        record_date_str = data.get('record_date') or ''
         record_type = data.get('record_type', 'checkup')
         health_status = data.get('health_status', 'healthy')
         description = data.get('description', '')
@@ -137,14 +224,25 @@ def add_health_record_internal(data):
         if weight_error:
             return error_response(weight_error)
         
-        # 解析记录日期
+        # 解析记录日期时间（支持 YYYY-MM-DD、YYYY-MM-DD HH:MM:SS、ISO 格式，或与 record_time 组合）
         if not record_date_str:
-            record_date = date.today()
+            record_date = datetime.now()
         else:
             try:
-                record_date = datetime.strptime(record_date_str, '%Y-%m-%d').date()
+                if 'T' in record_date_str:
+                    record_date = datetime.fromisoformat(record_date_str.replace('Z', '+00:00'))
+                elif ' ' in record_date_str:
+                    record_date = datetime.strptime(record_date_str, '%Y-%m-%d %H:%M:%S')
+                else:
+                    # 只有日期，尝试与 record_time 组合
+                    rt = data.get('record_time', '')
+                    if rt:
+                        record_date = datetime.strptime(f"{record_date_str} {rt}", '%Y-%m-%d %H:%M:%S')
+                    else:
+                        record_date = datetime.strptime(record_date_str, '%Y-%m-%d')
             except ValueError:
-                record_date = date.today()
+                # 解析失败则退回当前时间
+                record_date = datetime.now()
         
         # 解析下次检查日期
         next_checkup_date = None
@@ -202,6 +300,11 @@ def add_cleaning_record_internal(data):
     try:
         user = request.current_user
         parrot_ids = data.get('parrot_ids', [])
+        # 标准化ID为整数，避免字符串ID与整数集合对比失败
+        if isinstance(parrot_ids, list):
+            parrot_ids = [int(p) for p in parrot_ids if str(p).isdigit()]
+        elif parrot_ids is not None:
+            parrot_ids = [int(parrot_ids)] if str(parrot_ids).isdigit() else []
         cleaning_time_str = data.get('cleaning_time') or data.get('record_date', '')
         cleaning_types = data.get('cleaning_types', [])
         description = data.get('description', '')
@@ -265,6 +368,15 @@ def add_breeding_record_internal(data):
         user = request.current_user
         male_parrot_id = data.get('male_parrot_id')
         female_parrot_id = data.get('female_parrot_id')
+        # 标准化ID为整数，避免字符串ID与整数集合对比失败
+        try:
+            male_parrot_id = int(male_parrot_id)
+        except (ValueError, TypeError):
+            pass
+        try:
+            female_parrot_id = int(female_parrot_id)
+        except (ValueError, TypeError):
+            pass
         mating_date_str = data.get('mating_date', '')
         egg_laying_date_str = data.get('egg_laying_date', '')
         egg_count = data.get('egg_count', 0)
@@ -956,7 +1068,8 @@ def get_health_records():
             except ValueError:
                 return error_response('结束日期格式错误')
         
-        query = query.order_by(HealthRecord.record_date.desc())
+        # 用户期望按创建时间倒序展示，最新创建的记录在最上面
+        query = query.order_by(HealthRecord.created_at.desc(), HealthRecord.id.desc())
         
         result = paginate_query(query, page, per_page)
         result['items'] = health_records_schema.dump(result['items'])
