@@ -53,7 +53,7 @@
 
       <!-- 记录列表 -->
       <view class="record-list" wx:if="{{displayRecords.length > 0}}">
-        <view class="record-card" wx:for="{{displayRecords}}" wx:key="id">
+        <view class="record-card" wx:for="{{displayRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="health" data-id="{{item.id}}">
           <view class="record-header">
             <view class="avatar-cell">
               <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">

@@ -213,7 +213,7 @@ def add_health_record_internal(data):
         medication = data.get('medication', '')
         vet_name = data.get('vet_name', '')
         cost = _normalize_amount(data.get('cost'))
-        image_urls = data.get('photos', [])
+        photos = data.get('photos', [])
         next_checkup_date_str = data.get('next_checkup_date', '')
 
         if not parrot_ids:
@@ -272,7 +272,7 @@ def add_health_record_internal(data):
                 medication=medication,
                 vet_name=vet_name,
                 cost=cost,
-                image_urls=','.join(image_urls) if image_urls else None,
+                image_urls=(__import__('json').dumps(photos, ensure_ascii=False) if isinstance(photos, list) and len(photos) > 0 else None),
                 record_date=record_date,
                 next_checkup_date=next_checkup_date,
                 created_by_user_id=user.id,
@@ -342,6 +342,7 @@ def add_cleaning_record_internal(data):
                     cleaning_type=cleaning_type,
                     description=description,
                     cleaning_time=cleaning_time,
+                    image_urls=(__import__('json').dumps(photos, ensure_ascii=False) if isinstance(photos, list) and len(photos) > 0 else None),
                     created_by_user_id=user.id,
                     team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
                 )
@@ -384,6 +385,7 @@ def add_breeding_record_internal(data):
         chick_count = data.get('chick_count', 0)
         success_rate = data.get('success_rate')
         notes = data.get('notes', '')
+        photos = data.get('photos', [])
         
         if not male_parrot_id or not female_parrot_id:
             return error_response('请选择公鸟和母鸟')
@@ -426,6 +428,7 @@ def add_breeding_record_internal(data):
             chick_count=chick_count,
             success_rate=success_rate,
             notes=notes,
+            image_urls=(__import__('json').dumps(photos, ensure_ascii=False) if isinstance(photos, list) and len(photos) > 0 else None),
             created_by_user_id=user.id,
             team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
         )
@@ -616,6 +619,53 @@ def get_recent_records():
     except Exception as e:
         return error_response(f'获取最近记录失败: {str(e)}')
 
+# 兼容前端详情页：按类型获取单条记录
+@records_bp.route('/<string:record_type>/<int:record_id>', methods=['GET'])
+@login_required
+def get_record_by_type(record_type, record_id):
+    """按类型获取单条记录详情（用于小程序统一详情页）
+    支持类型：feeding、health、cleaning、breeding
+    权限策略：仅返回当前用户在其模式下可访问的记录
+    """
+    try:
+        user = request.current_user
+
+        record = None
+        schema = None
+        accessible_ids = []
+
+        if record_type == 'feeding':
+            record = FeedingRecord.query.get(record_id)
+            schema = feeding_record_schema
+            accessible_ids = get_accessible_feeding_record_ids_by_mode(user)
+        elif record_type == 'health':
+            record = HealthRecord.query.get(record_id)
+            schema = health_record_schema
+            accessible_ids = get_accessible_health_record_ids_by_mode(user)
+        elif record_type == 'cleaning':
+            record = CleaningRecord.query.get(record_id)
+            schema = cleaning_record_schema
+            accessible_ids = get_accessible_cleaning_record_ids_by_mode(user)
+        elif record_type == 'breeding':
+            record = BreedingRecord.query.get(record_id)
+            schema = breeding_record_schema
+            accessible_ids = get_accessible_breeding_record_ids_by_mode(user)
+        else:
+            return error_response('不支持的记录类型')
+
+        if not record:
+            return error_response('记录不存在')
+
+        # 团队模式下的访问控制：必须在可访问ID集合中
+        if accessible_ids and (record.id not in accessible_ids):
+            return error_response('权限不足或记录不存在')
+
+        data = schema.dump(record)
+        return success_response(data)
+
+    except Exception as e:
+        return error_response(f'获取记录失败: {str(e)}')
+
 # 饲料类型相关
 @records_bp.route('/feed-types', methods=['GET'])
 def get_feed_types():
@@ -768,6 +818,14 @@ def update_health_record_internal(record_id, data):
                 return error_response('下次检查日期格式错误')
     if 'notes' in data:
         record.notes = data['notes']
+    if 'photos' in data:
+        try:
+            import json
+            photos = data.get('photos') or []
+            if isinstance(photos, list):
+                record.image_urls = json.dumps(photos, ensure_ascii=False)
+        except Exception:
+            pass
     
     db.session.commit()
     
@@ -811,6 +869,7 @@ def update_cleaning_record_internal(record_id, data):
                     description=data.get('description', original_description),
                     cleaning_time=datetime.strptime(data['cleaning_time'], '%Y-%m-%d %H:%M:%S') if data.get('cleaning_time') else original_cleaning_time,
                     notes=data.get('notes', original_notes),
+                    image_urls=(__import__('json').dumps(data.get('photos', []), ensure_ascii=False) if isinstance(data.get('photos', []), list) and len(data.get('photos', [])) > 0 else record.image_urls),
                     created_by_user_id=original_created_by_user_id,
                     team_id=original_team_id
                 )
@@ -847,6 +906,14 @@ def update_cleaning_record_internal(record_id, data):
                 return error_response('清洁时间格式错误')
     if 'notes' in data:
         record.notes = data['notes']
+    if 'photos' in data:
+        try:
+            import json
+            photos = data.get('photos') or []
+            if isinstance(photos, list):
+                record.image_urls = json.dumps(photos, ensure_ascii=False)
+        except Exception:
+            pass
     
     db.session.commit()
     

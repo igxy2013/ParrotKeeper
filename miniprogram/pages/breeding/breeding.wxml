@@ -56,6 +56,8 @@
           wx:for="{{filteredRecords}}" 
           wx:key="id"
           bindtap="viewRecordDetail"
+          data-type="breeding"
+          data-id="{{item.id}}"
           data-record="{{item}}"
         >
           <view class="record-header">

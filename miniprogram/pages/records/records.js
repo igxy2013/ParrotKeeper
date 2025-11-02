@@ -35,6 +35,19 @@ Page({
     hasMore: true,
     menuRightPadding: 0
   },
+  
+  // 查看记录详情（统一处理四类记录）
+  viewRecordDetail(e) {
+    const ds = e.currentTarget.dataset || {}
+    const type = ds.type || this.data.activeTab || 'feeding'
+    const id = ds.id || ''
+    const ids = ds.ids || ''
+    const derivedId = id || (ids ? String(ids).split(',').filter(Boolean)[0] : '')
+    const query = [`type=${type}`]
+    if (derivedId) query.push(`id=${derivedId}`)
+    if (ids) query.push(`record_ids=${ids}`)
+    wx.navigateTo({ url: `/pages/records/detail/detail?${query.join('&')}` })
+  },
 
   // 页面显示时检查登录并加载
   onShow() {

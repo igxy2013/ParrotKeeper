@@ -272,6 +272,18 @@ Page({
     wx.navigateTo({ url: '/pages/records/add-record/add-record?type=cleaning' })
   },
 
+  // 查看记录详情（支持单条与聚合记录）
+  viewRecordDetail(e) {
+    const ds = e.currentTarget?.dataset || {}
+    const id = ds.id || ''
+    const ids = ds.ids || ''
+    const derivedId = id || (ids ? String(ids).split(',').filter(Boolean)[0] : '')
+    const query = ['type=cleaning']
+    if (derivedId) query.push(`id=${derivedId}`)
+    if (ids) query.push(`record_ids=${ids}`)
+    wx.navigateTo({ url: `/pages/records/detail/detail?${query.join('&')}` })
+  },
+
   // 编辑记录
   editRecord(e) {
     const { id, ids, parrotIds, cleaningTypeIds } = e.currentTarget.dataset;

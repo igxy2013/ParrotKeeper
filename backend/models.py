@@ -98,6 +98,7 @@ class FeedingRecord(db.Model):
     amount = db.Column(db.Numeric(6, 2))
     feeding_time = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
+    image_urls = db.Column(db.Text)  # JSON 数组，记录照片URL列表
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -140,6 +141,7 @@ class CleaningRecord(db.Model):
     description = db.Column(db.Text)
     cleaning_time = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
+    image_urls = db.Column(db.Text)  # JSON 数组，记录照片URL列表
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -160,6 +162,7 @@ class BreedingRecord(db.Model):
     chick_count = db.Column(db.Integer, default=0)
     success_rate = db.Column(db.Numeric(5, 2))
     notes = db.Column(db.Text)
+    image_urls = db.Column(db.Text)  # JSON 数组，记录照片URL列表
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

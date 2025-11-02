@@ -338,5 +338,13 @@ Page({
         icon: 'error'
       });
     }
+  },
+  // 查看记录详情
+  viewRecordDetail(e) {
+    const ds = e.currentTarget.dataset || {}
+    const id = ds.id || ''
+    const q = [`type=health`]
+    if (id) q.push(`id=${id}`)
+    wx.navigateTo({ url: `/pages/records/detail/detail?${q.join('&')}` })
   }
 })

@@ -41,7 +41,7 @@
     <!-- Cleaning Records -->
     <view class="list" wx:if="{{displayRecords.length > 0}}">
       <block wx:for="{{displayRecords}}" wx:key="id">
-        <view class="card">
+        <view class="card" bindtap="viewRecordDetail" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}">
           <view class="card-left">
             <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
               <view class="avatar-cluster">

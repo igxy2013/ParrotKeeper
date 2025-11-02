@@ -21,6 +21,13 @@ from routes.settings import settings_bp
 from routes.admin import admin_bp
 from routes.announcements import announcements_bp
 import os
+from utils import login_required, success_response, error_response
+from team_mode_utils import (
+    get_accessible_feeding_record_ids_by_mode,
+    get_accessible_health_record_ids_by_mode,
+    get_accessible_cleaning_record_ids_by_mode,
+    get_accessible_breeding_record_ids_by_mode
+)
 
 def create_app(config_name=None):
     """应用工厂函数"""
@@ -91,6 +98,53 @@ def create_app(config_name=None):
             'message': '服务正常',
             'version': app.config.get('APP_VERSION', 'unknown')
         })
+
+    # 兼容小程序：按类型获取记录详情（无 /api 前缀）
+    @app.route('/records/<string:record_type>/<int:record_id>', methods=['GET'])
+    @login_required
+    def get_record_by_type_compat(record_type, record_id):
+        try:
+            from models import FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord
+            from schemas import (
+                feeding_record_schema, health_record_schema,
+                cleaning_record_schema, breeding_record_schema
+            )
+
+            user = request.current_user
+
+            record = None
+            schema = None
+            accessible_ids = []
+
+            if record_type == 'feeding':
+                record = FeedingRecord.query.get(record_id)
+                schema = feeding_record_schema
+                accessible_ids = get_accessible_feeding_record_ids_by_mode(user)
+            elif record_type == 'health':
+                record = HealthRecord.query.get(record_id)
+                schema = health_record_schema
+                accessible_ids = get_accessible_health_record_ids_by_mode(user)
+            elif record_type == 'cleaning':
+                record = CleaningRecord.query.get(record_id)
+                schema = cleaning_record_schema
+                accessible_ids = get_accessible_cleaning_record_ids_by_mode(user)
+            elif record_type == 'breeding':
+                record = BreedingRecord.query.get(record_id)
+                schema = breeding_record_schema
+                accessible_ids = get_accessible_breeding_record_ids_by_mode(user)
+            else:
+                return error_response('不支持的记录类型')
+
+            if not record:
+                return error_response('记录不存在')
+
+            if accessible_ids and (record.id not in accessible_ids):
+                return error_response('权限不足或记录不存在')
+
+            data = schema.dump(record)
+            return success_response(data)
+        except Exception as e:
+            return error_response(f'获取记录失败: {str(e)}')
     
     # 静态文件服务
     @app.route('/uploads/<path:filename>')

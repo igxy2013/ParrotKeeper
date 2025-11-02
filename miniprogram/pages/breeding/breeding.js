@@ -222,18 +222,16 @@ Page({
     })
   },
 
-  // 查看记录详情
+  // 查看记录详情（跳转统一详情页）
   viewRecordDetail(e) {
-    const record = e.currentTarget.dataset.record
-    // 可以导航到详情页面或显示详情弹窗
-    console.log('查看记录详情:', record)
-  },
-
-  // 查看记录详情
-  viewRecordDetail(e) {
-    const record = e.currentTarget.dataset.record
-    // 可以导航到详情页面或显示详情弹窗
-    console.log('查看记录详情:', record)
+    const ds = e.currentTarget?.dataset || {}
+    const id = ds.id || (ds.record && ds.record.id) || ''
+    const ids = ds.ids || ''
+    const derivedId = id || (ids ? String(ids).split(',').filter(Boolean)[0] : '')
+    const query = ['type=breeding']
+    if (derivedId) query.push(`id=${derivedId}`)
+    if (ids) query.push(`record_ids=${ids}`)
+    wx.navigateTo({ url: `/pages/records/detail/detail?${query.join('&')}` })
   },
 
   // 编辑记录

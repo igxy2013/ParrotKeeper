@@ -1,0 +1,96 @@
+<app-header title="记录详情" showBack="true"></app-header>
+
+<view class="page">
+  <block wx:if="{{loading}}">
+    <view class="loading">加载中...</view>
+  </block>
+
+  <block wx:elif="{{error}}">
+    <view class="error">{{error}}</view>
+  </block>
+
+  <block wx:else>
+    <view class="card">
+      <view class="row">
+        <text class="label">类型</text>
+        <text class="value">{{recordTypeLabel}}</text>
+      </view>
+      <view class="row">
+        <text class="label">时间</text>
+        <text class="value">{{displayTime}}</text>
+      </view>
+      <view class="row" wx:if="{{parrotName}}">
+        <text class="label">鹦鹉</text>
+        <text class="value">{{parrotName}}</text>
+      </view>
+      
+      <!-- 喂食 -->
+      <block wx:if="{{recordType === 'feeding'}}">
+        <view class="row" wx:if="{{record.feed_type || record.feed_type_name}}">
+          <text class="label">饲料</text>
+          <text class="value">{{record.feed_type_name || record.feed_type}}</text>
+        </view>
+        <view class="row" wx:if="{{record.amount}}">
+          <text class="label">数量</text>
+          <text class="value">{{record.amount}}</text>
+        </view>
+      </block>
+
+      <!-- 清洁 -->
+      <block wx:if="{{recordType === 'cleaning'}}">
+        <view class="row" wx:if="{{record.cleaning_type_name || record.cleaning_type}}">
+          <text class="label">清洁类型</text>
+          <text class="value">{{record.cleaning_type_name || record.cleaning_type}}</text>
+        </view>
+        <view class="row" wx:if="{{record.description}}">
+          <text class="label">描述</text>
+          <text class="value">{{record.description}}</text>
+        </view>
+      </block>
+
+      <!-- 健康 -->
+      <block wx:if="{{recordType === 'health'}}">
+        <view class="row" wx:if="{{record.weight}}">
+          <text class="label">体重</text>
+          <text class="value">{{record.weight}}</text>
+        </view>
+        <view class="row" wx:if="{{record.health_status}}">
+          <text class="label">健康状态</text>
+          <text class="value">{{record.health_status}}</text>
+        </view>
+      </block>
+
+      <!-- 繁殖 -->
+      <block wx:if="{{recordType === 'breeding'}}">
+        <view class="row" wx:if="{{record.breeding_status}}">
+          <text class="label">繁殖状态</text>
+          <text class="value">{{record.breeding_status}}</text>
+        </view>
+        <view class="row" wx:if="{{record.nest_status}}">
+          <text class="label">巢箱状态</text>
+          <text class="value">{{record.nest_status}}</text>
+        </view>
+      </block>
+
+      <view class="row" wx:if="{{record.notes}}">
+        <text class="label">备注</text>
+        <text class="value">{{record.notes}}</text>
+      </view>
+      
+      <!-- 照片展示 -->
+      <view class="photos" wx:if="{{record.photos && record.photos.length}}">
+        <text class="label">记录照片</text>
+        <view class="photo-grid">
+          <block wx:for="{{record.photos}}" wx:key="*this">
+            <image class="photo-item" src="{{item}}" mode="aspectFill" bindtap="previewPhoto" data-url="{{item}}" />
+          </block>
+        </view>
+      </view>
+    </view>
+
+    <!-- 多记录聚合提示 -->
+    <view class="aggregate" wx:if="{{isAggregate}}">
+      <text>该时间点包含多个记录（{{aggregateCount}}）</text>
+    </view>
+  </block>
+</view>

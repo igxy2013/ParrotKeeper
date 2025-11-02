@@ -45,7 +45,7 @@
   <!-- 喂食记录 -->
   <view class="records-container" wx:if="{{activeTab === 'feeding'}}">
     <view class="record-list" wx:if="{{feedingRecords.length > 0}}">
-      <view class="record-card" wx:for="{{feedingRecords}}" wx:key="id">
+      <view class="record-card" wx:for="{{feedingRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}">
         <view class="record-header">
           <view class="record-info">
             <text class="record-title">{{item.parrot_name}}</text>
@@ -91,7 +91,7 @@
   <!-- 健康记录 -->
   <view class="records-container" wx:if="{{activeTab === 'health'}}">
     <view class="record-list" wx:if="{{healthRecords.length > 0}}">
-      <view class="record-card" wx:for="{{healthRecords}}" wx:key="id">
+      <view class="record-card" wx:for="{{healthRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="health" data-id="{{item.id}}" data-ids="{{item.record_ids}}">
         <view class="record-header">
           <view class="avatar-cell">
             <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
@@ -159,7 +159,7 @@
   <!-- 清洁记录 -->
   <view class="records-container" wx:if="{{activeTab === 'cleaning'}}">
     <view class="record-list" wx:if="{{cleaningRecords.length > 0}}">
-      <view class="record-card" wx:for="{{cleaningRecords}}" wx:key="id">
+      <view class="record-card" wx:for="{{cleaningRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}">
         <view class="record-header">
           <view class="avatar-cell">
             <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
@@ -226,7 +226,7 @@
   <!-- 繁殖记录 -->
   <view class="records-container" wx:if="{{activeTab === 'breeding'}}">
     <view class="record-list" wx:if="{{breedingRecords.length > 0}}">
-      <view class="record-card" wx:for="{{breedingRecords}}" wx:key="id">
+      <view class="record-card" wx:for="{{breedingRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="breeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}">
         <view class="record-header">
           <view class="avatar-cell">
             <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">

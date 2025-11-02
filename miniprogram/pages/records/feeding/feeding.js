@@ -606,5 +606,16 @@ Page({
         icon: 'error'
       });
     }
+  },
+  // 查看记录详情（支持聚合）
+  viewRecordDetail(e) {
+    const ds = e.currentTarget.dataset || {}
+    const id = ds.id || ''
+    const ids = ds.recordIds || ds['record-ids'] || ds['record_ids'] || ''
+    const derivedId = id || (ids ? String(ids).split(',').filter(Boolean)[0] : '')
+    const q = [`type=feeding`]
+    if (derivedId) q.push(`id=${derivedId}`)
+    if (ids) q.push(`record_ids=${ids}`)
+    wx.navigateTo({ url: `/pages/records/detail/detail?${q.join('&')}` })
   }
 });

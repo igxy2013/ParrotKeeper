@@ -75,6 +75,7 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
     # 确保parrot_id字段被包含
     parrot_id = fields.Integer(dump_only=True)
+    photos = fields.Method('get_photos', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
@@ -84,6 +85,16 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_username(self, obj):
         return obj.created_by.username if obj.created_by else None
+    
+    def get_photos(self, obj):
+        try:
+            import json
+            if not getattr(obj, 'image_urls', None):
+                return []
+            data = json.loads(obj.image_urls)
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
 
 class HealthRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -135,6 +146,7 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
     cleaning_type_text = fields.Method('get_cleaning_type_text', dump_only=True)
+    photos = fields.Method('get_photos', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
@@ -154,6 +166,16 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
             'water_bowl_clean': '水碗清洁'
         }
         return cleaning_type_map.get(obj.cleaning_type, obj.cleaning_type)
+    
+    def get_photos(self, obj):
+        try:
+            import json
+            if not getattr(obj, 'image_urls', None):
+                return []
+            data = json.loads(obj.image_urls)
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
 
 class BreedingRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -167,6 +189,7 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
     male_parrot_name = fields.Method('get_male_parrot_name', dump_only=True)
     female_parrot_name = fields.Method('get_female_parrot_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
+    photos = fields.Method('get_photos', dump_only=True)
     
     def get_male_parrot_name(self, obj):
         return obj.male_parrot.name if obj.male_parrot else None
@@ -176,6 +199,16 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_username(self, obj):
         return obj.created_by.username if obj.created_by else None
+    
+    def get_photos(self, obj):
+        try:
+            import json
+            if not getattr(obj, 'image_urls', None):
+                return []
+            data = json.loads(obj.image_urls)
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
 
 class ExpenseSchema(SQLAlchemyAutoSchema):
     class Meta:
