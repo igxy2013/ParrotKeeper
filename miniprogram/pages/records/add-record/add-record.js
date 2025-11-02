@@ -344,13 +344,34 @@ const app = getApp()
           'observation': '观察中'
         }
         
-        // 解析记录时间
-        const recordTime = new Date(record.record_time)
-        const dateStr = recordTime.getFullYear() + '-' + 
-                       String(recordTime.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(recordTime.getDate()).padStart(2, '0')
-        const timeStr = String(recordTime.getHours()).padStart(2, '0') + ':' + 
-                       String(recordTime.getMinutes()).padStart(2, '0')
+        // 解析记录时间（兼容 ISO、空格分隔以及仅日期），避免不同端 Date 解析不一致
+        const rawTime = record.record_time || record.record_date || ''
+        let dateStr = this.data.formData.record_date
+        let timeStr = this.data.formData.record_time
+        if (rawTime) {
+          const s = String(rawTime).trim()
+          if (s.includes('T')) {
+            // ISO 格式：YYYY-MM-DDTHH:MM:SS(.sss)(Z|+08:00)
+            const [d, tRaw] = s.split('T')
+            let t = tRaw || ''
+            // 去掉时区与毫秒
+            t = t.replace('Z', '')
+                 .replace(/\+\d{2}:?\d{2}$/,'')
+                 .replace(/-\d{2}:?\d{2}$/,'')
+            if (t.includes('.')) t = t.split('.')[0]
+            dateStr = d
+            timeStr = (t || '').slice(0,5) || '00:00'
+          } else if (s.includes(' ')) {
+            // 空格分隔：YYYY-MM-DD HH:MM:SS
+            const parts = s.split(' ')
+            dateStr = parts[0]
+            timeStr = (parts[1] || '').slice(0,5) || '00:00'
+          } else {
+            // 仅日期
+            dateStr = s
+            // 保持原有默认的时间
+          }
+        }
         
         // 根据记录类型设置表单数据
         let formData = {
@@ -423,9 +444,15 @@ const app = getApp()
           formData.food_amounts[String(id)] = formData.amount || ''
         })
         
-        // 生成选中名称
-        const selectedParrots = this.data.parrotList.filter(p => formData.parrot_ids.includes(p.id)).map(p => ({ id: p.id, name: p.name }))
-        const selectedParrotNames = selectedParrots.map(p => p.name).join('、')
+        // 生成选中名称（如果列表中找不到该鹦鹉，使用后端返回的名称兜底）
+        let selectedParrots = this.data.parrotList
+          .filter(p => formData.parrot_ids.includes(p.id))
+          .map(p => ({ id: p.id, name: p.name }))
+        let selectedParrotNames = selectedParrots.map(p => p.name).join('、')
+        if ((!selectedParrots || selectedParrots.length === 0) && parrotId && selectedParrotName) {
+          selectedParrots = [{ id: parseInt(parrotId), name: selectedParrotName }]
+          selectedParrotNames = selectedParrotName
+        }
         const selectedFeedTypes = this.data.feedTypeList.filter(f => formData.food_types.includes(f.id)).map(f => ({ id: f.id, name: f.displayName || f.name }))
         const selectedFeedTypeNames = selectedFeedTypes.map(f => f.name).join('、')
         
@@ -1189,7 +1216,7 @@ const app = getApp()
         // 编辑接口期望 record_date 为 YYYY-MM-DD HH:MM:SS，不支持修改鹦鹉
         const payload = isEdit
           ? { ...commonHealth, record_date: timeStr }
-          : { ...commonHealth, record_date: formData.record_date, parrot_ids: (formData.parrot_ids || []).map(id => Number(id)) }
+          : { ...commonHealth, record_date: timeStr, parrot_ids: (formData.parrot_ids || []).map(id => Number(id)) }
         const res = await app.request({ url, method, data: payload })
         if (!res.success) throw new Error(res.message || '保存失败')
       } else if (recordType === 'breeding') {

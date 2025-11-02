@@ -168,6 +168,22 @@ Page({
     }
     // 如果处于团队模式，刷新团队信息
     this.loadTeamInfoIfNeeded();
+    // 检查是否需要因模式切换刷新统计卡片
+    try {
+      const appInst = getApp();
+      if (appInst && appInst.globalData) {
+        const currentMode = appInst.globalData.userMode || this.data.userMode;
+        // 同步显示的用户模式，避免切换后标签不同步
+        if (currentMode && currentMode !== this.data.userMode) {
+          this.setData({ userMode: currentMode });
+        }
+        if (appInst.globalData.needRefresh) {
+          // 重置刷新标志并重新加载统计概览
+          appInst.globalData.needRefresh = false;
+          this.loadOverviewStats();
+        }
+      }
+    } catch (_) {}
     // 拉取公告并注入通知（避免重复）
     this.fetchPublishedAnnouncementsAndInject()
   },
@@ -812,6 +828,19 @@ Page({
     this.setData({ userMode: mode, showModeDialog: false });
     app.setUserMode && app.setUserMode(mode);
     wx.showToast({ title: `已切换为${mode === 'personal' ? '个人模式' : '团队模式'}`, icon: 'none' });
+    // 切换后立即刷新统计卡片，并处理团队信息显示
+    if (mode === 'team') {
+      this.loadTeamInfoIfNeeded();
+    } else {
+      this.setData({
+        teamRoleDisplay: '',
+        currentTeamName: '',
+        teamInfo: {},
+        isTeamOwner: false,
+        isTeamAdmin: false
+      });
+    }
+    this.loadOverviewStats();
   },
 
   // 胶囊按钮即时模式切换
@@ -835,6 +864,8 @@ Page({
         isTeamAdmin: false
       });
     }
+    // 切换后立即刷新统计卡片
+    this.loadOverviewStats();
   },
 
   // 团队相关占位

@@ -40,19 +40,22 @@ Page({
           return new Date(`${s}T00:00:00`)
         }
         if (s.includes('T')) {
+          // 优先按本地时间解析（无时区信息时不强制为 UTC）
           if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s)) {
             const d = new Date(s)
             return isNaN(d.getTime()) ? null : d
           }
-          const dUtc = new Date(s + 'Z')
-          if (!isNaN(dUtc.getTime())) return dUtc
-          const dLocal = new Date(s)
-          return isNaN(dLocal.getTime()) ? null : dLocal
+          const dLocalFirst = new Date(s)
+          if (!isNaN(dLocalFirst.getTime())) return dLocalFirst
+          const dUtcFallback = new Date(s + 'Z')
+          if (!isNaN(dUtcFallback.getTime())) return dUtcFallback
+          return null
         }
         const isoLocal = s.replace(' ', 'T')
-        let d = new Date(isoLocal + 'Z')
+        // 先尝试本地解析，再回退到 UTC
+        let d = new Date(isoLocal)
         if (!isNaN(d.getTime())) return d
-        d = new Date(isoLocal)
+        d = new Date(isoLocal + 'Z')
         if (!isNaN(d.getTime())) return d
         d = new Date(s.replace(/-/g, '/'))
         return isNaN(d.getTime()) ? null : d

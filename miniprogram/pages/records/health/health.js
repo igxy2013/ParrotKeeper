@@ -68,7 +68,7 @@ Page({
         this.setData({ parrotsList: list })
         // 依赖鹦鹉列表来补全头像，列表就绪后再刷新健康记录以补齐头像
         if (this.data.isLogin) {
-          this.loadHealthRecords(true)
+          await this.loadHealthRecords(true)
         }
       }
     } catch (e) {
@@ -97,33 +97,35 @@ Page({
 
       if (res.success) {
         const items = Array.isArray(res.data?.items) ? res.data.items : (Array.isArray(res.data) ? res.data : [])
-        const mappedBase = items.map(r => ({
-          id: r.id,
-          parrot_id: r.parrot_id || (r.parrot && r.parrot.id),
-          parrot_name: r.parrot_name || (r.parrot && r.parrot.name) || '',
-          parrot: r.parrot,
-          record_date_formatted: app.formatDate(r.record_date),
-          weight: r.weight,
-          notes: r.notes,
-          symptoms: r.symptoms,
-          treatment: r.treatment,
-          health_status: r.health_status,
-          health_status_text: r.health_status_text,
-          record_date_raw: r.record_date
-        }))
-        // 生成头像字段：优先使用记录内头像，其次从 parrotsList 匹配
         const list = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
+        const mappedBase = items.map(r => {
+          const pid = r.parrot_id || (r.parrot && r.parrot.id)
+          // 优先通过ID从鹦鹉列表获取名称，避免名称错配
+          const byId = pid ? list.find(x => x.id === pid) : null
+          const name = byId ? byId.name : (r.parrot_name || (r.parrot && r.parrot.name) || '')
+          return {
+            id: r.id,
+            parrot_id: pid,
+            parrot_name: name,
+            parrot: r.parrot,
+            record_date_formatted: app.formatDate(r.record_date),
+            weight: r.weight,
+            notes: r.notes,
+            symptoms: r.symptoms,
+            treatment: r.treatment,
+            health_status: r.health_status,
+            health_status_text: r.health_status_text,
+            record_date_raw: r.record_date
+          }
+        })
+        // 生成头像字段：优先使用记录内头像，其次严格按ID从 parrotsList 匹配
         const mapped = mappedBase.map(r => {
-          // 优先使用记录内的照片/头像，并解析为完整URL
           const recordPhoto = (r.parrot && r.parrot.photo_url) ? app.resolveUploadUrl(r.parrot.photo_url) : ''
           const recordAvatar = (r.parrot && r.parrot.avatar_url) ? app.resolveUploadUrl(r.parrot.avatar_url) : ''
           let avatar = recordPhoto || recordAvatar || ''
 
           if (!avatar) {
-            // 回退从鹦鹉列表匹配，解析URL；若仍为空则给默认头像
-            const pid = r.parrot_id
-            const pname = r.parrot_name
-            const p = list.find(x => (pid && x.id === pid) || (pname && x.name === pname))
+            const p = r.parrot_id ? list.find(x => x.id === r.parrot_id) : null
             if (p) {
               const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
               const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
@@ -132,7 +134,6 @@ Page({
             }
           }
 
-          // 仍未获得头像时，使用默认头像占位
           if (!avatar) {
             avatar = '/images/parrot-avatar-green.svg'
           }
@@ -160,18 +161,21 @@ Page({
     let attentionCount = 0
     const checkCount = records.length
 
-    // 统计不同健康状态的鹦鹉数量
-    const parrotHealthStatus = {}
+    // 以鹦鹉ID聚合，取每只鹦鹉最新一条记录的健康状态
+    const latestByParrot = {}
     records.forEach(record => {
-      if (record.parrot_name) {
-        parrotHealthStatus[record.parrot_name] = record.health_status
+      const key = record.parrot_id || record.parrot_name || `unknown-${record.id}`
+      const ts = record.record_date_raw ? new Date(record.record_date_raw).getTime() : 0
+      const prev = latestByParrot[key]
+      if (!prev || ts >= prev.ts) {
+        latestByParrot[key] = { status: record.health_status, ts }
       }
     })
 
-    Object.values(parrotHealthStatus).forEach(status => {
+    Object.values(latestByParrot).forEach(({ status }) => {
       if (status === 'healthy') {
         healthyCount++
-      } else if (status === 'sick' || status === 'observation') {
+      } else if (status === 'sick' || status === 'observation' || status === 'recovering') {
         attentionCount++
       }
     })
