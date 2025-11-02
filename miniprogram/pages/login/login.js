@@ -93,7 +93,13 @@ Page({
         
         console.log('账号登录成功，用户:', user, '模式:', selectedMode)
         
-        wx.showToast({ title: '登录成功', icon: 'success' })
+        // 显示登录消息（可能包含签到积分信息）
+        const loginMessage = response.message || '登录成功'
+        wx.showToast({ 
+          title: loginMessage, 
+          icon: loginMessage.includes('签到') ? 'success' : 'success',
+          duration: 2000
+        })
         // 成功后直接跳转到首页，避免返回栈为空导致不跳转
         setTimeout(() => {
           wx.reLaunch({ url: '/pages/index/index' })

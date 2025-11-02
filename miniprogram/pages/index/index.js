@@ -999,9 +999,12 @@ Page({
                     // 登录成功后加载数据
                     this.loadData();
                     
+                    // 显示登录消息（可能包含签到积分信息）
+                    const loginMessage = res.data.message || '登录成功';
                     wx.showToast({
-                      title: '登录成功',
-                      icon: 'success'
+                      title: loginMessage,
+                      icon: 'success',
+                      duration: loginMessage.includes('签到') ? 2500 : 1500
                     });
                   } else {
                     wx.showToast({
