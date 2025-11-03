@@ -810,3 +810,27 @@
     text-align: center;
   }
 }
+/* Modern action button styles */
+.modern-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 2rpx 28rpx;
+  border-radius: 9999rpx;
+  background: linear-gradient(135deg, #7c3aed 0%, #BA68C8 100%);
+  box-shadow: 0 6rpx 18rpx rgba(16, 185, 129, 0.24);
+  transform: translateZ(0);
+}
+.modern-action-btn--hover {
+  box-shadow: 0 10rpx 24rpx rgba(16, 185, 129, 0.3);
+  opacity: 0.96;
+}
+.modern-action-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+.modern-action-text {
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 600;
+}

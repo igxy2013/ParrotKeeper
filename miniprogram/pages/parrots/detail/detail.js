@@ -65,7 +65,7 @@ Page({
         quickCleaning: '/images/remix/ri-calendar-fill-blue.png',
         quickBreeding: '/images/remix/ri-book-fill-green.png',
         // 抠图按钮图标（如缺失需用户下载）
-        removeBg: '/images/remix/magic-line.png'
+        removeBg: '/images/remix/magic-line-white.png'
       }
     }
   },
