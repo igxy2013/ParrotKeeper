@@ -41,8 +41,44 @@ def save_uploaded_file(file, folder='parrots'):
         return f"{subfolder}/{filename}" if subfolder else filename
     return None
 
+def auto_crop_image(image_path):
+    """自动裁剪图片，去除空白区域并将主体放大"""
+    try:
+        # 打开图片
+        img = Image.open(image_path)
+        
+        # 如果图片有透明通道，使用透明通道作为裁剪依据
+        if img.mode in ('RGBA', 'LA'):
+            # 获取alpha通道
+            alpha = img.split()[-1]
+            # 创建一个纯黑的背景
+            bbox = alpha.getbbox()
+        else:
+            # 对于没有透明通道的图片，转换为RGBA模式并创建alpha通道
+            img = img.convert('RGBA')
+            alpha = img.split()[-1]
+            bbox = alpha.getbbox()
+        
+        if bbox:
+            # 裁剪图片
+            cropped = img.crop(bbox)
+            
+            # 生成新的文件名
+            name, ext = os.path.splitext(image_path)
+            cropped_path = f"{name}_cropped.png"
+            
+            # 保存裁剪后的图片
+            cropped.save(cropped_path, 'PNG')
+            return cropped_path
+        else:
+            # 如果没有找到边界框，返回原图路径
+            return image_path
+    except Exception as e:
+        print(f"自动裁剪图片失败: {str(e)}")
+        return image_path
+
 def remove_background(image_path):
-    """调用 remove.bg API 移除图片背景"""
+    """调用 remove.bg API 移除图片背景，并自动裁剪空白区域"""
     try:
         from flask import current_app
         api_key = current_app.config.get('REMOVE_BG_API_KEY')
@@ -60,6 +96,16 @@ def remove_background(image_path):
             processed_filename = image_path.replace('.', '_processed.')
             with open(processed_filename, 'wb') as f:
                 f.write(response.content)
+            
+            # 自动裁剪空白区域
+            cropped_filename = auto_crop_image(processed_filename)
+            
+            # 如果裁剪成功，返回裁剪后的文件，否则返回处理后的文件
+            if cropped_filename and cropped_filename != processed_filename:
+                # 删除未裁剪的中间文件
+                if os.path.exists(processed_filename):
+                    os.remove(processed_filename)
+                return cropped_filename
             return processed_filename
         return None
     except Exception as e:
@@ -110,42 +156,6 @@ def add_user_points(user_id, points_to_add, point_type):
         db.session.rollback()
         print(f"增加用户积分失败: {e}")
         return False
-
-def auto_crop_image(image_path):
-    """自动裁剪图片，去除空白区域并将主体放大"""
-    try:
-        # 打开图片
-        img = Image.open(image_path)
-        
-        # 如果图片有透明通道，使用透明通道作为裁剪依据
-        if img.mode in ('RGBA', 'LA'):
-            # 获取alpha通道
-            alpha = img.split()[-1]
-            # 创建一个纯黑的背景
-            bbox = alpha.getbbox()
-        else:
-            # 对于没有透明通道的图片，转换为RGBA模式并创建alpha通道
-            img = img.convert('RGBA')
-            alpha = img.split()[-1]
-            bbox = alpha.getbbox()
-        
-        if bbox:
-            # 裁剪图片
-            cropped = img.crop(bbox)
-            
-            # 生成新的文件名
-            name, ext = os.path.splitext(image_path)
-            cropped_path = f"{name}_cropped.png"
-            
-            # 保存裁剪后的图片
-            cropped.save(cropped_path, 'PNG')
-            return cropped_path
-        else:
-            # 如果没有找到边界框，返回原图路径
-            return image_path
-    except Exception as e:
-        print(f"自动裁剪图片失败: {str(e)}")
-        return image_path
 
 def process_parrot_image(file, folder='parrots'):
     """处理鹦鹉图片：保存原图并生成抠图版本"""
