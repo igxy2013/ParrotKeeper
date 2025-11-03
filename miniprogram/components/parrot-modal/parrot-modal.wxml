@@ -89,7 +89,12 @@
             <view class="photo-preview" wx:if="{{form.photo_url}}">
               <image class="preview-image" src="{{form.photo_url}}" mode="aspectFit" bindtap="previewPhoto" />
               <view class="photo-actions">
-                <view class="action-btn" bindtap="deletePhoto"><text class="action-icon">删除</text></view>
+                <view class="action-btn" bindtap="confirmRemoveBg">
+                  <text class="action-icon">抠图</text>
+                </view>
+                <view class="action-btn" bindtap="deletePhoto">
+                  <text class="action-icon">删除</text>
+                </view>
               </view>
             </view>
             <view class="upload-area" wx:else bindtap="choosePhoto">

@@ -138,6 +138,71 @@ Component({
       })
     },
 
+    // 抠图前确认
+    confirmRemoveBg() {
+      if (!this.data.form || !this.data.form.photo_url) {
+        app.showError('暂无可处理的照片')
+        return
+      }
+      wx.showModal({
+        title: 'AI一键抠图',
+        content: '将使用AI对当前照片进行抠图，移除背景并裁剪空白。是否继续？',
+        confirmText: '继续',
+        success: (res) => {
+          if (res.confirm) {
+            this.processPhotoRemoveBg()
+          }
+        }
+      })
+    },
+
+    // 调用后端进行抠图并替换
+    async processPhotoRemoveBg() {
+      let isLoading = false
+      try {
+        app.showLoading('抠图处理中...')
+        isLoading = true
+        const currentUrl = this.data.form.photo_url
+        console.log('发送抠图请求，图片路径:', currentUrl)
+        
+        if (!currentUrl) {
+          throw new Error('图片路径为空')
+        }
+        
+        const res = await app.request({
+          url: '/api/image/process-existing',
+          method: 'POST',
+          data: { image_path: currentUrl }
+        })
+
+        const processedUrl = res && (res.processed_url || (res.data && res.data.processed_url))
+        if (!processedUrl) {
+          throw new Error(res && (res.error || res.message) || '抠图处理失败')
+        }
+
+        // 统一存储相对路径（与上传逻辑一致）：提取 /uploads/ 之后的部分
+        let storagePath = processedUrl
+        const m = String(processedUrl).match(/\/uploads\/(.+)$/)
+        if (m && m[1]) storagePath = m[1]
+
+        // 更新表单中的照片URL
+        const fullUrl = app.resolveUploadUrl(storagePath)
+        this.setData({ 'form.photo_url': fullUrl })
+        app.showSuccess('抠图成功')
+      } catch (e) {
+        console.error('抠图失败:', e)
+        wx.showModal({
+          title: '温馨提示',
+          content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+          showCancel: false
+        })
+      } finally {
+        if (isLoading) {
+          app.hideLoading()
+        }
+      }
+    },
+
     // 性别映射（显示<->接口）
     apiGenderToDisplay(g) {
       if (g === 'male') return '雄性'
