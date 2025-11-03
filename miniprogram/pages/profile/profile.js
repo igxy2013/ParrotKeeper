@@ -801,26 +801,14 @@ Page({
   // 关于我们：展示版本与说明
   showAbout() {
     const app = getApp()
-
-    const showModalWithVersion = (version) => {
-      const contentText = `鹦鹉管家 v${version}\n用心呵护每一只小鹦鹉\n如需帮助，请使用“客服支持”菜单联系我们。\n我们重视隐私，仅收集必要数据用于改善服务。`
-      wx.showModal({
-        title: '关于我们',
-        content: contentText,
-        showCancel: false
-      })
-    }
-
-    // 优先从后端健康检查接口获取版本号，失败则回退到本地版本
-    app.request({ url: '/api/health' })
-      .then(res => {
-        const version = (res && res.version) ? res.version : (app.globalData.appVersion || '未知')
-        showModalWithVersion(version)
-      })
-      .catch(() => {
-        const version = app.globalData.appVersion || '未知'
-        showModalWithVersion(version)
-      })
+    // 直接使用全局版本号（已在 app.js 启动时从微信API获取）
+    const version = app.globalData.appVersion || '未知'
+    const contentText = `鹦鹉管家 v${version}\n用心呵护每一只小鹦鹉\n如需帮助，请使用"客服支持"菜单联系我们。\n我们重视隐私，仅收集必要数据用于改善服务。`
+    wx.showModal({
+      title: '关于我们',
+      content: contentText,
+      showCancel: false
+    })
   },
   showHelp() {},
   handleLogout() {},

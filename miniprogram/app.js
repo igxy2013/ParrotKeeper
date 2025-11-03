@@ -8,7 +8,7 @@ App({
     // 动态设置，默认正式环境，开发工具中自动切换为本地
     //baseUrl: 'https://aixbim.cn', // 后端API地址（默认正式环境）
     baseUrl: 'https://bimai.xyz', // 后端API地址（默认正式环境）
-    //baseUrl: 'http://192.168.0.80:5090', // 后端API地址（默认开发环境，与 .env 端口一致）
+    //baseUrl: 'http://192.168.0.80:5075', // 后端API地址（默认开发环境，与 .env 端口一致）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
     needRefresh: false, // 页面数据刷新标志（模式变更时触发）
@@ -19,22 +19,25 @@ App({
     useIconFont: true // 是否启用图标字体（iOS优先启用，统一兼容）
   },
 
-  // 初始化小程序版本号
+  // 初始化小程序版本号（优先使用微信官方版本号）
   initAppVersion() {
     try {
       const accountInfo = wx.getAccountInfoSync()
       if (accountInfo && accountInfo.miniProgram && accountInfo.miniProgram.version) {
         this.globalData.appVersion = accountInfo.miniProgram.version
         console.log('获取到小程序版本号:', this.globalData.appVersion)
+        return true
       } else {
         console.log('无法获取小程序版本号，使用默认版本号')
+        return false
       }
     } catch (e) {
       console.error('获取小程序版本号失败:', e)
+      return false
     }
   },
 
-  // 通过后端API获取版本号
+  // 通过后端API获取版本号（作为后备方案）
   fetchServerVersion() {
     this.request({ url: '/api/health' })
       .then(res => {
@@ -80,11 +83,14 @@ App({
   onLaunch() {
     console.log('小程序启动')
     
-    // 先初始化平台与后端地址，再请求后端版本
+    // 先初始化平台与后端地址，再获取版本号
     this.initPlatformInfo()
-    // 获取版本号：优先后端API，其次微信API
-    this.fetchServerVersion()
-    this.initAppVersion()
+    this.initBaseUrl()
+    // 获取版本号：优先微信API，其次后端API
+    const wxVersionSuccess = this.initAppVersion()
+    if (!wxVersionSuccess) {
+      this.fetchServerVersion()
+    }
     
     // 检查登录状态
     const openid = wx.getStorageSync('openid')
@@ -144,6 +150,47 @@ App({
       console.warn('获取系统信息失败，使用默认设置', e)
       this.globalData.platformInfo = { isIOS: false, system: '' }
       this.globalData.useIconFont = true
+    }
+  },
+
+  // 根据环境初始化后端 API 基础地址
+  initBaseUrl() {
+    try {
+      // 允许通过本地存储覆盖（便于开发时临时切换）
+      const stored = wx.getStorageSync('apiBaseUrl')
+      if (stored && typeof stored === 'string') {
+        this.globalData.baseUrl = stored
+        console.log('使用存储覆盖的 API 地址:', this.globalData.baseUrl)
+        return
+      }
+
+      // 微信提供的环境标识：develop | trial | release
+      let envVersion = 'develop'
+      try {
+        const account = wx.getAccountInfoSync && wx.getAccountInfoSync()
+        if (account && account.miniProgram && account.miniProgram.envVersion) {
+          envVersion = account.miniProgram.envVersion
+        }
+      } catch (_) {}
+
+      // 各环境默认地址（可按需调整）
+      const DEFAULT_RELEASE = 'https://bimai.xyz'
+      const DEFAULT_TRIAL = DEFAULT_RELEASE
+      // 开发环境建议填写你本机在局域网的 IP 与端口
+      const DEFAULT_DEVELOP = 'http://192.168.0.80:5075'
+
+      if (envVersion === 'release') {
+        this.globalData.baseUrl = DEFAULT_RELEASE
+      } else if (envVersion === 'trial') {
+        this.globalData.baseUrl = DEFAULT_TRIAL
+      } else {
+        this.globalData.baseUrl = DEFAULT_DEVELOP
+      }
+
+      console.log('环境:', envVersion, 'API 地址:', this.globalData.baseUrl)
+    } catch (e) {
+      console.warn('初始化 API 地址失败，使用内置默认值:', e)
+      // 保持 globalData.baseUrl 的默认值
     }
   },
 

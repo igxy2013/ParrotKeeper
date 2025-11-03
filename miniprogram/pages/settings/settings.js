@@ -297,27 +297,14 @@ Page({
   },
   showAbout() {
     const app = getApp();
-    // 优先使用后端 API 返回的版本号，但不展示后端地址
-    app.request({ url: '/api/health' })
-      .then(res => {
-        const version = (res && res.version) ? res.version : (app.globalData.appVersion || '未知');
-        // 使用模板字符串生成真正的多行文本，兼容 DevTools 与真机
-        const contentText = `鹦鹉管家 v${version}\n用心呵护每一只小鹦鹉`;
-        wx.showModal({
-          title: '关于应用',
-          content: contentText,
-          showCancel: false
-        });
-      })
-      .catch(() => {
-        const version = app.globalData.appVersion || '未知';
-        const contentText = `鹦鹉管家 v${version}\n用心呵护每一只小鹦鹉`;
-        wx.showModal({
-          title: '关于应用',
-          content: contentText,
-          showCancel: false
-        });
-      });
+    // 直接使用全局版本号（已在 app.js 启动时从微信API获取）
+    const version = app.globalData.appVersion || '未知';
+    const contentText = `鹦鹉管家 v${version}\n用心呵护每一只小鹦鹉`;
+    wx.showModal({
+      title: '关于应用',
+      content: contentText,
+      showCancel: false
+    });
   },
   showHelp() {
     wx.navigateTo({ url: '/pages/settings/feedback/feedback' })
