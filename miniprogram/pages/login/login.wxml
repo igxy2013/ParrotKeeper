@@ -15,9 +15,9 @@
           <image wx:if="{{selectedMode === 'personal'}}" class="selected-badge" src="/images/remix/checkbox-circle-fill-white.png" mode="widthFix"/>
         </view>
         <view class="mode-option mode-team {{selectedMode === 'team' ? 'active' : ''}}" bindtap="selectMode" data-mode="team">
-          <image class="mode-icon-img" src="/images/remix/customer-service-2-line.png" mode="widthFix"/>
+          <image class="mode-icon-img" src="/images/remix/group-line.png" mode="widthFix"/>
           <view class="mode-name">团队模式</view>
-          <view class="mode-desc">查看团队管理员数据</view>
+          <view class="mode-desc">管理团队鹦鹉数据</view>
           <image wx:if="{{selectedMode === 'team'}}" class="selected-badge" src="/images/remix/checkbox-circle-fill-white.png" mode="widthFix"/>
         </view>
       </view>

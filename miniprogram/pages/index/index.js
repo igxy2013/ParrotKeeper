@@ -102,6 +102,7 @@ Page({
       myParrotsTitleHeart: '/images/remix/ri-heart-fill-green.png',
       // 默认占位图
       defaultParrot: '/images/default-parrot.png',
+      logo: '/images/logo.png',
       // 快捷操作
       actions: {
         quickFeeding: '/images/remix/ri-restaurant-fill-orange.png',

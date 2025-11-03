@@ -301,7 +301,7 @@
     <!-- 登录提示 -->
     <view class="login-prompt-card" wx:if="{{!isLogin}}">
       <view class="login-content">
-      <view class="login-icon"><image class="login-icon-img" src="{{iconPaths.defaultParrot}}" mode="widthFix" binderror="handleIconError" data-key="defaultParrot"/></view>
+      <view class="login-icon"><image class="login-icon-img" src="{{iconPaths.logo}}" mode="widthFix" binderror="handleIconError" data-key="defaultParrot"/></view>
         <text class="login-title">欢迎使用鹦鹉管家</text>
         <text class="login-subtitle">请先登录以使用完整功能</text>
         <button class="login-btn" bindtap="handleLogin">微信快速登录</button>

@@ -55,16 +55,15 @@
       </view>
     </view>
   </view>
-
-  <!-- 未登录状态 -->
-  <view class="login-prompt" wx:if="{{!isLogin}}">
-    <view class="login-card">
-<image class="login-icon-img" src="{{iconPaths.loginAvatar}}" mode="aspectFit" binderror="onProfileIconError" data-key="loginAvatar" />
-      <text class="login-text">欢迎使用鹦鹉管家</text>
-      <text class="login-subtitle">请先登录以查看个人信息</text>
-      <button class="login-btn" bindtap="handleLogin">微信快速登录</button>
+    <!-- 登录提示 -->
+    <view class="login-prompt-card" wx:if="{{!isLogin}}">
+      <view class="login-content">
+      <view class="login-icon"><image class="login-icon" src="{{iconPaths.logo}}" mode="widthFix" binderror="handleIconError" data-key="defaultParrot"/></view>
+        <text class="login-title">欢迎使用鹦鹉管家</text>
+        <text class="login-subtitle">请先登录以使用完整功能</text>
+        <button class="login-btn" bindtap="handleLogin">微信快速登录</button>
+      </view>
     </view>
-  </view>
 
 
 

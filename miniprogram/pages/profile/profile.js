@@ -87,7 +87,8 @@ Page({
       arrowRight: '/images/remix/arrow-right-s-line.png',
       addLine: '/images/remix/ri-add-line.png',
       infoLine: '/images/remix/information-line.png',
-      feedbackLine: '/images/remix/feedback-line.png'
+      feedbackLine: '/images/remix/feedback-line.png',
+      logo: '/images/logo.png'
     }
   },
 

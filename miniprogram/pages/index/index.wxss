@@ -868,7 +868,6 @@
 
 .login-icon {
   font-size: 120rpx;
-  margin-bottom: 32rpx;
 }
 
 .login-title {
@@ -891,7 +890,7 @@
   color: #ffffff;
   border: none;
   border-radius: 48rpx;
-  padding: 32rpx 64rpx;
+  padding: 6rpx 64rpx;
   font-size: 32rpx;
   font-weight: bold;
   box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.3);
