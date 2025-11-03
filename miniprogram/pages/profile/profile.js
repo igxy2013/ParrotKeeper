@@ -1139,7 +1139,6 @@ Page({
     } catch (e) {
       app.hideLoading();
       console.error('选择或上传头像失败:', e);
-      wx.showToast({ title: '操作失败，请重试', icon: 'none' });
     }
   },
 
