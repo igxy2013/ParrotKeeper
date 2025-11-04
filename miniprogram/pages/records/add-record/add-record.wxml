@@ -203,7 +203,7 @@
           <text class="picker-text {{formData.male_parrot_id ? '' : 'placeholder'}}">
             {{selectedMaleParrotName || '请选择雄性鹦鹉'}}
           </text>
-          <text class="picker-arrow">▼</text>
+          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
         </view>
       </view>
       
@@ -213,7 +213,7 @@
           <text class="picker-text {{formData.female_parrot_id ? '' : 'placeholder'}}">
             {{selectedFemaleParrotName || '请选择雌性鹦鹉'}}
           </text>
-          <text class="picker-arrow">▼</text>
+          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
         </view>
       </view>
       

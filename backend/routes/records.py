@@ -386,6 +386,25 @@ def add_breeding_record_internal(data):
         success_rate = data.get('success_rate')
         notes = data.get('notes', '')
         photos = data.get('photos', [])
+        # 记录创建时间（用于在前端显示/编辑记录时间）
+        record_time_str = data.get('record_time')
+        created_at_dt = None
+        if record_time_str:
+            try:
+                # 支持多种格式：ISO、完整日期时间、到分钟、仅日期
+                if 'T' in record_time_str:
+                    created_at_dt = datetime.fromisoformat(record_time_str.replace('Z', '+00:00'))
+                else:
+                    try:
+                        created_at_dt = datetime.strptime(record_time_str, '%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        try:
+                            created_at_dt = datetime.strptime(record_time_str, '%Y-%m-%d %H:%M')
+                        except ValueError:
+                            # 仅日期，时间默认 00:00
+                            created_at_dt = datetime.strptime(record_time_str, '%Y-%m-%d')
+            except Exception:
+                created_at_dt = None
         
         if not male_parrot_id or not female_parrot_id:
             return error_response('请选择公鸟和母鸟')
@@ -416,6 +435,29 @@ def add_breeding_record_internal(data):
                 hatching_date = datetime.strptime(hatching_date_str, '%Y-%m-%d').date()
             except ValueError:
                 pass
+
+        # 数值字段标准化：空字符串/None 转默认值
+        try:
+            if egg_count == '' or egg_count is None:
+                egg_count = 0
+            else:
+                egg_count = int(egg_count)
+        except (ValueError, TypeError):
+            egg_count = 0
+        try:
+            if chick_count == '' or chick_count is None:
+                chick_count = 0
+            else:
+                chick_count = int(chick_count)
+        except (ValueError, TypeError):
+            chick_count = 0
+        try:
+            if success_rate == '' or success_rate is None:
+                success_rate = None
+            else:
+                success_rate = float(success_rate)
+        except (ValueError, TypeError):
+            success_rate = None
         
         # 创建繁殖记录
         record = BreedingRecord(
@@ -430,7 +472,8 @@ def add_breeding_record_internal(data):
             notes=notes,
             image_urls=(__import__('json').dumps(photos, ensure_ascii=False) if isinstance(photos, list) and len(photos) > 0 else None),
             created_by_user_id=user.id,
-            team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+            team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None,
+            created_at=created_at_dt or None
         )
         db.session.add(record)
         db.session.commit()
@@ -532,7 +575,8 @@ def get_record(record_id):
             if breeding_record:
                 result = breeding_record_schema.dump(breeding_record)
                 result['type'] = 'breeding'
-                result['record_time'] = breeding_record.mating_date.isoformat() if breeding_record.mating_date else None
+                # 记录时间应表示记录创建时间，不与交配/下蛋/孵化日期混用
+                result['record_time'] = breeding_record.created_at.isoformat() if breeding_record.created_at else None
                 return success_response(result)
         
         return error_response('记录不存在', 404)
@@ -661,6 +705,18 @@ def get_record_by_type(record_type, record_id):
             return error_response('权限不足或记录不存在')
 
         data = schema.dump(record)
+        # 为统一前端显示，补充 record_time 字段
+        if record_type == 'feeding':
+            data['record_time'] = record.feeding_time.isoformat() if getattr(record, 'feeding_time', None) else None
+        elif record_type == 'health':
+            data['record_time'] = record.record_date.isoformat() if getattr(record, 'record_date', None) else None
+        elif record_type == 'cleaning':
+            data['record_time'] = record.cleaning_time.isoformat() if getattr(record, 'cleaning_time', None) else None
+        elif record_type == 'breeding':
+            # 使用创建时间作为记录时间
+            data['record_time'] = record.created_at.isoformat() if getattr(record, 'created_at', None) else None
+        # 详情页所需：显式返回创建时间 created_at
+        data['created_at'] = record.created_at.isoformat() if getattr(record, 'created_at', None) else None
         return success_response(data)
 
     except Exception as e:
@@ -983,6 +1039,23 @@ def update_breeding_record_internal(record_id, data):
                 record.success_rate = None
     if 'notes' in data:
         record.notes = data['notes']
+    # 支持更新记录时间（created_at），用于编辑页面修改记录时间
+    if 'record_time' in data and data['record_time']:
+        record_time_str = data['record_time']
+        try:
+            if 'T' in record_time_str:
+                record.created_at = datetime.fromisoformat(record_time_str.replace('Z', '+00:00'))
+            else:
+                try:
+                    record.created_at = datetime.strptime(record_time_str, '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    try:
+                        record.created_at = datetime.strptime(record_time_str, '%Y-%m-%d %H:%M')
+                    except ValueError:
+                        record.created_at = datetime.strptime(record_time_str, '%Y-%m-%d')
+        except Exception:
+            # 忽略时间解析错误，不中断其他字段更新
+            pass
     
     db.session.commit()
     
@@ -1399,9 +1472,25 @@ def get_breeding_records():
         # 排序和分页
         query = query.order_by(BreedingRecord.mating_date.desc())
         result = paginate_query(query, page, per_page)
-        
+
+        # 为每条记录补充 record_time 字段，表示最后添加/编辑时间（使用 created_at）
+        raw_items = result['items']
+        dumped_items = breeding_records_schema.dump(raw_items)
+        items_with_time = []
+        try:
+            for idx, item in enumerate(dumped_items):
+                created_at_val = None
+                try:
+                    created_at_val = raw_items[idx].created_at
+                except Exception:
+                    created_at_val = None
+                item['record_time'] = created_at_val.isoformat() if created_at_val else None
+                items_with_time.append(item)
+        except Exception:
+            items_with_time = dumped_items
+
         return success_response({
-            'items': breeding_records_schema.dump(result['items']),
+            'items': items_with_time,
             'total': result['total'],
             'pages': result['pages'],
             'current_page': result['current_page'],

@@ -73,6 +73,7 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     feed_type_name = fields.Method('get_feed_type_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
+    created_by_nickname = fields.Method('get_created_by_nickname', dump_only=True)
     # 确保parrot_id字段被包含
     parrot_id = fields.Integer(dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
@@ -85,6 +86,9 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_username(self, obj):
         return obj.created_by.username if obj.created_by else None
+    
+    def get_created_by_nickname(self, obj):
+        return obj.created_by.nickname if obj.created_by else None
     
     def get_photos(self, obj):
         try:
@@ -106,6 +110,7 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
     created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
+    created_by_nickname = fields.Method('get_created_by_nickname', dump_only=True)
     health_status_text = fields.Method('get_health_status_text', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
     
@@ -114,6 +119,9 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_username(self, obj):
         return obj.created_by.username if obj.created_by else None
+    
+    def get_created_by_nickname(self, obj):
+        return obj.created_by.nickname if obj.created_by else None
     
     def get_health_status_text(self, obj):
         """将英文健康状态转换为中文显示"""
@@ -145,6 +153,7 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
     created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
+    created_by_nickname = fields.Method('get_created_by_nickname', dump_only=True)
     cleaning_type_text = fields.Method('get_cleaning_type_text', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
     
@@ -153,6 +162,9 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_username(self, obj):
         return obj.created_by.username if obj.created_by else None
+    
+    def get_created_by_nickname(self, obj):
+        return obj.created_by.nickname if obj.created_by else None
     
     def get_cleaning_type_text(self, obj):
         """将英文清洁类型转换为中文显示"""
@@ -189,6 +201,7 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
     male_parrot_name = fields.Method('get_male_parrot_name', dump_only=True)
     female_parrot_name = fields.Method('get_female_parrot_name', dump_only=True)
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
+    created_by_nickname = fields.Method('get_created_by_nickname', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
     
     def get_male_parrot_name(self, obj):
@@ -199,6 +212,9 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_username(self, obj):
         return obj.created_by.username if obj.created_by else None
+    
+    def get_created_by_nickname(self, obj):
+        return obj.created_by.nickname if obj.created_by else None
     
     def get_photos(self, obj):
         try:

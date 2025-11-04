@@ -263,9 +263,22 @@ Page({
         return list.map(r => {
           const formatted = {
             ...r,
+            created_at_formatted: r.created_at ? app.formatDateTime(r.created_at) : '',
             mating_date_formatted: r.mating_date ? app.formatDateTime(r.mating_date) : '',
             egg_laying_date_formatted: r.egg_laying_date ? app.formatDateTime(r.egg_laying_date) : '',
-            hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : ''
+            hatching_date_formatted: r.hatching_date ? app.formatDateTime(r.hatching_date) : '',
+            // 记录时间统一显示逻辑：优先后端 record_time（最后添加/编辑时间），其次 created_at，再回退节点日期
+            record_time_formatted: (r.record_time
+              ? app.formatDateTime(r.record_time)
+              : (r.created_at
+                ? app.formatDateTime(r.created_at)
+                : (r.mating_date
+                  ? app.formatDateTime(r.mating_date)
+                  : (r.egg_laying_date
+                    ? app.formatDateTime(r.egg_laying_date)
+                    : (r.hatching_date
+                      ? app.formatDateTime(r.hatching_date)
+                      : '')))))
           }
           // 取公母两只鹦鹉头像
           const male = r.male_parrot || allParrots.find(x => (r.male_parrot_id && x.id === r.male_parrot_id) || (r.male_parrot_name && x.name === r.male_parrot_name))

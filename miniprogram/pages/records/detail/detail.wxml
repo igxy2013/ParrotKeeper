@@ -16,8 +16,12 @@
         <text class="value">{{recordTypeLabel}}</text>
       </view>
       <view class="row">
-        <text class="label">时间</text>
+        <text class="label">记录时间</text>
         <text class="value">{{displayTime}}</text>
+      </view>
+      <view class="row" wx:if="{{recorderName}}">
+        <text class="label">记录人</text>
+        <text class="value">{{recorderName}}</text>
       </view>
       <view class="row" wx:if="{{parrotName}}">
         <text class="label">鹦鹉</text>
@@ -27,7 +31,7 @@
       <!-- 喂食 -->
       <block wx:if="{{recordType === 'feeding'}}">
         <view class="row" wx:if="{{record.feed_type || record.feed_type_name}}">
-          <text class="label">饲料</text>
+          <text class="label">食物类型</text>
           <text class="value">{{record.feed_type_name || record.feed_type}}</text>
         </view>
         <view class="row" wx:if="{{record.amount}}">
@@ -43,7 +47,7 @@
           <text class="value">{{record.cleaning_type_text || record.cleaning_type_name || record.cleaning_type}}</text>
         </view>
         <view class="row" wx:if="{{record.description}}">
-          <text class="label">描述</text>
+          <text class="label">清洁描述</text>
           <text class="value">{{record.description}}</text>
         </view>
       </block>
@@ -62,14 +66,39 @@
 
       <!-- 繁殖 -->
       <block wx:if="{{recordType === 'breeding'}}">
-        <view class="row" wx:if="{{record.breeding_status}}">
-          <text class="label">繁殖状态</text>
-          <text class="value">{{record.breeding_status}}</text>
+        <view class="row" wx:if="{{record.male_parrot_name}}">
+          <text class="label">公鸟</text>
+          <text class="value">{{record.male_parrot_name}}</text>
         </view>
-        <view class="row" wx:if="{{record.nest_status}}">
-          <text class="label">巢箱状态</text>
-          <text class="value">{{record.nest_status}}</text>
+        <view class="row" wx:if="{{record.female_parrot_name}}">
+          <text class="label">母鸟</text>
+          <text class="value">{{record.female_parrot_name}}</text>
         </view>
+        <view class="row" wx:if="{{record.mating_date}}">
+          <text class="label">交配日期</text>
+          <text class="value">{{record.mating_date}}</text>
+        </view>
+        <view class="row" wx:if="{{record.egg_laying_date}}">
+          <text class="label">下蛋日期</text>
+          <text class="value">{{record.egg_laying_date}}</text>
+        </view>
+        <view class="row" wx:if="{{record.egg_count || record.egg_count === 0}}">
+          <text class="label">蛋数</text>
+          <text class="value">{{record.egg_count}}</text>
+        </view>
+        <view class="row" wx:if="{{record.hatching_date}}">
+          <text class="label">孵化日期</text>
+          <text class="value">{{record.hatching_date}}</text>
+        </view>
+        <view class="row" wx:if="{{record.chick_count || record.chick_count === 0}}">
+          <text class="label">雏鸟数</text>
+          <text class="value">{{record.chick_count}}</text>
+        </view>
+        <view class="row" wx:if="{{record.success_rate || record.success_rate === 0}}">
+          <text class="label">成功率</text>
+          <text class="value">{{record.success_rate}}</text>
+        </view>
+        
       </block>
 
       <view class="row" wx:if="{{record.notes}}">
@@ -91,6 +120,23 @@
     <!-- 多记录聚合提示 -->
     <view class="aggregate" wx:if="{{isAggregate}}">
       <text>该时间点包含多个记录（{{aggregateCount}}）</text>
+    </view>
+
+    <!-- 聚合喂食记录列表 -->
+    <view class="card" wx:if="{{isAggregate && recordType === 'feeding'}}">
+      <view class="row">
+        <text class="label">包含记录</text>
+        <text class="value">共 {{aggregateCount}} 条</text>
+      </view>
+      <block wx:for="{{aggregateRecords}}" wx:key="id">
+        <view class="row">
+          <text class="label">{{item.parrotName}}</text>
+          <view class="value">
+            <text>{{item.feedTypeName}}</text>
+            <text wx:if="{{item.amount || item.amount === 0}}">（{{item.amount}} g）</text>
+          </view>
+        </view>
+      </block>
     </view>
   </block>
 </view>

@@ -156,6 +156,13 @@ Page({
         statusClass = 'status-nesting'
       }
       
+      // 记录时间：优先后端 record_time（最后添加/编辑时间），其次 created_at，再回退节点日期
+      const rawTime = record.record_time || record.created_at || record.mating_date || record.egg_laying_date || record.hatching_date || ''
+      const parsedTime = this.parseServerTime(rawTime)
+      const recordTime = parsedTime
+        ? app.formatDateTime(parsedTime, 'YYYY-MM-DD HH:mm')
+        : this.normalizeDisplayTime(rawTime)
+
       return {
         id: record.id,
         parrotPair,
@@ -171,6 +178,7 @@ Page({
         statusClass,
         notes: record.notes || '',
         createdAt: this.formatDate(record.created_at),
+        recordTime,
         rawData: record
       }
     })
@@ -297,10 +305,90 @@ Page({
   // 格式化日期
   formatDate(dateString) {
     if (!dateString) return ''
-    const date = new Date(dateString)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+    const d = this.parseServerTime(dateString)
+    if (d) {
+      return app.formatDateTime(d, 'YYYY-MM-DD')
+    }
+    // 兜底：按字符串规则归一化
+    const s = String(dateString).trim()
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+    if (s.includes('T')) {
+      const x = s.split('T')[0]
+      return x
+    }
+    if (s.includes(' ')) {
+      return s.split(' ')[0]
+    }
+    return s
+  }
+  ,
+
+  // 统一解析服务端时间字符串（本地时间，兼容 iOS）
+  parseServerTime(value) {
+    if (!value) return null
+    try {
+      if (value instanceof Date) return value
+      if (typeof value === 'number') {
+        const dNum = new Date(value)
+        return isNaN(dNum.getTime()) ? null : dNum
+      }
+      if (typeof value === 'string') {
+        const s = value.trim()
+        // 仅日期：YYYY-MM-DD -> 当天本地 00:00:00
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+          const d0 = new Date(`${s}T00:00:00`)
+          return isNaN(d0.getTime()) ? null : d0
+        }
+        // 已包含 Z 或时区偏移，直接解析
+        if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s)) {
+          const dz = new Date(s)
+          return isNaN(dz.getTime()) ? null : dz
+        }
+        // 空格或 T 分隔：YYYY-MM-DD HH:mm[:ss] / YYYY-MM-DDTHH:mm[:ss]
+        if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s)) {
+          // 先尝试 iOS 友好的斜杠格式
+          let local = s.replace('T', ' ').replace(/-/g, '/')
+          if (/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/.test(local)) local = local + ':00'
+          const dLocal = new Date(local)
+          if (!isNaN(dLocal.getTime())) return dLocal
+          // 兜底：ISO T 格式并补秒
+          let iso = s.includes(' ') ? s.replace(' ', 'T') : s
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) iso = iso + ':00'
+          const dIso = new Date(iso)
+          if (!isNaN(dIso.getTime())) return dIso
+        }
+        // 其它情况：尝试直接解析或斜杠替换
+        let d = new Date(s)
+        if (!isNaN(d.getTime())) return d
+        d = new Date(s.replace(/-/g, '/'))
+        return isNaN(d.getTime()) ? null : d
+      }
+      return null
+    } catch (_) {
+      return null
+    }
+  }
+  ,
+
+  // 归一化显示时间为 YYYY-MM-DD HH:mm（字符串兜底）
+  normalizeDisplayTime(input) {
+    if (!input) return ''
+    let s = String(input).trim()
+    if (s.includes('T')) {
+      let x = s.replace('T', ' ')
+      x = x.replace('Z', '')
+      x = x.replace(/([+\-]\d{2}:?\d{2})$/, '')
+      if (x.includes('.')) x = x.split('.')[0]
+      return x.substring(0, 16)
+    }
+    if (s.includes(' ')) {
+      const parts = s.split(' ')
+      const d0 = parts[0]
+      let t0 = (parts[1] || '00:00')
+      if (t0.length > 5) t0 = t0.substring(0, 5)
+      return `${d0} ${t0}`
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s} 00:00`
+    return s
   }
 })

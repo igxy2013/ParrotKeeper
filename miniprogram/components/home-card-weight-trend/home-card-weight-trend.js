@@ -31,13 +31,15 @@ Component({
     },
     palette(i) {
       // 与统计页的颜色保持一致
-      const colors = ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
+      const colors = ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395']
       return colors[i % colors.length]
     },
-    prepareDisplaySeries() {
+  prepareDisplaySeries() {
       const src = Array.isArray(this.data.series) ? this.data.series : []
       const selectedId = this.data.selectedParrotId
-      const filtered = selectedId ? src.filter(s => String(s.parrot_id) === String(selectedId)) : src
+      let filtered = selectedId ? src.filter(s => String(s.parrot_id) === String(selectedId)) : src
+      // 默认最多显示12只鹦鹉
+      if (!selectedId && Array.isArray(filtered)) filtered = filtered.slice(0, 12)
       const display = filtered.map((s, i) => ({
         parrot_id: s.parrot_id,
         parrot_name: s.parrot_name,

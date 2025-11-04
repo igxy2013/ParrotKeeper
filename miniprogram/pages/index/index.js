@@ -1244,7 +1244,7 @@ Page({
     }
 
     wx.navigateTo({
-      url: '/pages/breeding/breeding'
+      url: '/pages/records/breeding/breeding'
     })
   },
 

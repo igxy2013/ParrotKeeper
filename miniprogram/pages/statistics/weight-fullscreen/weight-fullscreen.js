@@ -4,7 +4,8 @@ Page({
     // 传入的数据
     weightSeries: [],
     selectedParrotId: null,
-    weightColors: ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22'],
+    // 体重趋势颜色：10种高对比色（与统计页一致）
+    weightColors: ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395'],
     weightLegend: [],
     weightStartDate: '',
     weightEndDate: '',
@@ -49,7 +50,7 @@ Page({
   drawChart() {
     const series = this.data.weightSeries || []
     const selectedId = this.data.selectedParrotId
-    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series
+    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series.slice(0, 12)
     const hasRange = !!(this.data.weightStartDate && this.data.weightEndDate)
     const rangeStart = this.data.weightStartDate
     const rangeEnd = this.data.weightEndDate
@@ -349,7 +350,7 @@ Page({
   updateLegend() {
     const series = this.data.weightSeries || []
     const selectedId = this.data.selectedParrotId
-    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series
+    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series.slice(0, 12)
     const palette = this.data.weightColors || ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
     const legend = (displaySeries || []).map((s, idx) => ({
       parrot_id: s.parrot_id,

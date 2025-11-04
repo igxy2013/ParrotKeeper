@@ -178,7 +178,11 @@ const app = getApp()
         // 应用预填鹦鹉ID到选择状态
         const { prefillParrotIds } = this.data
         const selectedParrots = []
-        const parrotIdsApplied = prefillParrotIds && prefillParrotIds.length ? prefillParrotIds.slice() : this.data.formData.parrot_ids
+        const isBreeding = this.data.recordType === 'breeding'
+        const parrotIdsAppliedRaw = prefillParrotIds && prefillParrotIds.length
+          ? prefillParrotIds.slice()
+          : (Array.isArray(this.data.formData.parrot_ids) ? this.data.formData.parrot_ids.slice() : [])
+        const parrotIdsApplied = isBreeding ? parrotIdsAppliedRaw.slice(0, 2) : parrotIdsAppliedRaw
         const parrotListWithSelection = allParrots.map(p => {
           const selected = parrotIdsApplied.includes(p.id)
           if (selected) selectedParrots.push({ id: p.id, name: p.name })
@@ -194,6 +198,8 @@ const app = getApp()
           selectedParrotNames,
           'formData.parrot_ids': parrotIdsApplied
         })
+        // 初次加载后根据基础选择更新繁殖记录的雄/雌选择器范围
+        this.updateBreedingParrotListsBasedOnSelection()
       }
     } catch (error) {
       console.error('加载鹦鹉列表失败:', error)
@@ -345,7 +351,8 @@ const app = getApp()
         }
         
         // 解析记录时间（兼容 ISO、空格分隔以及仅日期），避免不同端 Date 解析不一致
-        const rawTime = record.record_time || record.record_date || ''
+        // 统一以后端返回的 record_time 为主，若无则回退 record_date
+        const rawTime = (record.record_time || record.record_date || '')
         let dateStr = this.data.formData.record_date
         let timeStr = this.data.formData.record_time
         if (rawTime) {
@@ -372,6 +379,7 @@ const app = getApp()
             // 保持原有默认的时间
           }
         }
+        // 不再将繁殖记录时间与交配日期绑定，保持独立的记录创建时间
         
         // 根据记录类型设置表单数据
         let formData = {
@@ -560,7 +568,9 @@ const app = getApp()
           maleParrotList: maleParrotListSynced,
           femaleParrotList: femaleParrotListSynced
         })
-        
+        // 编辑模式：根据基础选择限制雄/雌选择器范围
+        this.updateBreedingParrotListsBasedOnSelection()
+
         this.validateForm()
       }
     } catch (error) {
@@ -618,7 +628,12 @@ const app = getApp()
       if (index >= 0) {
         selectedParrots.splice(index, 1)
       } else {
-        selectedParrots.push({ id, name })
+        // 繁殖记录：最多选择 2 只鹦鹉
+        if (this.data.recordType === 'breeding' && selectedParrots.length >= 2) {
+          wx.showToast({ title: '最多选择2只鹦鹉', icon: 'none' })
+        } else {
+          selectedParrots.push({ id, name })
+        }
       }
       parrotList = parrotList.map(p => ({
         ...p,
@@ -637,9 +652,60 @@ const app = getApp()
 
   // 确认鹦鹉选择
   confirmParrotSelection: function() {
-    this.setData({
-      showParrotModal: false
-    })
+    // 关闭弹窗前根据选择更新繁殖记录的雄/雌选择器范围
+    this.updateBreedingParrotListsBasedOnSelection()
+    this.setData({ showParrotModal: false })
+  },
+
+  // 根据基础选择的鹦鹉更新繁殖记录的雄/雌选择器范围
+  updateBreedingParrotListsBasedOnSelection: function() {
+    try {
+      const { recordType, parrotList } = this.data
+      if (recordType !== 'breeding') return
+      const rawIds = Array.isArray(this.data.formData.parrot_ids) ? this.data.formData.parrot_ids : []
+      const selectedIds = rawIds.map(id => parseInt(id)).filter(id => !isNaN(id))
+
+      let maleParrotList = []
+      let femaleParrotList = []
+      if (selectedIds.length === 2) {
+        const idSet = new Set(selectedIds)
+        const twoParrots = parrotList.filter(p => idSet.has(p.id))
+        maleParrotList = twoParrots.map(p => ({ ...p }))
+        femaleParrotList = twoParrots.map(p => ({ ...p }))
+      } else {
+        maleParrotList = parrotList.filter(p => p.gender === 'male' || p.gender === 'unknown' || !p.gender).map(p => ({ ...p }))
+        femaleParrotList = parrotList.filter(p => p.gender === 'female' || p.gender === 'unknown' || !p.gender).map(p => ({ ...p }))
+      }
+
+      const currentMaleId = parseInt(this.data.formData.male_parrot_id)
+      const currentFemaleId = parseInt(this.data.formData.female_parrot_id)
+      const maleParrotListSynced = maleParrotList.map(p => ({ ...p, selected: p.id === currentMaleId }))
+      const femaleParrotListSynced = femaleParrotList.map(p => ({ ...p, selected: p.id === currentFemaleId }))
+
+      const maleValid = maleParrotListSynced.some(p => p.id === currentMaleId)
+      const femaleValid = femaleParrotListSynced.some(p => p.id === currentFemaleId)
+      const newFormData = { ...this.data.formData }
+      let selectedMaleParrotName = this.data.selectedMaleParrotName
+      let selectedFemaleParrotName = this.data.selectedFemaleParrotName
+      if (!maleValid) {
+        newFormData.male_parrot_id = ''
+        selectedMaleParrotName = ''
+      }
+      if (!femaleValid) {
+        newFormData.female_parrot_id = ''
+        selectedFemaleParrotName = ''
+      }
+
+      this.setData({
+        maleParrotList: maleParrotListSynced,
+        femaleParrotList: femaleParrotListSynced,
+        selectedMaleParrotName,
+        selectedFemaleParrotName,
+        formData: newFormData
+      })
+    } catch (err) {
+      console.warn('更新繁殖鹦鹉选择器范围失败:', err)
+    }
   },
   
   // 选择食物类型（多选）
@@ -818,7 +884,12 @@ const app = getApp()
 
   // 使用原生复选框进行鹦鹉选择（多选）
   onParrotChange: function(e) {
-    const selectedIds = (e.detail.value || []).map(v => String(v))
+    let selectedIds = (e.detail.value || []).map(v => String(v))
+    // 繁殖记录：最多选择 2 只鹦鹉（复选框场景）
+    if (this.data.recordType === 'breeding' && selectedIds.length > 2) {
+      wx.showToast({ title: '最多选择2只鹦鹉', icon: 'none' })
+      selectedIds = selectedIds.slice(0, 2)
+    }
     const parrotList = this.data.parrotList.map(item => ({
       ...item,
       selected: selectedIds.includes(String(item.id))
@@ -833,6 +904,8 @@ const app = getApp()
       selectedParrotNames: selectedNames,
       'formData.parrot_ids': selectedIds
     })
+    // 根据选择更新繁殖记录的雄/雌选择器范围
+    this.updateBreedingParrotListsBasedOnSelection()
     this.validateForm()
   },
 
@@ -887,24 +960,22 @@ const app = getApp()
 
   // 日期选择器变更
   onDateChange: function(e) {
-    this.setData({
-      'formData.record_date': e.detail.value
-    })
+    const val = e.detail.value
+    this.setData({ 'formData.record_date': val })
     this.validateForm()
   },
 
   // 时间选择器变更
   onTimeChange: function(e) {
-    this.setData({
-      'formData.record_time': e.detail.value
-    })
+    this.setData({ 'formData.record_time': e.detail.value })
     this.validateForm()
   },
 
   // 交配日期选择器变更
   onMatingDateChange: function(e) {
+    const val = e.detail.value
     this.setData({
-      'formData.mating_date': e.detail.value
+      'formData.mating_date': val
     })
     this.validateForm()
   },
@@ -1240,6 +1311,7 @@ const app = getApp()
         const payload = {
           ...baseCommon,
           type: 'breeding',
+          // 将记录时间传递给后端，用于设置/更新 created_at
           record_time: timeStr,
           male_parrot_id: formData.male_parrot_id,
           female_parrot_id: formData.female_parrot_id,

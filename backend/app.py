@@ -142,6 +142,18 @@ def create_app(config_name=None):
                 return error_response('权限不足或记录不存在')
 
             data = schema.dump(record)
+            # 统一前端显示字段：record_time 与 created_at
+            if record_type == 'feeding':
+                data['record_time'] = record.feeding_time.isoformat() if getattr(record, 'feeding_time', None) else None
+            elif record_type == 'health':
+                data['record_time'] = record.record_date.isoformat() if getattr(record, 'record_date', None) else None
+            elif record_type == 'cleaning':
+                data['record_time'] = record.cleaning_time.isoformat() if getattr(record, 'cleaning_time', None) else None
+            elif record_type == 'breeding':
+                # 繁殖记录以创建时间作为记录时间
+                data['record_time'] = record.created_at.isoformat() if getattr(record, 'created_at', None) else None
+            # 显式返回创建时间
+            data['created_at'] = record.created_at.isoformat() if getattr(record, 'created_at', None) else None
             return success_response(data)
         except Exception as e:
             return error_response(f'获取记录失败: {str(e)}')

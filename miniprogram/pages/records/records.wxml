@@ -54,10 +54,10 @@
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-feed-type-ids="{{item.feed_type_ids}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" catchtap="editRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-feed-type-ids="{{item.feed_type_ids}}" wx:if="{{hasOperationPermission}}">
               <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" catchtap="deleteRecord" data-type="feeding" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
               <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
@@ -121,10 +121,10 @@
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" catchtap="editRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" catchtap="deleteRecord" data-type="health" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
@@ -189,10 +189,10 @@
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-cleaning-type-ids="{{item.cleaning_type_ids}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" catchtap="editRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-cleaning-type-ids="{{item.cleaning_type_ids}}" wx:if="{{hasOperationPermission}}">
               <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" catchtap="deleteRecord" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}" wx:if="{{hasOperationPermission}}">
               <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>
@@ -251,15 +251,15 @@
           </view>
           <view class="record-info">
             <text class="record-title">{{item.male_parrot_name}} × {{item.female_parrot_name}}</text>
-            <text class="record-time">{{item.mating_date_formatted}}</text>
+            <text class="record-time">{{item.record_time_formatted}}</text>
             <!-- 团队模式下显示创建者 -->
             <text wx:if="{{isTeamMode && item.created_by_username}}" class="record-creator">记录者：{{item.created_by_username}}</text>
           </view>
           <view class="record-actions">
-            <view class="action-btn" bindtap="editRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" catchtap="editRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
-            <view class="action-btn" bindtap="deleteRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
+            <view class="action-btn" catchtap="deleteRecord" data-type="breeding" data-id="{{item.id}}" wx:if="{{hasOperationPermission}}">
               <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
             </view>
           </view>

@@ -36,13 +36,8 @@
         "add-record/add-record",
         "feeding/feeding",
         "health/health",
-        "detail/detail"
-      ]
-    },
-    {
-      "root": "pages/breeding",
-      "pages": [
-        "breeding"
+        "detail/detail",
+        "breeding/breeding"
       ]
     },
     {

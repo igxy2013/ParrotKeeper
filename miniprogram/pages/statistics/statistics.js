@@ -28,7 +28,8 @@ const app = getApp()
     selectedParrotName: '',
     showParrotDropdown: false,
     weightDays: 7, // 本周对应7天
-    weightColors: ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22'],
+    // 体重趋势颜色：10种高对比色（统一全局）
+    weightColors: ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395'],
     weightLegend: [],
     // 体重趋势自定义时间范围（滑块）
     weightRangeDates: [],
@@ -962,7 +963,7 @@ const app = getApp()
   updateWeightLegend() {
     const series = this.data.weightSeries || []
     const selectedId = this.data.selectedParrotId
-    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series
+    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series.slice(0, 12)
     const palette = this.data.weightColors || ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
     const legend = (displaySeries || []).map((s, idx) => ({
       parrot_id: s.parrot_id,
@@ -1008,7 +1009,7 @@ const app = getApp()
   drawWeightChart() {
     const series = this.data.weightSeries || []
     const selectedId = this.data.selectedParrotId
-    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series
+    const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series.slice(0, 12)
     const hasRange = !!(this.data.weightStartDate && this.data.weightEndDate)
     const rangeStart = this.data.weightStartDate
     const rangeEnd = this.data.weightEndDate
