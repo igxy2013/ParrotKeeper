@@ -1,5 +1,6 @@
 from flask import Blueprint, request
-from models import db, User, Announcement
+from sqlalchemy import func
+from models import db, User, Announcement, Parrot, Expense
 from utils import login_required, success_response, error_response, paginate_query
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -31,7 +32,28 @@ def list_users():
             )
 
         result = paginate_query(query, page, per_page)
-        # 为避免引入额外依赖，直接构造必要字段
+
+        # 批量统计：每个用户的鹦鹉数量与总支出
+        user_ids = [u.id for u in result['items']]
+        parrot_counts = {}
+        total_expenses = {}
+        if user_ids:
+            # 统计鹦鹉数量（仅激活）
+            pc_rows = db.session.query(Parrot.user_id, func.count(Parrot.id))\
+                .filter(Parrot.user_id.in_(user_ids), Parrot.is_active.is_(True))\
+                .group_by(Parrot.user_id).all()
+            for uid, cnt in pc_rows:
+                parrot_counts[uid] = int(cnt or 0)
+
+            # 统计总支出（个人与团队均按创建者聚合）
+            te_rows = db.session.query(Expense.user_id, func.coalesce(func.sum(Expense.amount), 0))\
+                .filter(Expense.user_id.in_(user_ids))\
+                .group_by(Expense.user_id).all()
+            for uid, total in te_rows:
+                # 转为 float 以便前端显示
+                total_expenses[uid] = float(total or 0)
+
+        # 构造返回字段并附加统计数据
         items = []
         for u in result['items']:
             items.append({
@@ -45,7 +67,9 @@ def list_users():
                 'login_type': u.login_type,
                 'user_mode': u.user_mode,
                 'points': u.points,
-                'created_at': u.created_at.isoformat() if u.created_at else None
+                'created_at': u.created_at.isoformat() if u.created_at else None,
+                'parrot_count': parrot_counts.get(u.id, 0),
+                'total_expense': total_expenses.get(u.id, 0.0)
             })
 
         return success_response({

@@ -38,3 +38,18 @@
 .theme-dark .role-label { color: #9ca3af; }
 .theme-dark .role-chip { background: rgba(255,255,255,0.12); color: #e5e7eb; }
 .theme-dark .search-placeholder { color: #9ca3af; }
+
+/* 排序条样式 */
+.sort-bar { display: flex; align-items: center; justify-content: space-between; padding: 12rpx 20rpx; background: #ffffff; border: 1rpx solid #eef2f7; border-radius: 16rpx; box-shadow: 0 6rpx 16rpx rgba(0,0,0,0.04); margin-bottom: 16rpx; }
+.sort-picker { display: flex; align-items: center; }
+.sort-label { font-size: 26rpx; color: #6b7280; margin-right: 16rpx; }
+.sort-chip { font-size: 26rpx; color: #0f172a; padding: 8rpx 16rpx; border: 1rpx solid #e5e7eb; border-radius: 12rpx; background: #f9fafb; }
+.order-toggle { padding: 8rpx 16rpx; border: 1rpx solid #e5e7eb; border-radius: 12rpx; background: #f9fafb; }
+.order-label { font-size: 26rpx; color: #0f172a; }
+
+/* 深色模式适配 */
+.theme-dark .sort-bar { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); box-shadow: none; }
+.theme-dark .sort-label { color: #9ca3af; }
+.theme-dark .sort-chip { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.12); color: #e5e7eb; }
+.theme-dark .order-toggle { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.12); }
+.theme-dark .order-label { color: #e5e7eb; }

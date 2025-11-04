@@ -13,6 +13,19 @@
         </view>
       </view>
 
+      <!-- 排序控件 -->
+      <view class="sort-bar">
+        <picker mode="selector" range="{{sortOptions}}" value="{{sortIndex}}" bindchange="onSortChange">
+          <view class="sort-picker">
+            <text class="sort-label">排序</text>
+            <text class="sort-chip">{{sortOptions[sortIndex]}}</text>
+          </view>
+        </picker>
+        <view class="order-toggle" bindtap="toggleSortOrder">
+          <text class="order-label">{{sortOrder === 'desc' ? '降序' : '升序'}}</text>
+        </view>
+      </view>
+
       <view wx:if="{{loading}}" class="tips">加载中...</view>
 
       <view class="count-grid" wx:if="{{!loading}}">
@@ -33,6 +46,8 @@
               <text class="name">{{item.nickname || item.username || ('用户' + item.id)}}</text>
               <text class="meta">积分: {{item.points || 0}}</text>
               <text class="meta">{{item.phone || ''}}</text>
+              <text class="meta">鹦鹉数量: {{item.parrot_count || 0}}</text>
+              <text class="meta">总支出: ¥{{item.total_expense || 0}}</text>
             </view>
             <picker mode="selector" range="{{roleDisplay}}" value="{{item.selectedIndex}}" bindchange="changeRole" data-index="{{index}}">
               <view class="role-picker">
