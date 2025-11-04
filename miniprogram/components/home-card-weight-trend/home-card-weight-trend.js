@@ -30,8 +30,8 @@ Component({
       wx.navigateTo({ url: '/pages/statistics/statistics' })
     },
     palette(i) {
-      // 与统计页的颜色保持一致
-      const colors = ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395']
+      // 与统计页的颜色保持一致（12种）
+      const colors = ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#22AA99', '#FF66CC']
       return colors[i % colors.length]
     },
   prepareDisplaySeries() {

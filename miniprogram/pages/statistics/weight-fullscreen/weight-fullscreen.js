@@ -4,8 +4,8 @@ Page({
     // 传入的数据
     weightSeries: [],
     selectedParrotId: null,
-    // 体重趋势颜色：10种高对比色（与统计页一致）
-    weightColors: ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395'],
+    // 体重趋势颜色：12种高对比色（与统计页一致）
+    weightColors: ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#22AA99', '#FF66CC'],
     weightLegend: [],
     weightStartDate: '',
     weightEndDate: '',
@@ -188,7 +188,7 @@ Page({
         ctx.fillText(label, x, y + 6)
       }
 
-      const colorPalette = this.data.weightColors || ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
+      const colorPalette = this.data.weightColors || ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#22AA99', '#FF66CC']
       const tapAreas = []
 
       // 折线与填充
@@ -351,7 +351,7 @@ Page({
     const series = this.data.weightSeries || []
     const selectedId = this.data.selectedParrotId
     const displaySeries = selectedId ? series.filter(s => String(s.parrot_id) === String(selectedId)) : series.slice(0, 12)
-    const palette = this.data.weightColors || ['#667eea', '#764ba2', '#4CAF50', '#ff7f50', '#3498db', '#e67e22']
+    const palette = this.data.weightColors || ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#22AA99', '#FF66CC']
     const legend = (displaySeries || []).map((s, idx) => ({
       parrot_id: s.parrot_id,
       parrot_name: s.parrot_name,
