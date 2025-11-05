@@ -83,3 +83,18 @@ def delete_feedback(feedback_id):
         db.session.rollback()
         return error_response(f'删除反馈失败: {str(e)}')
 
+
+@feedback_bp.route('/unread_count', methods=['GET'])
+@login_required
+def get_unread_feedback_count():
+    """获取未读反馈数量（仅超级管理员可查看）"""
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限查看反馈统计', 403)
+
+        # 获取所有反馈数量（可以根据需要添加时间过滤等条件）
+        unread_count = Feedback.query.count()
+        return success_response({'unread_count': unread_count})
+    except Exception as e:
+        return error_response(f'获取反馈统计失败: {str(e)}')

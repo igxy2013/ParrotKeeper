@@ -50,6 +50,8 @@ Page({
     showNotifications: false,
     notifications: [],
     unreadCount: 0,
+    // 未读反馈数量
+    unreadFeedbackCount: 0,
     // 应用版本号（从全局注入，展示真实小程序版本）
     appVersion: '未知',
 
@@ -150,6 +152,9 @@ Page({
       const unreadCount = nm.getUnreadCount();
       this.setData({ notifications, unreadCount });
 
+      // 获取未读反馈数量（仅超级管理员）
+      this.loadUnreadFeedbackCount();
+
       // 页面可见期间轮询，确保跨分钟到点也能生成当天提醒
       if (this._reminderTimer) {
         clearInterval(this._reminderTimer);
@@ -160,6 +165,8 @@ Page({
           const updated = nm.getLocalNotifications();
           const updatedUnread = nm.getUnreadCount();
           this.setData({ notifications: updated, unreadCount: updatedUnread });
+          // 定期更新未读反馈数量
+          this.loadUnreadFeedbackCount();
         } catch (_) {}
       }, 60000);
     } catch (_) {}
@@ -507,6 +514,21 @@ Page({
 
   closeNotifications() {
     this.setData({ showNotifications: false });
+  },
+
+  // 获取未读反馈数量
+  async loadUnreadFeedbackCount() {
+    // 仅超级管理员需要显示反馈徽章
+    if (!this.data.isSuperAdmin) return;
+    
+    try {
+      const res = await app.request({ url: '/api/feedback/unread_count', method: 'GET' });
+      if (res && res.success && res.data) {
+        this.setData({ unreadFeedbackCount: res.data.unread_count });
+      }
+    } catch (e) {
+      console.error('获取未读反馈数量失败:', e);
+    }
   },
 
   markAllNotificationsRead() {

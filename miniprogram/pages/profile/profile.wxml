@@ -370,6 +370,7 @@
             <view class="menu-item-title">反馈管理</view>
             <view class="menu-item-desc">查看与处理用户反馈</view>
           </view>
+          <view class="menu-item-badge" wx:if="{{unreadFeedbackCount > 0}}">{{unreadFeedbackCount}}</view>
           <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
         </view>
         <view class="menu-item" bindtap="goAdminCareGuideEditor">
