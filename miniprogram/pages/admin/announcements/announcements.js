@@ -43,9 +43,30 @@ Page({
     try {
       const res = await app.request({ url: '/api/admin/announcements', method: 'GET' })
       if (res && res.success) {
+        const pad = (n) => (n < 10 ? '0' + n : '' + n)
+        const toLocal = (isoStr, withSeconds = true, assumeUtcIfNoTz = true) => {
+          if (!isoStr) return ''
+          // 若字符串不包含时区信息，则默认按UTC处理再转换到本地
+          const hasTz = /[zZ]|([+\-]\d{2}:?\d{2})$/.test(isoStr)
+          const normalized = isoStr.includes('T') ? isoStr : isoStr.replace(' ', 'T')
+          let d = new Date(hasTz ? normalized : (assumeUtcIfNoTz ? (normalized + 'Z') : normalized))
+          if (isNaN(d.getTime())) {
+            // 作为兜底，使用 / 分隔解析（仍按本地）
+            try { d = new Date(isoStr.replace(/-/g, '/')) } catch (_) {}
+          }
+          if (isNaN(d.getTime())) return ''
+          const Y = d.getFullYear()
+          const M = pad(d.getMonth() + 1)
+          const D = pad(d.getDate())
+          const h = pad(d.getHours())
+          const m = pad(d.getMinutes())
+          const s = pad(d.getSeconds())
+          return withSeconds ? `${Y}-${M}-${D} ${h}:${m}:${s}` : `${Y}-${M}-${D} ${h}:${m}`
+        }
         const list = (res.data.announcements || []).map(a => ({
           ...a,
-          created_at_display: a.created_at ? a.created_at.replace('T',' ').slice(0,19) : ''
+          created_at_display: toLocal(a.created_at, true, true),
+          scheduled_at_display: a.scheduled_at ? toLocal(a.scheduled_at, false, false) : ''
         }))
         this.setData({ announcements: list })
       } else {

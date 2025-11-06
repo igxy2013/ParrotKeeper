@@ -61,7 +61,7 @@
               <text class="ann-title">{{item.title}}</text>
               <text class="ann-meta">
                 {{item.created_at_display}} ·
-                {{item.status === 'published' ? '已发布' : (item.status === 'scheduled' ? ('定时发布 ' + (item.scheduled_at ? item.scheduled_at.replace('T',' ').slice(0,16) : '')) : '草稿')}}
+                {{item.status === 'published' ? '已发布' : (item.status === 'scheduled' ? ('定时发布 ' + (item.scheduled_at_display || '待定')) : '草稿')}}
               </text>
             </view>
             <view class="ann-actions">
