@@ -29,7 +29,14 @@
           />
         </view>
         <view class="parrot-details">
-          <view class="parrot-name">{{parrot.name}}</view>
+          <view class="parrot-title">
+            <text class="parrot-name">{{parrot.name}}</text>
+            <view class="gender-badge gender-{{parrot.gender}}">
+              <text wx:if="{{parrot.gender === 'male'}}" class="gender-icon">♂</text>
+              <text wx:elif="{{parrot.gender === 'female'}}" class="gender-icon">♀</text>
+              <text wx:else class="gender-icon">？</text>
+            </view>
+          </view>
           <view class="parrot-species">{{parrot.species_name}}</view>
           <view class="parrot-status-tags">
             <view class="health-badge health-{{parrot.current_health_status || parrot.health_status || 'healthy'}}">

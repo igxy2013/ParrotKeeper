@@ -265,6 +265,30 @@
   margin-bottom: 8rpx;
 }
 
+/* 名称与性别徽章容器 */
+.parrot-title {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+/* 性别徽章样式，与列表页一致 */
+.gender-badge {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  line-height: 1;
+  border: 2rpx solid transparent;
+}
+.gender-icon { font-weight: 700; }
+.gender-male { background: #e0f2fe; border-color: #bae6fd; color: #0284c7; }
+.gender-female { background: #fde7f3; border-color: #fbcfe8; color: #db2777; }
+.gender-unknown { background: #f3f4f6; border-color: #e5e7eb; color: #6b7280; }
+
 .parrot-species {
   font-size: 28rpx;
   color: #6b7280;

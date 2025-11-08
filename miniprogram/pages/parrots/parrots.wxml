@@ -87,7 +87,14 @@
         <!-- 基本信息 -->
         <view class="parrot-info">
           <view class="parrot-header">
-            <text class="parrot-name">{{item.name}}</text>
+            <view class="parrot-title">
+              <text class="parrot-name">{{item.name}}</text>
+              <view class="gender-badge gender-{{item.gender}}">
+                <text wx:if="{{item.gender === 'male'}}" class="gender-icon">♂</text>
+                <text wx:elif="{{item.gender === 'female'}}" class="gender-icon">♀</text>
+                <text wx:else class="gender-icon">？</text>
+              </view>
+            </view>
             <view class="health-badge health-{{item.current_health_status || item.health_status}}">
               <text wx:if="{{(item.current_health_status || item.health_status) === 'healthy'}}">健康</text>
               <text wx:elif="{{(item.current_health_status || item.health_status) === 'sick'}}">生病</text>

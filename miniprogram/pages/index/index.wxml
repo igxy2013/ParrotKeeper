@@ -166,7 +166,14 @@
         <view class="parrot-card-row">
           <view class="parrot-mini-card" wx:for="{{myParrots}}" wx:key="id" data-id="{{item.id}}" bindtap="openParrotDetail">
             <image class="parrot-mini-avatar" src="{{item.photo_url || item.avatar_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
-            <text class="parrot-mini-name">{{item.name}}</text>
+            <view class="parrot-mini-title">
+              <text class="parrot-mini-name">{{item.name}}</text>
+              <view class="mini-gender-badge gender-{{item.gender}}">
+                <text wx:if="{{item.gender === 'male'}}" class="mini-gender-icon">♂</text>
+                <text wx:elif="{{item.gender === 'female'}}" class="mini-gender-icon">♀</text>
+                <text wx:else class="mini-gender-icon">？</text>
+              </view>
+            </view>
             <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
             <view class="health-badge health-{{item.current_health_status || 'healthy'}}">{{item.current_health_status_text || '健康'}}</view>
           </view>
