@@ -117,7 +117,7 @@ Page({
         addParrot: '/images/remix/ri-add-fill-emerald.png',
         quickExpense: '/images/remix/ri-money-dollar-circle-fill-blue.png',
         expenseMgmt: '/images/remix/ri-book-fill-orange.png',
-        statistics: '/images/remix/ri-nurse-line-purple.png'
+        Careguide: '/images/remix/ri-nurse-line-purple.png'
       },
       // 性别 PNG 图标
       genderMale: '/images/remix/men-line.png',
@@ -1185,9 +1185,9 @@ Page({
   },
 
   // 导航到记录页面
-  navigateToStatistics() {
+  navigateToCareguide() {
     // 与底部导航一致使用 reLaunch，避免非TabBar页面 switchTab 无效
-    wx.reLaunch({
+    wx.navigateTo({
       url: '/pages/care-guide/care-guide'
     })
   },

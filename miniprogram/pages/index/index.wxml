@@ -234,9 +234,9 @@
           </view>
           <text class="action-label">收支管理</text>
         </view>
-        <view class="action-item statistics {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToStatistics">
+        <view class="action-item Careguide {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToCareguide">
           <view class="action-icon-wrapper">
-        <image class="action-icon-img" src="{{iconPaths.actions.statistics}}" mode="widthFix" binderror="handleIconError" data-key="actions.statistics"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.Careguide}}" mode="widthFix" binderror="handleIconError" data-key="actions.Careguide"/>
           </view>
           <text class="action-label">护理指南</text>
         </view>

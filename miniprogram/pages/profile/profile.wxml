@@ -81,9 +81,6 @@
         </view>
     </view>
 
-
-
-
 <!-- 在用户信息卡片后新增统计网格 -->
 <view class="stats-grid" wx:if="{{isLogin}}">
   <view class="stat-card red">

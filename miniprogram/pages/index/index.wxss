@@ -654,7 +654,7 @@
 .action-item.management {
   background: linear-gradient(135deg, #FFF2E6, #FDE2CC);
 }
-.action-item.statistics {
+.action-item.Careguide {
   background: linear-gradient(135deg, #F3E8FF, #E9D5FF);
 }
 .action-item.cleaning,
