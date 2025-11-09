@@ -279,6 +279,14 @@ def add_health_record_internal(data):
                 team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
             )
             db.session.add(record)
+            # 如填写了体重，则同步更新到鹦鹉详情的体重字段
+            if weight is not None:
+                try:
+                    parrot_obj = Parrot.query.filter_by(id=parrot_id).first()
+                    if parrot_obj:
+                        parrot_obj.weight = weight
+                except Exception:
+                    pass
             created_records.append(record)
         
         db.session.commit()
