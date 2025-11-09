@@ -32,9 +32,9 @@
           <view class="parrot-title">
             <text class="parrot-name">{{parrot.name}}</text>
             <view class="gender-badge gender-{{parrot.gender}}">
-              <text wx:if="{{parrot.gender === 'male'}}" class="gender-icon">♂</text>
-              <text wx:elif="{{parrot.gender === 'female'}}" class="gender-icon">♀</text>
-              <text wx:else class="gender-icon">？</text>
+              <image wx:if="{{parrot.gender === 'male'}}" class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" />
+              <image wx:elif="{{parrot.gender === 'female'}}" class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" />
+              <image wx:else class="gender-icon-img" src="/images/remix/question-mark.png" mode="widthFix" />
             </view>
           </view>
           <view class="parrot-species">{{parrot.species_name}}</view>

@@ -39,5 +39,18 @@ Page({
       .catch(err => {
         this.setData({ error: (err && err.message) || '网络错误', loading: false })
       })
+  },
+
+  onHeaderBack() {
+    try {
+      const pages = getCurrentPages()
+      if (Array.isArray(pages) && pages.length > 1) {
+        wx.navigateBack({ delta: 1 })
+      } else {
+        wx.reLaunch({ url: '/pages/index/index' })
+      }
+    } catch (_) {
+      wx.reLaunch({ url: '/pages/index/index' })
+    }
   }
 })

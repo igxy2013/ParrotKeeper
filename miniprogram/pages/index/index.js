@@ -112,8 +112,12 @@ Page({
         addParrot: '/images/remix/ri-add-fill-emerald.png',
         quickExpense: '/images/remix/ri-money-dollar-circle-fill-blue.png',
         expenseMgmt: '/images/remix/ri-book-fill-orange.png',
-        statistics: '/images/remix/ri-bar-chart-fill-purple.png'
+        statistics: '/images/remix/ri-nurse-line-purple.png'
       },
+      // 性别 PNG 图标
+      genderMale: '/images/remix/men-line.png',
+      genderFemale: '/images/remix/women-line.png',
+      genderUnknown: '/images/remix/question-mark.png',
       // 通知与表单图标
       alertInfo: '/images/remix/ri-information-fill-amber.png',
       closeWhite: '/images/icons/close-white.png',
@@ -1142,7 +1146,7 @@ Page({
   navigateToStatistics() {
     // 与底部导航一致使用 reLaunch，避免非TabBar页面 switchTab 无效
     wx.reLaunch({
-      url: '/pages/statistics/statistics'
+      url: '/pages/care-guide/care-guide'
     })
   },
 

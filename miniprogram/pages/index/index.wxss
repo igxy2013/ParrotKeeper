@@ -990,17 +990,26 @@
 
 /* 迷你性别徽章 */
 .mini-gender-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 24rpx;
   height: 24rpx;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18rpx;
-  line-height: 1;
+  vertical-align: middle;
+  margin-left: 4rpx;
   border: 2rpx solid transparent;
 }
-.mini-gender-icon { font-weight: 700; }
+.mini-gender-icon {
+  font-size: 16rpx;
+  line-height: 1;
+  font-weight: 700;
+  transform: translateY(-1rpx); /* 最终居中小修 */
+}
+.mini-gender-icon-img {
+  width: 16rpx;
+  height: 16rpx;
+}
 .gender-male { background: #e0f2fe; border-color: #bae6fd; color: #0284c7; }
 .gender-female { background: #fde7f3; border-color: #fbcfe8; color: #db2777; }
 .gender-unknown { background: #f3f4f6; border-color: #e5e7eb; color: #6b7280; }
