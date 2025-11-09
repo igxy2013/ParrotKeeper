@@ -59,6 +59,14 @@
           <image class="menu-icon-img" src="/images/remix/edit-line.png" mode="widthFix" />
           <text class="menu-item-text">编辑信息</text>
         </view>
+        <view class="menu-item" wx:if="{{hasOperationPermission}}" bindtap="openTransferModal">
+          <image class="menu-icon-img" src="/images/remix/arrow-left-right-line.png" mode="widthFix" />
+          <text class="menu-item-text">过户</text>
+        </view>
+        <view class="menu-item" wx:if="{{hasOperationPermission}}" bindtap="openGenerateTransferCode">
+          <image class="menu-icon-img" src="/images/remix/key-2-line.png" mode="widthFix" />
+          <text class="menu-item-text">生成过户码</text>
+        </view>
         <view class="menu-item delete-item" bindtap="deleteParrot">
           <image class="menu-icon-img" src="/images/remix/delete-bin-line-red.png" mode="widthFix" />
           <text class="menu-item-text">删除鹦鹉</text>
@@ -276,6 +284,24 @@
   </view>
 </view>
 
+<!-- 过户码弹窗 -->
+<view class="modal-overlay" wx:if="{{showTransferCodeModal}}" bindtap="closeTransferCodeModal"></view>
+<view class="transfer-code-modal" wx:if="{{showTransferCodeModal}}">
+  <view class="modal-header">
+    <view class="modal-title">过户码</view>
+    <view class="modal-subtitle">将此码提供给下一任主人，对方即可认领</view>
+  </view>
+  <view class="modal-body">
+    <view class="code-box">
+      <text class="code-text">{{transferCode || (transferCodeGenerating ? '生成中...' : '点击下方生成')}}</text>
+    </view>
+  </view>
+  <view class="modal-actions">
+    <button class="modal-btn cancel-btn" bindtap="closeTransferCodeModal">关闭</button>
+    <button class="modal-btn cancel-btn" bindtap="copyTransferCode" disabled="{{!transferCode || transferCodeGenerating}}">复制过户码</button>
+    <button class="modal-btn submit-btn" bindtap="generateTransferCode" loading="{{transferCodeGenerating}}" disabled="{{transferCodeGenerating}}">生成过户码</button>
+  </view>
+</view>
 <!-- 复用组件：添加/编辑鹦鹉弹窗（编辑用） -->
 <parrot-modal 
   visible="{{showParrotModal}}"
@@ -287,3 +313,31 @@
   bind:cancel="onParrotModalCancel"
   bind:submit="onParrotModalSubmit"
 />
+
+<!-- 过户弹窗 -->
+<view class="modal-overlay" wx:if="{{showTransferModal}}" bindtap="closeTransferModal"></view>
+<view class="transfer-modal" wx:if="{{showTransferModal}}">
+  <view class="modal-header">
+    <view class="modal-title">鹦鹉过户</view>
+    <view class="modal-subtitle">目标至少填写一项，下方三选一即可</view>
+  </view>
+  <view class="modal-body">
+    <view class="input-group">
+      <text class="input-label">目标用户ID</text>
+      <input class="input" placeholder="请输入用户ID" value="{{transferTargetId}}" bindinput="onInputTransferId" />
+    </view>
+    <view class="input-group">
+      <text class="input-label">目标OpenID</text>
+      <input class="input" placeholder="请输入OpenID" value="{{transferTargetOpenid}}" bindinput="onInputTransferOpenid" />
+    </view>
+    <view class="input-group">
+      <text class="input-label">目标用户名</text>
+      <input class="input" placeholder="请输入用户名" value="{{transferTargetUsername}}" bindinput="onInputTransferUsername" />
+    </view>
+    <view class="tip-text">过户会解除团队共享并将提醒移交至新主人。</view>
+  </view>
+  <view class="modal-actions">
+    <button class="modal-btn cancel-btn" bindtap="closeTransferModal" disabled="{{transferSubmitting}}">取消</button>
+    <button class="modal-btn submit-btn" bindtap="submitTransfer" loading="{{transferSubmitting}}" disabled="{{transferSubmitting}}">确认过户</button>
+  </view>
+</view>

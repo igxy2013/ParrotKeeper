@@ -25,7 +25,9 @@ Component({
       acquisition_date: '',
       photo_url: ''
     },
-    typeIndex: 0
+    typeIndex: 0,
+    createMode: 'form',
+    claimCode: ''
   },
   observers: {
     'parrot, parrotTypes': function(parrot, types) {
@@ -60,6 +62,11 @@ Component({
     onOverlayTap() { this.triggerEvent('cancel') },
     onCancel() { this.triggerEvent('cancel') },
 
+    setCreateMode(e) {
+      const m = e.currentTarget.dataset.mode
+      this.setData({ createMode: m || 'form' })
+    },
+
     onInputChange(e) {
       const field = e.currentTarget.dataset.field
       const value = e.detail.value
@@ -79,6 +86,11 @@ Component({
       const field = e.currentTarget.dataset.field
       const value = e.detail.value
       this.setData({ [`form.${field}`]: value })
+    },
+
+    onInputClaimCode(e) {
+      const value = (e && e.detail && e.detail.value) || ''
+      this.setData({ claimCode: value.toUpperCase() })
     },
 
     // 图片相关
@@ -217,6 +229,18 @@ Component({
 
     // 提交（仅做校验与规范化，网络请求由父页面处理）
     onSubmit() {
+      // 认领模式：直接把过户码上抛给父页面
+      if (this.data.mode !== 'edit' && this.data.createMode === 'claim') {
+        const code = (this.data.claimCode || '').trim()
+        if (!code || code.length !== 8) {
+          app.showError('请输入 8 位过户码')
+          return
+        }
+        const payload = { id: '', data: { code }, mode: 'claim' }
+        this.triggerEvent('submit', payload)
+        return
+      }
+
       const f = { ...this.data.form }
       if (!f.name || !f.type) {
         app.showError('请填写必填项：名字与品种')

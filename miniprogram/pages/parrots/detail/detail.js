@@ -67,7 +67,18 @@ Page({
         // 抠图按钮图标（如缺失需用户下载）
         removeBg: '/images/remix/magic-line-white.png'
       }
-    }
+    },
+    // 过户弹窗与输入
+    showTransferModal: false,
+    transferTargetId: '',
+    transferTargetOpenid: '',
+    transferTargetUsername: '',
+    transferTargetPhone: '',
+    transferSubmitting: false,
+    // 过户码弹窗
+    showTransferCodeModal: false,
+    transferCode: '',
+    transferCodeGenerating: false
   },
 
   onLoad(options) {
@@ -569,6 +580,163 @@ Page({
     this.setData({
       showMenu: false
     })
+  },
+
+  // 打开生成过户码弹窗
+  openGenerateTransferCode() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
+    this.setData({
+      showMenu: false,
+      showTransferCodeModal: true,
+      transferCode: '',
+      transferCodeGenerating: false
+    })
+  },
+
+  // 关闭过户码弹窗
+  closeTransferCodeModal() {
+    if (this.data.transferCodeGenerating) return
+    this.setData({
+      showTransferCodeModal: false,
+      transferCode: ''
+    })
+  },
+
+  // 生成过户码
+  async generateTransferCode() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
+    if (this.data.transferCodeGenerating) return
+    const parrotId = this.data.parrotId
+    if (!parrotId) {
+      app.showError('缺少鹦鹉ID')
+      return
+    }
+    try {
+      this.setData({ transferCodeGenerating: true })
+      const res = await app.request({
+        url: `/api/parrots/${parrotId}/transfer/code`,
+        method: 'POST'
+      })
+      if (res && res.success && res.data && res.data.code) {
+        this.setData({ transferCode: res.data.code })
+        wx.showToast({ title: '生成成功', icon: 'success' })
+      } else {
+        app.showError(res && res.message ? res.message : '生成失败')
+      }
+    } catch (err) {
+      app.showError('生成失败，请稍后重试')
+    } finally {
+      this.setData({ transferCodeGenerating: false })
+    }
+  },
+
+  // 复制过户码到剪贴板
+  copyTransferCode() {
+    const code = this.data.transferCode
+    if (!code) {
+      app.showError('请先生成过户码')
+      return
+    }
+    wx.setClipboardData({
+      data: String(code),
+      success: () => {
+        wx.showToast({ title: '已复制', icon: 'success' })
+      },
+      fail: () => {
+        app.showError('复制失败，请重试')
+      }
+    })
+  },
+
+  // 打开过户弹窗
+  openTransferModal() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
+    this.setData({
+      showMenu: false,
+      showTransferModal: true,
+      transferTargetId: '',
+      transferTargetOpenid: '',
+      transferTargetUsername: '',
+      transferTargetPhone: '',
+      transferSubmitting: false
+    })
+  },
+
+  // 关闭过户弹窗
+  closeTransferModal() {
+    if (this.data.transferSubmitting) return
+    this.setData({
+      showTransferModal: false,
+      transferTargetId: '',
+      transferTargetOpenid: '',
+      transferTargetUsername: '',
+      transferTargetPhone: ''
+    })
+  },
+
+  // 输入事件
+  onInputTransferId(e) {
+    this.setData({ transferTargetId: e.detail.value })
+  },
+  onInputTransferOpenid(e) {
+    this.setData({ transferTargetOpenid: e.detail.value })
+  },
+  onInputTransferUsername(e) {
+    this.setData({ transferTargetUsername: e.detail.value })
+  },
+  onInputTransferPhone(e) {
+    this.setData({ transferTargetPhone: e.detail.value })
+  },
+
+  // 提交过户
+  async submitTransfer() {
+    if (!this.data.hasOperationPermission) {
+      app.showError('您没有操作权限')
+      return
+    }
+    const { transferTargetId, transferTargetOpenid, transferTargetUsername, transferTargetPhone, parrotId } = this.data
+    if (!transferTargetId && !transferTargetOpenid && !transferTargetUsername && !transferTargetPhone) {
+      app.showError('请至少填写一个目标用户信息')
+      return
+    }
+    try {
+      this.setData({ transferSubmitting: true })
+      app.showLoading('过户中...')
+      const payload = {}
+      if (transferTargetId) payload.new_owner_id = transferTargetId
+      if (transferTargetOpenid) payload.new_owner_openid = transferTargetOpenid
+      if (transferTargetUsername) payload.new_owner_username = transferTargetUsername
+      if (transferTargetPhone) payload.new_owner_phone = transferTargetPhone
+
+      const res = await app.request({
+        url: `/api/parrots/${parrotId}/transfer`,
+        method: 'POST',
+        data: payload
+      })
+      if (res && res.success) {
+        app.showSuccess('过户成功')
+        this.setData({ showTransferModal: false })
+        // 刷新详情
+        await this.loadParrotDetail()
+      } else {
+        app.showError((res && res.message) || '过户失败')
+      }
+    } catch (e) {
+      console.error('过户失败:', e)
+      app.showError('网络错误，请稍后重试')
+    } finally {
+      app.hideLoading()
+      this.setData({ transferSubmitting: false })
+    }
   },
 
   // 编辑鹦鹉（打开弹窗）

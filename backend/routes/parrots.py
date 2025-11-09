@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
-from models import db, Parrot, ParrotSpecies, User
+from models import db, Parrot, ParrotSpecies, User, ParrotTransferCode
 from schemas import parrot_schema, parrots_schema, parrot_species_list_schema
 from utils import login_required, success_response, error_response, paginate_query, save_uploaded_file
 from team_utils import parrot_access_required
 from team_mode_utils import get_accessible_parrot_ids_by_mode
 from datetime import datetime, date
+import random
+import string
 
 parrots_bp = Blueprint('parrots', __name__, url_prefix='/api/parrots')
 
@@ -286,6 +288,178 @@ def update_parrot(parrot_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'更新鹦鹉信息失败: {str(e)}')
+
+@parrots_bp.route('/<int:parrot_id>/transfer', methods=['POST'])
+@login_required
+def transfer_parrot(parrot_id):
+    """鹦鹉过户：仅当前拥有者可执行，将鹦鹉转移给新主人
+    支持通过 target_user_id / target_openid / target_username / target_phone 指定新主人
+    
+    变更内容：
+    - 更新 Parrot.user_id 为新主人
+    - 根据新主人的当前团队，更新 Parrot.team_id（个人模式为 None，团队模式为 current_team_id）
+    - 取消所有 TeamParrot 分享记录（置为不激活），避免旧团队继续访问
+    - 将与该鹦鹉相关的提醒（Reminder）转移到新主人名下，并同步提醒的 team_id
+    """
+    try:
+        from team_models import TeamParrot
+        from models import Reminder
+
+        user = request.current_user
+
+        # 仅允许当前拥有者执行
+        parrot = Parrot.query.filter_by(id=parrot_id, is_active=True).first()
+        if not parrot:
+            return error_response('鹦鹉不存在或已被删除', 404)
+        if parrot.user_id != user.id:
+            return error_response('只有当前主人可以执行过户', 403)
+
+        data = request.get_json() or {}
+        target_user = None
+
+        # 优先级：id > openid > username > phone
+        target_user_id = data.get('target_user_id')
+        target_openid = data.get('target_openid')
+        target_username = data.get('target_username')
+        target_phone = data.get('target_phone')
+
+        if target_user_id:
+            target_user = User.query.filter_by(id=target_user_id).first()
+        elif target_openid:
+            target_user = User.query.filter_by(openid=target_openid).first()
+        elif target_username:
+            target_user = User.query.filter_by(username=target_username).first()
+        elif target_phone:
+            target_user = User.query.filter_by(phone=target_phone).first()
+
+        if not target_user:
+            return error_response('未找到目标用户，请检查输入信息', 404)
+
+        if target_user.id == parrot.user_id:
+            return error_response('目标用户已是该鹦鹉的主人，无需过户')
+
+        # 执行过户
+        parrot.user_id = target_user.id
+
+        # 根据目标用户模式更新团队标识
+        if hasattr(target_user, 'user_mode') and target_user.user_mode == 'team' and target_user.current_team_id:
+            parrot.team_id = target_user.current_team_id
+        else:
+            parrot.team_id = None
+
+        # 取消所有团队分享记录
+        TeamParrot.query.filter_by(parrot_id=parrot.id).update({TeamParrot.is_active: False})
+
+        # 将提醒转移到新主人名下
+        Reminder.query.filter_by(parrot_id=parrot.id).update({
+            Reminder.user_id: target_user.id,
+            Reminder.team_id: parrot.team_id
+        })
+
+        db.session.commit()
+
+        return success_response(parrot_schema.dump(parrot), '过户成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'过户失败: {str(e)}')
+
+# 生成随机过户码（8位，大写字母与数字）
+def _generate_transfer_code(length: int = 8) -> str:
+    alphabet = string.ascii_uppercase + string.digits
+    return ''.join(random.choices(alphabet, k=length))
+
+@parrots_bp.route('/<int:parrot_id>/transfer/code', methods=['POST'])
+@login_required
+def generate_transfer_code(parrot_id):
+    """生成一次性过户码：仅当前主人可生成
+    返回 { code }
+    """
+    try:
+        user = request.current_user
+        parrot = Parrot.query.filter_by(id=parrot_id, is_active=True).first()
+        if not parrot:
+            return error_response('鹦鹉不存在或已被删除', 404)
+        if parrot.user_id != user.id:
+            return error_response('只有当前主人可以生成过户码', 403)
+
+        # 生成唯一过户码
+        code = _generate_transfer_code()
+        # 确保唯一性，最多尝试5次
+        attempts = 0
+        while ParrotTransferCode.query.filter_by(code=code).first() and attempts < 5:
+            code = _generate_transfer_code()
+            attempts += 1
+        if ParrotTransferCode.query.filter_by(code=code).first():
+            return error_response('生成过户码失败，请重试')
+
+        ptc = ParrotTransferCode(
+            parrot_id=parrot.id,
+            code=code,
+            created_by_user_id=user.id
+        )
+        db.session.add(ptc)
+        db.session.commit()
+
+        return success_response({ 'code': code }, '过户码已生成')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'生成过户码失败: {str(e)}')
+
+@parrots_bp.route('/transfer/claim', methods=['POST'])
+@login_required
+def claim_parrot_by_code():
+    """通过一次性过户码认领鹦鹉，成功后完成过户并失效过户码"""
+    try:
+        from team_models import TeamParrot
+        from models import Reminder
+
+        user = request.current_user
+        data = request.get_json() or {}
+        code = data.get('code')
+        if not code:
+            return error_response('请提供过户码')
+
+        ptc = ParrotTransferCode.query.filter_by(code=code).first()
+        if not ptc:
+            return error_response('过户码不存在', 404)
+        if ptc.used:
+            return error_response('过户码已被使用', 400)
+
+        parrot = Parrot.query.filter_by(id=ptc.parrot_id, is_active=True).first()
+        if not parrot:
+            return error_response('对应鹦鹉不存在或已被删除', 404)
+
+        if parrot.user_id == user.id:
+            return error_response('您已是该鹦鹉的主人，无需认领')
+
+        # 执行过户
+        parrot.user_id = user.id
+        # 根据当前用户模式更新团队标识
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            parrot.team_id = user.current_team_id
+        else:
+            parrot.team_id = None
+
+        # 取消所有团队分享记录
+        TeamParrot.query.filter_by(parrot_id=parrot.id).update({TeamParrot.is_active: False})
+
+        # 将提醒转移到新主人名下
+        Reminder.query.filter_by(parrot_id=parrot.id).update({
+            Reminder.user_id: user.id,
+            Reminder.team_id: parrot.team_id
+        })
+
+        # 标记过户码已使用
+        ptc.used = True
+        ptc.used_by_user_id = user.id
+        ptc.used_at = datetime.utcnow()
+
+        db.session.commit()
+
+        return success_response(parrot_schema.dump(parrot), '认领成功，过户已完成')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'认领失败: {str(e)}')
 
 @parrots_bp.route('/<int:parrot_id>', methods=['DELETE'])
 @login_required

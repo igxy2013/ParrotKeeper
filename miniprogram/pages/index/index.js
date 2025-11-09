@@ -1560,24 +1560,29 @@ Page({
       app.showError('请先登录后使用此功能')
       return
     }
-    const payload = (e && e.detail && e.detail.data) || null
-    if (!payload || !payload.name) {
-      app.showError('请填写必填项：名字与品种')
-      return
-    }
+    const detail = (e && e.detail) || {}
+    const mode = detail.mode || 'add'
+    const payload = detail.data || null
     try {
-      const res = await app.request({ url: '/api/parrots', method: 'POST', data: payload })
-      if (res.success) {
-        app.showSuccess('添加成功')
-        this.closeAddParrotModal()
-        if (typeof this.loadMyParrots === 'function') {
-          this.loadMyParrots()
-        }
+      let res
+      if (mode === 'claim') {
+        const code = payload && payload.code
+        if (!code || String(code).length !== 8) { app.showError('请输入 8 位过户码'); return }
+        res = await app.request({ url: '/api/parrots/transfer/claim', method: 'POST', data: { code } })
+        if (res.success) { app.showSuccess('认领成功') }
       } else {
-        app.showError(res.message || '添加失败')
+        if (!payload || !payload.name) { app.showError('请填写必填项：名字与品种'); return }
+        res = await app.request({ url: '/api/parrots', method: 'POST', data: payload })
+        if (res.success) { app.showSuccess('添加成功') }
+      }
+      if (res && res.success) {
+        this.closeAddParrotModal()
+        if (typeof this.loadMyParrots === 'function') { this.loadMyParrots() }
+      } else if (res) {
+        app.showError(res.message || (mode === 'claim' ? '认领失败' : '添加失败'))
       }
     } catch (error) {
-      app.showError('网络错误，添加失败')
+      app.showError('网络错误，请稍后重试')
     }
   },
 

@@ -8,9 +8,15 @@
       </view>
     </view>
 
+    <!-- 添加方式切换（仅新增模式可见） -->
+    <view class="mode-switch-row" wx:if="{{mode !== 'edit'}}">
+      <view class="mode-btn {{createMode === 'form' ? 'active' : ''}}" bindtap="setCreateMode" data-mode="form">填写信息</view>
+      <view class="mode-btn {{createMode === 'claim' ? 'active' : ''}}" bindtap="setCreateMode" data-mode="claim">过户码认领</view>
+    </view>
+
     <!-- 弹窗内容 -->
     <scroll-view scroll-y="true" class="modal-scroll">
-      <view class="form-section">
+      <view class="form-section" wx:if="{{mode === 'edit' || createMode === 'form'}}">
         <!-- 名字 -->
         <view class="form-item">
           <text class="form-label">鹦鹉名字 *</text>
@@ -109,12 +115,27 @@
           <textarea class="textarea-input" placeholder="记录一些特殊信息，如性格特点、喜好等..." value="{{form.notes}}" bindinput="onInputChange" data-field="notes" />
         </view>
       </view>
+
+      <!-- 过户码认领内容 -->
+      <view class="claim-section" wx:if="{{mode !== 'edit' && createMode === 'claim'}}">
+        <view class="form-item">
+          <text class="form-label">过户码 *</text>
+          <input class="text-input" placeholder="输入 8 位过户码" value="{{claimCode}}" bindinput="onInputClaimCode" maxlength="8" />
+          <text class="tip-text">提示：当前主人在详情页生成过户码后，你可在此认领。</text>
+        </view>
+      </view>
     </scroll-view>
 
     <!-- 底部按钮 -->
     <view class="modal-footer">
       <button class="btn-secondary" bindtap="onCancel">取消</button>
-      <button class="btn-primary {{(!form.name || !form.type) ? 'is-disabled' : ''}}" bindtap="onSubmit" disabled="{{!form.name || !form.type}}">{{mode === 'edit' ? '保存' : '添加鹦鹉'}}</button>
+      <button 
+        class="btn-primary {{(mode === 'edit' || createMode === 'form') ? ((!form.name || !form.type) ? 'is-disabled' : '') : ((claimCode.length !== 8) ? 'is-disabled' : '')}}" 
+        bindtap="onSubmit" 
+        disabled="{{(mode === 'edit' || createMode === 'form') ? (!form.name || !form.type) : (claimCode.length !== 8)}}"
+      >
+        {{ mode === 'edit' ? '保存' : (createMode === 'form' ? '添加鹦鹉' : '认领') }}
+      </button>
     </view>
   </view>
 </view>

@@ -22,6 +22,8 @@
   font-family: 'Microsoft YaHei','PingFang SC','Hiragino Sans GB','Heiti SC','SimHei',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans',sans-serif;
   /* 避开微信右上角胶囊按钮，整体下移一点 */
   margin-top: 96rpx;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header-gradient {
@@ -36,13 +38,21 @@
 /* 图片版关闭图标尺寸 */
 .modal-close-icon-img { width: 32rpx; height: 32rpx; }
 
-.modal-scroll { max-height: calc(82vh - 240rpx); }
+.modal-scroll { flex: 1; min-height: 0; }
 .form-section { padding: 32rpx; }
 .form-item { margin-bottom: 24rpx; }
 .form-label { display:block; font-size:26rpx; color:#374151; font-weight:600; margin-bottom:12rpx; }
 .label-icon { color:#10B981; margin-right:12rpx; }
 /* 图片版标签图标尺寸 */
 .label-icon-img { width: 28rpx; height: 28rpx; margin-right: 12rpx; }
+
+/* 添加方式切换 */
+.mode-switch-row { display:flex; gap:12rpx; padding: 16rpx 24rpx; background:#f9fafb; border-bottom:2rpx solid #f3f4f6; }
+.mode-btn { flex:1; text-align:center; padding:16rpx; border-radius:9999rpx; font-size:26rpx; background:#e5e7eb; color:#374151; }
+.mode-btn.active { background: linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4); color:#ffffff; }
+
+.claim-section { padding: 32rpx; }
+.tip-text { margin-top: 8rpx; font-size: 22rpx; color: #6b7280; }
 
 .text-input { width:100%; box-sizing:border-box; padding: 0 24rpx; border:2rpx solid #e5e7eb; border-radius:32rpx; font-size:26rpx; height:88rpx; }
 .text-input:focus { border-color:#26A69A; background:#ffffff; }

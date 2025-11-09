@@ -340,3 +340,20 @@ class Announcement(db.Model):
     
     # 关系
     creator = db.relationship('User', backref='announcements', lazy=True)
+
+class ParrotTransferCode(db.Model):
+    __tablename__ = 'parrot_transfer_codes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'), nullable=False)
+    code = db.Column(db.String(32), unique=True, nullable=False)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    used = db.Column(db.Boolean, default=False)
+    used_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    used_at = db.Column(db.DateTime, nullable=True)
+
+    # 关系
+    parrot = db.relationship('Parrot', backref='transfer_codes', lazy=True)
+    creator = db.relationship('User', foreign_keys=[created_by_user_id], backref='created_transfer_codes', lazy=True)
+    used_by = db.relationship('User', foreign_keys=[used_by_user_id], backref='used_transfer_codes', lazy=True)

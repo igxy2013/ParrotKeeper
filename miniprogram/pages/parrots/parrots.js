@@ -52,8 +52,14 @@ Page({
       statusRestaurantOrange: '/images/remix/ri-restaurant-fill-orange.png',
       arrowRightGray: '/images/remix/ri-arrow-right-s-fill-gray.png',
       arrowRight: '/images/remix/arrow-right-s-line.png',
-      addParrotEmerald: '/images/remix/add-circle-fill.png'
-    }
+      addParrotEmerald: '/images/remix/add-circle-fill.png',
+      claimByCodeKey: '/images/remix/key-2-line.png'
+    },
+
+    // 通过过户码添加弹窗
+    showClaimByCodeModal: false,
+    claimCode: '',
+    claimingByCode: false
   },
 
   onLoad() {
@@ -151,6 +157,66 @@ Page({
       await this.loadParrots(true)
     } finally {
       wx.stopPullDownRefresh()
+    }
+  },
+
+  // 打开通过过户码添加弹窗
+  openClaimByCodeModal() {
+    if (!this.data.isLogin) {
+      app.showError('请先登录')
+      return
+    }
+    this.setData({
+      showClaimByCodeModal: true,
+      claimCode: '',
+      claimingByCode: false
+    })
+  },
+
+  // 关闭弹窗
+  closeClaimByCodeModal() {
+    if (this.data.claimingByCode) return
+    this.setData({
+      showClaimByCodeModal: false,
+      claimCode: ''
+    })
+  },
+
+  // 输入过户码
+  onInputClaimCode(e) {
+    this.setData({ claimCode: e.detail.value })
+  },
+
+  // 提交认领
+  async submitClaimByCode() {
+    if (!this.data.isLogin) {
+      app.showError('请先登录')
+      return
+    }
+    const code = (this.data.claimCode || '').trim()
+    if (!code) {
+      app.showError('请输入过户码')
+      return
+    }
+    try {
+      this.setData({ claimingByCode: true })
+      const res = await app.request({
+        url: '/api/parrots/transfer/claim',
+        method: 'POST',
+        data: { code }
+      })
+      if (res && res.success) {
+        wx.showToast({ title: '认领成功', icon: 'success' })
+        this.setData({ showClaimByCodeModal: false, claimCode: '' })
+        // 完全刷新列表
+        await this.refreshData()
+      } else {
+        app.showError(res && res.message ? res.message : '认领失败')
+      }
+    } catch (err) {
+      app.showError('认领失败，请稍后重试')
+    } finally {
+      this.setData({ claimingByCode: false })
     }
   },
 
@@ -731,13 +797,30 @@ Page({
     if (!this.data.isLogin) { app.showError('请先登录后使用此功能'); return }
     const { id, data, mode } = e.detail
     try {
-      const res = await app.request({ url: mode === 'edit' ? `/api/parrots/${id}` : '/api/parrots', method: mode === 'edit' ? 'PUT' : 'POST', data })
-      if (res.success) {
-        app.showSuccess(mode === 'edit' ? '编辑成功' : '添加成功')
+      let res
+      if (mode === 'claim') {
+        const code = data && data.code
+        if (!code || String(code).length !== 8) {
+          app.showError('请输入 8 位过户码')
+          return
+        }
+        res = await app.request({ url: '/api/parrots/transfer/claim', method: 'POST', data: { code } })
+        if (res.success) {
+          app.showSuccess('认领成功')
+        }
+      } else {
+        res = await app.request({ url: mode === 'edit' ? `/api/parrots/${id}` : '/api/parrots', method: mode === 'edit' ? 'PUT' : 'POST', data })
+        if (res.success) {
+          app.showSuccess(mode === 'edit' ? '编辑成功' : '添加成功')
+        }
+      }
+
+      if (res && res.success) {
         this.setData({ showParrotModal: false, currentParrotForm: null })
         this.loadParrots(true)
-      } else {
-        app.showError(res.message || (mode === 'edit' ? '编辑失败' : '添加失败'))
+      } else if (res) {
+        const msg = res.message || (mode === 'edit' ? '编辑失败' : (mode === 'claim' ? '认领失败' : '添加失败'))
+        app.showError(msg)
       }
     } catch (error) {
       app.showError('网络错误，请稍后重试')

@@ -867,3 +867,150 @@
   font-size: 28rpx;
   font-weight: 600;
 }
+
+/* 过户弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 1999;
+}
+
+.transfer-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 86vw;
+  max-width: 680rpx;
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 24rpx 60rpx rgba(0,0,0,0.18);
+  overflow: hidden;
+  z-index: 2000;
+  border: 2rpx solid rgba(0,0,0,0.06);
+}
+
+.modal-header {
+  padding: 28rpx 32rpx 12rpx;
+  background: linear-gradient(90deg, #10b981, #14b8a6);
+  color: #ffffff;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.modal-subtitle {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.modal-body {
+  padding: 28rpx 32rpx 10rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.input-label {
+  font-size: 24rpx;
+  color: #374151;
+  font-weight: 500;
+}
+
+.input {
+  padding: 18rpx 22rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid rgba(0,0,0,0.08);
+  background: rgba(249, 250, 251, 0.6);
+  font-size: 28rpx;
+}
+
+.tip-text {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #6b7280;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18rpx;
+  padding: 20rpx 24rpx 24rpx;
+  border-top: 2rpx solid rgba(0,0,0,0.06);
+}
+
+.modal-btn {
+  padding: 18rpx 28rpx;
+  border-radius: 9999rpx;
+  width: 220rpx; /* 统一按钮宽度 */
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+/* 覆盖小程序 button 默认描边与 ::after 边框，确保圆角一致 */
+button.modal-btn { border: none; }
+.modal-btn::after { border: none; border-radius: 9999rpx; }
+
+.cancel-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+  color: #ffffff;
+  box-shadow: 0 6rpx 18rpx rgba(16, 185, 129, 0.24);
+}
+
+/* 仅在过户弹窗中居中主标题，并保证独占一行 */
+.transfer-modal .modal-title {  display: block; }
+
+/* 过户码弹窗容器样式（与过户弹窗一致） */
+.transfer-code-modal {
+  display: block;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 86vw;
+  max-width: 680rpx;
+  background: #ffffff;
+  border-radius: 32rpx;
+  box-shadow: 0 24rpx 60rpx rgba(0,0,0,0.18);
+  overflow: hidden;
+  z-index: 2000;
+  border: 2rpx solid rgba(0,0,0,0.06);
+}
+
+/* 过户码显示区域 */
+.code-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+  border-radius: 24rpx;
+  background: rgba(249, 250, 251, 0.8);
+  border: 2rpx solid rgba(0,0,0,0.06);
+  margin-top: 8rpx;
+}
+
+.code-text {
+  font-size: 40rpx;
+  letter-spacing: 6rpx;
+  font-weight: 700;
+  color: #0f172a;
+}
