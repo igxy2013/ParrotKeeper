@@ -12,16 +12,19 @@
 }
 
 .modal-content {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2001;
   width: 100%;
   max-width: 700rpx;
-  max-height: 82vh;
+  height: 82vh; /* 固定高度以便内部scroll-view正确分配空间 */
   background: #ffffff;
   border-radius: 48rpx;
   overflow: hidden;
   box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.18);
   font-family: 'Microsoft YaHei','PingFang SC','Hiragino Sans GB','Heiti SC','SimHei',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans',sans-serif;
-  /* 避开微信右上角胶囊按钮，整体下移一点 */
-  margin-top: 96rpx;
   display: flex;
   flex-direction: column;
 }
@@ -30,6 +33,7 @@
   background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
   padding: 24rpx 32rpx;
   position: relative;
+  flex-shrink: 0;
 }
 .modal-header-row { display: flex; align-items: center; justify-content: space-between; }
 .modal-title { color: #ffffff; font-size: 36rpx; font-weight: bold; }
@@ -47,7 +51,7 @@
 .label-icon-img { width: 28rpx; height: 28rpx; margin-right: 12rpx; }
 
 /* 添加方式切换 */
-.mode-switch-row { display:flex; gap:12rpx; padding: 16rpx 24rpx; background:#f9fafb; border-bottom:2rpx solid #f3f4f6; }
+.mode-switch-row { display:flex; gap:12rpx; padding: 16rpx 24rpx; background:#f9fafb; border-bottom:2rpx solid #f3f4f6; flex-shrink: 0; }
 .mode-btn { flex:1; text-align:center; padding:16rpx; border-radius:9999rpx; font-size:26rpx; background:#e5e7eb; color:#374151; }
 .mode-btn.active { background: linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4); color:#ffffff; }
 
@@ -72,7 +76,7 @@
 .gender-female { background:#fff1f5; color:#9d174d; }
 .gender-female.active { background:#ffe4e6; border-color:#f9a8d4; color:#831843; }
 
-.modal-footer { display:flex; gap:12rpx; padding:20rpx 28rpx; border-top:2rpx solid #f3f4f6; background:#f9fafb; }
+.modal-footer { display:flex; gap:12rpx; padding:20rpx 28rpx; border-top:2rpx solid #f3f4f6; background:#f9fafb; flex-shrink: 0; }
 .btn-secondary, .btn-primary { flex:1; padding:18rpx 24rpx; border-radius:28rpx; font-size:26rpx; }
 .btn-secondary { background:#e5e7eb; color:#374151; }
 .btn-primary { background: linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4); color:#ffffff; }

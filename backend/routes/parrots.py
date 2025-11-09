@@ -434,6 +434,8 @@ def claim_parrot_by_code():
 
         # 执行过户
         parrot.user_id = user.id
+        # 认领成功后，将入住/获得日期更新为认领当天
+        parrot.acquisition_date = date.today()
         # 根据当前用户模式更新团队标识
         if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
             parrot.team_id = user.current_team_id

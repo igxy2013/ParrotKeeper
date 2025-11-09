@@ -5,9 +5,6 @@
     <view slot="actions" class="header-btn" bindtap="addParrot">
       <image class="header-btn-icon-img" src="{{iconPaths.headerAddEmerald}}" mode="widthFix" binderror="onListIconError" data-key="headerAddEmerald"/>
     </view>
-    <view slot="actions" class="header-btn" bindtap="openClaimByCodeModal">
-      <image class="header-btn-icon-img" src="{{iconPaths.claimByCodeKey}}" mode="widthFix" binderror="onListIconError" data-key="claimByCodeKey"/>
-    </view>
   </app-header>
 
   <!-- 统计概览卡片 -->

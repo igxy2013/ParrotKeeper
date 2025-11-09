@@ -1,5 +1,5 @@
-<view wx:if="{{visible}}" class="modal-overlay" catchtouchmove="true" bindtap="onOverlayTap">
-  <view class="modal-content" catchtap="stopPropagation">
+<view wx:if="{{visible}}" class="modal-overlay" catchtouchmove="true" bindtap="onOverlayTap"></view>
+<view wx:if="{{visible}}" class="modal-content" catchtap="stopPropagation">
     <!-- 渐变头部 -->
     <view class="modal-header-gradient">
       <view class="modal-header-row">
@@ -138,4 +138,3 @@
       </button>
     </view>
   </view>
-</view>
