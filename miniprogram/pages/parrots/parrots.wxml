@@ -123,7 +123,7 @@
               <text wx:else>健康</text>
             </view>
           </view>
-          <text class="parrot-species">{{item.species_name}} • {{item.age_days ? item.age_days + '天' : '未知'}} • {{item.weight ? (item.weight % 1 === 0 ? item.weight : item.weight.toFixed(1)) + 'g' : ''}}</text>
+          <text class="parrot-species">{{item.species_name}} • {{item.age_days ? item.age_days + '天' : '未知'}} • {{item.weight_display || '未记录'}}</text>
           <view class="parrot-status">
             <view class="status-item">
               <image class="status-icon-img" src="{{iconPaths.statusRestaurantOrange}}" mode="widthFix" binderror="onListIconError" data-key="statusRestaurantOrange"/>

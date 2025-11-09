@@ -130,7 +130,7 @@
             </view>
             <view class="info-grid-item weight-info">
               <view class="grid-label">体重</view>
-              <view class="grid-value">{{parrot.weight ? (parrot.weight % 1 === 0 ? parrot.weight : parrot.weight.toFixed(1)) + 'g' : '未记录'}}</view>
+              <view class="grid-value">{{parrot.weight_display || '未记录'}}</view>
             </view>
             <view class="info-grid-item number-info">
               <view class="grid-label">鹦鹉编号</view>

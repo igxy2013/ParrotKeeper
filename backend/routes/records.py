@@ -854,6 +854,15 @@ def update_health_record_internal(record_id, data):
         if weight_error:
             return error_response(weight_error)
         record.weight = data['weight']
+        # 如填写了体重，则同步更新到鹦鹉详情的体重字段
+        try:
+            if data['weight'] is not None and str(data['weight']).strip() != '':
+                parrot_obj = Parrot.query.filter_by(id=record.parrot_id).first()
+                if parrot_obj:
+                    parrot_obj.weight = data['weight']
+        except Exception:
+            # 为确保更新健康记录不受影响，这里容错处理
+            pass
     if 'temperature' in data:
         record.temperature = data['temperature']
     if 'health_status' in data:

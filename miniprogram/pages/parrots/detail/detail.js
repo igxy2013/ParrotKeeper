@@ -297,6 +297,22 @@ Page({
             name: rawParrot.name
           })
         }
+        // 规范化体重展示，避免 WXML 中方法调用导致的 undefinedg
+        try {
+          const w = parrot.weight
+          let weightDisplay = ''
+          if (w !== null && w !== undefined && w !== '') {
+            const num = typeof w === 'number' ? w : parseFloat(String(w))
+            if (!isNaN(num) && isFinite(num)) {
+              // 保留 1 位小数（如为整数则仍显示 .0 由 UI 接受）
+              const rounded = Math.round(num * 10) / 10
+              weightDisplay = `${rounded}g`
+            }
+          }
+          parrot.weight_display = weightDisplay
+        } catch (e) {
+          parrot.weight_display = ''
+        }
         
         // 计算年龄和入住天数
         const age = this.calculateAge(parrot.birth_date)

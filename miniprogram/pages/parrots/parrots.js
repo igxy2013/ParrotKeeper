@@ -288,9 +288,24 @@ Page({
             species_name: speciesName,
             name: p.name
           })
+          // 预计算体重展示，避免 WXML 表达式出现 undefinedg
+          let weightDisplay = ''
+          try {
+            const w = p.weight
+            if (w !== null && w !== undefined && w !== '') {
+              const num = typeof w === 'number' ? w : parseFloat(String(w))
+              if (!isNaN(num) && isFinite(num)) {
+                const rounded = Math.round(num * 10) / 10
+                weightDisplay = `${rounded}g`
+              }
+            }
+          } catch (e) {
+            weightDisplay = ''
+          }
           return {
             ...p,
             weight: p.weight ? parseFloat(p.weight) : null,
+            weight_display: weightDisplay,
             acquisition_date_formatted: app.formatDate(p.acquisition_date),
             photo_url: photoUrl,
             avatar_url: avatarUrl
