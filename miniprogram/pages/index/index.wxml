@@ -42,7 +42,12 @@
       <view class="welcome-bg-circle circle-2"></view>
       <view class="welcome-content">
         <text class="welcome-greeting">{{greeting}}，{{userInfo.nickname || userInfo.username || '鹦鹉爱好者'}}！</text>
-        <text class="welcome-message">今天也要好好照顾小家伙们哦</text>
+        <block wx:if="{{isSingleParrot}}">
+          <text class="welcome-message">今天是你和{{singleParrotName}}相处的第<text class="welcome-day-count">{{singleParrotDays}}</text>天！</text>
+        </block>
+        <block wx:else>
+          <text class="welcome-message">{{welcomeMessage}}</text>
+        </block>
         <view class="status-indicator">
           <view class="status-dot {{overview.health_status && (overview.health_status.sick > 0 || overview.health_status.recovering > 0 || overview.health_status.observation > 0) ? 'status-dot-warning' : 'status-dot-healthy'}}"></view>
           <view class="status-text">{{overview_status_text}}</view>

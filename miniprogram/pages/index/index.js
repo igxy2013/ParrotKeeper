@@ -4,6 +4,11 @@ const app = getApp()
 Page({
   data: {
     greeting: '早上好',
+    // 首页欢迎语：默认“今天也要好好照顾小家伙们哦”，当仅有1只鹦鹉时改为“今天是你和XX相处的第YY天！”
+    welcomeMessage: '今天也要好好照顾小家伙们哦',
+    isSingleParrot: false,
+    singleParrotName: '',
+    singleParrotDays: 1,
     userInfo: {},
     isLogin: false,
     overview: {
@@ -621,6 +626,43 @@ Page({
         })
         // 展示全部供横向滑动
         this.setData({ myParrots: parrots })
+
+        // 仅当用户只有1只鹦鹉时，设置欢迎语为“今天是你和XX相处的第YY天！”
+        let newWelcome = '今天也要好好照顾小家伙们哦'
+        let isSingleParrot = false
+        let singleParrotName = ''
+        let singleParrotDays = 1
+        if (parrots.length === 1) {
+          const p = parrots[0]
+          const name = (p && p.name) ? p.name : '你的鹦鹉'
+          // 优先使用 acquisition_date，其次使用 created_at 作为兜底
+          const startDateStr = p.acquisition_date || p.created_at || ''
+          const startDate = this.parseServerTime(startDateStr)
+          if (startDate) {
+            // 以当天0点与开始日期0点计算相处天数，首日记为第1天
+            const today = new Date()
+            today.setHours(0,0,0,0)
+            const begin = new Date(startDate)
+            begin.setHours(0,0,0,0)
+            let days = Math.floor((today.getTime() - begin.getTime()) / 86400000) + 1
+            if (days < 1) days = 1
+            newWelcome = `今天是你和${name}相处的第${days}天！`
+            isSingleParrot = true
+            singleParrotName = name
+            singleParrotDays = days
+          } else {
+            newWelcome = `今天是你和${name}相处的第1天！`
+            isSingleParrot = true
+            singleParrotName = name
+            singleParrotDays = 1
+          }
+        }
+        this.setData({
+          welcomeMessage: newWelcome,
+          isSingleParrot,
+          singleParrotName,
+          singleParrotDays
+        })
       }
     } catch (error) {
       console.error('加载我的鹦鹉失败:', error)

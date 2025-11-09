@@ -217,6 +217,12 @@
   color: rgba(255, 255, 255, 0.9);
   display: block;
   margin-bottom: 32rpx;
+  white-space: nowrap;
+}
+.welcome-day-count {
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #FFFFFF;
 }
 
 .status-indicator {
