@@ -138,5 +138,22 @@
         </view>
       </block>
     </view>
+
+    <!-- 聚合清洁记录列表 -->
+    <view class="card" wx:if="{{isAggregate && recordType === 'cleaning'}}">
+      <view class="row">
+        <text class="label">包含记录</text>
+        <text class="value">共 {{aggregateCount}} 条</text>
+      </view>
+      <block wx:for="{{aggregateRecords}}" wx:key="id">
+        <view class="row">
+          <text class="label">{{item.parrotName}}</text>
+          <view class="value">
+            <text>{{item.cleaningTypeText}}</text>
+            <text wx:if="{{item.description}}">（{{item.description}}）</text>
+          </view>
+        </view>
+      </block>
+    </view>
   </block>
 </view>

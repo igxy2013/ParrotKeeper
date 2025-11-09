@@ -165,19 +165,31 @@ Page({
         .filter(r => r && r.success && r.data)
         .map(r => r.data)
 
-      // 构建展示用列表项（喂食为主）
+      // 构建展示用列表项（按类型生成字段）
       const listItems = okItems.map(item => {
         const parrotName = (item.parrot && item.parrot.name) || item.parrot_name || ''
-        const feedTypeName = item.feed_type_name || (item.feed_type && item.feed_type.name) || ''
-        const amount = (item.amount !== undefined && item.amount !== null) ? item.amount : ''
-        return {
+        const base = {
           id: item.id,
           parrotName,
-          feedTypeName,
-          amount,
           displayTime: this.resolveDisplayTime(type, item),
           recorderName: this.resolveRecorderName(item)
         }
+        if (type === 'feeding') {
+          const feedTypeName = item.feed_type_name || (item.feed_type && item.feed_type.name) || ''
+          const amount = (item.amount !== undefined && item.amount !== null) ? item.amount : ''
+          return { ...base, feedTypeName, amount }
+        } else if (type === 'cleaning') {
+          const cleaningTypeText = item.cleaning_type_text || item.cleaning_type_name || item.cleaning_type || ''
+          const description = item.description || ''
+          return { ...base, cleaningTypeText, description }
+        } else if (type === 'health') {
+          const healthStatusText = item.health_status_text || item.health_status || ''
+          const weight = (item.weight !== undefined && item.weight !== null) ? item.weight : ''
+          return { ...base, healthStatusText, weight }
+        } else if (type === 'breeding') {
+          return base
+        }
+        return base
       })
 
       // 头部信息：统一显示第一个记录的时间与记录人；鹦鹉名聚合显示
@@ -200,52 +212,114 @@ Page({
   },
 
   resolveDisplayTime(type, record) {
-    // 统一格式为 YYYY-MM-DD HH:MM:SS，兼容 ISO/空格分隔/仅日期/分离的日期与时间
-    const normalize = (dateStr, timeStr) => {
-      const d = (dateStr || '').trim()
-      const t = (timeStr || '').trim()
-      if (d && t) {
-        let tt = t
-        if (tt.length === 5) tt = `${tt}:00`
-        if (tt.length > 8) tt = tt.substring(0, 8)
-        return `${d} ${tt}`
+    // 统一解析服务端时间为 Date，并按本地时区格式化为 YYYY-MM-DD HH:mm:ss
+    const parseServerTime = (value) => {
+      if (!value) return null
+      try {
+        if (value instanceof Date) return value
+        if (typeof value === 'number') {
+          const dNum = new Date(value)
+          return isNaN(dNum.getTime()) ? null : dNum
+        }
+        if (typeof value === 'string') {
+          const s = value.trim()
+          // 仅日期：YYYY-MM-DD -> 当天本地 00:00:00
+          if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+            const d0 = new Date(`${s}T00:00:00`)
+            return isNaN(d0.getTime()) ? null : d0
+          }
+          // 已包含 Z 或时区偏移，直接解析（自动转换为本地时区显示）
+          if (/[Zz]|[\+\-]\d{2}:?\d{2}$/.test(s)) {
+            const dz = new Date(s)
+            return isNaN(dz.getTime()) ? null : dz
+          }
+          // 空格或 T 分隔：YYYY-MM-DD HH:mm[:ss] / YYYY-MM-DDTHH:mm[:ss]
+          if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s)) {
+            // iOS 友好的斜杠本地解析
+            let local = s.replace('T', ' ').replace(/-/g, '/')
+            if (/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/.test(local)) local = local + ':00'
+            const dLocal = new Date(local)
+            if (!isNaN(dLocal.getTime())) return dLocal
+            // 兜底：ISO T 格式并补秒
+            let iso = s.includes(' ') ? s.replace(' ', 'T') : s
+            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) iso = iso + ':00'
+            const dIso = new Date(iso)
+            if (!isNaN(dIso.getTime())) return dIso
+          }
+          // 最后尝试直接解析或补 Z 作为 UTC 回退
+          const dDirect = new Date(s)
+          if (!isNaN(dDirect.getTime())) return dDirect
+          const dUtc = new Date(s + 'Z')
+          return isNaN(dUtc.getTime()) ? null : dUtc
+        }
+        return null
+      } catch (e) {
+        return null
       }
-      const s = (t || d || '').trim()
-      if (!s) return ''
-      if (s.includes('T')) {
-        let x = s.replace('T', ' ')
-        x = x.replace('Z', '')
-        x = x.replace(/([\+\-]\d{2}:?\d{2})$/, '')
-        if (x.includes('.')) x = x.split('.')[0]
-        return x.substring(0, 19)
-      }
-      if (s.includes(' ')) {
-        const parts = s.split(' ')
-        const d0 = parts[0]
-        let t0 = parts[1] || '00:00:00'
-        if (t0.length === 5) t0 = `${t0}:00`
-        return `${d0} ${t0.substring(0, 8)}`
-      }
-      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s} 00:00:00`
-      return s
     }
 
-    // 详情页优先：使用 created_at
-    const created = record.created_at || ''
-    const normCreated = normalize('', created)
-    if (normCreated) return normCreated
-    // 次选：updated_at
+    const formatLocal = (dt) => (dt ? app.formatDateTime(dt, 'YYYY-MM-DD HH:mm:ss') : '')
+
+    // 按类型选择主时间字段，避免使用 created_at 导致时区偏差
+    if (type === 'health') {
+      // 健康记录：优先 record_date + record_time，其次 record_time
+      const recordDate = (record.record_date || '').trim()
+      const recordTime = (record.record_time || '').trim()
+      if (recordDate || recordTime) {
+        let merged = ''
+        if (recordDate && recordTime) {
+          let rt = recordTime
+          if (rt.length === 5) rt = `${rt}:00`
+          if (rt.length > 8) rt = rt.substring(0, 8)
+          merged = `${recordDate}T${rt}`
+        } else {
+          const s = recordDate || recordTime
+          merged = s.includes(' ') ? s.replace(' ', 'T') : s
+        }
+        const dMerged = parseServerTime(merged)
+        if (dMerged) return formatLocal(dMerged)
+      }
+      const dHealth = parseServerTime(record.record_time || '')
+      if (dHealth) return formatLocal(dHealth)
+    } else if (type === 'cleaning') {
+      // 清洁记录：优先 cleaning_time
+      const dCleaning = parseServerTime(record.cleaning_time || '')
+      if (dCleaning) return formatLocal(dCleaning)
+    } else if (type === 'feeding') {
+      // 喂食记录：优先 feeding_time
+      const dFeeding = parseServerTime(record.feeding_time || '')
+      if (dFeeding) return formatLocal(dFeeding)
+    } else if (type === 'breeding') {
+      // 繁殖记录：优先专属字段，再回退 created_at
+      const specific = record.mating_date || record.egg_laying_date || record.hatching_date || ''
+      const dSpec = parseServerTime(specific)
+      if (dSpec) return formatLocal(dSpec)
+    }
+
+    // 通用回退：updated_at -> created_at -> record_time
     const updated = record.updated_at || ''
-    const normUpdated = normalize('', updated)
-    if (normUpdated) return normUpdated
-    // 再次：合并 record_date + record_time（健康等类型）
-    const recordDate = record.record_date || ''
-    const recordTime = record.record_time || ''
-    const merged = normalize(recordDate, recordTime)
-    if (merged) return merged
-    // 兜底：各类型专属时间
-    const primary = record.record_time || record.feeding_time || record.cleaning_time || record.breeding_time || ''
-    return normalize('', primary)
+    const dUpdated = parseServerTime(updated)
+    if (dUpdated) return formatLocal(dUpdated)
+    const created = record.created_at || ''
+    const dCreated = parseServerTime(created)
+    if (dCreated) return formatLocal(dCreated)
+    const dPrimary = parseServerTime(record.record_time || '')
+    if (dPrimary) return formatLocal(dPrimary)
+    // 最后回退：原始字符串规范化为人类可读
+    const s = String(updated || created || '').trim()
+    if (!s) return ''
+    if (s.includes('T')) {
+      const x = s.replace('T', ' ').replace('Z', '').replace(/([\+\-]\d{2}:?\d{2})$/, '')
+      return x.includes('.') ? x.split('.')[0].substring(0, 19) : x.substring(0, 19)
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s} 00:00:00`
+    if (s.includes(' ')) {
+      const parts = s.split(' ')
+      let t0 = (parts[1] || '00:00:00')
+      if (t0.length === 5) t0 = `${t0}:00`
+      return `${parts[0]} ${t0.substring(0, 8)}`
+    }
+    return s
   },
 
   resolveRecorderName(record) {
