@@ -973,22 +973,76 @@ Page({
   // 加载健康提醒
   async loadHealthAlerts() {
     try {
-      // 这里可以根据实际需求加载健康提醒
-      // 比如疫苗提醒、体检提醒等
+      const res = await app.request({
+        url: '/api/statistics/health-anomalies',
+        method: 'GET',
+        data: { days: 30 }
+      })
+
+      if (!res || !res.success) {
+        this.setData({ healthAlerts: [] })
+        return
+      }
+
       const alerts = []
-      
-      // 检查是否有鹦鹉需要健康检查
-      const now = new Date()
-      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      
-      // 这里可以添加更多的健康提醒逻辑
-      
+      const severityOrder = { high: 2, medium: 1, low: 0 }
+      const results = res.data && res.data.results ? res.data.results : []
+      results.forEach(r => {
+        const pid = r.parrot_id
+        const name = r.parrot_name
+        const anomalies = r.anomalies || []
+        anomalies.forEach(a => {
+          const sev = a.severity || 'medium'
+          const sevText = sev === 'high' ? '【高】' : (sev === 'medium' ? '【中】' : '【低】')
+          const title = `${name}：${sevText}${a.message || '健康异常提醒'}`
+          // 简要细节
+          let detailText = ''
+          const d = a.details || {}
+          if (a.type === 'weight_decline') {
+            if (d.drop_pct !== undefined) {
+              detailText = `下降 ${d.drop_pct}%；近期均值 ${d.recent_avg_g || d.latest_weight_g || '--'}g`
+            } else if (d.slope_g_per_day !== undefined) {
+              detailText = `斜率 ${d.slope_g_per_day} g/天；基准 ${d.baseline_g} g`
+            }
+          } else if (a.type === 'feeding_gap') {
+            if (d.gap_hours !== undefined) {
+              detailText = `间隔 ${d.gap_hours} 小时${d.median_hours ? `（常态 ${d.median_hours} 小时）` : ''}`
+            }
+          } else if (a.type === 'feeding_frequency_low') {
+            if (d.recent_median_per_day !== undefined) {
+              detailText = `最近日中位 ${d.recent_median_per_day} 次/天（常态 ${d.baseline_median_per_day} 次/天）`
+            }
+          }
+          const description = `${a.suggestion || ''}${detailText ? '。' + detailText : ''}`
+          alerts.push({
+            id: `${pid}-${a.type}-${sev}`,
+            parrot_id: pid,
+            title,
+            description,
+            severity: sev,
+            type: a.type
+          })
+        })
+      })
+
+      // 按严重级别排序，最多显示前 3 条（首页卡片展示）
+      alerts.sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
+      const topAlerts = alerts.slice(0, 3)
+
       this.setData({
-        healthAlerts: alerts
+        healthAlerts: topAlerts
       })
     } catch (error) {
       console.error('加载健康提醒失败:', error)
+      this.setData({ healthAlerts: [] })
     }
+  },
+
+  // 查看全部健康提醒
+  navigateToHealthAlerts() {
+    wx.navigateTo({
+      url: '/pages/health-alerts/health-alerts'
+    })
   },
 
   // 处理登录

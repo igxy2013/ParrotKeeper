@@ -20,6 +20,7 @@ from routes.feedback import feedback_bp
 from routes.settings import settings_bp
 from routes.admin import admin_bp
 from routes.announcements import announcements_bp
+from routes.ai import ai_bp
 import os
 from utils import login_required, success_response, error_response
 from team_mode_utils import (
@@ -61,6 +62,7 @@ def create_app(config_name=None):
     app.register_blueprint(settings_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(announcements_bp)
+    app.register_blueprint(ai_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
@@ -198,6 +200,7 @@ def init_scheduler(app):
         def push_due_reminders():
             from models import Reminder, ReminderLog, User
             from routes.notifications import get_access_token
+            from routes.reminders import predict_next_remind_at
             from config import Config
             import requests
             from datetime import datetime
@@ -208,8 +211,12 @@ def init_scheduler(app):
                 mm = now.minute
                 today = date.today()
 
-                # 查询所有每日启用的提醒
-                reminders = Reminder.query.filter_by(is_active=True, frequency='daily').all()
+                # 1) 处理按 remind_at 到点的提醒（个性化预测）
+                due_personalized = Reminder.query.filter(
+                    Reminder.is_active == True,
+                    Reminder.remind_at != None,
+                    Reminder.remind_at <= now
+                ).all()
 
                 access_token = get_access_token()
                 if not access_token:
@@ -218,6 +225,72 @@ def init_scheduler(app):
 
                 api_url = f'https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token={access_token}'
 
+                # 先推送个性化 remind_at 到点提醒
+                for r in due_personalized:
+                    try:
+                        # 去重：当天是否已推送
+                        exists = ReminderLog.query.filter_by(reminder_id=r.id, sent_date=today).first()
+                        if exists:
+                            continue
+
+                        user = User.query.get(r.user_id)
+                        if not user or not user.openid:
+                            continue
+
+                        # 根据类型选择模板ID
+                        if r.reminder_type == 'feeding':
+                            template_id = getattr(Config, 'WECHAT_TEMPLATE_ID_FEEDING', None)
+                            reminder_type_cn = '喂食提醒'
+                        elif r.reminder_type == 'cleaning':
+                            template_id = getattr(Config, 'WECHAT_TEMPLATE_ID_CLEANING', None)
+                            reminder_type_cn = '清洁提醒'
+                        else:
+                            template_id = None
+                            reminder_type_cn = '系统提醒'
+
+                        if not template_id:
+                            continue
+
+                        template_data = {
+                            'thing1': { 'value': r.title or '您有一条提醒' },
+                            'time2': { 'value': now.strftime('%Y-%m-%d %H:%M') },
+                            'thing3': { 'value': user.nickname or '鹦鹉管家' },
+                            'thing4': { 'value': reminder_type_cn }
+                        }
+
+                        payload = {
+                            'touser': user.openid,
+                            'template_id': template_id,
+                            'page': 'pages/index/index',
+                            'data': template_data
+                        }
+
+                        resp = requests.post(api_url, json=payload)
+                        result = resp.json()
+                        if result.get('errcode') == 0:
+                            # 记录日志，避免当天重复
+                            log = ReminderLog(reminder_id=r.id, sent_date=today)
+                            db.session.add(log)
+
+                            # 动态生成下一次 remind_at（除 once 外）
+                            if r.frequency == 'once':
+                                r.remind_at = None
+                            else:
+                                try:
+                                    next_time = predict_next_remind_at(r.user_id, r.team_id, r.parrot_id, r.reminder_type)
+                                    r.remind_at = next_time
+                                except Exception as e:
+                                    # 若预测异常，清空，避免重复触发
+                                    r.remind_at = None
+                            db.session.commit()
+                            print(f"个性化推送成功: user={user.id}, type={r.reminder_type}")
+                        else:
+                            print(f"个性化推送失败: {result}")
+                    except Exception as e:
+                        print(f"个性化推送异常: {str(e)}")
+
+                # 2) 处理每日固定时间提醒
+                reminders = Reminder.query.filter_by(is_active=True, frequency='daily').all()
                 for r in reminders:
                     try:
                         if not r.reminder_time:

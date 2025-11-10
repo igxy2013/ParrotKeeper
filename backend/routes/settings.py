@@ -2,6 +2,7 @@ from flask import Blueprint, request
 from models import db, UserSetting
 from utils import login_required, success_response, error_response
 import json
+from datetime import datetime
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -20,6 +21,105 @@ def get_home_widgets():
         except Exception:
             pass
     return success_response({ 'widgets': widgets })
+
+
+# ================= 护理教练个性化配置 ==================
+
+def _default_care_coach_preferences():
+    return {
+        'feeding': {
+            'min_per_week': 14,        # 雏鸟建议每天2次；成鸟可降低
+            'max_seed_ratio': 0.3      # 种子类最高比例建议
+        },
+        'cleaning': {
+            'min_per_14d': 2           # 14天至少清洁2次
+        },
+        'health': {
+            'alert_weight_change_pct_14d': 5.0  # 14天体重变化预警阈值（绝对值%）
+        },
+        'delivery': {
+            'subscription_enabled': False,
+            'template_id': None,
+            'page': 'pages/index/index'
+        }
+    }
+
+
+def _get_user_team_context(user):
+    team_id = None if getattr(user, 'user_mode', 'personal') == 'personal' else getattr(user, 'current_team_id', None)
+    return team_id
+
+
+@settings_bp.route('/api/settings/care-coach', methods=['GET'])
+@login_required
+def get_care_coach_preferences():
+    try:
+        user = request.current_user
+        team_id = _get_user_team_context(user)
+        setting = UserSetting.query.filter_by(user_id=user.id, team_id=team_id, key='care_coach_preferences').first()
+        prefs = _default_care_coach_preferences()
+        if setting and setting.value:
+            try:
+                data = json.loads(setting.value)
+                if isinstance(data, dict):
+                    # 合并默认值，防止缺项
+                    def merge(a, b):
+                        for k, v in b.items():
+                            if k not in a:
+                                a[k] = v
+                            elif isinstance(v, dict) and isinstance(a.get(k), dict):
+                                merge(a[k], v)
+                        return a
+                    prefs = merge(data, _default_care_coach_preferences())
+            except Exception:
+                pass
+        return success_response({'preferences': prefs}, '获取护理教练偏好成功')
+    except Exception as e:
+        return error_response(f'获取护理教练偏好失败: {str(e)}')
+
+
+@settings_bp.route('/api/settings/care-coach', methods=['PUT'])
+@login_required
+def update_care_coach_preferences():
+    try:
+        user = request.current_user
+        team_id = _get_user_team_context(user)
+        data = request.get_json() or {}
+        prefs = data.get('preferences') or {}
+        if not isinstance(prefs, dict):
+            return error_response('无效的偏好结构：应为对象')
+
+        setting = UserSetting.query.filter_by(user_id=user.id, team_id=team_id, key='care_coach_preferences').first()
+        if not setting:
+            setting = UserSetting(user_id=user.id, team_id=team_id, key='care_coach_preferences', value=json.dumps(_default_care_coach_preferences(), ensure_ascii=False))
+            db.session.add(setting)
+        # 合并并保存
+        try:
+            current = json.loads(setting.value) if setting.value else {}
+        except Exception:
+            current = {}
+
+        def deep_merge(base, new):
+            for k, v in new.items():
+                if isinstance(v, dict) and isinstance(base.get(k), dict):
+                    base[k] = deep_merge(base[k], v)
+                else:
+                    base[k] = v
+            return base
+
+        merged = deep_merge(current if isinstance(current, dict) else {}, prefs)
+        setting.value = json.dumps(merged, ensure_ascii=False)
+        setting.updated_at = datetime.utcnow()
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return error_response(f'保存偏好失败: {str(e)}')
+
+        return success_response({'preferences': merged}, '更新护理教练偏好成功')
+    except Exception as e:
+        return error_response(f'更新护理教练偏好失败: {str(e)}')
 
 @settings_bp.route('/api/settings/home-widgets', methods=['PUT'])
 @login_required
@@ -45,4 +145,3 @@ def update_home_widgets():
         setting.value = json.dumps(clean_widgets, ensure_ascii=False)
     db.session.commit()
     return success_response({ 'widgets': clean_widgets }, '已更新首页组件显示设置')
-

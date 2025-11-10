@@ -1,14 +1,29 @@
 <!-- pages/care-guide/care-guide.wxml -->
 <view class="page-container {{pageThemeClass}}">
-  <app-header title="护理指南" subtitle="鹦鹉护理知识与建议" showBack="true" customBack="true" bind:back="onHeaderBack"></app-header>
+  <app-header title="护理指南" subtitle="鹦鹉护理知识与建议" showBack="true" customBack="true" bind:back="onHeaderBack">
+    <view slot="actions" class="cg-header-btn" bindtap="onSmartAdviceTap">
+      <text class="cg-header-btn-text">✨ 智能建议</text>
+    </view>
+  </app-header>
   <view class="page-content">
     <view wx:if="{{loading}}" class="loading-box">正在加载护理指南...</view>
     <view wx:if="{{!!error}}" class="error-box">{{error}}</view>
 
-    <block wx:for="{{sections}}" wx:key="key">
+    <!-- 品种切换 Tabs（含通用建议） -->
+    <view class="species-tabs-section" wx:if="{{speciesTabs && speciesTabs.length > 0}}">
+      <scroll-view class="chip-scroll" scroll-x="true">
+        <block wx:for="{{speciesTabs}}" wx:key="key">
+          <view class="chip {{activeTabKey === item.key ? 'active' : ''}}" bindtap="selectSpeciesTab" data-key="{{item.key}}">
+            <text class="option-text">{{item.name}}</text>
+          </view>
+        </block>
+      </scroll-view>
+    </view>
+
+    <block wx:for="{{sections}}" wx:key="title">
       <view class="guide-section">
         <text class="guide-section-title">{{item.title}}</text>
-        <block wx:for="{{item.items}}" wx:key="index">
+        <block wx:for="{{item.items}}" wx:key="text">
           <view class="guide-item">
             <text wx:if="{{item.emoji}}" class="guide-item-icon-emoji">{{item.emoji}}</text>
             <image wx:if="{{item.iconUrl}}" class="guide-item-icon-img" src="{{item.iconUrl}}" mode="aspectFit"/>
@@ -21,6 +36,44 @@
     </block>
 
     <view class="footer-tip">内容为通用建议，具体健康问题请咨询专业兽医。</view>
+  </view>
+</view>
+
+<!-- 智能建议弹窗 -->
+<view class="advice-modal-overlay" wx:if="{{smartAdviceVisible}}" bindtap="closeSmartAdvice">
+  <view class="advice-modal" catchtap="noop">
+    <view class="advice-modal-header">
+      <text class="advice-modal-title">智能护理建议</text>
+      <text class="advice-modal-close" bindtap="closeSmartAdvice">×</text>
+    </view>
+
+    <scroll-view class="advice-modal-body" scroll-y="true">
+      <view wx:if="{{!!smartAdviceError}}" class="advice-error">{{smartAdviceError}}</view>
+      <view wx:if="{{!smartAdviceError && (!smartAdviceItems || smartAdviceItems.length === 0)}}" class="advice-empty">暂无建议</view>
+
+      <block wx:for="{{smartAdviceItems}}" wx:key="parrot_id">
+        <view class="advice-card">
+          <view class="advice-card-header">
+            <text class="advice-parrot">{{item.parrot_name}}</text>
+            <text class="advice-species">（{{item.species_name}}）</text>
+          </view>
+          <view class="advice-list">
+            <block wx:for="{{item.advice}}" wx:key="suggestion">
+              <view class="advice-item">
+                <text class="advice-tag">
+                  {{item.category === 'diet' ? '饮食' : (item.category === 'environment' ? '环境' : (item.category === 'interaction' ? '互动' : '健康'))}}
+                </text>
+                <text class="advice-text">{{item.suggestion}}</text>
+              </view>
+            </block>
+          </view>
+        </view>
+      </block>
+    </scroll-view>
+
+    <view class="advice-modal-actions">
+      <button class="btn-close" bindtap="closeSmartAdvice">关闭</button>
+    </view>
   </view>
 </view>
 

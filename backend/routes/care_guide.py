@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
-from utils import success_response, error_response
+from utils import success_response, error_response, login_required
+from team_mode_utils import get_accessible_parrot_ids_by_mode
+from models import Parrot, ParrotSpecies
 import os
 import json
 from datetime import datetime
@@ -163,4 +165,162 @@ def update_care_guide():
         return error_response(f'保存失败：{str(e)}')
 
     return success_response({'message': '更新成功', 'config': data}, '更新护理指南成功')
+
+
+# === 个性化：按品种输出专业建议与知识科普 ===
+def _normalize_species_key(name: str | None) -> str:
+    if not name:
+        return 'unknown'
+    n = name.strip().lower()
+    # 常见中文/英文别名归一化
+    mapping = {
+        '虎皮鹦鹉': 'budgerigar', '虎皮': 'budgerigar', 'budgerigar': 'budgerigar', 'budgie': 'budgerigar',
+        '玄凤鹦鹉': 'cockatiel', '玄凤': 'cockatiel', 'cockatiel': 'cockatiel',
+        '金刚鹦鹉': 'macaw', '金刚': 'macaw', 'macaw': 'macaw',
+        '非洲灰鹦鹉': 'african_grey', '非洲灰': 'african_grey', 'african grey': 'african_grey', 'african_grey': 'african_grey',
+        '亚马逊鹦鹉': 'amazon', '亚马逊': 'amazon', 'amazon': 'amazon'
+    }
+    # 英文名全小写匹配
+    if n in mapping:
+        return mapping[n]
+    # 中文包含匹配
+    for k, v in mapping.items():
+        if k in name:
+            return v
+    return n.replace(' ', '_')
+
+
+def _build_species_sections(base_cfg: dict, key: str) -> list:
+    # 基于通用内容复制一份作为基础
+    sections = json.loads(json.dumps(base_cfg.get('sections', [])))
+    # 建立标题索引（中文标题）以便合并
+    title_to_idx = {sec.get('title'): i for i, sec in enumerate(sections)}
+    # 英文key到中文标题的映射
+    key_to_title = {
+        'diet': '饮食',
+        'environment': '环境',
+        'interaction': '互动',
+        'health': '健康',
+        'emergency': '紧急情况',
+    }
+
+    # 追加或替换部分条目
+    extra = []
+    if key == 'budgerigar':
+        extra = [
+            {'key': 'diet', 'items': [
+                {'text': '以颗粒饲料为主，少量种子作为奖励，避免长期高脂肪种子。', 'emoji': '🌾'},
+                {'text': '每日补充新鲜蔬叶如小松菜、菠菜（适量），提供钙源。', 'emoji': '🥬'}
+            ]},
+            {'key': 'environment', 'items': [
+                {'text': '笼条间距建议≤1.2cm，避免逃脱与卡头。', 'emoji': '📏'},
+                {'text': '提供沙浴或喷雾浴，保持羽毛清洁。', 'emoji': '🫧'}
+            ]}
+        ]
+    elif key == 'cockatiel':
+        extra = [
+            {'key': 'diet', 'items': [
+                {'text': '注意补钙与维生素D3，繁殖期尤需关注。', 'emoji': '🦴'}
+            ]},
+            {'key': 'interaction', 'items': [
+                {'text': '口哨与模仿训练效果好，以短时高频互动建立信任。', 'emoji': '🎶'}
+            ]}
+        ]
+    elif key == 'macaw':
+        extra = [
+            {'key': 'environment', 'items': [
+                {'text': '提供超大笼舍与坚固栖木，防止啃咬破坏。', 'emoji': '🪵'},
+                {'text': '每日安排高强度玩耍与觅食任务，避免无聊与破坏性行为。', 'emoji': '🏋️'}
+            ]},
+            {'key': 'diet', 'items': [
+                {'text': '以配方颗粒为主，搭配多样蔬果与少量坚果，控制总能量。', 'emoji': '🥗'}
+            ]}
+        ]
+    elif key == 'african_grey':
+        extra = [
+            {'key': 'diet', 'items': [
+                {'text': '易低钙：关注钙与D3摄入，适度阳光或UVB灯。', 'emoji': '🌞'}
+            ]},
+            {'key': 'interaction', 'items': [
+                {'text': '智商高需高强度认知丰富化，定期更换解谜玩具。', 'emoji': '🧩'}
+            ]}
+        ]
+    elif key == 'amazon':
+        extra = [
+            {'key': 'diet', 'items': [
+                {'text': '易肥胖：以低脂颗粒与蔬菜为主，坚果严格限量。', 'emoji': '⚖️'}
+            ]},
+            {'key': 'health', 'items': [
+                {'text': '定期称重与记录体脂趋势，适度飞行训练控制体重。', 'emoji': '📈'}
+            ]}
+        ]
+
+    # 将 extra 按中文标题合并到现有 sections
+    if extra:
+        for block in extra:
+            k = block.get('key')
+            items = block.get('items', [])
+            cn_title = key_to_title.get(k, k)
+            if cn_title in title_to_idx:
+                sections[title_to_idx[cn_title]].setdefault('items', []).extend(items)
+            else:
+                sections.append({ 'title': cn_title, 'items': items })
+    return sections
+
+
+@care_guide_bp.route('/personalized', methods=['GET'])
+@login_required
+def get_personalized_care_guide():
+    """根据用户所养品种返回个性化护理建议与知识科普。
+    返回结构：
+    {
+      title, schema_version,
+      species: [{id, name, key}],
+      general: { sections: [...] },
+      guides: { key: { display_name, sections } },
+      updated_at
+    }
+    """
+    try:
+        user = request.current_user
+        cfg = _load_config()
+
+        # 获取用户可访问的鹦鹉对应品种
+        accessible_ids = get_accessible_parrot_ids_by_mode(user)
+        if not accessible_ids:
+            # 无数据时返回通用内容
+            return success_response({
+                'title': cfg.get('title', '护理指南'),
+                'schema_version': '1.1',
+                'species': [],
+                'general': { 'sections': cfg.get('sections', []) },
+                'guides': {},
+                'updated_at': datetime.utcnow().isoformat()
+            })
+
+        parrots = Parrot.query.filter(Parrot.id.in_(accessible_ids), Parrot.is_active == True).all()
+        species_ids = set([p.species_id for p in parrots if p.species_id])
+        species_rows = ParrotSpecies.query.filter(ParrotSpecies.id.in_(species_ids)).all() if species_ids else []
+
+        species_info = []
+        guides = {}
+        for s in species_rows:
+            key = _normalize_species_key(s.name)
+            species_info.append({ 'id': s.id, 'name': s.name, 'key': key })
+            guides[key] = {
+                'display_name': s.name,
+                'sections': _build_species_sections(cfg, key)
+            }
+
+        # 若无已知映射的品种，仍返回通用内容
+        return success_response({
+            'title': cfg.get('title', '护理指南'),
+            'schema_version': '1.1',
+            'species': species_info,
+            'general': { 'sections': cfg.get('sections', []) },
+            'guides': guides,
+            'updated_at': datetime.utcnow().isoformat()
+        }, '获取个性化护理指南成功')
+    except Exception as e:
+        return error_response(f'获取个性化护理指南失败: {str(e)}')
 

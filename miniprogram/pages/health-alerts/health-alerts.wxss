@@ -1,0 +1,119 @@
+/* 主要内容区域复用首页样式约束 */
+.main-content {
+  padding-top: 32rpx;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+}
+
+/* 健康提醒卡片与首页一致 */
+.health-alerts .card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20rpx);
+  border-radius: 48rpx;
+  padding: 24rpx;
+  margin: 0 0 32rpx 0;
+  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.08);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+
+.card-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+  border-radius: 32rpx;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  border: 1rpx solid rgba(255, 255, 255, 0.5);
+  overflow: visible;
+}
+
+.alert-item:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
+}
+
+.alert-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8rpx;
+  border-top-left-radius: 32rpx;
+  border-bottom-left-radius: 32rpx;
+}
+
+.alert-item.high {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(255, 153, 153, 0.12));
+}
+.alert-item.high::before { background: #ef4444; }
+
+.alert-item.medium {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(255, 193, 7, 0.12));
+}
+.alert-item.medium::before { background: #f59e0b; }
+
+.alert-item.low {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(45, 212, 191, 0.12));
+}
+.alert-item.low::before { background: #14b8a6; }
+
+.alert-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+}
+
+.alert-icon-img {
+  width: 64rpx;
+  height: 64rpx;
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.alert-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.alert-subtitle {
+  font-size: 26rpx;
+  color: #666666;
+}

@@ -77,6 +77,12 @@
     }
     ,
     {
+      "root": "pages/health-alerts",
+      "pages": [
+        "health-alerts"
+      ]
+    },
+    {
       "root": "pages/announcements",
       "pages": [
         "center/center"

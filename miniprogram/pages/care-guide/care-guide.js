@@ -6,7 +6,17 @@ Page({
     pageThemeClass: '',
     loading: true,
     error: '',
-    sections: []
+    // 旧版：通用 sections
+    sections: [],
+    // 新增：个性化数据
+    speciesTabs: [], // [{ key: 'general', name: '通用建议' }, { key, name }...]
+    activeTabKey: 'general',
+    guidesMap: {}, // { key: { display_name, sections } }
+    generalSections: [],
+    // 智能建议弹窗状态
+    smartAdviceVisible: false,
+    smartAdviceItems: [],
+    smartAdviceError: ''
   },
 
   onLoad() {
@@ -20,9 +30,49 @@ Page({
       }
     } catch (_) {}
 
-    this.fetchCareGuide()
+    // 优先拉取个性化护理指南；失败则回退到通用指南
+    this.fetchPersonalizedCareGuide()
   }
   ,
+
+  fetchPersonalizedCareGuide() {
+    this.setData({ loading: true, error: '' })
+    app.request({ url: '/api/care-guide/personalized' })
+      .then(res => {
+        if (res && res.success && res.data) {
+          const data = res.data || {}
+          const species = Array.isArray(data.species) ? data.species : []
+          const guides = data.guides || {}
+          const generalSections = Array.isArray(data.general && data.general.sections) ? data.general.sections : []
+
+          // 构建 tabs：通用 + 物种
+          const tabs = [{ key: 'general', name: '通用建议' }].concat(
+            species.map(s => ({ key: s.key, name: s.name }))
+          )
+
+          const firstKey = tabs[0]?.key || 'general'
+          // 设置数据并展示通用或第一个物种
+          this.setData({
+            speciesTabs: tabs,
+            guidesMap: guides,
+            generalSections,
+            activeTabKey: firstKey,
+            // 兼容旧版：sections 同步为当前激活的内容
+            sections: firstKey === 'general' ? generalSections : ((guides[firstKey] && guides[firstKey].sections) || [])
+          })
+        } else {
+          // 非成功返回：回退至通用
+          this.fetchCareGuide()
+        }
+      })
+      .catch(_ => {
+        // 游客模式或网络错误：回退至通用
+        this.fetchCareGuide()
+      })
+      .finally(() => {
+        this.setData({ loading: false })
+      })
+  },
 
   fetchCareGuide() {
     this.setData({ loading: true, error: '' })
@@ -31,7 +81,14 @@ Page({
         if (res && res.success && res.data) {
           const sections = Array.isArray(res.data.sections) ? res.data.sections : []
           // 直接使用后端结构；若未来提供 iconUrl 可直接渲染
-          this.setData({ sections, loading: false })
+          this.setData({
+            sections,
+            generalSections: sections,
+            speciesTabs: [{ key: 'general', name: '通用建议' }],
+            guidesMap: {},
+            activeTabKey: 'general',
+            loading: false
+          })
         } else {
           this.setData({ error: res && res.message ? res.message : '加载失败', loading: false })
         }
@@ -40,6 +97,45 @@ Page({
         this.setData({ error: (err && err.message) || '网络错误', loading: false })
       })
   },
+
+  // 切换品种 Tab
+  selectSpeciesTab(e) {
+    const key = e.currentTarget?.dataset?.key || 'general'
+    const { guidesMap, generalSections } = this.data
+    const sections = key === 'general' ? generalSections : ((guidesMap[key] && guidesMap[key].sections) || [])
+    // 生成新数组副本，确保渲染引擎检测到变更
+    const nextSections = JSON.parse(JSON.stringify(sections || []))
+    this.setData({ activeTabKey: key, sections: nextSections })
+  },
+
+  // 触发智能建议（llm=true）
+  onSmartAdviceTap() {
+    this.setData({ smartAdviceVisible: true, smartAdviceError: '', smartAdviceItems: [] })
+    try { app.showLoading('生成智能建议...') } catch (_) {}
+    app.request({ url: '/api/ai/care-coach?llm=true' })
+      .then(res => {
+        if (res && res.success) {
+          const items = (res.data && res.data.items) || []
+          this.setData({ smartAdviceItems: items })
+        } else {
+          this.setData({ smartAdviceError: (res && res.message) || '生成失败' })
+        }
+      })
+      .catch(err => {
+        this.setData({ smartAdviceError: (err && err.message) || '网络错误' })
+      })
+      .finally(() => {
+        try { app.hideLoading() } catch (_) {}
+      })
+  },
+
+  // 关闭智能建议弹窗
+  closeSmartAdvice() {
+    this.setData({ smartAdviceVisible: false })
+  },
+
+  // 空方法，阻止事件穿透
+  noop() {},
 
   onHeaderBack() {
     try {

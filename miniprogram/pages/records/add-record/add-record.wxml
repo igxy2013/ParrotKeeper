@@ -88,12 +88,31 @@
               </view>
             </picker>
           </view>
-        </view>
       </view>
+    </view>
 
-      <!-- 喂食记录特有字段 -->
-      <view class="form-section" wx:if="{{recordType === 'feeding'}}">
-        <view class="section-title">喂食详情</view>
+    <!-- 智能录入（实验） -->
+    <view class="form-section">
+      <view class="section-title">智能录入（实验）</view>
+      <view class="form-item">
+        <text class="form-label">自然语言输入</text>
+        <textarea
+          class="form-textarea"
+          placeholder="示例：今天下午清洁笼子并更换饮水，鹦鹉：小绿、花花。"
+          value="{{aiInputText}}"
+          bindinput="onAIInputChange"
+          maxlength="500"
+          show-confirm-bar="{{false}}"
+        />
+      </view>
+      <view class="form-actions">
+        <button class="btn btn-secondary" bindtap="parseWithAI" loading="{{aiParsing}}" disabled="{{aiParsing}}">一键解析</button>
+      </view>
+    </view>
+
+    <!-- 喂食记录特有字段 -->
+    <view class="form-section" wx:if="{{recordType === 'feeding'}}">
+      <view class="section-title">喂食详情</view>
         
         <view class="form-item">
           <text class="form-label">食物类型</text>

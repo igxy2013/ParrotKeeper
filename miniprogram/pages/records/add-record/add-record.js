@@ -73,10 +73,15 @@ const app = getApp()
     // 表单状态
     canSubmit: false,
     submitting: false,
-    
+
     // 其他
       today: '',
-      recordId: null // 编辑模式下的记录ID
+      recordId: null, // 编辑模式下的记录ID
+      // AI 智能录入
+      aiInputText: '',
+      aiParsing: false,
+      aiParseConfidence: null,
+      aiParseConfidencePercentInt: null
     },
   
   // 将记录类型映射为中文文案
@@ -88,6 +93,184 @@ const app = getApp()
       breeding: '繁殖'
     }
     return map[type] || ''
+  },
+
+  // AI 文本输入
+  onAIInputChange: function(e) {
+    const v = (e.detail && e.detail.value) ? e.detail.value : ''
+    this.setData({ aiInputText: v })
+  },
+
+  // 触发AI解析
+  parseWithAI: async function() {
+    const text = (this.data.aiInputText || '').trim()
+    if (!text) {
+      app.showError('请输入要解析的文本')
+      return
+    }
+    try {
+      this.setData({ aiParsing: true })
+      const res = await app.request({
+        url: '/api/ai/parse-record',
+        method: 'POST',
+        data: {
+          text,
+          default_record_type: this.data.recordType
+        }
+      })
+      if (!res || !res.success) {
+        app.showError(res && res.message ? res.message : '解析失败')
+        return
+      }
+      const parsed = (res.data && res.data.parsed) ? res.data.parsed : {}
+      const confidence = (res.data && typeof res.data.confidence === 'number') ? res.data.confidence : null
+
+      // 确保相关列表已加载，便于后续映射显示
+      try {
+        if (Array.isArray(parsed.parrot_ids) && parsed.parrot_ids.length && (!this.data.parrotList || this.data.parrotList.length === 0)) {
+          await this.loadParrotList()
+        }
+      } catch (_) {}
+      try {
+        if (Array.isArray(parsed.cleaning_types) && parsed.cleaning_types.length && (!this.data.cleaningTypeList || this.data.cleaningTypeList.length === 0)) {
+          this.initCleaningTypeList()
+        }
+      } catch (_) {}
+      try {
+        const foodTypesByType = parsed.food_types_by_type
+        if (Array.isArray(foodTypesByType) && foodTypesByType.length && (!this.data.feedTypeList || this.data.feedTypeList.length === 0)) {
+          await this.loadFeedTypeList()
+        }
+      } catch (_) {}
+
+      this.applyAIParsedResult(parsed, confidence)
+    } catch (err) {
+      console.error('AI 解析失败:', err)
+      app.showError('AI 解析失败')
+    } finally {
+      this.setData({ aiParsing: false })
+    }
+  },
+
+  applyAIParsedResult: function(parsed, confidence) {
+    if (!parsed || typeof parsed !== 'object') return
+    const currentType = this.data.recordType
+    const parsedType = parsed.record_type || currentType
+
+    // 更新记录类型（若解析到不同类型，提示并切换）
+    if (parsedType !== currentType) {
+      this.setData({ recordType: parsedType })
+      wx.setNavigationBarTitle({ title: `添加${this.typeToText(parsedType)}记录` })
+      wx.showToast({ title: `检测到${this.typeToText(parsedType)}，已切换`, icon: 'none' })
+    }
+
+    // 基础时间
+    if (parsed.record_date) {
+      this.setData({ 'formData.record_date': parsed.record_date })
+    }
+    if (parsed.record_time) {
+      this.setData({ 'formData.record_time': parsed.record_time })
+    }
+
+    // 鹦鹉匹配
+    if (Array.isArray(parsed.parrot_ids) && parsed.parrot_ids.length) {
+      const ids = parsed.parrot_ids.map(x => parseInt(x)).filter(x => !isNaN(x))
+      const selectedParrots = []
+      const parrotList = this.data.parrotList.slice()
+      const idSet = new Set(ids)
+      const parrotListWithSel = parrotList.map(p => ({ ...p, selected: idSet.has(p.id) }))
+      parrotListWithSel.forEach(p => { if (p.selected) selectedParrots.push({ id: p.id, name: p.name }) })
+      const selectedParrotNames = selectedParrots.length > 0 ? selectedParrots.map(p => p.name).join('、') : (`已选择${ids.length}只鹦鹉`)
+      this.setData({
+        parrotList: parrotListWithSel,
+        selectedParrots,
+        selectedParrotNames,
+        'formData.parrot_ids': ids
+      })
+      // 繁殖记录的雄/雌列表依赖选择，保持同步
+      if (this.data.recordType === 'breeding') {
+        this.updateBreedingParrotListsBasedOnSelection()
+      }
+    }
+
+    // 清洁类型
+    if (parsed.cleaning_types && Array.isArray(parsed.cleaning_types)) {
+      const cleaningTypeList = this.data.cleaningTypeList.slice()
+      const idSet = new Set(parsed.cleaning_types)
+      const selectedCleaningTypes = []
+      const selectedNames = []
+      const withSel = cleaningTypeList.map(ct => {
+        const sel = idSet.has(ct.id)
+        if (sel) { selectedCleaningTypes.push(ct.id); selectedNames.push(ct.name) }
+        return { ...ct, selected: sel }
+      })
+      this.setData({
+        cleaningTypeList: withSel,
+        selectedCleaningTypes,
+        selectedCleaningTypeNames: selectedNames.join('、'),
+        'formData.cleaning_types': selectedCleaningTypes
+      })
+    }
+    if (typeof parsed.description === 'string') {
+      this.setData({ 'formData.description': parsed.description })
+    }
+
+    // 健康解析
+    if (parsed.weight !== undefined && parsed.weight !== null) {
+      const w = String(parsed.weight)
+      this.setData({ 'formData.weight': w })
+    }
+    if (parsed.health_status) {
+      const textMap = { healthy: '健康', sick: '生病', recovering: '康复中', observation: '观察中' }
+      const hs = parsed.health_status
+      this.setData({ 'formData.health_status': hs, healthStatusText: textMap[hs] || '健康' })
+    }
+
+    // 喂食解析：按类型选择食物，填充分量（若解析到）
+    if (Array.isArray(parsed.food_types_by_type) && parsed.food_types_by_type.length) {
+      const feedTypeList = this.data.feedTypeList.slice()
+      const typeSet = new Set(parsed.food_types_by_type)
+      const selectedFeedTypes = []
+      const selectedFeedTypeIds = []
+      const selectedNames = []
+      const withSel = feedTypeList.map(f => {
+        const sel = typeSet.has(f.type)
+        if (sel) {
+          selectedFeedTypes.push({ id: f.id, name: f.displayName })
+          selectedFeedTypeIds.push(f.id)
+          selectedNames.push(f.displayName)
+        }
+        return { ...f, selected: sel }
+      })
+      // 同步分量映射：初始化所选项的键
+      const foodAmounts = { ...(this.data.formData.food_amounts || {}) }
+      const parsedAmt = (parsed.amount !== undefined && parsed.amount !== null) ? String(parsed.amount) : ''
+      selectedFeedTypeIds.forEach(id => {
+        const key = String(id)
+        // 若已有解析到的分量，则为每个已选项预填相同分量，便于用户微调
+        if (parsedAmt) {
+          foodAmounts[key] = parsedAmt
+        } else if (!(key in foodAmounts)) {
+          foodAmounts[key] = ''
+        }
+      })
+      this.setData({
+        feedTypeList: withSel,
+        selectedFeedTypes,
+        selectedFeedTypeNames: selectedNames.join('、'),
+        'formData.food_types': selectedFeedTypeIds,
+        'formData.food_amounts': foodAmounts
+      })
+    }
+    if (parsed.amount !== undefined && parsed.amount !== null) {
+      const amt = String(parsed.amount)
+      this.setData({ 'formData.amount': amt })
+    }
+
+    // 刷新提交状态并给出简单的完成提示（不显示置信度）
+    this.setData({ aiParseConfidence: null, aiParseConfidencePercentInt: null })
+    wx.showToast({ title: '解析完成', icon: 'success' })
+    this.validateForm()
   },
 
   onLoad: async function(options) {

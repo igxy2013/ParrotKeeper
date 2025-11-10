@@ -165,7 +165,7 @@
     <view class="my-parrots-card" wx:if="{{myParrots.length > 0}}">
       <view class="card-header">
       <text class="card-title"><image class="inline-title-icon" src="{{iconPaths.myParrotsTitleHeart}}" mode="widthFix" binderror="handleIconError" data-key="myParrotsTitleHeart"/> 我的鹦鹉</text>
-        <text class="more-link" bindtap="navigateToParrots">查看全部 →</text>
+        <text class="more-link" bindtap="navigateToParrots">查看全部</text>
       </view>
       <scroll-view class="parrot-card-scroll" scroll-x="true" enable-flex="true" scroll-with-animation="true">
         <view class="parrot-card-row">
@@ -268,10 +268,11 @@
     <view class="card">
       <view class="card-header">
         <text class="card-title">健康提醒</text>
+        <text class="more-link" bindtap="navigateToHealthAlerts">查看全部</text>
       </view>
       <view class="card-content">
         <view class="alert-list">
-          <view class="alert-item" wx:for="{{healthAlerts}}" wx:key="id">
+          <view class="alert-item {{item.severity}}" wx:for="{{healthAlerts}}" wx:key="id">
       <view class="alert-icon"><image class="alert-icon-img" src="{{iconPaths.alertInfo}}" mode="widthFix" binderror="handleIconError" data-key="alertInfo"/></view>
             <view class="alert-content">
               <view class="alert-title">{{item.title}}</view>

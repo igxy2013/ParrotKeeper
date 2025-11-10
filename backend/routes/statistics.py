@@ -564,3 +564,358 @@ def get_weight_trends():
         })
     except Exception as e:
         return error_response(f'获取体重趋势失败: {str(e)}')
+
+
+# ===== 健康异常检测：体重与进食频次 =====
+def _median(nums):
+    arr = sorted([n for n in nums if n is not None])
+    if not arr:
+        return None
+    n = len(arr)
+    mid = n // 2
+    if n % 2 == 1:
+        return arr[mid]
+    else:
+        return (arr[mid - 1] + arr[mid]) / 2.0
+
+def _detect_weight_decline(weights_with_time,
+                           window_days=7,
+                           drop_pct_high=0.05,
+                           drop_pct_medium=0.03,
+                           slope_window_days=14,
+                           slope_ratio_threshold=-0.015):
+    """
+    输入: [(timestamp, weight_g), ...] 按时间升序
+    规则:
+      - 滑动窗口：最近 window_days 的均值较之前窗口均值下降 >drop_pct_high -> high
+      - 滑动窗口：最近 window_days 的均值较之前窗口均值下降 >drop_pct_medium -> medium
+      - 近 slope_window_days 线性趋势斜率显著为负（相对均值比例） -> medium
+    返回: dict 或 None
+    """
+    if not weights_with_time or len(weights_with_time) < 2:
+        return None
+    from datetime import datetime, timedelta
+    now = datetime.now()
+
+    # 将同一天的多条体重记录聚合为日均值，平滑噪声
+    daily = {}
+    for (t, w) in weights_with_time:
+        if not t or w is None:
+            continue
+        d = t.date() if hasattr(t, 'date') else t
+        daily.setdefault(d, []).append(float(w))
+    daily_series = sorted([(d, sum(ws)/len(ws)) for d, ws in daily.items()], key=lambda x: x[0])
+    if len(daily_series) < 2:
+        return None
+
+    # 最近窗口与之前窗口比较（窗口为天）
+    recent_end = daily_series[-1][0]
+    recent_start = recent_end - timedelta(days=window_days-1)
+    prev_end = recent_start - timedelta(days=1)
+    prev_start = prev_end - timedelta(days=window_days-1)
+
+    recent_vals = [w for (d, w) in daily_series if recent_start <= d <= recent_end]
+    prev_vals = [w for (d, w) in daily_series if prev_start <= d <= prev_end]
+
+    if recent_vals and prev_vals:
+        recent_avg = sum(recent_vals)/len(recent_vals)
+        prev_avg = sum(prev_vals)/len(prev_vals)
+        if prev_avg > 0:
+            drop_pct = (prev_avg - recent_avg) / prev_avg
+            if drop_pct >= drop_pct_high:
+                return {
+                    'type': 'weight_decline',
+                    'severity': 'high',
+                    'message': f'体重在最近{window_days}天较前一窗口明显下滑（>{int(drop_pct_high*100)}%）。',
+                    'suggestion': '请尽快复查体重，调整饮食，并考虑就医。',
+                    'details': {
+                        'recent_avg_g': round(float(recent_avg or 0), 2),
+                        'prev_avg_g': round(float(prev_avg or 0), 2),
+                        'drop_pct': round(drop_pct*100, 2)
+                    }
+                }
+            elif drop_pct >= drop_pct_medium:
+                return {
+                    'type': 'weight_decline',
+                    'severity': 'medium',
+                    'message': f'体重在最近{window_days}天下滑（>{int(drop_pct_medium*100)}%）。',
+                    'suggestion': '观察并优化营养，3-7天后复查体重。',
+                    'details': {
+                        'recent_avg_g': round(float(recent_avg or 0), 2),
+                        'prev_avg_g': round(float(prev_avg or 0), 2),
+                        'drop_pct': round(drop_pct*100, 2)
+                    }
+                }
+
+    # 线性趋势（近 slope_window_days）
+    window_start = now.date() - timedelta(days=slope_window_days-1)
+    trend_window = [(d, w) for (d, w) in daily_series if d >= window_start]
+    if len(trend_window) >= 3:
+        xs = [(d - window_start).days for (d, _) in trend_window]
+        ys = [w for (_, w) in trend_window]
+        x_mean = sum(xs)/len(xs)
+        y_mean = sum(ys)/len(ys)
+        num = sum((x - x_mean)*(y - y_mean) for x, y in zip(xs, ys))
+        den = sum((x - x_mean)**2 for x in xs) or 1e-6
+        slope = num / den  # g/天
+        baseline = y_mean or ys[-1]
+        # 显著负斜率阈值：每天下降超过 baseline 的一定比例
+        if baseline and slope < slope_ratio_threshold * baseline:
+            return {
+                'type': 'weight_decline',
+                'severity': 'medium',
+                'message': f'体重近{slope_window_days}天呈持续下滑趋势。',
+                'suggestion': '关注摄食与活动，必要时就医排查。',
+                'details': {
+                    'slope_g_per_day': round(float(slope), 2),
+                    'baseline_g': round(float(baseline), 2)
+                }
+            }
+    return None
+
+def _detect_feeding_gap(feed_times):
+    """
+    输入: [datetime feeding_time, ...] 升序
+    规则:
+      - 计算历史中位间隔；若距上次进食 > 1.5x 中位间隔 -> medium/high
+      - 无法计算时回退阈值：>36h -> medium, >48h -> high
+    返回: dict 或 None
+    """
+    if not feed_times:
+        return {
+            'type': 'feeding_gap',
+            'severity': 'medium',
+            'message': '暂无喂食记录，建议尽快补充并记录。',
+            'suggestion': '完善喂食记录以便系统评估与提醒。',
+            'details': {}
+        }
+    if len(feed_times) == 1:
+        last = feed_times[-1]
+        from datetime import datetime, timedelta
+        hours = (datetime.now() - last).total_seconds()/3600.0
+        if hours > 48:
+            sev = 'high'
+            msg = '已超过48小时未记录进食。'
+        elif hours > 36:
+            sev = 'medium'
+            msg = '已超过36小时未记录进食。'
+        else:
+            return None
+        return {
+            'type': 'feeding_gap',
+            'severity': sev,
+            'message': msg,
+            'suggestion': '检查实际进食情况，尽快补充记录与喂食。',
+            'details': { 'gap_hours': round(hours, 1) }
+        }
+    # 计算中位间隔
+    deltas = []
+    for i in range(1, len(feed_times)):
+        delta = (feed_times[i] - feed_times[i-1]).total_seconds()/3600.0
+        # 合理区间 2h-72h
+        if 2 <= delta <= 72:
+            deltas.append(delta)
+    med = _median(deltas)
+    from datetime import datetime
+    last = feed_times[-1]
+    gap_h = (datetime.now() - last).total_seconds()/3600.0
+    if med:
+        if gap_h >= 2.0 * med:
+            sev = 'high'
+            msg = '进食间隔远超常态。'
+        elif gap_h >= 1.5 * med:
+            sev = 'medium'
+            msg = '进食间隔高于常态。'
+        else:
+            return None
+        return {
+            'type': 'feeding_gap',
+            'severity': sev,
+            'message': msg,
+            'suggestion': '关注摄食意愿与精神状态，必要时复查。',
+            'details': { 'gap_hours': round(gap_h, 1), 'median_hours': round(med, 1) }
+        }
+    else:
+        # 回退阈值
+        if gap_h > 48:
+            sev = 'high'
+            msg = '已超过48小时未记录进食。'
+        elif gap_h > 36:
+            sev = 'medium'
+            msg = '已超过36小时未记录进食。'
+        else:
+            return None
+        return {
+            'type': 'feeding_gap',
+            'severity': sev,
+            'message': msg,
+            'suggestion': '检查实际进食情况，尽快补充记录与喂食。',
+            'details': { 'gap_hours': round(gap_h, 1) }
+        }
+
+def _detect_feeding_frequency(feed_times,
+                              window_days=7,
+                              baseline_days=21,
+                              low_ratio_medium=0.6,
+                              low_ratio_high=0.4):
+    """
+    输入: [datetime feeding_time, ...] 升序
+    规则（滑动窗口按日计数）:
+      - 最近 window_days 的每日喂食中位数相对之前 baseline_days 的每日喂食中位数显著偏低
+        · < low_ratio_high -> high
+        · < low_ratio_medium -> medium
+    返回: dict 或 None
+    """
+    if not feed_times:
+        return None
+    from datetime import timedelta
+    # 按日聚合计数
+    daily_counts = {}
+    for t in feed_times:
+        if not t:
+            continue
+        d = t.date() if hasattr(t, 'date') else t
+        daily_counts[d] = daily_counts.get(d, 0) + 1
+    if not daily_counts:
+        return None
+    days_sorted = sorted(daily_counts.keys())
+    last_day = days_sorted[-1]
+    recent_start = last_day - timedelta(days=window_days-1)
+    baseline_end = recent_start - timedelta(days=1)
+    baseline_start = baseline_end - timedelta(days=baseline_days-1)
+
+    recent_vals = [daily_counts.get(d, 0) for d in days_sorted if recent_start <= d <= last_day]
+    baseline_vals = [daily_counts.get(d, 0) for d in days_sorted if baseline_start <= d <= baseline_end]
+
+    if not recent_vals or not baseline_vals:
+        # 若无有效对照窗口，则不触发频次预警
+        return None
+
+    recent_med = _median(recent_vals)
+    baseline_med = _median(baseline_vals)
+    if baseline_med is None or baseline_med <= 0:
+        return None
+    ratio = (recent_med or 0) / baseline_med
+    if ratio < low_ratio_high:
+        return {
+            'type': 'feeding_frequency_low',
+            'severity': 'high',
+            'message': f'最近{window_days}天喂食频次显著低于常态。',
+            'suggestion': '评估采食意愿与健康状态，必要时增补与就医。',
+            'details': {
+                'recent_median_per_day': float(recent_med or 0),
+                'baseline_median_per_day': float(baseline_med or 0),
+                'ratio': round(float(ratio), 2)
+            }
+        }
+    elif ratio < low_ratio_medium:
+        return {
+            'type': 'feeding_frequency_low',
+            'severity': 'medium',
+            'message': f'最近{window_days}天喂食频次低于常态。',
+            'suggestion': '适当增加喂食关注与记录，观察精神状态。',
+            'details': {
+                'recent_median_per_day': float(recent_med or 0),
+                'baseline_median_per_day': float(baseline_med or 0),
+                'ratio': round(float(ratio), 2)
+            }
+        }
+    return None
+
+@statistics_bp.route('/health-anomalies', methods=['GET'])
+@login_required
+def get_health_anomalies():
+    """健康异常检测：体重快速下滑与进食频次异常。
+    Query:
+      - days: 数据回看天数（默认30）
+      - parrot_id: 指定鹦鹉（可选）
+    返回: 每只鹦鹉的异常列表及建议
+    """
+    try:
+        user = request.current_user
+        days = request.args.get('days', 30, type=int)
+        parrot_id = request.args.get('parrot_id', type=int)
+        # 可选阈值与窗口参数（提供默认值，支持滑动窗口检测）
+        weight_window_days = request.args.get('weight_window_days', 7, type=int)
+        weight_drop_pct_high = request.args.get('weight_drop_pct_high', 0.05, type=float)
+        weight_drop_pct_medium = request.args.get('weight_drop_pct_medium', 0.03, type=float)
+        slope_window_days = request.args.get('slope_window_days', 14, type=int)
+        slope_ratio_threshold = request.args.get('slope_ratio_threshold', -0.015, type=float)
+
+        feed_window_days = request.args.get('feed_window_days', 7, type=int)
+        feed_baseline_days = request.args.get('feed_baseline_days', 21, type=int)
+        feed_low_ratio_medium = request.args.get('feed_low_ratio_medium', 0.6, type=float)
+        feed_low_ratio_high = request.args.get('feed_low_ratio_high', 0.4, type=float)
+
+        end_date = date.today()
+        start_date = end_date - timedelta(days=max(1, days)-1)
+
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        if parrot_id:
+            if parrot_id not in accessible_parrot_ids:
+                return error_response('无权访问该鹦鹉数据', 403)
+            target_ids = [parrot_id]
+        else:
+            target_ids = accessible_parrot_ids
+
+        results = []
+        for pid in target_ids:
+            parrot = Parrot.query.get(pid)
+            if not parrot or not parrot.is_active:
+                continue
+
+            # 体重数据（按时间升序）
+            w_rows = db.session.query(HealthRecord.record_date, HealthRecord.weight).filter(
+                HealthRecord.parrot_id == pid,
+                HealthRecord.weight.isnot(None),
+                func.date(HealthRecord.record_date) >= start_date,
+                func.date(HealthRecord.record_date) <= end_date
+            ).order_by(HealthRecord.record_date.asc()).all()
+            weights = [(r[0], float(r[1])) for r in w_rows if r[0] is not None and r[1] is not None]
+
+            # 喂食时间（按时间升序）
+            f_rows = db.session.query(FeedingRecord.feeding_time).filter(
+                FeedingRecord.parrot_id == pid,
+                func.date(FeedingRecord.feeding_time) >= start_date,
+                func.date(FeedingRecord.feeding_time) <= end_date
+            ).order_by(FeedingRecord.feeding_time.asc()).all()
+            feed_times = [r[0] for r in f_rows if r[0] is not None]
+
+            anomalies = []
+            aw = _detect_weight_decline(
+                weights,
+                window_days=weight_window_days,
+                drop_pct_high=weight_drop_pct_high,
+                drop_pct_medium=weight_drop_pct_medium,
+                slope_window_days=slope_window_days,
+                slope_ratio_threshold=slope_ratio_threshold
+            )
+            if aw:
+                anomalies.append(aw)
+            af = _detect_feeding_gap(feed_times)
+            if af:
+                anomalies.append(af)
+            # 滑动窗口频次检测
+            ff = _detect_feeding_frequency(
+                feed_times,
+                window_days=feed_window_days,
+                baseline_days=feed_baseline_days,
+                low_ratio_medium=feed_low_ratio_medium,
+                low_ratio_high=feed_low_ratio_high
+            )
+            if ff:
+                anomalies.append(ff)
+
+            results.append({
+                'parrot_id': pid,
+                'parrot_name': parrot.name,
+                'anomalies': anomalies
+            })
+
+        return success_response({
+            'start_date': str(start_date),
+            'end_date': str(end_date),
+            'results': results
+        })
+    except Exception as e:
+        return error_response(f'获取健康异常检测失败: {str(e)}')
