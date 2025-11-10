@@ -66,6 +66,21 @@ Page({
     }
   },
 
+  // 分钟/小时/天 相对时间格式（超过24小时显示天）
+  formatMinutesHoursOnly(value) {
+    const dt = this.parseServerTime(value)
+    if (!dt) return ''
+    const now = new Date()
+    const diffMs = now.getTime() - dt.getTime()
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    if (diffMinutes < 1) return '刚刚'
+    if (diffMinutes < 60) return `${diffMinutes}分钟前`
+    const diffHours = Math.floor(diffMinutes / 60)
+    if (diffHours < 24) return `${diffHours}小时前`
+    const diffDays = Math.floor(diffHours / 24)
+    return `${diffDays}天前`
+  },
+
   onShow() {
     this.computeMenuRightPadding()
     this.checkLoginAndLoad()
@@ -240,10 +255,7 @@ Page({
       return d && d >= weekAgo
     }).length
     const uniqueTypes = this.buildFilterOptions(records).length - 1
-    const lastTimeText = records[0] ? (() => {
-      const d = this.parseServerTime(records[0].timeValue || records[0].cleaning_time)
-      return d ? app.formatRelativeTime(d) : app.formatRelativeTime(records[0].cleaning_time)
-    })() : ''
+    const lastTimeText = records[0] ? this.formatMinutesHoursOnly(records[0].timeValue || records[0].cleaning_time) : ''
     return { weeklyCount, uniqueTypes, lastTimeText }
   },
 
