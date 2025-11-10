@@ -22,6 +22,16 @@ Page({
       lastTimeText: ''
     },
 
+    // 搜索与时间筛选
+    searchQuery: '',
+    startDate: '',
+    endDate: '',
+
+    // 虚拟化渲染（分块追加）
+    virtualChunkIndex: 0,
+    virtualChunkSize: 40,
+    virtualDisplayRecords: [],
+
     menuRightPadding: 0
   },
 
@@ -260,20 +270,92 @@ Page({
   },
 
   applyFilter(filter) {
-    const { cleaningRecords } = this.data
+    const { cleaningRecords, searchQuery, startDate, endDate } = this.data
     let display = cleaningRecords
+
+    // 类型筛选
     if (filter && filter !== '全部') {
-      display = cleaningRecords.filter(r => {
+      display = display.filter(r => {
         const types = (r.cleaning_type_text || '').split('、')
         return types.includes(filter)
       })
     }
-    this.setData({ selectedFilter: filter, displayRecords: display })
+
+    // 关键词搜索（鹦鹉名/类型/备注/描述/创建者）
+    const q = (searchQuery || '').trim()
+    if (q) {
+      const lowerQ = q.toLowerCase()
+      display = display.filter(r => {
+        const fields = [
+          r.parrot_name || '',
+          r.cleaning_type_text || r.cleaning_type || '',
+          r.description || '',
+          r.notes || '',
+          r.created_by_username || ''
+        ].map(x => String(x).toLowerCase())
+        return fields.some(f => f.includes(lowerQ))
+      })
+    }
+
+    // 时间范围筛选（包含端点）
+    if (startDate || endDate) {
+      const startTs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : -Infinity
+      const endTs = endDate ? new Date(`${endDate}T23:59:59`).getTime() : Infinity
+      display = display.filter(r => {
+        const d = this.parseServerTime(r.timeValue || r.cleaning_time)
+        const ts = d ? d.getTime() : 0
+        return ts >= startTs && ts <= endTs
+      })
+    }
+
+    // 更新展示与统计
+    this.setData({ selectedFilter: filter, displayRecords: display, stats: this.computeStats(display) })
+    this.resetVirtualWindow()
   },
 
   selectFilter(e) {
     const filter = e.currentTarget.dataset.filter
     this.applyFilter(filter)
+  },
+
+  onSearchInput(e) {
+    const val = (e.detail && e.detail.value) ? e.detail.value : ''
+    this.setData({ searchQuery: val })
+    this.applyFilter(this.data.selectedFilter)
+  },
+
+  onStartDateChange(e) {
+    const val = (e.detail && e.detail.value) ? e.detail.value : ''
+    this.setData({ startDate: val })
+    this.applyFilter(this.data.selectedFilter)
+  },
+
+  onEndDateChange(e) {
+    const val = (e.detail && e.detail.value) ? e.detail.value : ''
+    this.setData({ endDate: val })
+    this.applyFilter(this.data.selectedFilter)
+  },
+
+  clearDateFilter() {
+    this.setData({ startDate: '', endDate: '' })
+    this.applyFilter(this.data.selectedFilter)
+  },
+
+  resetVirtualWindow() {
+    const size = this.data.virtualChunkSize || 40
+    const list = Array.isArray(this.data.displayRecords) ? this.data.displayRecords : []
+    const initial = list.slice(0, size)
+    this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: initial })
+  },
+
+  onListScrollLower() {
+    const { displayRecords, virtualDisplayRecords, virtualChunkIndex, virtualChunkSize } = this.data
+    if (!Array.isArray(displayRecords) || !Array.isArray(virtualDisplayRecords)) return
+    if (virtualDisplayRecords.length >= displayRecords.length) return
+    const nextIndex = virtualChunkIndex + 1
+    const nextCount = Math.min(displayRecords.length, (nextIndex + 1) * (virtualChunkSize || 40))
+    const nextSlice = displayRecords.slice(0, nextCount)
+    this.setData({ virtualChunkIndex: nextIndex, virtualDisplayRecords: nextSlice })
   },
 
   addCleaningRecord() {

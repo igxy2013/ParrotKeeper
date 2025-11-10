@@ -1,5 +1,5 @@
 <!--pages/records/feeding/feeding.wxml-->
-<view class="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 pb-6">
+<view class="feeding-page min-h-screen pb-6">
   <!-- 通用头部组件 -->
   <app-header title="喂食记录" subtitle="记录每次喂食情况" showBack="{{true}}" theme="orange">
     <view slot="actions" class="header-btn" bindtap="showAddForm">
@@ -8,7 +8,7 @@
   </app-header>
 
   <!-- Main Content -->
-  <view class="pt-6 px-4 space-y-6">
+  <scroll-view class="pt-6 px-4 space-y-6" scroll-y="true" bindscrolltolower="onListScrollLower" lower-threshold="100">
     <!-- Filter Chips (aligned with health page design) -->
     <view class="filter-section">
       <scroll-view class="chip-scroll" scroll-x="true">
@@ -50,12 +50,27 @@
       </view>
     </view>
 
+    <!-- 搜索与日期筛选 -->
+    <view class="search-filter">
+      <input class="search-input" placeholder="搜索（鹦鹉/食物/备注）" value="{{searchQuery}}" bindinput="onSearchInput" confirm-type="search" />
+      <view class="date-filter-row">
+        <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+          <view class="date-picker">{{startDate || '开始日期'}}</view>
+        </picker>
+        <text class="range-sep">—</text>
+        <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+          <view class="date-picker">{{endDate || '结束日期'}}</view>
+        </picker>
+        <view class="clear-date" bindtap="clearDateFilter">清除</view>
+      </view>
+    </view>
+
     <!-- Feeding Records -->
     <view class="space-y-4">
       <view 
-        wx:for="{{filteredRecords}}" 
+        wx:for="{{virtualDisplayRecords}}" 
         wx:key="key" 
-        class="bg-white-80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-white-50"
+        class="bg-white-80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-white-50 record-card"
         bindtap="viewRecordDetail" data-id="{{item.id}}" data-record-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}"
       >
         <view class="flex items-start space-x-4">
@@ -136,14 +151,14 @@
         </view>
       </view>
       <!-- 空状态（参考健康检查记录页面） -->
-      <view class="empty-state" wx:if="{{filteredRecords.length === 0}}">
+      <view class="empty-state" wx:if="{{virtualDisplayRecords.length === 0}}">
         <view class="empty-icon">🍽️</view>
         <view class="empty-text">暂无喂食记录</view>
         <view class="empty-subtitle">开始记录您的喂食情况</view>
         <view class="btn-primary" bindtap="showAddForm">添加喂食记录</view>
       </view>
     </view>
-  </view>
+  </scroll-view>
 
 
 </view>

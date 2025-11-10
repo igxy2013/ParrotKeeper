@@ -19,7 +19,17 @@ Page({
       totalCount: 0,
       parrotCount: 0,
       totalAmount: 0
-    }
+    },
+
+    // 搜索与日期筛选
+    searchQuery: '',
+    startDate: '',
+    endDate: '',
+
+    // 虚拟化渲染（分块追加）
+    virtualChunkIndex: 0,
+    virtualChunkSize: 40,
+    virtualDisplayRecords: []
   },
 
   onLoad() {
@@ -331,10 +341,35 @@ Page({
         return names.includes(this.data.selectedParrot);
       });
     }
-    
-    this.setData({
-      filteredRecords: filtered
-    });
+
+    // 关键词搜索（鹦鹉名/食物类型/备注）
+    const q = (this.data.searchQuery || '').trim();
+    if (q) {
+      const lowerQ = q.toLowerCase();
+      filtered = filtered.filter(item => {
+        const fields = [
+          item.parrot_names_display || (Array.isArray(item.parrot_names) ? item.parrot_names.join('、') : ''),
+          (Array.isArray(item.food_types) ? item.food_types.map(f => f.name).join('、') : ''),
+          item.notes || ''
+        ].map(x => String(x).toLowerCase());
+        return fields.some(f => f.includes(lowerQ));
+      });
+    }
+
+    // 日期范围筛选（包含端点）
+    const { startDate, endDate } = this.data;
+    if (startDate || endDate) {
+      const startTs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : -Infinity;
+      const endTs = endDate ? new Date(`${endDate}T23:59:59`).getTime() : Infinity;
+      filtered = filtered.filter(item => {
+        const d = this.parseIOSDate(item.feeding_time) || null;
+        const ts = d ? d.getTime() : 0;
+        return ts >= startTs && ts <= endTs;
+      });
+    }
+
+    this.setData({ filteredRecords: filtered });
+    this.resetVirtualWindow();
   },
 
   // 计算今日统计（基于后端过滤，避免前端时间解析差异）
@@ -487,6 +522,48 @@ Page({
     wx.navigateTo({
       url: '/pages/records/add-record/add-record?type=feeding'
     });
+  },
+
+  // 搜索与日期筛选事件
+  onSearchInput(e) {
+    const val = (e.detail && e.detail.value) ? e.detail.value : '';
+    this.setData({ searchQuery: val });
+    this.filterRecords();
+  },
+
+  onStartDateChange(e) {
+    const val = (e.detail && e.detail.value) ? e.detail.value : '';
+    this.setData({ startDate: val });
+    this.filterRecords();
+  },
+
+  onEndDateChange(e) {
+    const val = (e.detail && e.detail.value) ? e.detail.value : '';
+    this.setData({ endDate: val });
+    this.filterRecords();
+  },
+
+  clearDateFilter() {
+    this.setData({ startDate: '', endDate: '' });
+    this.filterRecords();
+  },
+
+  // 虚拟化渲染：窗口重置与滚动加载
+  resetVirtualWindow() {
+    const size = this.data.virtualChunkSize || 40;
+    const list = Array.isArray(this.data.filteredRecords) ? this.data.filteredRecords : [];
+    const initial = list.slice(0, size);
+    this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: initial });
+  },
+
+  onListScrollLower() {
+    const { filteredRecords, virtualDisplayRecords, virtualChunkIndex, virtualChunkSize } = this.data;
+    if (!Array.isArray(filteredRecords) || !Array.isArray(virtualDisplayRecords)) return;
+    if (virtualDisplayRecords.length >= filteredRecords.length) return;
+    const nextIndex = virtualChunkIndex + 1;
+    const nextCount = Math.min(filteredRecords.length, (nextIndex + 1) * (virtualChunkSize || 40));
+    const nextSlice = filteredRecords.slice(0, nextCount);
+    this.setData({ virtualChunkIndex: nextIndex, virtualDisplayRecords: nextSlice });
   },
 
   // 格式化日期

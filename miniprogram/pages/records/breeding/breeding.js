@@ -19,6 +19,14 @@ Page({
     // 繁殖记录数据
     breedingRecords: [],
     filteredRecords: [],
+
+    // 搜索/日期筛选与虚拟列表窗口
+    searchQuery: '',
+    startDate: '',
+    endDate: '',
+    virtualChunkIndex: 0,
+    virtualChunkSize: 25,
+    virtualDisplayRecords: [],
     
     // 鹦鹉选项
     parrotOptions: [],
@@ -200,14 +208,48 @@ Page({
 
   // 筛选记录
   filterRecords() {
-    const { breedingRecords, selectedStatus } = this.data
-    let filteredRecords = breedingRecords
-    
+    const { breedingRecords, selectedStatus, searchQuery, startDate, endDate, virtualChunkSize } = this.data
+    let filtered = breedingRecords
+
+    // 1) 状态筛选
     if (selectedStatus !== '全部') {
-      filteredRecords = breedingRecords.filter(record => record.status === selectedStatus)
+      filtered = filtered.filter(record => record.status === selectedStatus)
     }
-    
-    this.setData({ filteredRecords })
+
+    // 2) 关键字搜索（配对名称/两只名字/状态/备注）
+    const q = String(searchQuery || '').trim().toLowerCase()
+    if (q) {
+      filtered = filtered.filter(r => {
+        const pair = String(r.parrotPair || '').toLowerCase()
+        const male = String(r.maleParrot || '').toLowerCase()
+        const female = String(r.femaleParrot || '').toLowerCase()
+        const status = String(r.status || '').toLowerCase()
+        const notes = String(r.notes || '').toLowerCase()
+        return (
+          pair.includes(q) || male.includes(q) || female.includes(q) || status.includes(q) || notes.includes(q)
+        )
+      })
+    }
+
+    // 3) 日期范围（基于 record.rawData 的记录时间/节点时间）
+    const hasStart = !!startDate
+    const hasEnd = !!endDate
+    if (hasStart || hasEnd) {
+      const startTs = hasStart ? this.parseServerTime(startDate)?.getTime() || 0 : null
+      const endBase = hasEnd ? (this.parseServerTime(endDate)?.getTime() || 0) : null
+      const endTs = endBase != null ? (endBase + 24 * 60 * 60 * 1000 - 1) : null
+
+      filtered = filtered.filter(r => {
+        const ts = this.getBreedingRecordTs(r)
+        if (startTs != null && ts < startTs) return false
+        if (endTs != null && ts > endTs) return false
+        return true
+      })
+    }
+
+    // 更新数据并重置虚拟窗口
+    this.setData({ filteredRecords: filtered })
+    this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: filtered.slice(0, virtualChunkSize) })
   },
 
   // 选择状态筛选
@@ -240,6 +282,56 @@ Page({
     if (derivedId) query.push(`id=${derivedId}`)
     if (ids) query.push(`record_ids=${ids}`)
     wx.navigateTo({ url: `/pages/records/detail/detail?${query.join('&')}` })
+  },
+
+  // 搜索输入
+  onSearchInput(e) {
+    const v = String((e && e.detail && e.detail.value) || '').trim()
+    this.setData({ searchQuery: v })
+    this.filterRecords()
+  },
+
+  // 日期选择与清空
+  onStartDateChange(e) {
+    const v = (e && e.detail && e.detail.value) || ''
+    this.setData({ startDate: v })
+    this.filterRecords()
+  },
+  onEndDateChange(e) {
+    const v = (e && e.detail && e.detail.value) || ''
+    this.setData({ endDate: v })
+    this.filterRecords()
+  },
+  clearDateFilter() {
+    this.setData({ startDate: '', endDate: '' })
+    this.filterRecords()
+  },
+
+  // 虚拟列表窗口控制
+  resetVirtualWindow() {
+    const size = this.data.virtualChunkSize
+    const list = this.data.filteredRecords || []
+    this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: list.slice(0, size) })
+  },
+  onListScrollLower() {
+    const { virtualChunkIndex, virtualChunkSize } = this.data
+    const list = this.data.filteredRecords || []
+    const nextIndex = virtualChunkIndex + 1
+    const start = nextIndex * virtualChunkSize
+    if (start >= list.length) return
+    const nextChunk = list.slice(start, start + virtualChunkSize)
+    this.setData({
+      virtualChunkIndex: nextIndex,
+      virtualDisplayRecords: (this.data.virtualDisplayRecords || []).concat(nextChunk)
+    })
+  },
+
+  // 取得记录的参考时间戳（优先 record_time，其次 created_at/节点日期，最后回退显示时间）
+  getBreedingRecordTs(rec) {
+    const raw = rec && rec.rawData || {}
+    const cand = raw.record_time || raw.created_at || raw.mating_date || raw.egg_laying_date || raw.hatching_date || rec.recordTime || ''
+    const d = this.parseServerTime(cand)
+    return d ? d.getTime() : 0
   },
 
   // 编辑记录

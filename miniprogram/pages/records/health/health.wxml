@@ -51,9 +51,25 @@
         </view>
       </view>
 
-      <!-- 记录列表 -->
-      <view class="record-list" wx:if="{{displayRecords.length > 0}}">
-        <view class="record-card" wx:for="{{displayRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="health" data-id="{{item.id}}">
+      <!-- 搜索与日期筛选（与清洁页一致） -->
+      <view class="search-filter">
+        <input class="search-input" placeholder="搜索（名称/症状/治疗/备注）" value="{{searchQuery}}" bindinput="onSearchInput" confirm-type="search" />
+        <view class="date-filter-row">
+          <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+            <view class="date-picker">{{startDate || '开始日期'}}</view>
+          </picker>
+          <text class="range-sep">—</text>
+          <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+            <view class="date-picker">{{endDate || '结束日期'}}</view>
+          </picker>
+          <view class="clear-date" bindtap="clearDateFilter">清除</view>
+        </view>
+      </view>
+
+      <!-- 记录列表（虚拟化） -->
+      <scroll-view class="records-scroll" scroll-y="true" lower-threshold="50" bindscrolltolower="onListScrollLower">
+        <view class="record-list" wx:if="{{virtualDisplayRecords.length > 0}}">
+          <view class="record-card" wx:for="{{virtualDisplayRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="health" data-id="{{item.id}}">
           <view class="record-header">
             <view class="avatar-cell">
               <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
@@ -102,10 +118,11 @@
             <text class="notes-label">备注：</text>
             <text class="notes-value">{{item.notes}}</text>
           </view>
+          </view>
         </view>
-      </view>
+      </scroll-view>
       <!-- 空状态 -->
-      <view class="empty-state" wx:if="{{displayRecords.length === 0 && !loading}}">
+      <view class="empty-state" wx:if="{{virtualDisplayRecords.length === 0 && !loading}}">
         <view class="empty-icon">🏥</view>
         <view class="empty-text">暂无健康记录</view>
         <view class="empty-subtitle">开始记录您的健康检查过程</view>

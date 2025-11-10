@@ -8,6 +8,10 @@
 .bg-gradient-to-br {
   background: linear-gradient(135deg, #fff7ed 0%, #ffffff 50%, #fefce8 100%);
 }
+/* 喂食页面主体色系背景（更贴近橙色主题） */
+.feeding-page {
+  background: linear-gradient(135deg, #fff1e6 0%, #fffaf0 55%, #ffedd5 100%);
+}
 
 .pb-6 {
   padding-bottom: 48rpx;
@@ -119,6 +123,7 @@
 .px-4 {
   padding-left: 32rpx;
   padding-right: 32rpx;
+  box-sizing: border-box;
 }
 
 .py-3 {
@@ -131,7 +136,7 @@
 }
 
 .shadow-lg {
-  box-shadow: 0 20rpx 50rpx -24rpx rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12rpx 40rpx -16rpx rgba(0, 0, 0, 0.30);
 }
 
 /* 额外阴影等级，供统计卡片等使用 */
@@ -258,7 +263,7 @@
 }
 
 .border-white-50 {
-  border-color: rgba(17, 24, 39, 0.06);
+  border-color: rgba(17, 24, 39, 0.10);
 }
 
 .border-gray-200 {
@@ -292,6 +297,7 @@
 .px-4 {
   padding-left: 32rpx;
   padding-right: 32rpx;
+  box-sizing: border-box;
 }
 
 .py-2 {
@@ -705,3 +711,19 @@
   font-size: 28rpx;
   font-weight: 500;
 }
+/* 搜索与日期筛选（与清洁页一致的风格） */
+.search-filter { background: rgba(255,255,255,0.9); border: 1rpx solid rgba(17,24,39,0.06); box-shadow: 0 12rpx 30rpx -16rpx rgba(0,0,0,0.15); border-radius: 32rpx; padding: 24rpx; display: flex; flex-direction: column; gap: 16rpx; margin-top: 24rpx; margin-bottom: 24rpx; }
+.search-input { background: #f3f4f6; border-radius: 9999rpx; height: 72rpx; line-height: 72rpx; padding: 0 24rpx; font-size: 26rpx; color: #111827; width: 100%; box-sizing: border-box; }
+.date-filter-row { display: flex; align-items: center; gap: 16rpx; }
+.date-picker { background: #f3f4f6; border-radius: 9999rpx; padding: 12rpx 20rpx; font-size: 24rpx; color: #111827; }
+.range-sep { color: #6b7280; font-size: 24rpx; }
+.clear-date { padding: 10rpx 20rpx; border-radius: 9999rpx; background: #fef3c7; color: #b45309; font-size: 24rpx; }
+/* 调整筛选卡片上下间距以匹配清洁页 */
+.space-y-6 > .search-filter { margin-top: 24rpx; }
+.space-y-6 > .space-y-4 { margin-top: 24rpx; }
+/* 更精确的覆盖，防止被通用规则影响 */
+.space-y-6 > view + .search-filter { margin-top: 24rpx !important; }
+.space-y-6 > .search-filter + .space-y-4 { margin-top: 24rpx !important; }
+
+/* 强化记录卡片左右边缘可见性 */
+.record-card { border-color: rgba(17,24,39,0.12); box-shadow: 0 16rpx 50rpx -20rpx rgba(0,0,0,0.35); }

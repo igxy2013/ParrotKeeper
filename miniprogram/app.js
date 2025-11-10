@@ -16,7 +16,11 @@ App({
     notificationManager, // 全局通知管理器
     notificationUpdateCallback: null, // 通知更新回调
     platformInfo: { isIOS: false, system: '' },
-    useIconFont: true // 是否启用图标字体（iOS优先启用，统一兼容）
+    useIconFont: true, // 是否启用图标字体（iOS优先启用，统一兼容）
+    // 网络与重试队列
+    networkConnected: true,
+    pendingRequests: [],
+    pendingForms: []
   },
 
   // 初始化小程序版本号（优先使用微信官方版本号）
@@ -132,6 +136,38 @@ App({
     } catch (e) {
       console.warn('启用分享菜单失败:', e)
     }
+
+    // 初始化网络状态与重试监听
+    try {
+      wx.getNetworkType({
+        success: (res) => {
+          this.globalData.networkConnected = res.networkType !== 'none'
+        }
+      })
+      if (wx.onNetworkStatusChange) {
+        wx.onNetworkStatusChange((res) => {
+          this.globalData.networkConnected = res.isConnected
+          if (res.isConnected) {
+            this.processPendingRequests()
+            this.processPendingForms()
+          }
+        })
+      }
+      const saved = wx.getStorageSync('pending_requests') || []
+      if (Array.isArray(saved) && saved.length) {
+        this.globalData.pendingRequests = saved
+        if (this.globalData.networkConnected) {
+          this.processPendingRequests()
+        }
+      }
+      const savedForms = wx.getStorageSync('pending_forms') || []
+      if (Array.isArray(savedForms) && savedForms.length) {
+        this.globalData.pendingForms = savedForms
+        if (this.globalData.networkConnected) {
+          this.processPendingForms()
+        }
+      }
+    } catch (_) {}
   },
 
   // 初始化平台信息与图标策略
@@ -379,14 +415,149 @@ App({
           }
         },
         fail: (err) => {
-          wx.showToast({
-            title: '网络错误',
-            icon: 'none'
-          })
-          reject(err)
+          const errMsg = (err && err.errMsg) ? String(err.errMsg) : ''
+          const isNetworkErr = !this.globalData.networkConnected || /fail|timeout|network/i.test(errMsg)
+          const isWriteOp = ['POST', 'PUT', 'DELETE'].includes(String(method).toUpperCase())
+          if (isNetworkErr && isWriteOp) {
+            this.enqueueRequest({ url, method, data, header })
+            wx.showToast({ title: '已缓存，网络恢复后自动重试', icon: 'none' })
+            resolve({ success: false, offlineQueued: true, message: '已加入离线重试队列' })
+          } else {
+            wx.showToast({ title: '网络错误', icon: 'none' })
+            reject(err)
+          }
         }
       })
     })
+  },
+
+  // 加入离线重试队列
+  enqueueRequest(req) {
+    try {
+      const item = { ...req, tryCount: 0 }
+      const list = this.globalData.pendingRequests || []
+      list.push(item)
+      this.globalData.pendingRequests = list
+      wx.setStorageSync('pending_requests', list)
+    } catch (_) {}
+  },
+
+  // 处理离线队列
+  async processPendingRequests() {
+    const queue = this.globalData.pendingRequests || []
+    if (!this.globalData.networkConnected || !queue.length) return
+    while (queue.length && this.globalData.networkConnected) {
+      const item = queue[0]
+      const { url, method, data, header } = item
+      try {
+        const res = await new Promise((resolve, reject) => {
+          wx.request({
+            url: (this.globalData.baseUrl || '') + url,
+            method,
+            data,
+            header: { 'Content-Type': 'application/json', ...(header || {}) },
+            success: r => resolve(r),
+            fail: e => reject(e)
+          })
+        })
+        if (res.statusCode === 200) {
+          queue.shift()
+          wx.setStorageSync('pending_requests', queue)
+          wx.showToast({ title: '离线提交成功', icon: 'success' })
+          try {
+            const nm = this.globalData.notificationManager
+            if (nm) nm.addLocalNotification('离线提交', '网络恢复后已成功提交一条记录')
+          } catch (_) {}
+        } else {
+          queue.shift()
+          wx.setStorageSync('pending_requests', queue)
+          wx.showToast({ title: '提交失败（服务端）', icon: 'none' })
+        }
+      } catch (e) {
+        item.tryCount = (item.tryCount || 0) + 1
+        await this.retryDelay(item.tryCount)
+        if (!this.globalData.networkConnected) break
+      }
+    }
+  },
+
+  // 指数退避延迟
+  retryDelay(tryCount) {
+    const base = 500
+    const cap = 8000
+    const ms = Math.min(cap, base * Math.pow(2, Math.max(0, tryCount - 1)))
+    return new Promise((r) => setTimeout(r, ms))
+  },
+
+  // 入队：表单记录（含本地照片路径），网络恢复后自动上传照片并提交
+  enqueueFormRecord(form) {
+    try {
+      const item = { ...form, tryCount: 0 }
+      const list = this.globalData.pendingForms || []
+      list.push(item)
+      this.globalData.pendingForms = list
+      wx.setStorageSync('pending_forms', list)
+    } catch (_) {}
+  },
+
+  // 处理待提交的表单记录（支持上传本地照片）
+  async processPendingForms() {
+    const queue = this.globalData.pendingForms || []
+    if (!this.globalData.networkConnected || !queue.length) return
+    while (queue.length && this.globalData.networkConnected) {
+      const item = queue[0]
+      const { url, method, data, localPhotos = [], category = 'records/others', header = {} } = item
+      try {
+        // 先上传本地照片（若有）
+        const photoUrls = []
+        for (const p of (localPhotos || [])) {
+          const isFull = typeof p === 'string' && (p.startsWith('http') || p.includes('/uploads/'))
+          if (isFull) { photoUrls.push(p); continue }
+          const uploadRes = await new Promise((resolve, reject) => {
+            wx.uploadFile({
+              url: (this.globalData.baseUrl || '') + '/api/upload/image',
+              filePath: p,
+              name: 'file',
+              formData: { category },
+              header: { 'X-OpenID': this.globalData.openid },
+              success: resolve,
+              fail: reject
+            })
+          })
+          const dataU = JSON.parse(uploadRes.data)
+          if (dataU && dataU.success && dataU.data && dataU.data.url) {
+            const fullUrl = (this.globalData.baseUrl || '') + '/uploads/' + dataU.data.url
+            photoUrls.push(fullUrl)
+          } else {
+            throw new Error((dataU && dataU.message) || '图片上传失败')
+          }
+        }
+        const payload = { ...(data || {}), photos: photoUrls }
+        const res = await new Promise((resolve, reject) => {
+          wx.request({
+            url: (this.globalData.baseUrl || '') + url,
+            method,
+            data: payload,
+            header: { 'Content-Type': 'application/json', ...(header || {}) },
+            success: r => resolve(r),
+            fail: e => reject(e)
+          })
+        })
+        if (res.statusCode === 200) {
+          queue.shift()
+          wx.setStorageSync('pending_forms', queue)
+          wx.showToast({ title: '离线记录已提交', icon: 'success' })
+        } else {
+          queue.shift()
+          wx.setStorageSync('pending_forms', queue)
+          wx.showToast({ title: '提交失败（服务端）', icon: 'none' })
+        }
+      } catch (e) {
+        item.tryCount = (item.tryCount || 0) + 1
+        await this.retryDelay(item.tryCount)
+        if (!this.globalData.networkConnected) break
+      }
+    }
   },
 
   // 显示加载提示

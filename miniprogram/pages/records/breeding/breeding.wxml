@@ -49,11 +49,26 @@
     </view>
 
     <!-- 繁殖记录列表 -->
+    <!-- 搜索与日期筛选（与清洁页一致） -->
+    <view wx:if="{{isLogin}}" class="search-filter">
+      <input class="search-input" placeholder="搜索（配对名/状态/备注）" value="{{searchQuery}}" bindinput="onSearchInput" confirm-type="search" />
+      <view class="date-filter-row">
+        <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+          <view class="date-picker">{{startDate || '开始日期'}}</view>
+        </picker>
+        <text class="range-sep">—</text>
+        <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+          <view class="date-picker">{{endDate || '结束日期'}}</view>
+        </picker>
+        <view class="clear-date" bindtap="clearDateFilter">清除</view>
+      </view>
+    </view>
     <view wx:if="{{isLogin}}" class="records-section">
+      <scroll-view class="records-scroll" scroll-y="true" lower-threshold="50" bindscrolltolower="onListScrollLower">
       <view class="record-list" wx:if="{{filteredRecords.length > 0}}">
         <view 
           class="record-card" 
-          wx:for="{{filteredRecords}}" 
+          wx:for="{{virtualDisplayRecords}}" 
           wx:key="id"
           bindtap="viewRecordDetail"
           data-type="breeding"
@@ -108,6 +123,7 @@
           </view>
         </view>
       </view>
+      </scroll-view>
 
       <!-- 空状态 -->
       <view class="empty-state" wx:if="{{filteredRecords.length === 0 && !loading}}">

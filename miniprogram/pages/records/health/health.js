@@ -24,7 +24,17 @@ Page({
     },
 
     // 概览筛选：'' | 'healthy' | 'attention'
-    activeOverviewFilter: ''
+    activeOverviewFilter: '',
+
+    // 关键字与日期筛选
+    searchQuery: '',
+    startDate: '',
+    endDate: '',
+
+    // 虚拟列表窗口
+    virtualChunkIndex: 0,
+    virtualChunkSize: 25,
+    virtualDisplayRecords: []
   },
 
   onLoad(options) {
@@ -228,37 +238,153 @@ Page({
     this.updateDisplayRecords()
   },
 
-  // 根据 activeOverviewFilter 更新展示列表
+  // 根据各类筛选更新展示与虚拟列表窗口
   updateDisplayRecords() {
-    const { healthRecords, activeOverviewFilter } = this.data
-    if (!activeOverviewFilter) {
-      this.setData({ displayRecords: healthRecords })
-      return
+    const { healthRecords, activeOverviewFilter, searchQuery, startDate, endDate, virtualChunkSize } = this.data
+
+    let working = healthRecords
+
+    // 1) 概览筛选（按鹦鹉最新状态）
+    if (activeOverviewFilter) {
+      const latestMap = this.computeLatestStatusMap(healthRecords)
+      const allowedKeys = new Set(Object.keys(latestMap).filter(k => {
+        const status = latestMap[k].status
+        if (activeOverviewFilter === 'healthy') return status === 'healthy'
+        if (activeOverviewFilter === 'attention') return status === 'sick' || status === 'observation' || status === 'recovering'
+        return true
+      }))
+
+      const getKey = (r) => {
+        if (r.parrot_id !== undefined && r.parrot_id !== null && r.parrot_id !== '') {
+          return `id:${String(r.parrot_id)}`
+        }
+        const name = r.parrot_name || (r.parrot && r.parrot.name) || ''
+        if (name) {
+          return `name:${String(name).trim().toLowerCase()}`
+        }
+        return `u:${String(r.id)}`
+      }
+
+      working = healthRecords.filter(r => allowedKeys.has(getKey(r)))
     }
 
-    const latestMap = this.computeLatestStatusMap(healthRecords)
-    // 收集满足筛选的鹦鹉键集合
-    const allowedKeys = new Set(Object.keys(latestMap).filter(k => {
-      const status = latestMap[k].status
-      if (activeOverviewFilter === 'healthy') return status === 'healthy'
-      if (activeOverviewFilter === 'attention') return status === 'sick' || status === 'observation' || status === 'recovering'
-      return true
-    }))
-
-    const getKey = (r) => {
-      if (r.parrot_id !== undefined && r.parrot_id !== null && r.parrot_id !== '') {
-        return `id:${String(r.parrot_id)}`
-      }
-      const name = r.parrot_name || (r.parrot && r.parrot.name) || ''
-      if (name) {
-        return `name:${String(name).trim().toLowerCase()}`
-      }
-      return `u:${String(r.id)}`
+    // 2) 关键字搜索（名称、症状、治疗、备注、状态文案）
+    const q = String(searchQuery || '').trim().toLowerCase()
+    if (q) {
+      working = working.filter(r => {
+        const name = String(r.parrot_name || '').toLowerCase()
+        const symptoms = String(r.symptoms || '').toLowerCase()
+        const treatment = String(r.treatment || '').toLowerCase()
+        const notes = String(r.notes || '').toLowerCase()
+        const statusText = String(r.health_status_text || '').toLowerCase()
+        return (
+          name.includes(q) ||
+          symptoms.includes(q) ||
+          treatment.includes(q) ||
+          notes.includes(q) ||
+          statusText.includes(q)
+        )
+      })
     }
 
-    const filtered = healthRecords.filter(r => allowedKeys.has(getKey(r)))
+    // 3) 日期范围（基于 record_date_raw，本地时间）
+    const hasStart = !!startDate
+    const hasEnd = !!endDate
+    if (hasStart || hasEnd) {
+      const startTs = hasStart ? this.parseRecordDateTs(startDate) : null
+      // 结束天取当天 23:59:59.999
+      const endBase = hasEnd ? this.parseRecordDateTs(endDate) : null
+      const endTs = endBase != null ? (endBase + 24 * 60 * 60 * 1000 - 1) : null
 
-    this.setData({ displayRecords: filtered })
+      working = working.filter(r => {
+        const ts = this.parseRecordDateTs(r.record_date_raw)
+        if (startTs != null && ts < startTs) return false
+        if (endTs != null && ts > endTs) return false
+        return true
+      })
+    }
+
+    // 更新完整展示列表
+    this.setData({ displayRecords: working })
+
+    // 初始化虚拟窗口
+    const initial = working.slice(0, virtualChunkSize)
+    this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: initial })
+  },
+
+  // 搜索框输入
+  onSearchInput(e) {
+    const v = String((e && e.detail && e.detail.value) || '').trim()
+    this.setData({ searchQuery: v })
+    this.updateDisplayRecords()
+  },
+
+  // 开始日期变化
+  onStartDateChange(e) {
+    const v = (e && e.detail && e.detail.value) || ''
+    this.setData({ startDate: v })
+    this.updateDisplayRecords()
+  },
+
+  // 结束日期变化
+  onEndDateChange(e) {
+    const v = (e && e.detail && e.detail.value) || ''
+    this.setData({ endDate: v })
+    this.updateDisplayRecords()
+  },
+
+  // 清空日期筛选
+  clearDateFilter() {
+    this.setData({ startDate: '', endDate: '' })
+    this.updateDisplayRecords()
+  },
+
+  // 虚拟列表：重置窗口到第一页
+  resetVirtualWindow() {
+    const size = this.data.virtualChunkSize
+    const list = this.data.displayRecords || []
+    this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: list.slice(0, size) })
+  },
+
+  // 虚拟列表：滚动到底部加载下一段
+  onListScrollLower() {
+    const { virtualChunkIndex, virtualChunkSize } = this.data
+    const list = this.data.displayRecords || []
+    const nextIndex = virtualChunkIndex + 1
+    const start = nextIndex * virtualChunkSize
+    if (start >= list.length) return
+    const nextChunk = list.slice(start, start + virtualChunkSize)
+    this.setData({
+      virtualChunkIndex: nextIndex,
+      virtualDisplayRecords: (this.data.virtualDisplayRecords || []).concat(nextChunk)
+    })
+  },
+
+  // 解析日期为时间戳（兼容 iOS 的 YYYY-MM-DD 格式）
+  parseRecordDateTs(value) {
+    if (!value) return 0
+    try {
+      if (typeof value === 'number') return value
+      const s = String(value).trim()
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        const d = new Date(`${s}T00:00:00`)
+        return isNaN(d.getTime()) ? 0 : d.getTime()
+      }
+      if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s)) {
+        let iso = s.replace(' ', 'T')
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) iso = iso + ':00'
+        const dIso = new Date(iso)
+        if (!isNaN(dIso.getTime())) return dIso.getTime()
+        const dSlash = new Date(s.replace(/-/g, '/'))
+        return isNaN(dSlash.getTime()) ? 0 : dSlash.getTime()
+      }
+      let d = new Date(s)
+      if (!isNaN(d.getTime())) return d.getTime()
+      d = new Date(s.replace(/-/g, '/'))
+      return isNaN(d.getTime()) ? 0 : d.getTime()
+    } catch (_) {
+      return 0
+    }
   },
 
   // 切换鹦鹉筛选

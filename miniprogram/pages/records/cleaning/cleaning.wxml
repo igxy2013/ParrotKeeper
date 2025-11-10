@@ -8,7 +8,7 @@
   </app-header>
 
   <!-- Content -->
-  <scroll-view class="content" scroll-y="true">
+  <scroll-view class="content" scroll-y="true" bindscrolltolower="onListScrollLower" lower-threshold="100">
     <!-- Filter Chips (aligned with feeding page design) -->
     <view class="filter-section">
       <scroll-view scroll-x="true" class="chip-scroll">
@@ -38,9 +38,24 @@
       </view>
     </view>
 
+    <!-- 搜索与日期筛选 -->
+    <view class="search-filter">
+      <input class="search-input" placeholder="搜索（鹦鹉/类型/备注）" value="{{searchQuery}}" bindinput="onSearchInput" confirm-type="search" />
+      <view class="date-filter-row">
+        <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+          <view class="date-picker">{{startDate || '开始日期'}}</view>
+        </picker>
+        <text class="range-sep">—</text>
+        <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+          <view class="date-picker">{{endDate || '结束日期'}}</view>
+        </picker>
+        <view class="clear-date" bindtap="clearDateFilter">清除</view>
+      </view>
+    </view>
+
     <!-- Cleaning Records -->
     <view class="list" wx:if="{{displayRecords.length > 0}}">
-      <block wx:for="{{displayRecords}}" wx:key="id">
+      <block wx:for="{{virtualDisplayRecords}}" wx:key="id">
         <view class="card" bindtap="viewRecordDetail" data-type="cleaning" data-id="{{item.id}}" data-ids="{{item.record_ids}}">
           <view class="card-left">
             <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">

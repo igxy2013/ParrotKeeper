@@ -325,6 +325,8 @@ const app = getApp()
         title: `添加${this.typeToText(incomingType)}记录`
       })
     }
+    // 页面初始化后尝试恢复草稿
+    this.restoreDraftIfAny()
   },
 
   loadParrotList: async function() {
@@ -1192,6 +1194,8 @@ const app = getApp()
         const newPhotos = (res.tempFilePaths || [])
         const photos = this.data.formData.photos.concat(newPhotos).slice(0, 3)
         this.setData({ 'formData.photos': photos })
+        // 选择图片后立即保存草稿（防止意外退出丢失）
+        this.autoSaveDraft()
       }
     })
   },
@@ -1258,6 +1262,81 @@ const app = getApp()
     }
     wx.navigateBack({ delta: 1 })
   },
+
+  // ===== 离线草稿：保存 / 恢复 / 清除 =====
+  // 根据当前记录类型、团队与用户构造唯一草稿键
+  draftStorageKey: function() {
+    const teamId = app.globalData.teamId || 'default-team'
+    const userId = app.globalData.userInfo ? app.globalData.userInfo.id : 'anon'
+    const type = this.data.recordType
+    const idPart = this.data.recordId ? `edit-${this.data.recordId}` : 'new'
+    return `draft:${teamId}:${userId}:${type}:${idPart}`
+  },
+  // 自动保存草稿（防抖）
+  autoSaveDraft: function() {
+    if (this._autoSaveTimer) clearTimeout(this._autoSaveTimer)
+    this._autoSaveTimer = setTimeout(() => {
+      this.saveDraft()
+    }, 400)
+  },
+  // 保存草稿到本地存储
+  saveDraft: function() {
+    try {
+      const key = this.draftStorageKey()
+      const payload = {
+        recordType: this.data.recordType,
+        formData: this.data.formData,
+        selectedParrots: this.data.selectedParrots,
+        selectedParrotNames: this.data.selectedParrotNames,
+        selectedFeedTypes: this.data.selectedFeedTypes,
+        selectedFeedTypeNames: this.data.selectedFeedTypeNames,
+        selectedCleaningTypes: this.data.selectedCleaningTypes,
+        selectedCleaningTypeNames: this.data.selectedCleaningTypeNames,
+        selectedMaleParrotName: this.data.selectedMaleParrotName,
+        selectedFemaleParrotName: this.data.selectedFemaleParrotName,
+        healthStatusText: this.data.healthStatusText,
+        today: this.data.today,
+        recordId: this.data.recordId
+      }
+      wx.setStorageSync(key, payload)
+    } catch (e) {
+      // 忽略存储异常
+    }
+  },
+  // 页面初始化时尝试恢复草稿
+  restoreDraftIfAny: function() {
+    try {
+      const key = this.draftStorageKey()
+      const cached = wx.getStorageSync(key)
+      if (cached && cached.formData) {
+        const sameRecord = (!this.data.recordId && !cached.recordId) || (this.data.recordId && cached.recordId === this.data.recordId)
+        if (sameRecord) {
+          this.setData({
+            recordType: cached.recordType || this.data.recordType,
+            formData: cached.formData,
+            selectedParrots: cached.selectedParrots || [],
+            selectedParrotNames: cached.selectedParrotNames || '',
+            selectedFeedTypes: cached.selectedFeedTypes || [],
+            selectedFeedTypeNames: cached.selectedFeedTypeNames || '',
+            selectedCleaningTypes: cached.selectedCleaningTypes || [],
+            selectedCleaningTypeNames: cached.selectedCleaningTypeNames || '',
+            selectedMaleParrotName: cached.selectedMaleParrotName || '',
+            selectedFemaleParrotName: cached.selectedFemaleParrotName || '',
+            healthStatusText: cached.healthStatusText || this.data.healthStatusText
+          })
+        }
+      }
+    } catch (e) {
+      // 忽略读取异常
+    }
+  },
+  // 提交成功或用户主动返回时清理草稿
+  clearDraft: function() {
+    try {
+      const key = this.draftStorageKey()
+      wx.removeStorageSync(key)
+    } catch (e) { /* noop */ }
+  },
   
   // 校验表单是否可提交
   validateForm: function() {
@@ -1304,12 +1383,35 @@ const app = getApp()
     // 确保ok是布尔值，避免undefined
     ok = Boolean(ok)
     this.setData({ canSubmit: ok })
+    // 每次校验后自动保存当前草稿
+    this.autoSaveDraft()
   },
   
   // 提交表单
   submitForm: async function() {
     if (!this.data.canSubmit || this.data.submitting) return
     this.setData({ submitting: true })
+    // 无网络时直接缓存整单提交并返回
+    if (!app.globalData.networkConnected) {
+      try {
+        const payloadCommon = {
+          recordType: this.data.recordType,
+          isEdit: !!this.data.recordId,
+          recordId: this.data.recordId,
+          formData: this.data.formData,
+          photos: (this.data.formData.photos || []).slice(0, 3)
+        }
+        app.enqueueFormRecord(payloadCommon)
+        app.showSuccess('已离线保存，将自动重试提交')
+        this.clearDraft()
+        this.setData({ submitting: false })
+        this.goBack()
+      } catch (e) {
+        app.showError('缓存失败，请稍后重试')
+        this.setData({ submitting: false })
+      }
+      return
+    }
     
     try {
       const { recordType, formData, recordId, prefillRecordIds } = this.data
@@ -1509,6 +1611,8 @@ const app = getApp()
         if (!res.success) throw new Error(res.message || '保存失败')
       }
       wx.showToast({ title: '保存成功', icon: 'success' })
+      // 成功后清除草稿
+      this.clearDraft()
       
       // 添加通知
       const notificationManager = app.globalData.notificationManager;
