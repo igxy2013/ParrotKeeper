@@ -1529,6 +1529,8 @@
 /* 编辑模式遮罩与层级 */
 .stats-grid {
   position: relative;
+  display: flex;
+  justify-content: center;
 }
 .edit-mode-mask {
   position: absolute;
