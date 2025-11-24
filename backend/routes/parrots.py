@@ -468,8 +468,9 @@ def claim_parrot_by_code():
 def delete_parrot(parrot_id):
     """删除鹦鹉（硬删除）"""
     try:
-        from models import Expense, BreedingRecord
+        from models import Expense, BreedingRecord, ParrotTransferCode
         from team_models import TeamMember
+        from team_models import TeamParrot
         
         user = request.current_user
         
@@ -496,13 +497,19 @@ def delete_parrot(parrot_id):
         
         # 手动删除没有级联删除的相关记录
         # 删除支出记录
-        Expense.query.filter_by(parrot_id=parrot_id).delete()
+        Expense.query.filter_by(parrot_id=parrot_id).delete(synchronize_session=False)
         
         # 删除繁殖记录（作为雄性或雌性参与的记录）
         BreedingRecord.query.filter(
             (BreedingRecord.male_parrot_id == parrot_id) | 
             (BreedingRecord.female_parrot_id == parrot_id)
         ).delete(synchronize_session=False)
+
+        # 删除团队分享记录，避免外键约束阻塞删除
+        TeamParrot.query.filter_by(parrot_id=parrot_id).delete(synchronize_session=False)
+
+        # 删除与该鹦鹉相关的过户码，避免外键被置空导致约束错误
+        ParrotTransferCode.query.filter_by(parrot_id=parrot_id).delete(synchronize_session=False)
         
         # 硬删除鹦鹉（会自动级联删除相关的喂食、健康、清洁记录和提醒）
         db.session.delete(parrot)
