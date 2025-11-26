@@ -20,14 +20,14 @@ const app = getApp()
     feedingPeriod: 'week',
     expenseData: [],
     expensePeriod: 'month',
-    selectedPeriod: '本周', // 默认选择本周
+    selectedPeriod: '本月',
     
     // 体重趋势数据
     weightSeries: [],
     selectedParrotId: null,
     selectedParrotName: '',
     showParrotDropdown: false,
-    weightDays: 7, // 本周对应7天
+    weightDays: 30,
     // 体重趋势颜色：12种高对比色（统一全局）
     weightColors: ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#22AA99', '#FF66CC'],
     weightLegend: [],
@@ -864,7 +864,7 @@ const app = getApp()
 
   // 设置顶部时间段并刷新相关数据
   setSelectedPeriod(e) {
-    const period = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.period) || '本周'
+    const period = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.period) || '本月'
     let weightDays = 7
     if (period === '今天') weightDays = 1
     else if (period === '本周') weightDays = 7

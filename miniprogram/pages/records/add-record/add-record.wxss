@@ -149,6 +149,7 @@
   background: #ffffff;
   box-sizing: border-box;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .form-picker:active {
@@ -160,8 +161,11 @@
   color: #111827;
   flex: 1;
   line-height: 1;
+  height: 100%;
   display: flex;
   align-items: center;
+  white-space: nowrap;
+  transform: translateY(-12rpx);
 }
 
 .picker-text.placeholder {
