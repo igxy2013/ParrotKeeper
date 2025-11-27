@@ -6,7 +6,7 @@
   <view class="user-card" wx:if="{{isLogin}}">
     <view class="card-background"></view>
     <view class="user-avatar">
-        <view class="avatar-container" bindtap="chooseAvatarPhoto">
+        <button class="avatar-container" open-type="chooseAvatar" bindchooseavatar="onChooseWeChatAvatar">
           <image 
             class="avatar-image {{isEditingNickname ? 'editable' : ''}}" 
             src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
@@ -16,7 +16,7 @@
             <image class="edit-icon-img" src="{{iconPaths.cameraLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="cameraLine" catchtap="chooseAvatarPhoto" />
             <text class="avatar-edit-text">点击更换</text>
           </view>
-        </view>
+        </button>
     </view>
     <view class="user-info">
       <view class="nickname-display">

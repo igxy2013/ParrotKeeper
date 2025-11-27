@@ -4,16 +4,27 @@ echo      ParrotKeeper Backend Startup
 echo ========================================
 echo.
 
-:: Check if Python 3.10 is installed
-D:\Python310\python.exe --version >nul 2>&1
-if %errorlevel% neq 0 (
+:: Detect Python 3.10 interpreter
+set PYTHON_PATH=
+py -3.10 -V >nul 2>&1
+if %errorlevel% equ 0 (
+    for /f "usebackq delims=" %%P in (`py -3.10 -c "import sys; print(sys.executable)"`) do set "PYTHON_PATH=%%P"
+)
+if "%PYTHON_PATH%"=="" if exist "D:\Python310\python.exe" set "PYTHON_PATH=D:\Python310\python.exe"
+if "%PYTHON_PATH%"=="" (
+    python -V 2>&1 | findstr /C:"3.10" >nul
+    if %errorlevel% equ 0 set "PYTHON_PATH=python"
+)
+if "%PYTHON_PATH%"=="" (
+    python3 -V 2>&1 | findstr /C:"3.10" >nul
+    if %errorlevel% equ 0 set "PYTHON_PATH=python3"
+)
+if "%PYTHON_PATH%"=="" (
     echo [ERROR] Python 3.10 not found, please install Python 3.10 first
     pause
     exit /b 1
 )
-
-:: Set Python path to 3.10
-set PYTHON_PATH=D:\Python310\python.exe
+echo [INFO] Using Python interpreter: %PYTHON_PATH%
 
 :: Switch to backend directory
 cd /d "%~dp0backend"

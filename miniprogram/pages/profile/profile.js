@@ -35,7 +35,7 @@ Page({
     isEditingNickname: false,
     editNickname: '',
 
-    // 头像（直接点击上传，无弹窗）
+    showChooseAvatarModal: false,
 
     // 应用设置
     notificationsEnabled: false,
@@ -1143,6 +1143,53 @@ Page({
           app.globalData.userInfo = userInfo;
           wx.setStorageSync('userInfo', userInfo);
         } catch (_) {}
+        wx.showToast({ title: '头像已更新', icon: 'none' });
+      } else {
+        wx.showToast({ title: (updateRes && updateRes.message) || '头像更新失败', icon: 'none' });
+      }
+    } catch (e) {
+      app.hideLoading();
+      console.error('选择或上传头像失败:', e);
+    }
+  },
+
+  
+
+  async onChooseWeChatAvatar(e) {
+    const app = getApp();
+    try {
+      const avatarUrl = e && e.detail && e.detail.avatarUrl;
+      if (!avatarUrl) { this.setData({ showChooseAvatarModal: false }); return; }
+      this.setData({ showChooseAvatarModal: false });
+      app.showLoading('正在上传头像...');
+      const uploadRes = await new Promise((resolve, reject) => {
+        wx.uploadFile({
+          url: (app.globalData.baseUrl || '') + '/api/upload/image',
+          filePath: avatarUrl,
+          name: 'file',
+          formData: { category: 'avatars' },
+          header: {
+            'X-OpenID': app.globalData.openid || '',
+            'X-User-Mode': app.globalData.userMode || 'personal'
+          },
+          success: (res) => resolve(res),
+          fail: (err) => reject(err)
+        });
+      });
+      app.hideLoading();
+      if (uploadRes.statusCode !== 200) { return wx.showToast({ title: '上传失败', icon: 'none' }); }
+      let payload = {};
+      try { payload = JSON.parse(uploadRes.data || '{}'); } catch (_) { payload = {}; }
+      if (!payload || !payload.success || !payload.data || !payload.data.url) {
+        return wx.showToast({ title: (payload && payload.message) || '上传失败', icon: 'none' });
+      }
+      const resolvedUrl = app.resolveUploadUrl(payload.data.url);
+      const updateRes = await app.request({ url: '/api/auth/profile', method: 'PUT', data: { avatar_url: resolvedUrl } });
+      if (updateRes && updateRes.success) {
+        const serverUser = updateRes.data || {};
+        const userInfo = { ...this.data.userInfo, ...(serverUser || {}), avatar_url: (serverUser.avatar_url || resolvedUrl) };
+        this.setData({ userInfo });
+        try { app.globalData.userInfo = userInfo; wx.setStorageSync('userInfo', userInfo); } catch (_) {}
         wx.showToast({ title: '头像已更新', icon: 'none' });
       } else {
         wx.showToast({ title: (updateRes && updateRes.message) || '头像更新失败', icon: 'none' });

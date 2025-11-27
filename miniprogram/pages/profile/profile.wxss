@@ -56,6 +56,7 @@
   border-radius: 60rpx;
   border: 3rpx solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+  display: block;
 }
 
 .avatar-container {
@@ -64,7 +65,13 @@
   height: 120rpx;
   border-radius: 60rpx;
   overflow: hidden; /* 确保覆盖层裁剪与头像一致，消除边缘错位 */
-  display: inline-block; /* 与图片尺寸对齐，避免容器尺寸波动 */
+  display: inline-flex; /* 与图片尺寸对齐，避免容器尺寸波动 */
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  line-height: 0;
 }
 
 .avatar-edit-overlay {
