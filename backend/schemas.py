@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
-from models import User, Parrot, ParrotSpecies, FeedType, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord, Expense, Reminder
+from models import User, Parrot, ParrotSpecies, FeedType, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord, Expense, Reminder, Egg, IncubationLog
 
 class UserSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -242,6 +242,57 @@ class ReminderSchema(SQLAlchemyAutoSchema):
     
     parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
 
+class EggSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Egg
+        load_instance = True
+        exclude = ('created_at', 'updated_at')
+
+    breeding_record = fields.Nested(BreedingRecordSchema, dump_only=True, only=('id', 'male_parrot_name', 'female_parrot_name'))
+    mother_parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
+    father_parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name'))
+    species = fields.Nested(ParrotSpeciesSchema, dump_only=True)
+    created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
+    day_since_start = fields.Method('get_day_since_start', dump_only=True)
+
+    def get_day_since_start(self, obj):
+        try:
+            if obj.incubator_start_date:
+                from datetime import date, datetime
+                start = obj.incubator_start_date
+                # 兼容字符串日期
+                if isinstance(start, str):
+                    try:
+                        if 'T' in start:
+                            start_dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
+                            start = start_dt.date()
+                        else:
+                            start = datetime.strptime(start, '%Y-%m-%d').date()
+                    except Exception:
+                        return None
+                return (date.today() - start).days
+            return None
+        except Exception:
+            return None
+
+class IncubationLogSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = IncubationLog
+        load_instance = True
+        exclude = ('created_at',)
+
+    egg = fields.Nested(EggSchema, dump_only=True, only=('id', 'label'))
+    created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
+    day_index = fields.Method('get_day_index', dump_only=True)
+
+    def get_day_index(self, obj):
+        try:
+            if obj.egg and obj.egg.incubator_start_date and obj.log_date:
+                return (obj.log_date - obj.egg.incubator_start_date).days
+            return None
+        except Exception:
+            return None
+
 # 创建schema实例
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
@@ -272,3 +323,9 @@ expenses_schema = ExpenseSchema(many=True)
 
 reminder_schema = ReminderSchema()
 reminders_schema = ReminderSchema(many=True)
+
+egg_schema = EggSchema()
+eggs_schema = EggSchema(many=True)
+
+incubation_log_schema = IncubationLogSchema()
+incubation_logs_schema = IncubationLogSchema(many=True)

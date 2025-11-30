@@ -65,6 +65,7 @@ Page({
     menuItems: [
       { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.png' },
       { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.png' },
+      { icon: '🥚', title: '人工孵化', desc: '记录孵化过程', bgClass: 'bg-purple', iconSrc: '/images/remix/information-line.png' },
       { icon: '⭐', title: '积分计划', desc: '查看积分规则', bgClass: 'bg-blue', iconSrc: '/images/remix/information-line.png' },
       { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.png', isContact: true },
       { icon: '❓', title: '帮助反馈', desc: '提交问题与建议', bgClass: 'bg-amber', iconSrc: '/images/remix/feedback-line.png' },
@@ -435,6 +436,8 @@ Page({
       this.openNotifications();
     } else if (title === '护理指南') {
       wx.navigateTo({ url: '/pages/care-guide/care-guide' });
+    } else if (title === '人工孵化') {
+      wx.navigateTo({ url: '/pages/incubation/index' });
     } else if (title === '积分计划') {
       wx.navigateTo({ url: '/pages/points/plan/plan' });
     } else if (title === '客服支持') {
@@ -518,13 +521,19 @@ Page({
 
   // 获取未读反馈数量
   async loadUnreadFeedbackCount() {
-    // 仅超级管理员需要显示反馈徽章
     if (!this.data.isSuperAdmin) return;
-    
     try {
-      const res = await app.request({ url: '/api/feedback/unread_count', method: 'GET' });
-      if (res && res.success && res.data) {
-        this.setData({ unreadFeedbackCount: res.data.unread_count });
+      const res = await app.request({ url: '/api/feedback', method: 'GET' });
+      if (res && res.success) {
+        const list = res.data || [];
+        let prev = 0;
+        try { prev = wx.getStorageSync('feedback_last_count') || 0 } catch(_) {}
+        const cnt = Math.max(0, (list.length || 0) - (prev || 0));
+        this.setData({ unreadFeedbackCount: cnt });
+        try {
+          const appInst = getApp();
+          if (appInst && appInst.setFeedbackUnread) { appInst.setFeedbackUnread(cnt > 0) }
+        } catch (_) {}
       }
     } catch (e) {
       console.error('获取未读反馈数量失败:', e);

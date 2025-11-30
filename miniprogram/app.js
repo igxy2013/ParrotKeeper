@@ -15,6 +15,9 @@ App({
     appVersion: '1.0.0', // 小程序版本号（通过微信API动态获取）
     notificationManager, // 全局通知管理器
     notificationUpdateCallback: null, // 通知更新回调
+    // 反馈徽标同步：用于底部导航“个人中心”显示红点
+    hasUnreadFeedback: false,
+    feedbackBadgeUpdateCallback: null,
     platformInfo: { isIOS: false, system: '' },
     useIconFont: true, // 是否启用图标字体（iOS优先启用，统一兼容）
     // 网络与重试队列
@@ -213,7 +216,7 @@ App({
       const DEFAULT_RELEASE = 'https://bimai.xyz'
       const DEFAULT_TRIAL = DEFAULT_RELEASE
       // 开发环境建议填写你本机在局域网的 IP 与端口
-      const DEFAULT_DEVELOP = 'http://127.0.0.1:5075'
+      const DEFAULT_DEVELOP = 'http://192.168.0.80:5075'
 
       if (envVersion === 'release') {
         this.globalData.baseUrl = DEFAULT_RELEASE
@@ -228,6 +231,15 @@ App({
       console.warn('初始化 API 地址失败，使用内置默认值:', e)
       // 保持 globalData.baseUrl 的默认值
     }
+  },
+
+  // 未读反馈状态更新（同步到底部导航红点）
+  setFeedbackUnread(flag) {
+    try {
+      this.globalData.hasUnreadFeedback = !!flag
+      const cb = this.globalData.feedbackBadgeUpdateCallback
+      if (typeof cb === 'function') cb()
+    } catch (_) {}
   },
 
 

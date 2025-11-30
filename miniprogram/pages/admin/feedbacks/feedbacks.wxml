@@ -19,11 +19,12 @@
               <view class="content">{{item.content}}</view>
               <view class="contact" wx:if="{{item.contact}}">联系方式：{{item.contact}}</view>
               <view class="images" wx:if="{{item.image_urls && item.image_urls.length}}">
-                <block wx:for="{{item.image_urls}}" wx:key="{{index}}">
+                <block wx:for="{{item.image_urls}}" wx:key="index">
                   <image class="img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-src="{{item}}" />
                 </block>
               </view>
               <view class="actions">
+                <button class="btn" size="mini" bindtap="markAllRead">已读</button>
                 <button class="btn btn-danger" size="mini" bindtap="deleteFeedback" data-id="{{item.id}}">删除</button>
               </view>
             </view>

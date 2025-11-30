@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header",
+    "bottom-nav": "/components/bottom-nav/bottom-nav"
+  },
+  "navigationStyle": "custom",
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
+}

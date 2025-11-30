@@ -93,6 +93,13 @@
       "pages": [
         "plan/plan"
       ]
+    },
+    {
+      "root": "pages/incubation",
+      "pages": [
+        "index",
+        "detail/detail"
+      ]
     }
   ],
     "entryPagePath": "pages/index/index",

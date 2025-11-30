@@ -23,7 +23,17 @@ Page({
     try {
       const res = await app.request({ url: '/api/feedback', method: 'GET' })
       if (res && res.success) {
-        this.setData({ feedbacks: res.data || [] })
+        const list = res.data || []
+        this.setData({ feedbacks: list })
+        try {
+          const prev = wx.getStorageSync('feedback_last_count') || 0
+          const hasNew = (list.length || 0) > (prev || 0)
+          if (hasNew) {
+            const appInst = getApp()
+            if (appInst && appInst.setFeedbackUnread) { appInst.setFeedbackUnread(true) }
+          }
+          wx.setStorageSync('feedback_last_count', list.length || 0)
+        } catch (_) {}
       } else {
         wx.showToast({ title: res && res.message ? res.message : '获取失败', icon: 'none' })
       }
@@ -62,5 +72,27 @@ Page({
     } catch (e) {
       wx.showToast({ title: '网络错误', icon: 'none' })
     }
+  },
+
+  markAllRead(){
+    try{
+      // 服务端同步：标记全部为已读
+      app.request({ url: '/api/feedback/mark_all_read', method: 'POST' })
+        .then(res => {
+          if (res && res.success) {
+            const appInst = getApp()
+            if (appInst && appInst.setFeedbackUnread) { appInst.setFeedbackUnread(false) }
+            wx.setStorageSync('feedback_read_ack', Date.now())
+            const cnt = (this.data.feedbacks || []).length || 0
+            wx.setStorageSync('feedback_last_count', cnt)
+            wx.showToast({ title: '已标记为已读', icon: 'none' })
+          } else {
+            wx.showToast({ title: (res && res.message) || '服务端标记失败', icon: 'none' })
+          }
+        })
+        .catch(_ => {
+          wx.showToast({ title: '网络错误', icon: 'none' })
+        })
+    }catch(_){ wx.showToast({ title: '操作失败', icon: 'none' }) }
   }
 })

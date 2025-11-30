@@ -1,0 +1,58 @@
+.page-container{background:#f8f9fa;min-height:100vh}
+.page-content{padding:12px}
+.loading{text-align:center;color:#888;padding:24px}
+.egg-card{background:#fff;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.row{display:flex;justify-content:space-between;align-items:center}
+.label{font-weight:600}
+.status{font-size:12px;color:#10b981}
+.meta{display:flex;gap:12px;margin-top:6px;color:#666;font-size:12px}
+.calendar{background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.cal-header{font-weight:600;margin-bottom:8px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-cell{border:1px solid #eee;border-radius:8px;padding:6px;text-align:center}
+.cal-cell.has-log{background:#f0fdf4;border-color:#bbf7d0}
+.cal-cell.incubating{background:#fff7ed;border-color:#fdba74}
+.cal-cell.today{box-shadow:0 0 0 2px #2563eb inset}
+.day{font-weight:600}
+.day-index{display:block;color:#9ca3af;font-size:10px}
+.temp,.hum{display:block;color:#555;font-size:12px}
+.suggest-card{background:linear-gradient(180deg,#ffffff,#fbfbfb);border-radius:14px;padding:14px;margin-top:14px;box-shadow:0 8px 20px rgba(31,41,55,0.08);border:1px solid #eef2f7}
+.suggest-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.title-day{font-weight:700;font-size:16px;color:#111827}
+.title-date{color:#6b7280;font-size:12px;background:#f3f4f6;padding:4px 8px;border-radius:999px}
+.suggest-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px}
+.sg-box{border-radius:12px;padding:10px 12px;background:#f9fafb;border:1px solid #eef2f7}
+.sg-box.temp{background:linear-gradient(180deg,#ecfeff,#f9fafb)}
+.sg-box.hum{background:linear-gradient(180deg,#f0fdf4,#f9fafb)}
+.sg-label{display:block;color:#6b7280;font-size:12px}
+.sg-value{display:block;color:#1f2937;font-size:18px;font-weight:700;margin-top:2px}
+.suggest-meta{display:flex;gap:8px;flex-wrap:wrap}
+.meta-chip{padding:8px 12px;border-radius:999px;font-size:12px;color:#111827;background:#eef2ff}
+.meta-chip.turning{background:#e0f2fe;color:#0c4a6e}
+.meta-chip.candling{background:#ede9fe;color:#4c1d95}
+.cal-legend{display:flex;gap:12px;margin-top:8px;color:#666;font-size:12px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.dot-incubating{background:#fdba74}
+.dot-haslog{background:#22c55e}
+.dot-today{background:#2563eb}
+.logs{margin-top:12px}
+.section-title{font-weight:600;margin:10px 0}
+.log-item{background:#fff;border-radius:10px;padding:10px;margin-bottom:8px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+.log-row{display:flex;justify-content:space-between;color:#333}
+.advice{margin-top:6px;color:#666;font-size:12px}
+.add-log{background:#fff;border-radius:10px;padding:12px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.form-row{display:flex;gap:8px;margin-bottom:8px}
+.form-input{background:#f3f4f6;border-radius:8px;padding:8px;flex:1}
+.btn{background:#10b981;color:#fff;border-radius:8px}
+/* 顶部导航添加按钮统一尺寸与样式（与喂食记录一致） */
+.header-action{width:72rpx;height:72rpx;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10rpx)}
+.header-icon{width:36rpx;height:36rpx}
+.hatch-mask{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:999}
+.hatch-modal{width:86vw;max-width:640rpx;background:#fff;border-radius:14px;box-shadow:0 16px 40px rgba(17,24,39,0.2);overflow:hidden}
+.modal-title{font-weight:700;padding:16px 18px;border-bottom:1px solid #f1f5f9}
+.modal-content{padding:18px}
+.picker-display{background:#f3f4f6;border-radius:10px;padding:12px;color:#111827}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;padding:12px 18px;border-top:1px solid #f1f5f9}
+.btn-cancel{background:#f3f4f6;color:#111827;border-radius:10px}
+.btn-primary{background:#10b981;color:#fff;border-radius:10px}

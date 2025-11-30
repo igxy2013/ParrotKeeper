@@ -5,6 +5,7 @@ Component({
     defaultColor: { type: String, value: '#9CA3AF' }
   },
   data: {
+    hasUnreadFeedback: false,
     items: [
       {
         key: 'index',
@@ -35,6 +36,14 @@ Component({
         selectedIconPath: '/images/profile-active.png'
       }
     ]
+  },
+  lifetimes: {
+    attached(){
+      const app = getApp()
+      const update = () => { try { this.setData({ hasUnreadFeedback: !!(app && app.globalData && app.globalData.hasUnreadFeedback) }) } catch(_){} }
+      update()
+      try { app.globalData.feedbackBadgeUpdateCallback = update } catch(_){ }
+    }
   },
   methods: {
     onTap(e) {

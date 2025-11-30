@@ -173,6 +173,50 @@ class BreedingRecord(db.Model):
     female_parrot = db.relationship('Parrot', foreign_keys=[female_parrot_id], backref='female_breeding_records')
     created_by = db.relationship('User', backref='created_breeding_records', lazy=True)
 
+class Egg(db.Model):
+    __tablename__ = 'eggs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    breeding_record_id = db.Column(db.Integer, db.ForeignKey('breeding_records.id'))
+    mother_parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
+    father_parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
+    species_id = db.Column(db.Integer, db.ForeignKey('parrot_species.id'))
+    label = db.Column(db.String(50))
+    laid_date = db.Column(db.Date)
+    incubator_start_date = db.Column(db.Date)
+    status = db.Column(db.Enum('incubating', 'hatched', 'failed', 'stopped'), default='incubating')
+    hatch_date = db.Column(db.Date)
+    notes = db.Column(db.Text)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    team_id = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    breeding_record = db.relationship('BreedingRecord', backref='eggs', lazy=True)
+    mother_parrot = db.relationship('Parrot', foreign_keys=[mother_parrot_id], backref='laid_eggs')
+    father_parrot = db.relationship('Parrot', foreign_keys=[father_parrot_id], backref='fertilized_eggs')
+    species = db.relationship('ParrotSpecies', lazy=True)
+    created_by = db.relationship('User', backref='created_eggs', lazy=True)
+
+class IncubationLog(db.Model):
+    __tablename__ = 'incubation_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    egg_id = db.Column(db.Integer, db.ForeignKey('eggs.id'), nullable=False)
+    log_date = db.Column(db.Date, default=date.today, nullable=False)
+    temperature_c = db.Column(db.Numeric(4, 1))
+    humidity_pct = db.Column(db.Numeric(4, 1))
+    weight_g = db.Column(db.Numeric(6, 2))
+    advice = db.Column(db.Text)
+    notes = db.Column(db.Text)
+    image_urls = db.Column(db.Text)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    team_id = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    egg = db.relationship('Egg', backref=db.backref('incubation_logs', lazy=True, cascade='all, delete-orphan'))
+    created_by = db.relationship('User', backref='created_incubation_logs', lazy=True)
+
 class Expense(db.Model):
     __tablename__ = 'expenses'
     

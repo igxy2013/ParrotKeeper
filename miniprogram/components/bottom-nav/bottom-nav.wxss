@@ -66,6 +66,9 @@
   transition: transform 0.3s ease;
 }
 
+.bn-icon-wrap{ position: relative; }
+.bn-dot{ position: absolute; right: -4rpx; top: -4rpx; width: 12rpx; height: 12rpx; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2rpx #ffffff; }
+
 .bn-item.active .bn-icon {
   transform: scale(1.15);
   filter: none;

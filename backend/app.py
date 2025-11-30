@@ -21,6 +21,7 @@ from routes.settings import settings_bp
 from routes.admin import admin_bp
 from routes.announcements import announcements_bp
 from routes.ai import ai_bp
+from routes.incubation import incubation_bp
 import os
 from utils import login_required, success_response, error_response
 from team_mode_utils import (
@@ -63,6 +64,7 @@ def create_app(config_name=None):
     app.register_blueprint(admin_bp)
     app.register_blueprint(announcements_bp)
     app.register_blueprint(ai_bp)
+    app.register_blueprint(incubation_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
