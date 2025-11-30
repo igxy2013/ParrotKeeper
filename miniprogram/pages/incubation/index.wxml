@@ -28,6 +28,7 @@
           <view class="meta">
             <text>开始孵化：{{item.incubator_start_date_text || '未设置'}}</text>
             <text>天数：{{item.day_since_start_text}} 天</text>
+            <text>品种：{{item.species_name || '未设置'}}</text>
           </view>
         </view>
       </view>
@@ -57,6 +58,12 @@
         <text class="form-label">开始孵化</text>
         <picker mode="date" value="{{form.incubator_start_date}}" bindchange="onDateChange" data-field="incubator_start_date">
           <view class="form-picker">{{form.incubator_start_date || '请选择日期'}}</view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="form-label">鹦鹉品种</text>
+        <picker range="{{speciesNames}}" value="{{selectedSpeciesIndex}}" bindchange="onSpeciesChange">
+          <view class="form-picker">{{selectedSpeciesIndex >= 0 ? speciesNames[selectedSpeciesIndex] : '请选择品种'}}</view>
         </picker>
       </view>
     </view>

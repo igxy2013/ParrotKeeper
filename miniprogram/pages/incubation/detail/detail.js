@@ -17,7 +17,14 @@ Page({
     selectedCandlingText: '',
     showHatchPanel: false,
     hatchDate: '',
-    hasOperationPermission: false
+    hasOperationPermission: false,
+    speciesSupported: true
+  },
+
+  isSpeciesSupported(name){
+    const supported = ['玄凤鹦鹉','牡丹鹦鹉','亚马逊鹦鹉','金刚鹦鹉','非洲灰鹦鹉','折衷鹦鹉']
+    const n = (name || '').trim()
+    return supported.includes(n)
   },
 
   onLoad(options){
@@ -39,8 +46,10 @@ Page({
       const startText = this.formatDate(egg && egg.incubator_start_date)
       const dsCalc = (typeof egg.day_since_start === 'number') ? egg.day_since_start : this.computeDaySinceStart(egg && egg.incubator_start_date)
       const dsText = (dsCalc === null || dsCalc === undefined || isNaN(dsCalc)) ? '--' : String(dsCalc)
-      egg = { ...egg, incubator_start_date_text: startText, day_since_start: dsCalc, day_since_start_text: dsText }
-      this.setData({ egg, statusText: this.mapStatusToCN(egg && egg.status) })
+      const speciesName = (egg && egg.species && egg.species.name) ? egg.species.name : (egg && egg.species_name) || ''
+      egg = { ...egg, incubator_start_date_text: startText, day_since_start: dsCalc, day_since_start_text: dsText, species_name: speciesName }
+      const speciesSupported = this.isSpeciesSupported(speciesName)
+      this.setData({ egg, statusText: this.mapStatusToCN(egg && egg.status), speciesSupported })
       const calResp = await app.request({ url: `/api/incubation/eggs/${this.data.id}/calendar`, method: 'GET' })
       const calMap = (calResp && calResp.data && calResp.data.calendar) || {}
       this.buildCalendarFromMap(calMap)
@@ -123,19 +132,31 @@ Page({
         if (startStr){ sel = { date: todayStr, dayIndex: this.computeDaySinceStart(startStr)+1 } }
       }
       if (sel){
-        const s = this.suggestForDay(sel.dayIndex)
-        const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
-        const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
-        const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
-        this.setData({
-          selectedDate: sel.date,
-          selectedDateText: sel.date,
-          selectedDayIndex: sel.dayIndex,
-          selectedTempRangeText: `${tr.low}-${tr.high}℃`,
-          selectedHumRangeText: `${hr.low}-${hr.high}%`,
-          selectedTurningText: turningText,
-          selectedCandlingText: candlingText
-        })
+        if (this.data.speciesSupported){
+          const s = this.suggestForDay(sel.dayIndex)
+          const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
+          const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
+          const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
+          this.setData({
+            selectedDate: sel.date,
+            selectedDateText: sel.date,
+            selectedDayIndex: sel.dayIndex,
+            selectedTempRangeText: `${tr.low}-${tr.high}℃`,
+            selectedHumRangeText: `${hr.low}-${hr.high}%`,
+            selectedTurningText: turningText,
+            selectedCandlingText: candlingText
+          })
+        } else {
+          this.setData({
+            selectedDate: sel.date,
+            selectedDateText: sel.date,
+            selectedDayIndex: sel.dayIndex,
+            selectedTempRangeText: '—',
+            selectedHumRangeText: '—',
+            selectedTurningText: '—',
+            selectedCandlingText: '—'
+          })
+        }
       }
     }catch(_){ }
   },
@@ -154,19 +175,31 @@ Page({
         }
       }
       if (!dt || !di || di <= 0) return
-      const s = this.suggestForDay(di)
-      const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
-      const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
-      const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
-      this.setData({
-        selectedDate: dt,
-        selectedDateText: dt,
-        selectedDayIndex: di,
-        selectedTempRangeText: `${tr.low}-${tr.high}℃`,
-        selectedHumRangeText: `${hr.low}-${hr.high}%`,
-        selectedTurningText: turningText,
-        selectedCandlingText: candlingText
-      })
+      if (this.data.speciesSupported){
+        const s = this.suggestForDay(di)
+        const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
+        const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
+        const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
+        this.setData({
+          selectedDate: dt,
+          selectedDateText: dt,
+          selectedDayIndex: di,
+          selectedTempRangeText: `${tr.low}-${tr.high}℃`,
+          selectedHumRangeText: `${hr.low}-${hr.high}%`,
+          selectedTurningText: turningText,
+          selectedCandlingText: candlingText
+        })
+      } else {
+        this.setData({
+          selectedDate: dt,
+          selectedDateText: dt,
+          selectedDayIndex: di,
+          selectedTempRangeText: '—',
+          selectedHumRangeText: '—',
+          selectedTurningText: '—',
+          selectedCandlingText: '—'
+        })
+      }
     }catch(_){ }
   },
 
@@ -205,9 +238,9 @@ Page({
       temp = { low: 37.4, high: 37.6, target: 37.5 }
     }
     let humLow, humHigh
-    if (dayIndex <= 7){ humLow = 50.0; humHigh = 55.0 }
-    else if (dayIndex <= 14){ humLow = 48.0; humHigh = 55.0 }
-    else if (dayIndex <= 21){ humLow = 50.0; humHigh = 60.0 }
+    if (dayIndex <= 7){ humLow = 40.0; humHigh = 50.0 }
+    else if (dayIndex <= 16){ humLow = 40.0; humHigh = 50.0 }
+    else if (dayIndex <= 21){ humLow = 55.0; humHigh = 65.0 }
     else { humLow = 55.0; humHigh = 65.0 }
     const turning = { enabled: dayIndex >= 7 && dayIndex <= 16, interval_min: 120 }
     const candling = { enabled: dayIndex === 6 }

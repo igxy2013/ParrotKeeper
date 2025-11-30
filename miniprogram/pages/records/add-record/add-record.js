@@ -469,7 +469,8 @@ const app = getApp()
       { id: 'toys', name: '玩具清洁', selected: false },
       { id: 'perches', name: '栖木清洁', selected: false },
       { id: 'food_water', name: '食物和水清洁', selected: false },
-      { id: 'disinfection', name: '消毒', selected: false }
+      { id: 'disinfection', name: '消毒', selected: false },
+      { id: 'bath', name: '鹦鹉洗澡', selected: false }
     ]
     this.setData({
       cleaningTypeList: cleaningTypes

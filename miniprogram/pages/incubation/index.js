@@ -5,10 +5,13 @@ Page({
     loading: false,
     eggs: [],
     showAddEgg: false,
-    form: { label: '', laid_date: '', incubator_start_date: '' },
+    form: { label: '', laid_date: '', incubator_start_date: '', species_id: '' },
     editMode: false,
     currentEggId: null,
-    hasOperationPermission: false
+    hasOperationPermission: false,
+    speciesList: [],
+    speciesNames: [],
+    selectedSpeciesIndex: -1
   },
 
   onShow() {
@@ -27,12 +30,14 @@ Page({
       const mapped = items.map(it => {
         const ds = (typeof it.day_since_start === 'number' ? it.day_since_start : this.computeDaySinceStart(it && it.incubator_start_date))
         const dsText = (ds === null || ds === undefined || isNaN(ds)) ? '--' : String(ds)
+        const speciesName = (it && it.species && it.species.name) ? it.species.name : (it && it.species_name) || ''
         return {
           ...it,
           status_text: this.mapStatusToCN(it && it.status),
           day_since_start: ds,
           day_since_start_text: dsText,
-          incubator_start_date_text: this.formatDate(it && it.incubator_start_date)
+          incubator_start_date_text: this.formatDate(it && it.incubator_start_date),
+          species_name: speciesName
         }
       })
       this.setData({ eggs: mapped })
@@ -43,7 +48,13 @@ Page({
     }
   },
 
-  openAddEggModal() { this.setData({ showAddEgg: true }) },
+  openAddEggModal() {
+    if (!this.data.speciesList || this.data.speciesList.length === 0) {
+      this.loadSpeciesList().finally(() => this.setData({ showAddEgg: true }))
+    } else {
+      this.setData({ showAddEgg: true })
+    }
+  },
   closeAddEggModal() { this.setData({ showAddEgg: false, editMode: false, currentEggId: null }) },
   noop() {},
 
@@ -61,6 +72,27 @@ Page({
     form[field] = val
     this.setData({ form })
   },
+  async loadSpeciesList(){
+    try{
+      const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
+      if (res && res.success){
+        const list = res.data || []
+        const names = list.map(s => s.name)
+        this.setData({ speciesList: list, speciesNames: names })
+      }
+    }catch(_){ /* 忽略失败 */ }
+  },
+  onSpeciesChange(e){
+    try{
+      const idx = parseInt(e.detail.value)
+      if (isNaN(idx)) return
+      const list = this.data.speciesList || []
+      const item = list[idx]
+      const form = Object.assign({}, this.data.form)
+      form.species_id = item ? item.id : ''
+      this.setData({ selectedSpeciesIndex: idx, form })
+    }catch(_){ }
+  },
   formatDate(d) { return d ? String(d).slice(0, 10) : '' },
 
   async submitEgg() {
@@ -74,7 +106,7 @@ Page({
       }
       if (resp && resp.success) {
         wx.showToast({ title: this.data.editMode ? '更新成功' : '创建成功', icon: 'success' })
-        this.setData({ showAddEgg: false, editMode: false, currentEggId: null, form: { label: '', laid_date: '', incubator_start_date: '' } })
+        this.setData({ showAddEgg: false, editMode: false, currentEggId: null, form: { label: '', laid_date: '', incubator_start_date: '', species_id: '' }, selectedSpeciesIndex: -1 })
         this.fetchEggs()
       } else {
         wx.showToast({ title: resp.message || (this.data.editMode ? '更新失败' : '创建失败'), icon: 'none' })
@@ -114,16 +146,23 @@ Page({
     try{
       const id = e.currentTarget.dataset.id
       const item = (this.data.eggs || []).find(x => String(x.id) === String(id))
+      const speciesName = (item && item.species && item.species.name) ? item.species.name : (item && item.species_name) || ''
+      let speciesIdx = -1
+      if (this.data.speciesList && this.data.speciesList.length){
+        speciesIdx = this.data.speciesList.findIndex(s => s.name === speciesName || String(s.id) === String(item && (item.species_id || (item.species && item.species.id))))
+      }
       const form = {
         label: (item && item.label) || '',
         laid_date: this.formatDate(item && item.laid_date),
-        incubator_start_date: this.formatDate(item && item.incubator_start_date)
+        incubator_start_date: this.formatDate(item && item.incubator_start_date),
+        species_id: (item && (item.species_id || (item.species && item.species.id))) || ''
       }
       this.setData({
         showAddEgg: true,
         editMode: true,
         currentEggId: id,
-        form
+        form,
+        selectedSpeciesIndex: speciesIdx
       })
     }catch(_){ wx.showToast({ title: '无法编辑', icon: 'none' }) }
   },

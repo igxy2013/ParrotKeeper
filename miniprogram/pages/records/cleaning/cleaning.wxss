@@ -38,6 +38,18 @@
 }
 .add-icon { color: #fff; font-size: 36rpx; }
 
+/* 统一头部右侧加号按钮样式（与喂食/健康/繁殖页一致） */
+.header-btn {
+  width: 72rpx;
+  height: 72rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10rpx);
+}
+
 /* 统一 app-header 右侧加号图标尺寸 */
 .header-btn-icon-img {
   width: 36rpx;
