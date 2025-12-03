@@ -444,14 +444,39 @@ const app = getApp()
   // 加载食物偏好
   async loadFoodPreference() {
     try {
-      const end = new Date()
-      const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      const start_date = start.toISOString().slice(0, 10)
-      const end_date = end.toISOString().slice(0, 10)
+      const today = new Date()
+      const fmt = d => {
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const dd = String(d.getDate()).padStart(2, '0')
+        return `${y}-${m}-${dd}`
+      }
+      let start
+      let end
+      const p = this.data.selectedPeriod || '本月'
+      if (p === '今天') {
+        start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      } else if (p === '本周') {
+        const dow = today.getDay()
+        start = new Date(today)
+        start.setDate(today.getDate() - dow)
+        end = new Date(start)
+        end.setDate(start.getDate() + 6)
+      } else if (p === '本月') {
+        start = new Date(today.getFullYear(), today.getMonth(), 1)
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      } else if (p === '本年') {
+        start = new Date(today.getFullYear(), 0, 1)
+        end = new Date(today.getFullYear(), 11, 31)
+      } else {
+        start = new Date(1970, 0, 1)
+        end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      }
       const res = await app.request({
         url: '/api/records/feeding',
         method: 'GET',
-        data: { start_date, end_date }
+        data: { start_date: fmt(start), end_date: fmt(end) }
       })
       if (res.success) {
         const pref = this.processFoodPreference(res.data)
@@ -872,8 +897,8 @@ const app = getApp()
     else if (period === '本年') weightDays = 365
     else if (period === '全部') weightDays = 36500 // 约100年，等效于“全部”
     this.setData({ selectedPeriod: period, weightDays })
-    // 刷新体重趋势（概览平均体重依赖该数据）
     this.loadWeightTrends()
+    this.loadFoodPreference()
   },
 
   // 加载体重趋势（每只鹦鹉的折线）
@@ -1123,7 +1148,56 @@ const app = getApp()
       ctx.moveTo(paddingLeft, height - paddingBottom)
       ctx.lineTo(paddingLeft, paddingTop)
       ctx.stroke()
-  
+
+      if (selectedId) {
+        const sel = series.find(s => String(s.parrot_id) === String(selectedId)) || null
+        const speciesName = sel && sel.species_name
+        if (speciesName) {
+          const sameSpecies = series.filter(s => s.species_name === speciesName)
+          const vals = []
+          for (let i = 0; i < sameSpecies.length; i++) {
+            const pts = Array.isArray(sameSpecies[i].points) ? sameSpecies[i].points : []
+            for (let j = 0; j < pts.length; j++) {
+              const p = pts[j]
+              if (p && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) {
+                if (hasRange) {
+                  const d = p.date
+                  if (d && d >= rangeStart && d <= rangeEnd) vals.push(p.weight)
+                } else {
+                  vals.push(p.weight)
+                }
+              }
+            }
+          }
+          if (vals.length > 0 && isFinite(minW) && isFinite(maxW) && (maxW - minW) > 0) {
+            let sum = 0
+            for (let k = 0; k < vals.length; k++) sum += vals[k]
+            const ref = sum / vals.length
+            const norm = (ref - minW) / (maxW - minW)
+            if (isFinite(norm) && !isNaN(norm)) {
+              const yRef = paddingTop + (1 - norm) * chartH
+              ctx.save()
+              ctx.strokeStyle = '#7c3aed'
+              ctx.lineWidth = 2
+              if (typeof ctx.setLineDash === 'function') ctx.setLineDash([6, 6])
+              ctx.beginPath()
+              ctx.moveTo(paddingLeft, yRef)
+              ctx.lineTo(width - paddingRight, yRef)
+              ctx.stroke()
+              ctx.restore()
+              const label = `体重参考线: ${Math.round(ref)}g`
+              ctx.save()
+              ctx.font = '12px sans-serif'
+              ctx.fillStyle = '#7c3aed'
+              ctx.textAlign = 'right'
+              ctx.textBaseline = 'bottom'
+              ctx.fillText(label, width - paddingRight - 4, yRef - 4)
+              ctx.restore()
+            }
+          }
+        }
+      }
+
       // 纵轴刻度与数值
       const yTicks = 4
       ctx.fillStyle = '#666'

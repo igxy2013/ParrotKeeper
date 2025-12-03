@@ -467,8 +467,9 @@
 }
 
 .placeholder-text {
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 32rpx;
+  color: #1f2937;
+  font-weight: 600;
 }
 
 .trend-chart {
@@ -694,14 +695,15 @@
 .empty-placeholder {
   text-align: center;
   padding: 80rpx 40rpx;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f8f9fa;
   border-radius: 32rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border: 1rpx solid #e5e7eb;
 }
 
 .empty-placeholder .placeholder-text {
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 32rpx;
+  color: #1f2937;
+  font-weight: 600;
 }
 
 /* 加载状态 */
@@ -1247,6 +1249,13 @@
   text-align: right;
   font-size: 26rpx;
   color: #6b7280;
+}
+
+/* 食物偏好空状态强化可读性 */
+.food-pref-section .empty-placeholder .placeholder-text {
+  color: #6b7280;
+  font-size: 32rpx;
+  font-weight: 600;
 }
 
 @media (max-width: 375px) {

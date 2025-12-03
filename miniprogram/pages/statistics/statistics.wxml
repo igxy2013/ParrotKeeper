@@ -132,8 +132,6 @@
     </view>
   </view>
 
-  <!-- 喂食趋势：已按需求移除 -->
-
   <!-- 支出分析 -->
   <view class="expense-section">
     <view class="info-card">
@@ -197,7 +195,7 @@
         </view>
         <view class="empty-placeholder" wx:else>
           <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.restaurantOrange}}" mode="widthFix" binderror="onStatIconError" data-key="restaurantOrange"/></view>
-          <text class="placeholder-text">暂无数据</text>
+          <text class="placeholder-text">暂无喂食数据</text>
         </view>
       </view>
     </view>

@@ -290,11 +290,6 @@ Page({
   },
 
   // （已移除主题相关功能）
-
-  // 其它服务项（可逐步完善）
-  exportData() {
-    wx.showToast({ title: '数据导出功能即将上线', icon: 'none' });
-  },
   showAbout() {
     const app = getApp();
     // 直接使用全局版本号（已在 app.js 启动时从微信API获取）

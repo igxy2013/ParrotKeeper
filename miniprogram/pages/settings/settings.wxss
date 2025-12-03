@@ -1,6 +1,6 @@
 /* pages/settings/settings.wxss */
 .page-container { min-height: 100vh; background: linear-gradient(180deg, #f8f9ff, #eef2ff); }
-.page-content { padding: 20rpx; padding-bottom: calc(160rpx + env(safe-area-inset-bottom)); }
+.page-content { padding: 20rpx; }
 
 .section-title { display: flex; align-items: center; gap: 12rpx; font-weight: 600; color: #111827; font-size: 28rpx; margin: 16rpx 8rpx 20rpx; }
 .title-icon { font-size: 30rpx; }
@@ -56,6 +56,3 @@
 }
 
 /* 通知开启时，附加安全留白，防止底部导航遮挡 */
-.safe-bottom-spacer {
-  height: 80rpx;
-}

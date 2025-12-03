@@ -334,3 +334,48 @@ def format_datetime(datetime_obj):
     if not datetime_obj:
         return None
     return datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
+
+_cache_client = None
+
+def get_cache_client():
+    global _cache_client
+    if _cache_client is not None:
+        return _cache_client
+    try:
+        import redis
+        url = os.environ.get('REDIS_URL')
+        if url:
+            r = redis.Redis.from_url(url)
+        else:
+            host = os.environ.get('REDIS_HOST') or (current_app.config.get('REDIS_HOST') if current_app else None) or '127.0.0.1'
+            port = int(os.environ.get('REDIS_PORT') or (current_app.config.get('REDIS_PORT') if current_app else 6379) or 6379)
+            dbn = int(os.environ.get('REDIS_DB') or (current_app.config.get('REDIS_DB') if current_app else 0) or 0)
+            r = redis.Redis(host=host, port=port, db=dbn)
+        r.ping()
+        _cache_client = r
+        return _cache_client
+    except Exception:
+        _cache_client = None
+        return None
+
+def cache_get_json(key):
+    c = get_cache_client()
+    if not c:
+        return None
+    try:
+        v = c.get(key)
+        if not v:
+            return None
+        return json.loads(v)
+    except Exception:
+        return None
+
+def cache_set_json(key, value, ttl_seconds=600):
+    c = get_cache_client()
+    if not c:
+        return False
+    try:
+        c.setex(key, ttl_seconds, json.dumps(value, ensure_ascii=False))
+        return True
+    except Exception:
+        return False

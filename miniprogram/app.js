@@ -475,7 +475,6 @@ App({
         if (res.statusCode === 200) {
           queue.shift()
           wx.setStorageSync('pending_requests', queue)
-          wx.showToast({ title: '离线提交成功', icon: 'success' })
           try {
             const nm = this.globalData.notificationManager
             if (nm) nm.addLocalNotification('离线提交', '网络恢复后已成功提交一条记录')
@@ -483,7 +482,6 @@ App({
         } else {
           queue.shift()
           wx.setStorageSync('pending_requests', queue)
-          wx.showToast({ title: '提交失败（服务端）', icon: 'none' })
         }
       } catch (e) {
         item.tryCount = (item.tryCount || 0) + 1
@@ -558,11 +556,9 @@ App({
         if (res.statusCode === 200) {
           queue.shift()
           wx.setStorageSync('pending_forms', queue)
-          wx.showToast({ title: '离线记录已提交', icon: 'success' })
         } else {
           queue.shift()
           wx.setStorageSync('pending_forms', queue)
-          wx.showToast({ title: '提交失败（服务端）', icon: 'none' })
         }
       } catch (e) {
         item.tryCount = (item.tryCount || 0) + 1

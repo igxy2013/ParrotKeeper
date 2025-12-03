@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from utils import success_response, error_response, login_required
+from utils import success_response, error_response, login_required, cache_get_json, cache_set_json
 from team_mode_utils import get_accessible_parrot_ids_by_mode
 from models import Parrot, ParrotSpecies
 import os
@@ -85,24 +85,30 @@ def _default_config():
 
 
 def _load_config():
+    key = 'care_guide_config_v1'
+    cached = cache_get_json(key)
+    if isinstance(cached, dict):
+        return cached
     path = _get_config_path()
     if not os.path.exists(path):
-        # 初次写入默认文件，便于后续动态更新
         cfg = _default_config()
         _ensure_dir(path)
         try:
             with open(path, 'w', encoding='utf-8') as f:
                 json.dump(cfg, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            # 若写入失败，仍返回内存中的默认配置
+        except Exception:
             pass
+        cache_set_json(key, cfg, 3600)
         return cfg
     try:
         with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        # 读取失败时降级为默认配置
-        return _default_config()
+            cfg = json.load(f)
+            cache_set_json(key, cfg, 3600)
+            return cfg
+    except Exception:
+        cfg = _default_config()
+        cache_set_json(key, cfg, 3600)
+        return cfg
 
 
 @care_guide_bp.route('', methods=['GET'])
@@ -163,6 +169,10 @@ def update_care_guide():
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         return error_response(f'保存失败：{str(e)}')
+    try:
+        cache_set_json('care_guide_config_v1', data, 3600)
+    except Exception:
+        pass
 
     return success_response({'message': '更新成功', 'config': data}, '更新护理指南成功')
 
@@ -323,4 +333,3 @@ def get_personalized_care_guide():
         }, '获取个性化护理指南成功')
     except Exception as e:
         return error_response(f'获取个性化护理指南失败: {str(e)}')
-

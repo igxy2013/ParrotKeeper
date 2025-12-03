@@ -327,6 +327,30 @@ const app = getApp()
     }
     // 页面初始化后尝试恢复草稿
     this.restoreDraftIfAny()
+    if (!this.data.recordId) {
+      const ids = Array.isArray(this.data.prefillParrotIds) ? this.data.prefillParrotIds.slice() : []
+      if (ids.length) {
+        const isBreeding = this.data.recordType === 'breeding'
+        const effectiveIds = isBreeding ? ids.slice(0, 2) : ids
+        const baseList = Array.isArray(this.data.parrotList) ? this.data.parrotList : []
+        const set = new Set(effectiveIds)
+        const parrotList = baseList.map(p => ({ ...p, selected: set.has(p.id) }))
+        const selectedParrots = parrotList.filter(p => p.selected).map(p => ({ id: p.id, name: p.name }))
+        let selectedParrotNames = selectedParrots.map(p => p.name).join('、')
+        if (this.data.recordType === 'health' && effectiveIds.length >= 1) {
+          const target = baseList.find(p => p.id === effectiveIds[0])
+          selectedParrotNames = target ? target.name : ''
+        }
+        this.setData({
+          parrotList,
+          selectedParrots,
+          selectedParrotNames,
+          'formData.parrot_ids': effectiveIds
+        })
+        if (isBreeding) this.updateBreedingParrotListsBasedOnSelection()
+        this.validateForm()
+      }
+    }
   },
 
   loadParrotList: async function() {
@@ -1312,9 +1336,24 @@ const app = getApp()
       if (cached && cached.formData) {
         const sameRecord = (!this.data.recordId && !cached.recordId) || (this.data.recordId && cached.recordId === this.data.recordId)
         if (sameRecord) {
+          const existingFD = this.data.formData || {}
+          const mergedFD = { ...existingFD, ...cached.formData }
+          if (!this.data.recordId) {
+            mergedFD.record_date = this.data.today || existingFD.record_date || ''
+            const d = new Date()
+            const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+            mergedFD.record_time = hm
+          } else {
+            if (!mergedFD.record_date) mergedFD.record_date = this.data.today || existingFD.record_date || ''
+            if (!mergedFD.record_time) {
+              const d = new Date()
+              const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+              mergedFD.record_time = existingFD.record_time || hm
+            }
+          }
           this.setData({
             recordType: cached.recordType || this.data.recordType,
-            formData: cached.formData,
+            formData: mergedFD,
             selectedParrots: cached.selectedParrots || [],
             selectedParrotNames: cached.selectedParrotNames || '',
             selectedFeedTypes: cached.selectedFeedTypes || [],
@@ -1325,6 +1364,7 @@ const app = getApp()
             selectedFemaleParrotName: cached.selectedFemaleParrotName || '',
             healthStatusText: cached.healthStatusText || this.data.healthStatusText
           })
+          this.validateForm()
         }
       }
     } catch (e) {
@@ -1392,18 +1432,102 @@ const app = getApp()
   submitForm: async function() {
     if (!this.data.canSubmit || this.data.submitting) return
     this.setData({ submitting: true })
-    // 无网络时直接缓存整单提交并返回
+    // 无网络：按类型构造离线队列项（含本地照片），网络恢复后自动上传并提交
     if (!app.globalData.networkConnected) {
       try {
-        const payloadCommon = {
-          recordType: this.data.recordType,
-          isEdit: !!this.data.recordId,
-          recordId: this.data.recordId,
-          formData: this.data.formData,
-          photos: (this.data.formData.photos || []).slice(0, 3)
+        const { recordType, formData, recordId, prefillRecordIds } = this.data
+        const timeStr = `${formData.record_date} ${formData.record_time}:00`
+        const localPhotos = (formData.photos || []).slice(0, 3)
+        const baseCommon = { notes: formData.notes }
+        const enqueue = (item) => app.enqueueFormRecord(item)
+        if (recordType === 'feeding') {
+          if (recordId) {
+            const multiFood = (formData.food_types || []).length > 1 || Object.keys(formData.food_amounts || {}).length > 1
+            const hasBatchIds = Array.isArray(prefillRecordIds) && prefillRecordIds.length > 1
+            if (hasBatchIds && !multiFood) {
+              for (const id of prefillRecordIds) {
+                enqueue({
+                  url: `/api/records/${id}`,
+                  method: 'PUT',
+                  data: { ...baseCommon, type: 'feeding', feeding_time: timeStr, parrot_ids: formData.parrot_ids, feed_type_id: formData.food_types[0] || '', amount: formData.amount },
+                  localPhotos,
+                  category: 'records/feeding'
+                })
+              }
+            } else if (multiFood) {
+              enqueue({
+                url: '/api/records/feeding/upsert-by-time',
+                method: 'PUT',
+                data: { ...baseCommon, feeding_time: timeStr, parrot_ids: formData.parrot_ids, food_types: formData.food_types, food_amounts: formData.food_amounts, amount: (formData.food_types || []).length <= 1 ? formData.amount : undefined },
+                localPhotos,
+                category: 'records/feeding'
+              })
+            } else {
+              enqueue({
+                url: `/api/records/${recordId}`,
+                method: 'PUT',
+                data: { ...baseCommon, type: 'feeding', feeding_time: timeStr, parrot_ids: formData.parrot_ids, feed_type_id: formData.food_types[0] || '', amount: formData.amount },
+                localPhotos,
+                category: 'records/feeding'
+              })
+            }
+          } else {
+            enqueue({
+              url: '/api/records',
+              method: 'POST',
+              data: { ...baseCommon, type: 'feeding', feeding_time: timeStr, parrot_ids: formData.parrot_ids, food_types: formData.food_types, food_amounts: formData.food_amounts, amount: (formData.food_types || []).length <= 1 ? formData.amount : undefined },
+              localPhotos,
+              category: 'records/feeding'
+            })
+          }
+        } else if (recordType === 'cleaning') {
+          if (recordId) {
+            const hasBatchIds = Array.isArray(prefillRecordIds) && prefillRecordIds.length > 1
+            const effectiveCleaningTypes = (Array.isArray(formData.cleaning_types) && formData.cleaning_types.length > 0)
+              ? formData.cleaning_types
+              : (this.data.prefillCleaningTypeIds || [])
+            if (hasBatchIds) {
+              enqueue({
+                url: '/api/records/cleaning/batch-update',
+                method: 'PUT',
+                data: { ...baseCommon, record_ids: prefillRecordIds, record_time: timeStr, parrot_ids: formData.parrot_ids, cleaning_types: effectiveCleaningTypes, description: formData.description },
+                localPhotos,
+                category: 'records/cleaning'
+              })
+            } else {
+              enqueue({
+                url: `/api/records/${recordId}`,
+                method: 'PUT',
+                data: { ...baseCommon, type: 'cleaning', cleaning_time: timeStr, parrot_ids: formData.parrot_ids, cleaning_types: effectiveCleaningTypes, description: formData.description },
+                localPhotos,
+                category: 'records/cleaning'
+              })
+            }
+          } else {
+            enqueue({
+              url: '/api/records',
+              method: 'POST',
+              data: { ...baseCommon, type: 'cleaning', cleaning_time: timeStr, parrot_ids: formData.parrot_ids, cleaning_types: formData.cleaning_types || [], description: formData.description },
+              localPhotos,
+              category: 'records/cleaning'
+            })
+          }
+        } else if (recordType === 'health') {
+          const isEdit = !!recordId
+          const url = isEdit ? `/api/records/${recordId}` : '/api/records'
+          const method = isEdit ? 'PUT' : 'POST'
+          const toNumberOrNull = (v) => { const s = String(v || '').trim(); if (!s) return null; const n = Number(s); return isNaN(n) ? null : n }
+          const commonHealth = { ...baseCommon, type: 'health', weight: toNumberOrNull(formData.weight), health_status: formData.health_status }
+          const dataPayload = isEdit ? { ...commonHealth, record_date: timeStr } : { ...commonHealth, record_date: timeStr, parrot_ids: (formData.parrot_ids || []).map(id => Number(id)) }
+          enqueue({ url, method, data: dataPayload, localPhotos, category: 'records/health' })
+        } else if (recordType === 'breeding') {
+          const isEdit = !!recordId
+          const url = isEdit ? `/api/records/${recordId}` : '/api/records'
+          const method = isEdit ? 'PUT' : 'POST'
+          const dataPayload = { ...baseCommon, type: 'breeding', record_time: timeStr, male_parrot_id: formData.male_parrot_id, female_parrot_id: formData.female_parrot_id, mating_date: formData.mating_date, egg_laying_date: formData.egg_laying_date, egg_count: formData.egg_count, hatching_date: formData.hatching_date, chick_count: formData.chick_count, success_rate: formData.success_rate }
+          enqueue({ url, method, data: dataPayload, localPhotos, category: 'records/breeding' })
         }
-        app.enqueueFormRecord(payloadCommon)
-        app.showSuccess('已离线保存，将自动重试提交')
+        app.showSuccess('已离线保存，将自动提交')
         this.clearDraft()
         this.setData({ submitting: false })
         this.goBack()

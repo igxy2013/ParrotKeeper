@@ -10,19 +10,8 @@
     </view>
 
     <view class="settings-actions">
-      <view class="setting-action-item" bindtap="exportData">
-        <view class="setting-icon-wrapper">
-          <view class="setting-icon export-icon">📤</view>
-        </view>
-        <view class="setting-content">
-          <view class="setting-name">数据导出</view>
-          <view class="setting-desc">导出我的鹦鹉与记录数据</view>
-        </view>
-        <view class="setting-arrow">></view>
-      </view>
-
       
-
+      
       <view class="setting-action-item">
         <view class="setting-icon-wrapper">
           <view class="setting-icon notify-icon">🔔</view>
@@ -171,11 +160,5 @@
       </view>
   </view>
 
-    <!-- 通知开启时，额外安全留白，防止底部导航遮挡底部按钮 -->
-    <view wx:if="{{notificationsEnabled}}" class="safe-bottom-spacer"></view>
-
   </view>
 </view>
-
-<!-- 底部导航栏（非 Tab 页复用） -->
-<bottom-nav active="profile" />

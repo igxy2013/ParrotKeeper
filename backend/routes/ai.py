@@ -1,5 +1,5 @@
 from flask import Blueprint, request, current_app
-from utils import login_required, success_response, error_response
+from utils import login_required, success_response, error_response, cache_get_json, cache_set_json
 from models import db, Parrot, ParrotSpecies, FeedingRecord, HealthRecord, CleaningRecord, UserSetting
 from datetime import datetime, timedelta, date
 from team_mode_utils import get_accessible_parrot_ids_by_mode
@@ -375,14 +375,24 @@ def _default_care_guide_config():
 
 
 def _load_care_guide_config() -> dict:
+    key = 'care_guide_config_v1'
+    cached = cache_get_json(key)
+    if isinstance(cached, dict):
+        return cached
     path = _get_care_guide_path()
     try:
         if not os.path.exists(path):
-            return _default_care_guide_config()
+            cfg = _default_care_guide_config()
+            cache_set_json(key, cfg, 3600)
+            return cfg
         with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            cfg = json.load(f)
+            cache_set_json(key, cfg, 3600)
+            return cfg
     except Exception:
-        return _default_care_guide_config()
+        cfg = _default_care_guide_config()
+        cache_set_json(key, cfg, 3600)
+        return cfg
 
 
 def _default_preferences():

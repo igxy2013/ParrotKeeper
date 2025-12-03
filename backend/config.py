@@ -38,6 +38,17 @@ class Config:
     # 基础URL配置（用于生成图片等资源的完整可访问地址）
     BASE_URL = os.environ.get('BASE_URL') or 'https://bimai.xyz'
 
+    REDIS_URL = os.environ.get('REDIS_URL')
+    REDIS_HOST = os.environ.get('REDIS_HOST') or '127.0.0.1'
+    try:
+        REDIS_PORT = int(os.environ.get('REDIS_PORT') or 6379)
+    except Exception:
+        REDIS_PORT = 6379
+    try:
+        REDIS_DB = int(os.environ.get('REDIS_DB') or 0)
+    except Exception:
+        REDIS_DB = 0
+
     # 服务端网络配置（从 .env 读取）
     HOST = os.environ.get('HOST') or '0.0.0.0'
     try:

@@ -203,23 +203,11 @@ Page({
       console.log('API地址:', `${app.globalData.baseUrl}/api/expenses`)
       console.log('OpenID:', app.globalData.openid)
 
-      const response = await new Promise((resolve, reject) => {
-        wx.request({
-          url: `${app.globalData.baseUrl}/api/expenses`,
-          method: 'POST',
-          data: formData,
-          header: {
-            'X-OpenID': app.globalData.openid,
-            'Content-Type': 'application/json'
-          },
-          success: resolve,
-          fail: reject
-        })
-      })
+      const response = await app.request({ url: '/api/expenses', method: 'POST', data: formData })
 
       console.log('添加支出API响应:', response)
 
-      if (response && response.data && response.data.success) {
+      if (response && response.success) {
         wx.showToast({
           title: '添加成功',
           icon: 'success'
@@ -231,10 +219,14 @@ Page({
         setTimeout(() => {
           wx.navigateBack()
         }, 1500)
+      } else if (response && response.offlineQueued) {
+        wx.showToast({ title: '已离线保存，将自动提交', icon: 'none' })
+        app.globalData.needRefresh = true
+        setTimeout(() => { wx.navigateBack() }, 800)
       } else {
         console.error('添加支出API返回错误:', response)
         wx.showToast({
-          title: response?.data?.message || '添加失败',
+          title: response?.message || '添加失败',
           icon: 'none'
         })
       }

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, Expense, Income, UserStatistics
+from models import db, Parrot, ParrotSpecies, FeedingRecord, HealthRecord, CleaningRecord, Expense, Income, UserStatistics
 from utils import login_required, success_response, error_response, add_user_points
 from team_utils import get_accessible_parrots
 from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode, get_accessible_income_ids_by_mode
@@ -526,9 +526,10 @@ def get_weight_trends():
         results = db.session.query(
             HealthRecord.parrot_id.label('parrot_id'),
             Parrot.name.label('parrot_name'),
+            ParrotSpecies.name.label('species_name'),
             func.date(HealthRecord.record_date).label('date'),
             func.avg(HealthRecord.weight).label('avg_weight')
-        ).join(Parrot, HealthRecord.parrot_id == Parrot.id).filter(
+        ).join(Parrot, HealthRecord.parrot_id == Parrot.id).outerjoin(ParrotSpecies, Parrot.species_id == ParrotSpecies.id).filter(
             HealthRecord.parrot_id.in_(accessible_parrot_ids),
             Parrot.is_active == True,
             HealthRecord.weight.isnot(None),
@@ -537,6 +538,7 @@ def get_weight_trends():
         ).group_by(
             HealthRecord.parrot_id,
             Parrot.name,
+            ParrotSpecies.name,
             func.date(HealthRecord.record_date)
         ).order_by(
             HealthRecord.parrot_id,
@@ -550,6 +552,7 @@ def get_weight_trends():
                 series_map[pid] = {
                     'parrot_id': pid,
                     'parrot_name': r.parrot_name,
+                    'species_name': r.species_name,
                     'points': []
                 }
             series_map[pid]['points'].append({
