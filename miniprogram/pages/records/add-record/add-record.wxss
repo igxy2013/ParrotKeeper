@@ -372,6 +372,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12rpx;
   transition: all 0.3s ease;
 }
 
@@ -401,6 +402,18 @@
   background: #d1d5db;
   color: #9ca3af;
   box-shadow: none;
+}
+
+/* 保存中加载态下保持主按钮样式，避免禁用灰色影响动效对比度 */
+.btn-primary.loading {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.3);
+}
+.btn-primary.loading:disabled {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.3);
 }
 
 /* 弹窗样式 */
