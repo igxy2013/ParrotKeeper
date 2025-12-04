@@ -1,10 +1,7 @@
 .page-container { background: #f8f9fa; min-height: 100vh; }
 .page-content { padding: 20rpx; }
 .no-access, .loading, .empty { text-align: center; color: #666; padding: 40rpx 0; }
-.toolbar { display: flex; justify-content: flex-end; margin-bottom: 20rpx; }
-.quick-add-btn { display: flex; align-items: center; gap: 12rpx; background: #10b981; color: #fff; padding: 12rpx 20rpx; border-radius: 12rpx; }
-.action-icon-wrapper.small { width: 36rpx; height: 36rpx; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.25); border-radius: 50%; }
-.plus-icon { font-size: 28rpx; }
+.toolbar { display: none; }
 .list { display: flex; flex-direction: column; gap: 20rpx; }
 .item { background: #fff; border-radius: 32rpx; box-shadow: 0 16rpx 40rpx rgba(16, 185, 129, 0.08); border: 1rpx solid #eef2f7; overflow: hidden; }
 .item-header { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 32rpx; background: linear-gradient(135deg, #f8fff9 0%, #f1fffa 100%); }
@@ -40,3 +37,7 @@
 .btn-secondary, .btn-primary { flex:1; padding:18rpx 24rpx; border-radius:28rpx; font-size:26rpx; }
 .btn-secondary { background:#e5e7eb; color:#374151; }
 .btn-primary { background: linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4); color:#ffffff; }
+
+/* 顶部导航右侧加号按钮（与记录页面对齐） */
+.header-btn { width: 72rpx; height: 72rpx; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10rpx); }
+.header-btn-icon-img { width: 36rpx; height: 36rpx; }

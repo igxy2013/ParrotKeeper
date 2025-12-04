@@ -1,8 +1,8 @@
 .page-container{background:#fff;min-height:100vh}
 .page-content{padding:12px}
-.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.toolbar-left{flex:1}
-.toolbar-right{margin-left:12px}
+.toolbar{display:none}
+.toolbar-left{display:none}
+.toolbar-right{display:none}
 .picker-display{display:flex;align-items:center;justify-content:space-between;padding:24rpx;border:2rpx solid #e5e7eb;border-radius:32rpx;font-size:26rpx;background:#ffffff}
 .picker-display:active{border-color:#26A69A}
 .species-multi{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
@@ -10,11 +10,9 @@
 .species-option.selected{background:#10b981;border-color:#10b981;color:#ffffff;box-shadow:0 6rpx 14rpx rgba(16,185,129,0.35)}
 .btn-primary{background:#10b981;color:#fff;border-radius:12px;padding:10px 20px;font-size:14px;box-shadow:0 2px 6px rgba(16,185,129,.25)}
 .btn-primary.lg{padding:12px 22px;font-size:15px}
-.quick-add-btn{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#E9FFF4,#D7F8E7);border:none;border-radius:32rpx;padding:8px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.06)}
-.quick-add-btn:active{transform:translateY(2px) scale(0.98);box-shadow:0 4px 16px rgba(0,0,0,0.14)}
-.action-icon-wrapper.small{width:28px;height:28px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.1)}
-.plus-icon{color:#10b981;font-size:18px;line-height:1}
-.quick-add-label{font-size:14px;color:#374151;font-weight:500}
+/* 顶部导航右侧加号按钮 */
+.header-btn{width:72rpx;height:72rpx;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10rpx)}
+.header-btn-icon-img{width:36rpx;height:36rpx}
 .list{display:flex;flex-direction:column;gap:10px}
 .item{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;box-shadow:0 12px 32px rgba(0,0,0,0.08)}
 .item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}

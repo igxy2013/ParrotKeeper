@@ -1,17 +1,14 @@
 <view class="page-container">
-  <app-header title="鹦鹉品种管理" subtitle="维护品种基础信息" showBack="true" />
+  <app-header title="鹦鹉品种管理" subtitle="维护品种基础信息" showBack="true">
+    <view slot="actions" class="header-btn" bindtap="openCreateModal">
+      <image class="header-btn-icon-img" src="/images/remix/add-circle-fill.png" mode="widthFix" />
+    </view>
+  </app-header>
   <view class="page-content">
     <block wx:if="{{!isSuperAdmin}}"><view class="no-access">仅超级管理员可访问</view></block>
     <block wx:elif="{{loading}}"><view class="loading">加载中...</view></block>
     <block wx:else>
-      <view class="toolbar">
-        <view class="toolbar-right">
-          <view class="quick-add-btn" bindtap="openCreateModal">
-            <view class="action-icon-wrapper small"><text class="plus-icon">＋</text></view>
-            <text class="quick-add-label">新增品种</text>
-          </view>
-        </view>
-      </view>
+      
 
       <view class="list" wx:if="{{speciesList && speciesList.length}}">
         <view class="item" wx:for="{{speciesList}}" wx:key="id">
