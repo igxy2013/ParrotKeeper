@@ -1,6 +1,6 @@
 <view class="page-container">
   <app-header title="孵化详情" subtitle="记录孵化详细信息" showBack="true">
-    <view slot="actions" class="header-action" wx:if="{{hasOperationPermission}}" bindtap="openHatchPanel">
+    <view slot="actions" class="header-action" wx:if="{{hasOperationPermission}}" bindtap="openPlusMenu">
       <image class="header-icon" src="/images/remix/add-circle-fill.png" mode="widthFix" />
     </view>
   </app-header>
@@ -10,29 +10,64 @@
       <view class="egg-card">
         <view class="row">
           <text class="label">{{egg.label || ('蛋 ' + egg.id)}}</text>
-          <text class="status">{{statusText}}</text>
+          <view class="status-wrap">
+            <text class="status">{{statusText}}</text>
+            <text class="hatch-badge" wx:if="{{hasHatched && egg.hatch_date_text === selectedDate}}">今日出壳</text>
+          </view>
         </view>
         <view class="meta">
-          <text>开始：{{egg.incubator_start_date_text || '未设置'}}</text>
-          <text>天数：{{egg.day_since_start_text}} 天</text>
-          <text>品种：{{egg.species_name || '未设置'}}</text>
+          <view class="meta-item">
+            <text class="meta-label">开始</text>
+            <text class="meta-value">{{egg.incubator_start_date_text || '未设置'}}</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-label">天数</text>
+            <text class="meta-value">{{egg.day_since_start_text}} 天</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-label">品种</text>
+            <text class="meta-value">{{egg.species_name || '未设置'}}</text>
+          </view>
+          <view class="meta-item" wx:if="{{egg.hatch_date_text}}">
+            <text class="meta-label">出壳</text>
+            <text class="meta-value">{{egg.hatch_date_text}}</text>
+          </view>
         </view>
       </view>
 
       <view class="calendar" wx:if="{{calendarDays.length > 0}}">
-        <view class="cal-header">{{currentMonthText}}</view>
+        <view class="cal-header">
+          <view class="cal-nav">
+            <view class="nav-btn" bindtap="goPrevMonth">‹</view>
+            <text class="month-text">{{currentMonthText}}</text>
+            <view class="nav-btn" bindtap="goNextMonth">›</view>
+          </view>
+        </view>
+        <view class="cal-weekdays">
+          <view class="weekday">日</view>
+          <view class="weekday">一</view>
+          <view class="weekday">二</view>
+          <view class="weekday">三</view>
+          <view class="weekday">四</view>
+          <view class="weekday">五</view>
+          <view class="weekday">六</view>
+        </view>
         <view class="cal-grid">
-          <view class="cal-cell {{item.hasLog ? 'has-log' : ''}} {{item.isIncubating ? 'incubating' : ''}} {{item.isToday ? 'today' : ''}}" wx:for="{{calendarDays}}" wx:key="date" catchtap="onTapDay" data-date="{{item.date}}" data-dayindex="{{item.dayIndex}}">
+          <view class="cal-cell {{item.hasLog ? 'has-log' : ''}} {{item.isIncubating ? 'incubating' : ''}} {{item.isToday ? 'today' : ''}} {{item.date === selectedDate ? 'selected' : ''}}" wx:for="{{calendarDays}}" wx:key="date" catchtap="onTapDay" data-date="{{item.date}}" data-dayindex="{{item.dayIndex}}">
             <text class="day">{{item.day}}</text>
-            <text class="day-index" wx:if="{{item.dayIndex}}">第{{item.dayIndex}}天</text>
+            <text class="day-index" wx:if="{{item.dayIndex && item.isIncubating}}">第{{item.dayIndex}}天</text>
             <text class="temp" wx:if="{{item.hasLog && item.temp !== undefined && item.temp !== null}}">{{item.temp}}℃</text>
             <text class="hum" wx:if="{{item.hasLog && item.hum !== undefined && item.hum !== null}}">{{item.hum}}%</text>
+            <view class="candling-dot" wx:if="{{item.isCandlingDay}}"></view>
+            <view class="hatch-dot" wx:if="{{item.isHatchDay}}"></view>
           </view>
         </view>
         <view class="cal-legend">
           <view class="legend-item"><view class="legend-dot dot-incubating"></view><text>孵化期</text></view>
           <view class="legend-item"><view class="legend-dot dot-haslog"></view><text>有记录</text></view>
           <view class="legend-item"><view class="legend-dot dot-today"></view><text>今天</text></view>
+          <view class="legend-item"><view class="legend-dot dot-candling"></view><text>照蛋日</text></view>
+          <view class="legend-item"><view class="legend-dot dot-hatch"></view><text>出壳日</text></view>
         </view>
       </view>
 
@@ -44,7 +79,10 @@
         <view class="support-tip" wx:if="{{!speciesSupported}}">
           <text>当前孵化建议仅支持：玄凤鹦鹉、牡丹鹦鹉、亚马逊鹦鹉、金刚鹦鹉、非洲灰鹦鹉、折衷鹦鹉</text>
         </view>
-        <view class="suggest-grid">
+        <view class="hatched-info" wx:if="{{hasHatched && afterHatch}}">
+          <text>已出雏，无需孵化建议。</text>
+        </view>
+        <view class="suggest-grid" wx:if="{{!(hasHatched && afterHatch)}}">
           <view class="sg-box temp">
             <text class="sg-label">温度</text>
             <text class="sg-value">{{selectedTempRangeText}}</text>
@@ -54,7 +92,7 @@
             <text class="sg-value">{{selectedHumRangeText}}</text>
           </view>
         </view>
-        <view class="suggest-meta">
+        <view class="suggest-meta" wx:if="{{!(hasHatched && afterHatch)}}">
           <view class="meta-chip turning">{{selectedTurningText}}</view>
           <view class="meta-chip candling">{{selectedCandlingText}}</view>
         </view>
@@ -71,6 +109,44 @@
           <view class="modal-actions">
             <button class="btn-cancel" bindtap="closeHatchPanel">取消</button>
             <button class="btn-primary" bindtap="submitHatchDate">保存</button>
+          </view>
+        </view>
+      </view>
+
+      <view class="hatch-mask" wx:if="{{showUnifiedPanel}}" catchtouchmove="noop">
+        <view class="action-modal">
+          <view class="modal-title">孵化记录</view>
+          <view class="modal-content">
+            <view class="section">
+              <view class="form-row">
+                <text class="field-label">记录日期</text>
+                <picker mode="date" value="{{logDate}}" bindchange="onLogDateChange">
+                  <view class="picker-display">{{logDate || '选择日期'}}</view>
+                </picker>
+              </view>
+              <view class="form-row">
+                <input class="form-input large" type="digit" placeholder="温度℃" value="{{logTemp}}" bindinput="onLogTempInput"/>
+                <input class="form-input large" type="digit" placeholder="湿度%" value="{{logHum}}" bindinput="onLogHumInput"/>
+              </view>
+              <view class="form-row switch-row">
+                <text class="switch-label">是否照蛋</text>
+                <switch checked="{{logCandling}}" bindchange="toggleLogCandling"/>
+              </view>
+              <view class="form-row">
+                <input class="form-input large" placeholder="备注" value="{{logNotes}}" bindinput="onLogNotesInput"/>
+              </view>
+            </view>
+
+            <view class="section">
+              <view class="form-row switch-row">
+                <text class="switch-label">今日出壳</text>
+                <switch checked="{{hatchToday}}" bindchange="toggleHatchToday"/>
+              </view>
+            </view>
+          </view>
+          <view class="modal-actions">
+            <button class="btn-cancel lg" bindtap="closeUnifiedPanel">取消</button>
+            <button class="btn-primary lg" bindtap="submitUnifiedForm">保存</button>
           </view>
         </view>
       </view>

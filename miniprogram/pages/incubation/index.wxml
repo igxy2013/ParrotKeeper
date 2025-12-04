@@ -30,6 +30,9 @@
             <text>天数：{{item.day_since_start_text}} 天</text>
             <text>品种：{{item.species_name || '未设置'}}</text>
           </view>
+          <view class="meta" wx:if="{{item.hatch_date_text}}">
+            <text>出壳：{{item.hatch_date_text}}</text>
+          </view>
         </view>
       </view>
     </block>

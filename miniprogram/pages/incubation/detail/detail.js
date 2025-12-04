@@ -19,6 +19,18 @@ Page({
     hatchDate: '',
     hasOperationPermission: false,
     speciesSupported: true
+    , showUnifiedPanel: false
+    , logDate: ''
+    , logTemp: ''
+    , logHum: ''
+    , logNotes: ''
+    , logCandling: false
+    , hatchToday: false
+    , hasHatched: false
+    , afterHatch: false
+    , calendarYear: null
+    , calendarMonth: null
+    , calendarMap: {}
   },
 
   isSpeciesSupported(name){
@@ -47,11 +59,18 @@ Page({
       const dsCalc = (typeof egg.day_since_start === 'number') ? egg.day_since_start : this.computeDaySinceStart(egg && egg.incubator_start_date)
       const dsText = (dsCalc === null || dsCalc === undefined || isNaN(dsCalc)) ? '--' : String(dsCalc)
       const speciesName = (egg && egg.species && egg.species.name) ? egg.species.name : (egg && egg.species_name) || ''
-      egg = { ...egg, incubator_start_date_text: startText, day_since_start: dsCalc, day_since_start_text: dsText, species_name: speciesName }
+      const hatchText = this.formatDate(egg && egg.hatch_date)
+      egg = { ...egg, incubator_start_date_text: startText, hatch_date_text: hatchText, day_since_start: dsCalc, day_since_start_text: dsText, species_name: speciesName }
       const speciesSupported = this.isSpeciesSupported(speciesName)
-      this.setData({ egg, statusText: this.mapStatusToCN(egg && egg.status), speciesSupported })
+      const statusText = hatchText ? '已出雏' : this.mapStatusToCN(egg && egg.status)
+      const hasHatched = !!hatchText
+      this.setData({ egg, statusText, speciesSupported, hasHatched })
       const calResp = await app.request({ url: `/api/incubation/eggs/${this.data.id}/calendar`, method: 'GET' })
       const calMap = (calResp && calResp.data && calResp.data.calendar) || {}
+      const today = new Date()
+      const y = today.getFullYear()
+      const m = today.getMonth()
+      this.setData({ calendarMap: calMap, calendarYear: y, calendarMonth: m })
       this.buildCalendarFromMap(calMap)
     } catch (e) {
       wx.showToast({ title: e.message || '加载失败', icon: 'none' })
@@ -83,8 +102,8 @@ Page({
 
   buildCalendarFromMap(calendar){
     const today = new Date()
-    const year = today.getFullYear()
-    const month = today.getMonth()
+    const year = (this.data.calendarYear != null) ? this.data.calendarYear : today.getFullYear()
+    const month = (this.data.calendarMonth != null) ? this.data.calendarMonth : today.getMonth()
     const first = new Date(year, month, 1)
     const last = new Date(year, month + 1, 0)
     const days = []
@@ -94,40 +113,74 @@ Page({
     const startStr = egg.incubator_start_date_text || this.formatDate(egg.incubator_start_date)
     const startDate = startStr ? new Date(`${startStr}T00:00:00`) : null
     const todayMid = new Date(); todayMid.setHours(0,0,0,0)
+    const hatchStr = egg.hatch_date_text || this.formatDate(egg.hatch_date)
+    const endDate = hatchStr ? new Date(`${hatchStr}T00:00:00`) : todayMid
 
     for(let i=0;i<padStart;i++){ days.push({ day:'', date:'', hasLog:false }) }
     for(let d=1; d<=last.getDate(); d++){
       const dt = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
       const item = calendar && calendar[dt]
       const cellDate = new Date(`${dt}T00:00:00`)
-      const isIncubating = !!(startDate && cellDate >= startDate && cellDate <= todayMid)
+      const isIncubating = !!(startDate && cellDate >= startDate && cellDate <= endDate)
       let dayIndex = null
-      if (isIncubating) {
+      if (startDate && cellDate >= startDate) {
         dayIndex = Math.floor((cellDate.getTime() - startDate.getTime()) / 86400000) + 1
       }
       const isToday = cellDate.getTime() === todayMid.getTime()
       let sTempTarget=null, sTempRangeText='', sHumRangeText=''
-      if (isIncubating && dayIndex){
+      let isCandlingDay=false
+      const isHatchDay = !!(hatchStr && dt === hatchStr)
+      if (dayIndex){
         const s = this.suggestForDay(dayIndex)
         const tr = s.temperature_c || {}
         const hr = s.humidity_pct || {}
         sTempTarget = tr.target
         sTempRangeText = `${tr.low}-${tr.high}℃`
         sHumRangeText = `${hr.low}-${hr.high}%`
+        isCandlingDay = !!(s.candling && s.candling.enabled)
       }
-      days.push({ day: d, date: dt, hasLog: !!item, temp: item && item.temperature_c, hum: item && item.humidity_pct, isIncubating, dayIndex, isToday, sTempTarget, sTempRangeText, sHumRangeText })
+      days.push({ day: d, date: dt, hasLog: !!item, temp: item && item.temperature_c, hum: item && item.humidity_pct, isIncubating, dayIndex, isToday, sTempTarget, sTempRangeText, sHumRangeText, isCandlingDay, isHatchDay })
     }
     this.setData({ calendarDays: days, currentMonthText: `${year}年${month+1}月` })
     this.setDefaultSelection()
+  },
+
+  goPrevMonth(){
+    try{
+      let y = this.data.calendarYear
+      let m = this.data.calendarMonth
+      if (y == null || m == null){ const t = new Date(); y = t.getFullYear(); m = t.getMonth() }
+      m -= 1
+      if (m < 0){ m = 11; y -= 1 }
+      this.setData({ calendarYear: y, calendarMonth: m })
+      this.buildCalendarFromMap(this.data.calendarMap)
+    }catch(_){ }
+  },
+  goNextMonth(){
+    try{
+      let y = this.data.calendarYear
+      let m = this.data.calendarMonth
+      if (y == null || m == null){ const t = new Date(); y = t.getFullYear(); m = t.getMonth() }
+      m += 1
+      if (m > 11){ m = 0; y += 1 }
+      this.setData({ calendarYear: y, calendarMonth: m })
+      this.buildCalendarFromMap(this.data.calendarMap)
+    }catch(_){ }
   },
 
   setDefaultSelection(){
     try{
       const days = this.data.calendarDays || []
       const today = new Date(); const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
-      let sel = days.find(d => d.date === todayStr && d.isIncubating) || days.find(d => d.isIncubating)
+      const egg = this.data.egg || {}
+      const hatchStr = egg.hatch_date_text || this.formatDate(egg.hatch_date)
+      let sel = null
+      if (hatchStr){
+        sel = days.find(d => d.date === hatchStr) || days.find(d => d.isIncubating)
+      } else {
+        sel = days.find(d => d.date === todayStr && d.isIncubating) || days.find(d => d.isIncubating)
+      }
       if (!sel) {
-        const egg = this.data.egg || {}
         const startStr = egg.incubator_start_date_text || this.formatDate(egg.incubator_start_date)
         if (startStr){ sel = { date: todayStr, dayIndex: this.computeDaySinceStart(startStr)+1 } }
       }
@@ -137,6 +190,7 @@ Page({
           const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
           const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
           const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
+          const afterHatch = !!(hatchStr && sel.date >= hatchStr)
           this.setData({
             selectedDate: sel.date,
             selectedDateText: sel.date,
@@ -144,9 +198,11 @@ Page({
             selectedTempRangeText: `${tr.low}-${tr.high}℃`,
             selectedHumRangeText: `${hr.low}-${hr.high}%`,
             selectedTurningText: turningText,
-            selectedCandlingText: candlingText
+            selectedCandlingText: candlingText,
+            afterHatch
           })
         } else {
+          const afterHatch = !!(hatchStr && sel.date >= hatchStr)
           this.setData({
             selectedDate: sel.date,
             selectedDateText: sel.date,
@@ -154,7 +210,8 @@ Page({
             selectedTempRangeText: '—',
             selectedHumRangeText: '—',
             selectedTurningText: '—',
-            selectedCandlingText: '—'
+            selectedCandlingText: '—',
+            afterHatch
           })
         }
       }
@@ -175,6 +232,9 @@ Page({
         }
       }
       if (!dt || !di || di <= 0) return
+      const egg = this.data.egg || {}
+      const hatchStr = egg.hatch_date_text || this.formatDate(egg.hatch_date)
+      const afterHatch = !!(hatchStr && dt >= hatchStr)
       if (this.data.speciesSupported){
         const s = this.suggestForDay(di)
         const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
@@ -187,7 +247,8 @@ Page({
           selectedTempRangeText: `${tr.low}-${tr.high}℃`,
           selectedHumRangeText: `${hr.low}-${hr.high}%`,
           selectedTurningText: turningText,
-          selectedCandlingText: candlingText
+          selectedCandlingText: candlingText,
+          afterHatch
         })
       } else {
         this.setData({
@@ -197,7 +258,8 @@ Page({
           selectedTempRangeText: '—',
           selectedHumRangeText: '—',
           selectedTurningText: '—',
-          selectedCandlingText: '—'
+          selectedCandlingText: '—',
+          afterHatch
         })
       }
     }catch(_){ }
@@ -264,5 +326,87 @@ Page({
   mapStatusToCN(s){
     const map = { incubating: '孵化中', hatched: '已出雏', failed: '失败', stopped: '已停止' }
     return map[s] || (s || '')
-  }
+  },
+  openPlusMenu(){
+    const today = new Date()
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+    const logD = this.data.selectedDate || todayStr
+    this.setData({ showUnifiedPanel: true, logDate: logD, logTemp: '', logHum: '', logNotes: '', logCandling: false, hatchToday: false })
+  },
+  closeUnifiedPanel(){ this.setData({ showUnifiedPanel: false }) },
+
+  
+  onLogDateChange(e){ this.setData({ logDate: (e && e.detail && e.detail.value) || '' }) },
+  onLogTempInput(e){ this.setData({ logTemp: (e && e.detail && e.detail.value) || '' }) },
+  onLogHumInput(e){ this.setData({ logHum: (e && e.detail && e.detail.value) || '' }) },
+  onLogNotesInput(e){ this.setData({ logNotes: (e && e.detail && e.detail.value) || '' }) },
+  toggleLogCandling(e){ const v = !!(e && e.detail && e.detail.value); this.setData({ logCandling: v }) },
+  toggleHatchToday(e){ const v = !!(e && e.detail && e.detail.value); this.setData({ hatchToday: v }) },
+  async submitUnifiedForm(){
+    try{
+      const ops = []
+      const d = this.data.logDate
+      if(!d){ wx.showToast({ title: '请选择日期', icon: 'none' }); return }
+      const hasLog = !!(this.data.logTemp || this.data.logHum || this.data.logNotes || this.data.logCandling)
+      if (hasLog){
+        const t = this.data.logTemp ? parseFloat(this.data.logTemp) : undefined
+        const h = this.data.logHum ? parseFloat(this.data.logHum) : undefined
+        const payload = { log_date: d, date: d }
+        // 兼容后端键名：同时传递 temperature_c/temperature 与 humidity_pct/humidity
+        if (t !== undefined && !isNaN(t)) { payload.temperature_c = t; payload.temperature = t }
+        if (h !== undefined && !isNaN(h)) { payload.humidity_pct = h; payload.humidity = h }
+        if (this.data.logNotes) payload.notes = this.data.logNotes
+        // 兼容照蛋字段命名
+        payload.candling = !!this.data.logCandling
+        payload.is_candling = !!this.data.logCandling
+        // 传递 day_index 以便后端校验
+        const egg = this.data.egg || {}
+        const startStr = this.formatDate(egg.incubator_start_date)
+        if (startStr){
+          try{
+            const start = new Date(`${startStr}T00:00:00`)
+            const cell = new Date(`${d}T00:00:00`)
+            const di = Math.floor((cell - start)/86400000) + 1
+            if (di > 0 && isFinite(di)) payload.day_index = di
+          }catch(_){}
+        }
+        ops.push(app.request({ url: `/api/incubation/eggs/${this.data.id}/logs`, method: 'POST', data: payload }).catch(err => ({ success: false, message: err && err.message })))
+      }
+      if (this.data.hatchToday){
+        const today = new Date()
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+        ops.push(app.request({ url: `/api/incubation/eggs/${this.data.id}`, method: 'PUT', data: { hatch_date: todayStr } }).catch(err => ({ success: false, message: err && err.message })))
+      }
+      if (ops.length === 0){ wx.showToast({ title: '未填写内容', icon: 'none' }); return }
+      const results = await Promise.all(ops)
+      const ok = results.every(r => r && r.success)
+      if (ok){
+        wx.showToast({ title: '已保存', icon: 'success' })
+        this.setData({ showUnifiedPanel: false })
+        this.fetchDetail()
+      } else {
+        const failMsg = (results.find(r => !r || !r.success) || {}).message || '保存失败'
+        wx.showToast({ title: failMsg, icon: 'none' })
+      }
+    }catch(_){ wx.showToast({ title: '保存失败', icon: 'none' }) }
+  },
+
+  
+
+  
+  onStartDateChange(e){ this.setData({ startDate: (e && e.detail && e.detail.value) || '' }) },
+  async submitStartDate(){
+    try{
+      const d = this.data.startDate
+      if (!d){ wx.showToast({ title: '请选择日期', icon: 'none' }); return }
+      const resp = await app.request({ url: `/api/incubation/eggs/${this.data.id}`, method: 'PUT', data: { incubator_start_date: d } })
+      if (resp && resp.success){
+        wx.showToast({ title: '已保存开始日期', icon: 'success' })
+        this.setData({ showUnifiedPanel: false })
+        this.fetchDetail()
+      } else {
+        wx.showToast({ title: (resp && resp.message) || '保存失败', icon: 'none' })
+      }
+    }catch(_){ wx.showToast({ title: '保存失败', icon: 'none' }) }
+  },
 })

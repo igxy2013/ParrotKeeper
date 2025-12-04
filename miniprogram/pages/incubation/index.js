@@ -31,13 +31,15 @@ Page({
         const ds = (typeof it.day_since_start === 'number' ? it.day_since_start : this.computeDaySinceStart(it && it.incubator_start_date))
         const dsText = (ds === null || ds === undefined || isNaN(ds)) ? '--' : String(ds)
         const speciesName = (it && it.species && it.species.name) ? it.species.name : (it && it.species_name) || ''
+        const hatchText = this.formatDate(it && it.hatch_date)
         return {
           ...it,
-          status_text: this.mapStatusToCN(it && it.status),
+          status_text: hatchText ? '已出雏' : this.mapStatusToCN(it && it.status),
           day_since_start: ds,
           day_since_start_text: dsText,
           incubator_start_date_text: this.formatDate(it && it.incubator_start_date),
-          species_name: speciesName
+          species_name: speciesName,
+          hatch_date_text: hatchText
         }
       })
       this.setData({ eggs: mapped })
@@ -79,8 +81,10 @@ Page({
         const list = res.data || []
         const names = list.map(s => s.name)
         this.setData({ speciesList: list, speciesNames: names })
+        return list
       }
-    }catch(_){ /* 忽略失败 */ }
+      return []
+    }catch(_){ return [] }
   },
   onSpeciesChange(e){
     try{
@@ -142,14 +146,17 @@ Page({
     }catch(_){ return null }
   }
   ,
-  openEditEgg(e){
+  async openEditEgg(e){
     try{
       const id = e.currentTarget.dataset.id
       const item = (this.data.eggs || []).find(x => String(x.id) === String(id))
+      if (!item){ wx.showToast({ title: '记录不存在', icon: 'none' }); return }
+      if (!this.data.speciesList || !this.data.speciesList.length){ await this.loadSpeciesList() }
       const speciesName = (item && item.species && item.species.name) ? item.species.name : (item && item.species_name) || ''
+      const list = this.data.speciesList || []
       let speciesIdx = -1
-      if (this.data.speciesList && this.data.speciesList.length){
-        speciesIdx = this.data.speciesList.findIndex(s => s.name === speciesName || String(s.id) === String(item && (item.species_id || (item.species && item.species.id))))
+      if (list && list.length){
+        speciesIdx = list.findIndex(s => s.name === speciesName || String(s.id) === String(item && (item.species_id || (item.species && item.species.id))))
       }
       const form = {
         label: (item && item.label) || '',
