@@ -11,7 +11,8 @@
         "feedbacks/feedbacks",
         "care-guide-editor/care-guide-editor",
         "user-role/user-role",
-        "announcements/announcements"
+        "announcements/announcements",
+        "incubation-suggestions/incubation-suggestions"
       ]
     },
     {

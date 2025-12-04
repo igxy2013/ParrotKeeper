@@ -217,6 +217,29 @@ class IncubationLog(db.Model):
     egg = db.relationship('Egg', backref=db.backref('incubation_logs', lazy=True, cascade='all, delete-orphan'))
     created_by = db.relationship('User', backref='created_incubation_logs', lazy=True)
 
+class IncubationSuggestion(db.Model):
+    __tablename__ = 'incubation_suggestions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    species_id = db.Column(db.Integer, db.ForeignKey('parrot_species.id'), nullable=True)
+    day_start = db.Column(db.Integer, nullable=False, default=1)
+    day_end = db.Column(db.Integer, nullable=False, default=21)
+    temperature_target = db.Column(db.Numeric(4, 2))
+    temperature_low = db.Column(db.Numeric(4, 2))
+    temperature_high = db.Column(db.Numeric(4, 2))
+    humidity_low = db.Column(db.Numeric(4, 1))
+    humidity_high = db.Column(db.Numeric(4, 1))
+    turning_required = db.Column(db.Boolean, default=False)
+    candling_required = db.Column(db.Boolean, default=False)
+    tips = db.Column(db.Text)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    team_id = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    species = db.relationship('ParrotSpecies', lazy=True)
+    created_by = db.relationship('User', backref='created_incubation_suggestions', lazy=True)
+
 class Expense(db.Model):
     __tablename__ = 'expenses'
     

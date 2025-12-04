@@ -1,6 +1,7 @@
 from marshmallow import Schema, fields, validate
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from models import User, Parrot, ParrotSpecies, FeedType, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord, Expense, Reminder, Egg, IncubationLog
+from models import IncubationSuggestion
 
 class UserSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -289,9 +290,17 @@ class IncubationLogSchema(SQLAlchemyAutoSchema):
         try:
             if obj.egg and obj.egg.incubator_start_date and obj.log_date:
                 return (obj.log_date - obj.egg.incubator_start_date).days
-            return None
         except Exception:
             return None
+        return None
+
+class IncubationSuggestionSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = IncubationSuggestion
+        load_instance = True
+        exclude = ('created_at', 'updated_at')
+    species = fields.Nested(ParrotSpeciesSchema, dump_only=True, only=('id','name'))
+    created_by = fields.Nested(UserSchema, dump_only=True, only=('id','username'))
 
 # 创建schema实例
 user_schema = UserSchema()
@@ -329,3 +338,5 @@ eggs_schema = EggSchema(many=True)
 
 incubation_log_schema = IncubationLogSchema()
 incubation_logs_schema = IncubationLogSchema(many=True)
+incubation_suggestion_schema = IncubationSuggestionSchema()
+incubation_suggestions_schema = IncubationSuggestionSchema(many=True)

@@ -662,6 +662,14 @@ Page({
     if (role === 'admin') return '团队管理员';
     return '团队成员';
   },
+  goAdminIncubationSuggestions(){
+    try{
+      const userInfo = this.data.userInfo || app.globalData.userInfo || {}
+      const role = String(userInfo.role || '')
+      if (role !== 'super_admin') { app.showError('仅超级管理员可进入'); return }
+      wx.navigateTo({ url: '/pages/admin/incubation-suggestions/incubation-suggestions' })
+    }catch(_){ }
+  },
 
   // 加载团队信息（如果处于团队模式）
   async loadTeamInfoIfNeeded() {

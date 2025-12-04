@@ -78,12 +78,19 @@ Page({
       const statusText = hatchText ? '已出雏' : this.mapStatusToCN(egg && egg.status)
       const hasHatched = !!hatchText
       this.setData({ egg, statusText, speciesSupported, hasHatched, eggLogs: logsMapped })
+      let speciesSuggestions = []
+      try{
+        if (egg && egg.species_id){
+          const sResp = await app.request({ url: `/api/incubation/suggestions?species_id=${egg.species_id}`, method: 'GET' })
+          speciesSuggestions = (sResp && sResp.data && sResp.data.items) || []
+        }
+      }catch(_){ speciesSuggestions = [] }
       const calResp = await app.request({ url: `/api/incubation/eggs/${this.data.id}/calendar`, method: 'GET' })
       const calMap = (calResp && calResp.data && calResp.data.calendar) || {}
       const today = new Date()
       const y = today.getFullYear()
       const m = today.getMonth()
-      this.setData({ calendarMap: calMap, calendarYear: y, calendarMonth: m })
+      this.setData({ calendarMap: calMap, calendarYear: y, calendarMonth: m, speciesSuggestions })
       this.buildCalendarFromMap(calMap)
       this.updateSelectedLogs()
     } catch (e) {
@@ -145,13 +152,20 @@ Page({
       let isCandlingDay=false
       const isHatchDay = !!(hatchStr && dt === hatchStr)
       if (dayIndex){
+        const suggestions = this.data.speciesSuggestions || []
+        if (suggestions && suggestions.length > 0){
+          const match = suggestions.find(x => x && x.day_start!=null && x.day_end!=null && x.candling_required === true && dayIndex >= x.day_start && dayIndex <= x.day_end)
+          isCandlingDay = !!match
+        } else {
+          const sCandling = this.suggestForDay(dayIndex).candling
+          isCandlingDay = !!(sCandling && sCandling.enabled)
+        }
         const s = this.suggestForDay(dayIndex)
         const tr = s.temperature_c || {}
         const hr = s.humidity_pct || {}
         sTempTarget = tr.target
         sTempRangeText = `${tr.low}-${tr.high}℃`
         sHumRangeText = `${hr.low}-${hr.high}%`
-        isCandlingDay = !!(s.candling && s.candling.enabled)
       }
       days.push({ day: d, date: dt, hasLog: !!item, temp: item && item.temperature_c, hum: item && item.humidity_pct, isIncubating, dayIndex, isToday, sTempTarget, sTempRangeText, sHumRangeText, isCandlingDay, isHatchDay })
     }
@@ -199,36 +213,9 @@ Page({
         if (startStr){ sel = { date: todayStr, dayIndex: this.computeDaySinceStart(startStr)+1 } }
       }
       if (sel){
-        if (this.data.speciesSupported){
-          const s = this.suggestForDay(sel.dayIndex)
-          const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
-          const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
-          const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
+        {
           const afterHatch = !!(hatchStr && sel.date >= hatchStr)
-          this.setData({
-            selectedDate: sel.date,
-            selectedDateText: sel.date,
-            selectedDayIndex: sel.dayIndex,
-            selectedTempRangeText: `${tr.low}-${tr.high}℃`,
-            selectedHumRangeText: `${hr.low}-${hr.high}%`,
-            selectedTurningText: turningText,
-            selectedCandlingText: candlingText,
-            afterHatch
-          })
-          this.updateSelectedLogs()
-        } else {
-          const afterHatch = !!(hatchStr && sel.date >= hatchStr)
-          this.setData({
-            selectedDate: sel.date,
-            selectedDateText: sel.date,
-            selectedDayIndex: sel.dayIndex,
-            selectedTempRangeText: '—',
-            selectedHumRangeText: '—',
-            selectedTurningText: '—',
-            selectedCandlingText: '—',
-            afterHatch
-          })
-          this.updateSelectedLogs()
+          this.fetchAdviceAndSet(sel.date, sel.dayIndex, afterHatch)
         }
       }
     }catch(_){ }
@@ -251,35 +238,7 @@ Page({
       const egg = this.data.egg || {}
       const hatchStr = egg.hatch_date_text || this.formatDate(egg.hatch_date)
       const afterHatch = !!(hatchStr && dt >= hatchStr)
-      if (this.data.speciesSupported){
-        const s = this.suggestForDay(di)
-        const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
-        const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
-        const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
-        this.setData({
-          selectedDate: dt,
-          selectedDateText: dt,
-          selectedDayIndex: di,
-          selectedTempRangeText: `${tr.low}-${tr.high}℃`,
-          selectedHumRangeText: `${hr.low}-${hr.high}%`,
-          selectedTurningText: turningText,
-          selectedCandlingText: candlingText,
-          afterHatch
-        })
-        this.updateSelectedLogs()
-      } else {
-        this.setData({
-          selectedDate: dt,
-          selectedDateText: dt,
-          selectedDayIndex: di,
-          selectedTempRangeText: '—',
-          selectedHumRangeText: '—',
-          selectedTurningText: '—',
-          selectedCandlingText: '—',
-          afterHatch
-        })
-        this.updateSelectedLogs()
-      }
+      this.fetchAdviceAndSet(dt, di, afterHatch)
     }catch(_){ }
   },
   onEditLogTap(e){
@@ -386,6 +345,54 @@ Page({
     const turning = { enabled: dayIndex >= 7 && dayIndex <= 16, interval_min: 120 }
     const candling = { enabled: dayIndex === 6 }
     return { temperature_c: temp, humidity_pct: { low: humLow, high: humHigh }, turning, candling }
+  },
+
+  async fetchAdviceAndSet(dateText, dayIndex, afterHatch){
+    try{
+      const resp = await app.request({ url: `/api/incubation/eggs/${this.data.id}/advice?date=${encodeURIComponent(dateText)}`, method: 'GET' })
+      const ranges = (resp && resp.data && resp.data.ranges) || {}
+      const tr = ranges.temperature_c || {}
+      const hr = ranges.humidity_pct || {}
+      const turningRequired = (resp && resp.data) ? resp.data.turning_required : undefined
+      const candlingRequired = (resp && resp.data) ? resp.data.candling_required : undefined
+      let turningText
+      let candlingText
+      if (turningRequired === undefined || candlingRequired === undefined){
+        const s = this.suggestForDay(dayIndex)
+        turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
+        candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
+      } else {
+        turningText = turningRequired ? '需要翻蛋' : '不翻蛋 (OFF)'
+        candlingText = candlingRequired ? '照蛋看受精情况' : '不照蛋'
+      }
+      this.setData({
+        selectedDate: dateText,
+        selectedDateText: dateText,
+        selectedDayIndex: dayIndex,
+        selectedTempRangeText: (tr.low!=null && tr.high!=null) ? `${tr.low}-${tr.high}℃` : '—',
+        selectedHumRangeText: (hr.low!=null && hr.high!=null) ? `${hr.low}-${hr.high}%` : '—',
+        selectedTurningText: turningText,
+        selectedCandlingText: candlingText,
+        afterHatch
+      })
+      this.updateSelectedLogs()
+    }catch(_){
+      const s = this.suggestForDay(dayIndex)
+      const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
+      const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
+      const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
+      this.setData({
+        selectedDate: dateText,
+        selectedDateText: dateText,
+        selectedDayIndex: dayIndex,
+        selectedTempRangeText: `${tr.low}-${tr.high}℃`,
+        selectedHumRangeText: `${hr.low}-${hr.high}%`,
+        selectedTurningText: turningText,
+        selectedCandlingText: candlingText,
+        afterHatch
+      })
+      this.updateSelectedLogs()
+    }
   },
 
   computeDaySinceStart(dStr){

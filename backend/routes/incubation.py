@@ -1,7 +1,9 @@
 from flask import Blueprint, request
 from models import db, Egg, IncubationLog, Parrot, BreedingRecord, ParrotSpecies
+from models import IncubationSuggestion
 from utils import login_required, success_response, error_response
 from datetime import date, timedelta
+from decimal import Decimal
 
 incubation_bp = Blueprint('incubation', __name__, url_prefix='/api/incubation')
 
@@ -16,8 +18,31 @@ def _can_access_egg(user, egg: Egg):
     return egg.team_id is None and egg.created_by_user_id == user.id
 
 def _suggest_ranges(day_index: int, species: ParrotSpecies = None):
-    if day_index is None or day_index < 0:
-        day_index = 0
+    # 优先匹配自定义建议（按品种与天数范围）
+    try:
+        if species and species.id is not None and day_index is not None and day_index >= 1:
+            sug = IncubationSuggestion.query.filter(
+                IncubationSuggestion.species_id == species.id,
+                IncubationSuggestion.day_start <= day_index,
+                IncubationSuggestion.day_end >= day_index
+            ).order_by(IncubationSuggestion.day_start.asc()).first()
+            if sug:
+                return {
+                    'temperature_c': {
+                        'low': float(sug.temperature_low) if sug.temperature_low is not None else None,
+                        'high': float(sug.temperature_high) if sug.temperature_high is not None else None,
+                        'target': float(sug.temperature_target) if sug.temperature_target is not None else None
+                    },
+                    'humidity_pct': {
+                        'low': float(sug.humidity_low) if sug.humidity_low is not None else None,
+                        'high': float(sug.humidity_high) if sug.humidity_high is not None else None
+                    }
+                }
+    except Exception:
+        pass
+    # 默认建议
+    if day_index is None or day_index < 1:
+        day_index = 1
     if day_index >= 17:
         target_temp = 37.25
         temp_low = 37.2
@@ -46,9 +71,27 @@ def _suggest_ranges(day_index: int, species: ParrotSpecies = None):
 def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None):
     day_idx = None
     if egg and egg.incubator_start_date and log_date:
-        day_idx = (log_date - egg.incubator_start_date).days
+        day_idx = (log_date - egg.incubator_start_date).days + 1
     ranges = _suggest_ranges(day_idx, egg.species)
     tips = []
+    
+    try:
+        if egg.species and egg.species.id is not None and day_idx is not None and day_idx >= 1:
+            sug = IncubationSuggestion.query.filter(
+                IncubationSuggestion.species_id == egg.species.id,
+                IncubationSuggestion.day_start <= day_idx,
+                IncubationSuggestion.day_end >= day_idx
+            ).order_by(IncubationSuggestion.day_start.asc()).first()
+            if sug and sug.tips:
+                tips.append(sug.tips)
+            turning_required = bool(sug.turning_required) if sug is not None else None
+            candling_required = bool(sug.candling_required) if sug is not None else None
+        else:
+            turning_required = None
+            candling_required = None
+    except Exception:
+        turning_required = None
+        candling_required = None
     tips.append('每日翻蛋3-5次，均匀受热，避免标记面长期朝上')
     tips.append('定期照蛋观察气室与血管生长，发现血环及时处理')
     if day_idx is not None and day_idx >= 18:
@@ -66,7 +109,9 @@ def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None)
     return {
         'day_index': day_idx,
         'ranges': ranges,
-        'tips': tips
+        'tips': tips,
+        'turning_required': turning_required,
+        'candling_required': candling_required
     }
 
 @incubation_bp.route('/eggs', methods=['POST'])
@@ -288,15 +333,185 @@ def get_calendar(egg_id):
     except Exception as e:
         return error_response(f'获取失败: {str(e)}')
 
+@incubation_bp.route('/eggs/<int:egg_id>/advice', methods=['GET'])
+@login_required
+def get_egg_advice(egg_id):
+    try:
+        user = request.current_user
+        egg = Egg.query.get(egg_id)
+        if not egg:
+            return error_response('不存在')
+        if not _can_access_egg(user, egg):
+            return error_response('权限不足', 403)
+        d = request.args.get('date')
+        log_date = _parse_date(d) or date.today()
+        advice_obj = _generate_advice(egg, log_date, None, None)
+        return success_response(advice_obj)
+    except Exception as e:
+        return error_response(f'获取失败: {str(e)}')
+
 @incubation_bp.route('/suggestions', methods=['GET'])
 @login_required
 def get_suggestions():
     try:
-        day = request.args.get('day', type=int)
-        ranges = _suggest_ranges(day, None)
-        return success_response({'day_index': day, 'ranges': ranges})
+        species_id = request.args.get('species_id', type=int)
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        q = IncubationSuggestion.query
+        if species_id:
+            q = q.filter(IncubationSuggestion.species_id == species_id)
+        pagination = q.order_by(IncubationSuggestion.species_id.asc(), IncubationSuggestion.day_start.asc()).paginate(page=page, per_page=per_page, error_out=False)
+        items = pagination.items
+        from schemas import incubation_suggestions_schema
+        return success_response({'items': incubation_suggestions_schema.dump(items), 'total': pagination.total, 'page': page, 'per_page': per_page})
     except Exception as e:
-        return error_response(f'获取失败: {str(e)}')
+        try:
+            from sqlalchemy import text
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 50, type=int)
+            offset = (page - 1) * per_page
+            sid = request.args.get('species_id', type=int)
+            count_sql = 'SELECT COUNT(*) AS cnt FROM incubation_suggestions' + (' WHERE species_id=:sid' if sid else '')
+            total = db.session.execute(text(count_sql), ({'sid': sid} if sid else {})).scalar() or 0
+            base_sql = 'SELECT s.id,s.species_id,ps.name AS species_name,s.day_start,s.day_end,s.temperature_target,s.temperature_low,s.temperature_high,s.humidity_low,s.humidity_high,s.turning_required,s.candling_required,s.tips,s.created_at,s.updated_at FROM incubation_suggestions s LEFT JOIN parrot_species ps ON s.species_id = ps.id' + (' WHERE s.species_id=:sid' if sid else '') + ' ORDER BY s.species_id ASC, s.day_start ASC LIMIT :limit OFFSET :offset'
+            params = {'limit': per_page, 'offset': offset}
+            if sid:
+                params['sid'] = sid
+            rows = db.session.execute(text(base_sql), params).mappings().all()
+            items = []
+            for r in rows:
+                items.append({
+                    'id': r.get('id'),
+                    'species_id': r.get('species_id'),
+                    'species_name': r.get('species_name'),
+                    'day_start': r.get('day_start'),
+                    'day_end': r.get('day_end'),
+                    'temperature_target': r.get('temperature_target'),
+                    'temperature_low': r.get('temperature_low'),
+                    'temperature_high': r.get('temperature_high'),
+                    'humidity_low': r.get('humidity_low'),
+                    'humidity_high': r.get('humidity_high'),
+                    'turning_required': r.get('turning_required'),
+                    'candling_required': r.get('candling_required'),
+                    'tips': r.get('tips')
+                })
+            return success_response({'items': items, 'total': total, 'page': page, 'per_page': per_page})
+        except Exception:
+            return error_response(f'获取失败: {str(e)}')
+
+@incubation_bp.route('/suggestions', methods=['POST'])
+@login_required
+def create_suggestion():
+    try:
+        user = request.current_user
+        if getattr(user, 'role', 'user') not in ['admin', 'super_admin']:
+            return error_response('仅管理员可操作', 403)
+        data = request.get_json() or {}
+        def _num_or_none(v):
+            if v is None: return None
+            s = str(v).strip()
+            if s == '': return None
+            try:
+                return Decimal(s)
+            except Exception:
+                return None
+        def _int_or_default(v, d):
+            try:
+                return int(v)
+            except Exception:
+                return d
+        sug = IncubationSuggestion(
+            species_id=_int_or_default(data.get('species_id'), None),
+            day_start=_int_or_default(data.get('day_start'), 1),
+            day_end=_int_or_default(data.get('day_end'), 21),
+            temperature_target=_num_or_none(data.get('temperature_target')),
+            temperature_low=_num_or_none(data.get('temperature_low')),
+            temperature_high=_num_or_none(data.get('temperature_high')),
+            humidity_low=_num_or_none(data.get('humidity_low')),
+            humidity_high=_num_or_none(data.get('humidity_high')),
+            turning_required=bool(data.get('turning_required')),
+            candling_required=bool(data.get('candling_required')),
+            tips=data.get('tips'),
+            created_by_user_id=user.id,
+            team_id=_resolve_team_id(user)
+        )
+        db.session.add(sug)
+        db.session.commit()
+        from schemas import incubation_suggestion_schema
+        return success_response(incubation_suggestion_schema.dump(sug), '创建成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'创建失败: {str(e)}')
+
+@incubation_bp.route('/suggestions/<int:sug_id>', methods=['PUT'])
+@login_required
+def update_suggestion(sug_id):
+    try:
+        user = request.current_user
+        if getattr(user, 'role', 'user') not in ['admin', 'super_admin']:
+            return error_response('仅管理员可操作', 403)
+        sug = IncubationSuggestion.query.get(sug_id)
+        if not sug:
+            return error_response('不存在')
+        data = request.get_json() or {}
+        def _num_or_none(v):
+            if v is None: return None
+            s = str(v).strip()
+            if s == '': return None
+            try:
+                return Decimal(s)
+            except Exception:
+                return None
+        def _int_or_none(v):
+            try:
+                return int(v)
+            except Exception:
+                return None
+        if 'species_id' in data:
+            sug.species_id = _int_or_none(data.get('species_id'))
+        if 'day_start' in data:
+            sug.day_start = _int_or_none(data.get('day_start')) or sug.day_start
+        if 'day_end' in data:
+            sug.day_end = _int_or_none(data.get('day_end')) or sug.day_end
+        if 'temperature_target' in data:
+            sug.temperature_target = _num_or_none(data.get('temperature_target'))
+        if 'temperature_low' in data:
+            sug.temperature_low = _num_or_none(data.get('temperature_low'))
+        if 'temperature_high' in data:
+            sug.temperature_high = _num_or_none(data.get('temperature_high'))
+        if 'humidity_low' in data:
+            sug.humidity_low = _num_or_none(data.get('humidity_low'))
+        if 'humidity_high' in data:
+            sug.humidity_high = _num_or_none(data.get('humidity_high'))
+        if 'turning_required' in data:
+            sug.turning_required = bool(data.get('turning_required'))
+        if 'candling_required' in data:
+            sug.candling_required = bool(data.get('candling_required'))
+        if 'tips' in data:
+            sug.tips = data.get('tips')
+        db.session.commit()
+        from schemas import incubation_suggestion_schema
+        return success_response(incubation_suggestion_schema.dump(sug), '更新成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新失败: {str(e)}')
+
+@incubation_bp.route('/suggestions/<int:sug_id>', methods=['DELETE'])
+@login_required
+def delete_suggestion(sug_id):
+    try:
+        user = request.current_user
+        if getattr(user, 'role', 'user') not in ['admin', 'super_admin']:
+            return error_response('仅管理员可操作', 403)
+        sug = IncubationSuggestion.query.get(sug_id)
+        if not sug:
+            return error_response('不存在')
+        db.session.delete(sug)
+        db.session.commit()
+        return success_response({'id': sug_id}, '删除成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'删除失败: {str(e)}')
 def _parse_date(val):
     if not val:
         return None
