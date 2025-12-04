@@ -15,6 +15,7 @@ Page({
     selectedHumRangeText: '',
     selectedTurningText: '',
     selectedCandlingText: '',
+    selectedTips: [],
     showHatchPanel: false,
     hatchDate: '',
     hasOperationPermission: false,
@@ -355,6 +356,7 @@ Page({
       const hr = ranges.humidity_pct || {}
       const turningRequired = (resp && resp.data) ? resp.data.turning_required : undefined
       const candlingRequired = (resp && resp.data) ? resp.data.candling_required : undefined
+      const tipsArr = (resp && resp.data && Array.isArray(resp.data.user_tips)) ? resp.data.user_tips.filter(x => !!x) : []
       let turningText
       let candlingText
       if (turningRequired === undefined || candlingRequired === undefined){
@@ -373,6 +375,7 @@ Page({
         selectedHumRangeText: (hr.low!=null && hr.high!=null) ? `${hr.low}-${hr.high}%` : '—',
         selectedTurningText: turningText,
         selectedCandlingText: candlingText,
+        selectedTips: tipsArr,
         afterHatch
       })
       this.updateSelectedLogs()
@@ -381,6 +384,7 @@ Page({
       const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
       const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
       const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
+      const tipsArr = []
       this.setData({
         selectedDate: dateText,
         selectedDateText: dateText,
@@ -389,6 +393,7 @@ Page({
         selectedHumRangeText: `${hr.low}-${hr.high}%`,
         selectedTurningText: turningText,
         selectedCandlingText: candlingText,
+        selectedTips: tipsArr,
         afterHatch
       })
       this.updateSelectedLogs()

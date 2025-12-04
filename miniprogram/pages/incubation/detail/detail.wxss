@@ -59,6 +59,8 @@
 .meta-chip{padding:8px 12px;border-radius:999px;font-size:12px;color:#111827;background:#eef2ff}
 .meta-chip.turning{background:#e0f2fe;color:#0c4a6e}
 .meta-chip.candling{background:#ede9fe;color:#4c1d95}
+.suggest-tips{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.tip-item{background:#f9fafb;border:1px solid #eef2f7;border-radius:10px;padding:8px;color:#374151;font-size:13px}
 .cal-legend{display:flex;gap:12px;margin-top:8px;color:#666;font-size:12px}
 .legend-item{display:flex;align-items:center;gap:6px}
 .legend-dot{width:10px;height:10px;border-radius:50%}

@@ -143,6 +143,9 @@
           <view class="meta-chip turning">{{selectedTurningText}}</view>
           <view class="meta-chip candling">{{selectedCandlingText}}</view>
         </view>
+        <view class="suggest-tips" wx:if="{{selectedTips && selectedTips.length}}">
+          <view class="tip-item" wx:for="{{selectedTips}}" wx:key="index">{{item}}</view>
+        </view>
       </view>
 
       

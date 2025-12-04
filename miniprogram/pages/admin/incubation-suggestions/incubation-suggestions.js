@@ -106,7 +106,7 @@ Page({
     const s = this.data.speciesList[idx]
     this.setData({
       showModal: true,
-      modalTitle: '编辑聚合建议',
+      modalTitle: '编辑孵化建议',
       form: { id: sample.id, day_start: sample.day_start, day_end: sample.day_end, temperature_low: sample.temperature_low, temperature_high: sample.temperature_high, temperature_target: sample.temperature_target, humidity_low: sample.humidity_low, humidity_high: sample.humidity_high, turning_required: !!sample.turning_required, candling_required: !!sample.candling_required, tips: sample.tips },
       formSpeciesIndex: idx >=0 ? idx : 0,
       formSpeciesName: s ? s.name : (names[0] || ''),

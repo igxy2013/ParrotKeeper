@@ -74,6 +74,7 @@ def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None)
         day_idx = (log_date - egg.incubator_start_date).days + 1
     ranges = _suggest_ranges(day_idx, egg.species)
     tips = []
+    user_tips = []
     
     try:
         if egg.species and egg.species.id is not None and day_idx is not None and day_idx >= 1:
@@ -84,6 +85,7 @@ def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None)
             ).order_by(IncubationSuggestion.day_start.asc()).first()
             if sug and sug.tips:
                 tips.append(sug.tips)
+                user_tips.append(sug.tips)
             turning_required = bool(sug.turning_required) if sug is not None else None
             candling_required = bool(sug.candling_required) if sug is not None else None
         else:
@@ -110,6 +112,7 @@ def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None)
         'day_index': day_idx,
         'ranges': ranges,
         'tips': tips,
+        'user_tips': user_tips,
         'turning_required': turning_required,
         'candling_required': candling_required
     }
