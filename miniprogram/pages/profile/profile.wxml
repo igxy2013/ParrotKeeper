@@ -392,6 +392,17 @@
           <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
         </view>
 
+        <view class="menu-item" bindtap="goAdminParrotSpecies" wx:if="{{isSuperAdmin}}">
+          <view class="menu-item-icon bg-green">
+            <image class="menu-item-icon-img" src="{{iconPaths.editLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine" />
+          </view>
+          <view class="menu-item-content">
+            <view class="menu-item-title">鹦鹉品种管理</view>
+            <view class="menu-item-desc">维护品种信息与养护难度</view>
+          </view>
+          <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onProfileIconError" data-key="arrowRight" />
+        </view>
+
         <view class="menu-item" bindtap="goAdminUserRole">
           <view class="menu-item-icon bg-gray">
             <image class="menu-item-icon-img" src="{{iconPaths.userLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="userLine" />

@@ -1,0 +1,91 @@
+<view class="page-container">
+  <app-header title="鹦鹉品种管理" subtitle="维护品种基础信息" showBack="true" />
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}"><view class="no-access">仅超级管理员可访问</view></block>
+    <block wx:elif="{{loading}}"><view class="loading">加载中...</view></block>
+    <block wx:else>
+      <view class="toolbar">
+        <view class="toolbar-right">
+          <view class="quick-add-btn" bindtap="openCreateModal">
+            <view class="action-icon-wrapper small"><text class="plus-icon">＋</text></view>
+            <text class="quick-add-label">新增品种</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="list" wx:if="{{speciesList && speciesList.length}}">
+        <view class="item" wx:for="{{speciesList}}" wx:key="id">
+          <view class="item-header">
+            <text class="name">{{item.name}}</text>
+            <view class="actions">
+              <text class="action" bindtap="openEditModal" data-id="{{item.id}}">编辑</text>
+              <text class="action delete" bindtap="deleteSpecies" data-id="{{item.id}}">删除</text>
+            </view>
+          </view>
+          <view class="item-body">
+            <view class="kv-row" wx:if="{{item.description}}">
+              <text class="kv-label">说明</text>
+              <text class="kv-value">{{item.description}}</text>
+            </view>
+            <view class="kv-row" wx:if="{{item.avg_lifespan}}">
+              <text class="kv-label">平均寿命</text>
+              <text class="kv-value">{{item.avg_lifespan}} 年</text>
+            </view>
+            <view class="kv-row" wx:if="{{item.avg_size}}">
+              <text class="kv-label">体型</text>
+              <text class="kv-value">{{item.avg_size}}</text>
+            </view>
+            <view class="badge-group">
+              <text class="badge difficulty {{item.care_level}}">养护难度：{{item.care_level === 'easy' ? '容易' : item.care_level === 'hard' ? '困难' : '一般'}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view wx:else class="empty">暂无品种</view>
+    </block>
+
+    <view wx:if="{{showModal}}" class="modal-overlay" catchtouchmove="true"></view>
+    <view wx:if="{{showModal}}" class="modal-content">
+      <view class="modal-header-gradient">
+        <view class="modal-header-row">
+          <text class="modal-title">{{modalTitle}}</text>
+          <view class="modal-close-btn" bindtap="closeModal"><text class="modal-close-text">×</text></view>
+        </view>
+      </view>
+      <scroll-view scroll-y="true" class="modal-scroll">
+        <view class="form-section">
+          <view class="form-item">
+            <text class="form-label">品种名称 *</text>
+            <input class="text-input" placeholder="请输入品种名称" value="{{form.name}}" bindinput="onFormInput" data-field="name" />
+          </view>
+          <view class="form-item">
+            <text class="form-label">说明</text>
+            <input class="text-input" placeholder="可选" value="{{form.description}}" bindinput="onFormInput" data-field="description" />
+          </view>
+          <view class="form-grid">
+            <view class="form-item">
+              <text class="form-label">平均寿命(年)</text>
+              <input class="text-input" type="number" placeholder="如：15" value="{{form.avg_lifespan}}" bindinput="onFormInput" data-field="avg_lifespan" />
+            </view>
+            <view class="form-item">
+              <text class="form-label">体型</text>
+              <input class="text-input" placeholder="如：15cm" value="{{form.avg_size}}" bindinput="onFormInput" data-field="avg_size" />
+            </view>
+          </view>
+          <view class="form-item">
+            <text class="form-label">养护难度</text>
+            <picker range="{{careLevels}}" value="{{careLevelIndex}}" bindchange="onCareLevelChange">
+              <view class="picker-display">
+                <text>{{careLevels[careLevelIndex] || '选择养护难度'}}</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeModal">取消</button>
+        <button class="btn-primary" bindtap="submitForm">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

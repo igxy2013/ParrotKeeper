@@ -109,6 +109,15 @@ Page({
     wx.navigateTo({ url: '/pages/admin/announcements/announcements' })
   },
 
+  goAdminParrotSpecies() {
+    try {
+      const userInfo = this.data.userInfo || app.globalData.userInfo || {}
+      const role = String(userInfo.role || '')
+      if (role !== 'super_admin') { app.showError('仅超级管理员可进入'); return }
+      wx.navigateTo({ url: '/pages/admin/parrot-species/parrot-species' })
+    } catch(_) { }
+  },
+
   goAnnouncementsCenter() {
     wx.navigateTo({ url: '/pages/announcements/center/center' })
   },

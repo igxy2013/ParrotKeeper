@@ -39,7 +39,8 @@ Page({
   async loadSpecies(){
     try{
       const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
-      const list = (res && res.data) || []
+      const raw = (res && res.data) || []
+      const list = raw.map(s => ({ ...s, id: Number(s.id) }))
       const names = list.map(s => s.name)
       const map = {}
       list.forEach(s=>{ map[String(s.id)] = s.name })
@@ -104,15 +105,18 @@ Page({
     const names = (g.species_names || []).filter(Boolean)
     const idx = (this.data.speciesList || []).findIndex(sp => String(sp.id) === String(sample.species_id))
     const s = this.data.speciesList[idx]
+    const preIds = uniqIds.map(id => Number(id))
+    const list = (this.data.speciesList || []).map(sp => ({ ...sp, selected: preIds.indexOf(Number(sp.id)) >= 0 }))
     this.setData({
       showModal: true,
       modalTitle: '编辑孵化建议',
       form: { id: sample.id, day_start: sample.day_start, day_end: sample.day_end, temperature_low: sample.temperature_low, temperature_high: sample.temperature_high, temperature_target: sample.temperature_target, humidity_low: sample.humidity_low, humidity_high: sample.humidity_high, turning_required: !!sample.turning_required, candling_required: !!sample.candling_required, tips: sample.tips },
       formSpeciesIndex: idx >=0 ? idx : 0,
       formSpeciesName: s ? s.name : (names[0] || ''),
-      formSpeciesIds: uniqIds,
+      formSpeciesIds: preIds,
       formSpeciesDisplay: names.join('、'),
-      showSpeciesMulti: true
+      showSpeciesMulti: true,
+      speciesList: list
     })
   },
   onSpeciesChange(e){
@@ -134,6 +138,10 @@ Page({
       formSpeciesDisplay: '',
       showSpeciesMulti: false
     })
+    // 同步选中态到列表
+    const ids = []
+    const list = (this.data.speciesList || []).map(sp => ({ ...sp, selected: ids.indexOf(Number(sp.id)) >= 0 }))
+    this.setData({ speciesList: list })
   },
   openEditModal(e){
     const id = e.currentTarget.dataset.id
@@ -141,15 +149,18 @@ Page({
     if (!item){ wx.showToast({ title:'记录不存在', icon:'none' }); return }
     const idx = (this.data.speciesList || []).findIndex(sp => String(sp.id) === String(item.species_id))
     const s = this.data.speciesList[idx]
+    const preIds = item.species_id ? [Number(item.species_id)] : []
+    const list = (this.data.speciesList || []).map(sp => ({ ...sp, selected: preIds.indexOf(Number(sp.id)) >= 0 }))
     this.setData({
       showModal: true,
       modalTitle: '编辑孵化建议',
       form: { id: item.id, day_start: item.day_start, day_end: item.day_end, temperature_low: item.temperature_low, temperature_high: item.temperature_high, temperature_target: item.temperature_target, humidity_low: item.humidity_low, humidity_high: item.humidity_high, turning_required: !!item.turning_required, candling_required: !!item.candling_required, tips: item.tips },
       formSpeciesIndex: idx >=0 ? idx : this.data.selectedSpeciesIndex,
       formSpeciesName: s ? s.name : this.data.selectedSpeciesName,
-      formSpeciesIds: item.species_id ? [item.species_id] : [],
+      formSpeciesIds: preIds,
       formSpeciesDisplay: item.species_name || (s ? s.name : ''),
-      showSpeciesMulti: false
+      showSpeciesMulti: true,
+      speciesList: list
     })
   },
   closeModal(){ this.setData({ showModal:false }) },
@@ -198,14 +209,17 @@ Page({
     }catch(_){ wx.showToast({ title:'删除失败', icon:'none' }) }
   },
   toggleSpecies(e){
-    const id = e.currentTarget.dataset.id
+    const id = Number(e.currentTarget.dataset.id)
     const name = e.currentTarget.dataset.name
     const ids = (this.data.formSpeciesIds || []).slice()
     const idx = ids.indexOf(id)
     if (idx >= 0) ids.splice(idx, 1)
     else ids.push(id)
-    const names = (this.data.speciesList || []).filter(s => ids.indexOf(s.id) >= 0).map(s => s.name)
+    const names = (this.data.speciesList || []).filter(s => ids.indexOf(Number(s.id)) >= 0).map(s => s.name)
     this.setData({ formSpeciesIds: ids, formSpeciesDisplay: names.join('、') })
+    // 更新列表选中态用于样式高亮
+    const list = (this.data.speciesList || []).map(sp => ({ ...sp, selected: ids.indexOf(Number(sp.id)) >= 0 }))
+    this.setData({ speciesList: list })
   },
   async submitForm(){
     try{

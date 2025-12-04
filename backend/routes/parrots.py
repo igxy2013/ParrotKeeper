@@ -19,6 +19,92 @@ def get_species():
     except Exception as e:
         return error_response(f'获取品种列表失败: {str(e)}')
 
+@parrots_bp.route('/species', methods=['POST'])
+@login_required
+def create_species():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip()
+        if not name:
+            return error_response('品种名称不能为空')
+        care_level = data.get('care_level') or 'medium'
+        if care_level not in ['easy', 'medium', 'hard']:
+            return error_response('养护难度取值无效')
+        avg_lifespan = data.get('avg_lifespan')
+        avg_size = data.get('avg_size')
+        species = ParrotSpecies(
+            name=name,
+            description=data.get('description'),
+            avg_lifespan=avg_lifespan,
+            avg_size=avg_size,
+            care_level=care_level
+        )
+        db.session.add(species)
+        db.session.commit()
+        from schemas import ParrotSpeciesSchema
+        return success_response(ParrotSpeciesSchema().dump(species), '创建成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'创建品种失败: {str(e)}')
+
+@parrots_bp.route('/species/<int:species_id>', methods=['PUT'])
+@login_required
+def update_species(species_id):
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        species = ParrotSpecies.query.get(species_id)
+        if not species:
+            return error_response('品种不存在', 404)
+        data = request.get_json() or {}
+        if 'name' in data:
+            name = (data.get('name') or '').strip()
+            if not name:
+                return error_response('品种名称不能为空')
+            species.name = name
+        if 'description' in data:
+            species.description = data.get('description')
+        if 'avg_lifespan' in data:
+            species.avg_lifespan = data.get('avg_lifespan')
+        if 'avg_size' in data:
+            species.avg_size = data.get('avg_size')
+        if 'care_level' in data:
+            care_level = data.get('care_level') or 'medium'
+            if care_level not in ['easy', 'medium', 'hard']:
+                return error_response('养护难度取值无效')
+            species.care_level = care_level
+        db.session.commit()
+        from schemas import ParrotSpeciesSchema
+        return success_response(ParrotSpeciesSchema().dump(species), '更新成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新品种失败: {str(e)}')
+
+@parrots_bp.route('/species/<int:species_id>', methods=['DELETE'])
+@login_required
+def delete_species(species_id):
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        species = ParrotSpecies.query.get(species_id)
+        if not species:
+            return error_response('品种不存在', 404)
+        # 保护：若有鹦鹉引用该品种，禁止删除
+        has_parrots = Parrot.query.filter_by(species_id=species_id).first()
+        if has_parrots:
+            return error_response('存在引用该品种的鹦鹉，不可删除')
+        db.session.delete(species)
+        db.session.commit()
+        return success_response({'id': species_id}, '已删除')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'删除品种失败: {str(e)}')
+
 @parrots_bp.route('', methods=['GET'])
 @login_required
 def get_parrots():

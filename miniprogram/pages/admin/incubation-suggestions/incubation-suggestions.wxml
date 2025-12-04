@@ -1,3 +1,13 @@
+<wxs module="utils">
+var isSelected = function(list, id) {
+  if (!list) return false;
+  // WXS 中的 indexOf 返回值判断
+  return list.indexOf(id) > -1 || list.indexOf(parseInt(id)) > -1 || list.indexOf(id.toString()) > -1;
+}
+module.exports = {
+  isSelected: isSelected
+};
+</wxs>
 <view class="page-container">
   <app-header title="孵化建议管理" subtitle="按品种与天数范围配置" showBack="true" />
   <view class="page-content">
@@ -65,7 +75,7 @@
         <view class="modal-content">
           <view class="picker-display" bindtap="openSpeciesSelector">{{formSpeciesDisplay || '选择品种（可多选）'}}</view>
           <view class="species-multi" wx:if="{{showSpeciesMulti}}">
-            <view class="species-option {{formSpeciesIds.indexOf(item.id)>=0 ? 'selected' : ''}}" wx:for="{{speciesList}}" wx:key="id" bindtap="toggleSpecies" data-id="{{item.id}}" data-name="{{item.name}}">{{item.name}}</view>
+            <view class="species-option {{(item.selected || utils.isSelected(formSpeciesIds, item.id)) ? 'selected' : ''}}" style="{{(item.selected || utils.isSelected(formSpeciesIds, item.id)) ? 'background:#10b981;color:#ffffff;border-color:#10b981;box-shadow:0 6rpx 14rpx rgba(16,185,129,0.35)' : ''}}" wx:for="{{speciesList}}" wx:key="id" bindtap="toggleSpecies" data-id="{{item.id}}" data-name="{{item.name}}">{{item.name}}</view>
           </view>
           <view class="form-row">
             <input class="form-input" type="number" placeholder="开始天数" value="{{form.day_start}}" bindinput="onFormInput" data-field="day_start" />

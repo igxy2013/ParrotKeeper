@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "鹦鹉品种管理"
+}

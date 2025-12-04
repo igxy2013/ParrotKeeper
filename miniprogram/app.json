@@ -9,10 +9,11 @@
       "root": "pages/admin",
       "pages": [
         "feedbacks/feedbacks",
-        "care-guide-editor/care-guide-editor",
-        "user-role/user-role",
-        "announcements/announcements",
-        "incubation-suggestions/incubation-suggestions"
+      "care-guide-editor/care-guide-editor",
+      "user-role/user-role",
+      "announcements/announcements",
+      "incubation-suggestions/incubation-suggestions",
+      "parrot-species/parrot-species"
       ]
     },
     {
