@@ -20,8 +20,9 @@
 .weekday{background:#f9fafb;border:1px solid #eef2f7;border-radius:8px;padding:6px;text-align:center}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .cal-cell{border:1px solid #eee;border-radius:8px;padding:6px;text-align:center}
-.cal-cell.has-log{background:#f0fdf4;border-color:#bbf7d0}
+.cal-cell.has-log{border-color:#22c55e}
 .cal-cell.incubating{background:#fff7ed;border-color:#fdba74}
+.cal-cell.incubating.has-log{border-color:#22c55e}
 .cal-cell.today{box-shadow:0 0 0 2px #2563eb inset}
 .cal-cell.selected{box-shadow:0 0 0 2px #10b981 inset}
 .day{font-weight:600}
@@ -35,6 +36,20 @@
 .title-date{color:#6b7280;font-size:12px;background:#f3f4f6;padding:4px 8px;border-radius:999px}
 .suggest-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px}
 .hatched-info{text-align:center;color:#374151;background:#fff7ed;border:1px solid #fde68a;border-radius:10px;padding:10px;margin-bottom:10px}
+.logs-section{margin-top:12px}
+.logs-title{font-weight:700;margin-bottom:8px}
+.logs-list{display:flex;flex-direction:column;gap:10px}
+.log-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px}
+.log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.log-date{font-weight:600;color:#111827}
+.log-candling{background:#a78bfa;color:#fff;border-radius:999px;font-size:12px;padding:2px 8px}
+.log-actions{display:flex;gap:8px;align-items:center}
+.log-action{font-size:12px;color:#2563eb}
+.log-action.delete{color:#dc2626}
+.log-meta{display:flex;gap:8px;margin-bottom:6px}
+.log-chip{background:#f3f4f6;color:#374151;border-radius:999px;font-size:12px;padding:4px 8px}
+.log-notes{color:#374151;font-size:14px}
+.suggest-heading{font-weight:700;margin:8px 0 6px 0}
 .sg-box{border-radius:12px;padding:10px 12px;background:#f9fafb;border:1px solid #eef2f7}
 .sg-box.temp{background:linear-gradient(180deg,#ecfeff,#f9fafb)}
 .sg-box.hum{background:linear-gradient(180deg,#f0fdf4,#f9fafb)}

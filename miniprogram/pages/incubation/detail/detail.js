@@ -31,6 +31,14 @@ Page({
     , calendarYear: null
     , calendarMonth: null
     , calendarMap: {}
+    , eggLogs: []
+    , selectedLogs: []
+    , showEditLogPanel: false
+    , editingLogId: null
+    , editLogDate: ''
+    , editLogTemp: ''
+    , editLogHum: ''
+    , editLogNotes: ''
   },
 
   isSpeciesSupported(name){
@@ -54,7 +62,12 @@ Page({
       const resp = await app.request({ url: `/api/incubation/eggs/${this.data.id}`, method: 'GET' })
       let egg = (resp && resp.data && resp.data.egg) || {}
       const logs = (resp && resp.data && resp.data.logs) || []
-      const logsMapped = (logs || []).map(l => ({ ...l, log_date_text: this.formatDate(l && l.log_date) }))
+      const logsMapped = (logs || []).map(l => {
+        const rdt = l && (l.record_date_text || l.record_date || l.date)
+        const ldt = l && l.log_date
+        const logDateText = rdt ? String(rdt) : this.formatDate(ldt)
+        return { ...l, log_date_text: logDateText }
+      })
       const startText = this.formatDate(egg && egg.incubator_start_date)
       const dsCalc = (typeof egg.day_since_start === 'number') ? egg.day_since_start : this.computeDaySinceStart(egg && egg.incubator_start_date)
       const dsText = (dsCalc === null || dsCalc === undefined || isNaN(dsCalc)) ? '--' : String(dsCalc)
@@ -64,7 +77,7 @@ Page({
       const speciesSupported = this.isSpeciesSupported(speciesName)
       const statusText = hatchText ? '已出雏' : this.mapStatusToCN(egg && egg.status)
       const hasHatched = !!hatchText
-      this.setData({ egg, statusText, speciesSupported, hasHatched })
+      this.setData({ egg, statusText, speciesSupported, hasHatched, eggLogs: logsMapped })
       const calResp = await app.request({ url: `/api/incubation/eggs/${this.data.id}/calendar`, method: 'GET' })
       const calMap = (calResp && calResp.data && calResp.data.calendar) || {}
       const today = new Date()
@@ -72,6 +85,7 @@ Page({
       const m = today.getMonth()
       this.setData({ calendarMap: calMap, calendarYear: y, calendarMonth: m })
       this.buildCalendarFromMap(calMap)
+      this.updateSelectedLogs()
     } catch (e) {
       wx.showToast({ title: e.message || '加载失败', icon: 'none' })
     } finally {
@@ -201,6 +215,7 @@ Page({
             selectedCandlingText: candlingText,
             afterHatch
           })
+          this.updateSelectedLogs()
         } else {
           const afterHatch = !!(hatchStr && sel.date >= hatchStr)
           this.setData({
@@ -213,6 +228,7 @@ Page({
             selectedCandlingText: '—',
             afterHatch
           })
+          this.updateSelectedLogs()
         }
       }
     }catch(_){ }
@@ -250,6 +266,7 @@ Page({
           selectedCandlingText: candlingText,
           afterHatch
         })
+        this.updateSelectedLogs()
       } else {
         this.setData({
           selectedDate: dt,
@@ -261,8 +278,70 @@ Page({
           selectedCandlingText: '—',
           afterHatch
         })
+        this.updateSelectedLogs()
       }
     }catch(_){ }
+  },
+  onEditLogTap(e){
+    try{
+      const id = e.currentTarget.dataset.id
+      const list = this.data.selectedLogs || []
+      const item = list.find(x => String(x.id) === String(id))
+      if (!item){ wx.showToast({ title: '日志不存在', icon: 'none' }); return }
+      this.setData({
+        showEditLogPanel: true,
+        editingLogId: id,
+        editLogDate: item.log_date_text || this.formatDate(item.log_date),
+        editLogTemp: item.temperature_c || item.temperature || '',
+        editLogHum: item.humidity_pct || item.humidity || '',
+        editLogNotes: item.notes || ''
+      })
+    }catch(_){ }
+  },
+  closeEditLogPanel(){
+    this.setData({ showEditLogPanel: false, editingLogId: null })
+  },
+  onEditLogDateChange(e){ this.setData({ editLogDate: e.detail.value }) },
+  onEditLogTempInput(e){ this.setData({ editLogTemp: e.detail.value }) },
+  onEditLogHumInput(e){ this.setData({ editLogHum: e.detail.value }) },
+  onEditLogNotesInput(e){ this.setData({ editLogNotes: e.detail.value }) },
+  async submitEditLog(){
+    try{
+      const id = this.data.editingLogId
+      if (!id){ wx.showToast({ title: '未选择日志', icon: 'none' }); return }
+      const d = this.data.editLogDate
+      if (!d){ wx.showToast({ title: '请选择日期', icon: 'none' }); return }
+      const t = this.data.editLogTemp ? parseFloat(this.data.editLogTemp) : undefined
+      const h = this.data.editLogHum ? parseFloat(this.data.editLogHum) : undefined
+      const payload = { log_date: d }
+      if (t !== undefined && !isNaN(t)) payload.temperature_c = t
+      if (h !== undefined && !isNaN(h)) payload.humidity_pct = h
+      if (this.data.editLogNotes) payload.notes = this.data.editLogNotes
+      const resp = await app.request({ url: `/api/incubation/logs/${id}`, method: 'PUT', data: payload })
+      if (resp && resp.success){
+        wx.showToast({ title: '已保存', icon: 'success' })
+        this.setData({ showEditLogPanel: false, editingLogId: null })
+        this.fetchDetail()
+      } else {
+        wx.showToast({ title: (resp && resp.message) || '保存失败', icon: 'none' })
+      }
+    }catch(_){ wx.showToast({ title: '保存失败', icon: 'none' }) }
+  },
+  async onDeleteLogTap(e){
+    try{
+      const id = e.currentTarget.dataset.id
+      const confirmRes = await new Promise(resolve => {
+        wx.showModal({ title: '删除确认', content: '确定删除该日志吗？', success: r => resolve(r) })
+      })
+      if (!confirmRes || !confirmRes.confirm) return
+      const resp = await app.request({ url: `/api/incubation/logs/${id}`, method: 'DELETE' })
+      if (resp && resp.success){
+        wx.showToast({ title: '已删除', icon: 'success' })
+        this.fetchDetail()
+      } else {
+        wx.showToast({ title: (resp && resp.message) || '删除失败', icon: 'none' })
+      }
+    }catch(_){ wx.showToast({ title: '删除失败', icon: 'none' }) }
   },
 
   openHatchPanel(){
@@ -347,11 +426,22 @@ Page({
       const ops = []
       const d = this.data.logDate
       if(!d){ wx.showToast({ title: '请选择日期', icon: 'none' }); return }
+      const egg = this.data.egg || {}
+      const startStr = this.formatDate(egg && egg.incubator_start_date)
+      const hatchStr = this.formatDate(egg && egg.hatch_date)
+      if (!startStr && (this.data.logTemp || this.data.logHum || this.data.logNotes || this.data.logCandling)){
+        wx.showToast({ title: '请先设置孵化开始日期', icon: 'none' }); return
+      }
+      if (hatchStr){
+        const dt = new Date(`${d}T00:00:00`).getTime()
+        const ht = new Date(`${hatchStr}T00:00:00`).getTime()
+        if (dt > ht){ wx.showToast({ title: '出壳后无法添加孵化日志', icon: 'none' }); return }
+      }
       const hasLog = !!(this.data.logTemp || this.data.logHum || this.data.logNotes || this.data.logCandling)
       if (hasLog){
         const t = this.data.logTemp ? parseFloat(this.data.logTemp) : undefined
         const h = this.data.logHum ? parseFloat(this.data.logHum) : undefined
-        const payload = { log_date: d, date: d }
+        const payload = { log_date: d }
         // 兼容后端键名：同时传递 temperature_c/temperature 与 humidity_pct/humidity
         if (t !== undefined && !isNaN(t)) { payload.temperature_c = t; payload.temperature = t }
         if (h !== undefined && !isNaN(h)) { payload.humidity_pct = h; payload.humidity = h }
@@ -360,8 +450,6 @@ Page({
         payload.candling = !!this.data.logCandling
         payload.is_candling = !!this.data.logCandling
         // 传递 day_index 以便后端校验
-        const egg = this.data.egg || {}
-        const startStr = this.formatDate(egg.incubator_start_date)
         if (startStr){
           try{
             const start = new Date(`${startStr}T00:00:00`)
@@ -370,6 +458,7 @@ Page({
             if (di > 0 && isFinite(di)) payload.day_index = di
           }catch(_){}
         }
+        // 保留最小必要字段，避免后端解析歧义
         ops.push(app.request({ url: `/api/incubation/eggs/${this.data.id}/logs`, method: 'POST', data: payload }).catch(err => ({ success: false, message: err && err.message })))
       }
       if (this.data.hatchToday){
@@ -408,5 +497,14 @@ Page({
         wx.showToast({ title: (resp && resp.message) || '保存失败', icon: 'none' })
       }
     }catch(_){ wx.showToast({ title: '保存失败', icon: 'none' }) }
+  },
+  updateSelectedLogs(){
+    try{
+      const d = this.data.selectedDate
+      const list = this.data.eggLogs || []
+      if (!d || !list.length){ this.setData({ selectedLogs: [] }); return }
+      const filtered = list.filter(x => (x.log_date_text || this.formatDate(x.log_date)) === d)
+      this.setData({ selectedLogs: filtered })
+    }catch(_){ this.setData({ selectedLogs: [] }) }
   },
 })

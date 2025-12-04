@@ -188,7 +188,8 @@ def add_log(egg_id):
         if not _can_access_egg(user, egg):
             return error_response('权限不足', 403)
         data = request.get_json() or {}
-        log_date = data.get('log_date') or date.today()
+        # 解析日志日期，支持 'YYYY-MM-DD' 或 ISO 格式，未提供则为今日
+        log_date = _parse_date(data.get('log_date')) or date.today()
         temperature_c = data.get('temperature_c')
         humidity_pct = data.get('humidity_pct')
         weight_g = data.get('weight_g')
@@ -216,6 +217,51 @@ def add_log(egg_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'记录失败: {str(e)}')
+
+@incubation_bp.route('/logs/<int:log_id>', methods=['PUT'])
+@login_required
+def update_log(log_id):
+    try:
+        user = request.current_user
+        log = IncubationLog.query.get(log_id)
+        if not log:
+            return error_response('不存在')
+        egg = Egg.query.get(log.egg_id)
+        if not egg or not _can_access_egg(user, egg):
+            return error_response('权限不足', 403)
+        data = request.get_json() or {}
+        if 'log_date' in data:
+            val = _parse_date(data.get('log_date'))
+            if val:
+                log.log_date = val
+        for f in ['temperature_c', 'humidity_pct', 'weight_g', 'notes', 'image_urls']:
+            if f in data:
+                setattr(log, f, data.get(f))
+        db.session.commit()
+        from schemas import incubation_log_schema
+        payload = incubation_log_schema.dump(log)
+        return success_response(payload, '更新成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新失败: {str(e)}')
+
+@incubation_bp.route('/logs/<int:log_id>', methods=['DELETE'])
+@login_required
+def delete_log(log_id):
+    try:
+        user = request.current_user
+        log = IncubationLog.query.get(log_id)
+        if not log:
+            return error_response('不存在')
+        egg = Egg.query.get(log.egg_id)
+        if not egg or not _can_access_egg(user, egg):
+            return error_response('权限不足', 403)
+        db.session.delete(log)
+        db.session.commit()
+        return success_response({'id': log_id}, '删除成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'删除失败: {str(e)}')
 
 @incubation_bp.route('/eggs/<int:egg_id>/calendar', methods=['GET'])
 @login_required

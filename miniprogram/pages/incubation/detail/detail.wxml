@@ -56,8 +56,6 @@
           <view class="cal-cell {{item.hasLog ? 'has-log' : ''}} {{item.isIncubating ? 'incubating' : ''}} {{item.isToday ? 'today' : ''}} {{item.date === selectedDate ? 'selected' : ''}}" wx:for="{{calendarDays}}" wx:key="date" catchtap="onTapDay" data-date="{{item.date}}" data-dayindex="{{item.dayIndex}}">
             <text class="day">{{item.day}}</text>
             <text class="day-index" wx:if="{{item.dayIndex && item.isIncubating}}">第{{item.dayIndex}}天</text>
-            <text class="temp" wx:if="{{item.hasLog && item.temp !== undefined && item.temp !== null}}">{{item.temp}}℃</text>
-            <text class="hum" wx:if="{{item.hasLog && item.hum !== undefined && item.hum !== null}}">{{item.hum}}%</text>
             <view class="candling-dot" wx:if="{{item.isCandlingDay}}"></view>
             <view class="hatch-dot" wx:if="{{item.isHatchDay}}"></view>
           </view>
@@ -71,7 +69,56 @@
         </view>
       </view>
 
+      <view class="logs-section" wx:if="{{selectedLogs && selectedLogs.length > 0}}">
+        <view class="logs-title">孵化日志</view>
+        <view class="logs-list">
+          <view class="log-card" wx:for="{{selectedLogs}}" wx:key="id">
+            <view class="log-header">
+              <text class="log-date">{{item.log_date_text || item.log_date}}</text>
+              <text class="log-candling" wx:if="{{item.candling || item.is_candling}}">照蛋</text>
+              <view class="log-actions">
+                <text class="log-action edit" data-id="{{item.id}}" bindtap="onEditLogTap">编辑</text>
+                <text class="log-action delete" data-id="{{item.id}}" bindtap="onDeleteLogTap">删除</text>
+              </view>
+            </view>
+            <view class="log-meta">
+              <view wx:if="{{item.temperature_c || item.temperature}}" class="log-chip">温度 {{item.temperature_c || item.temperature}}℃</view>
+              <view wx:if="{{item.humidity_pct || item.humidity}}" class="log-chip">湿度 {{item.humidity_pct || item.humidity}}%</view>
+            </view>
+            <view class="log-notes" wx:if="{{item.notes}}">{{item.notes}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="hatch-mask" wx:if="{{showEditLogPanel}}" catchtouchmove="noop">
+        <view class="action-modal">
+          <view class="modal-title">编辑孵化日志</view>
+          <view class="modal-content">
+            <view class="section">
+              <view class="form-row">
+                <text class="field-label">记录日期</text>
+                <picker mode="date" value="{{editLogDate}}" bindchange="onEditLogDateChange">
+                  <view class="picker-display">{{editLogDate || '选择日期'}}</view>
+                </picker>
+              </view>
+              <view class="form-row">
+                <input class="form-input large" type="digit" placeholder="温度℃" value="{{editLogTemp}}" bindinput="onEditLogTempInput"/>
+                <input class="form-input large" type="digit" placeholder="湿度%" value="{{editLogHum}}" bindinput="onEditLogHumInput"/>
+              </view>
+              <view class="form-row">
+                <input class="form-input large" placeholder="备注" value="{{editLogNotes}}" bindinput="onEditLogNotesInput"/>
+              </view>
+            </view>
+          </view>
+          <view class="modal-actions">
+            <button class="btn-cancel lg" bindtap="closeEditLogPanel">取消</button>
+            <button class="btn-primary lg" bindtap="submitEditLog">保存</button>
+          </view>
+        </view>
+      </view>
+
       <view class="suggest-card" wx:if="{{selectedDayIndex}}">
+        <view class="suggest-heading">孵化建议</view>
         <view class="suggest-title">
           <text class="title-day">第{{selectedDayIndex}}天</text>
           <text class="title-date">{{selectedDateText}}</text>
@@ -97,6 +144,8 @@
           <view class="meta-chip candling">{{selectedCandlingText}}</view>
         </view>
       </view>
+
+      
 
       <view class="hatch-mask" wx:if="{{showHatchPanel}}" catchtouchmove="noop">
         <view class="hatch-modal">
