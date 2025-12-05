@@ -13,7 +13,8 @@ Page({
     speciesNames: [],
     selectedSpeciesIndex: -1,
     startDate: '',
-    startTime: '00:00'
+    startTime: '00:00',
+    formTouched: false
   },
 
   onShow() {
@@ -63,15 +64,15 @@ Page({
     const initTime = this.data.startTime || '00:00'
     if (!this.data.speciesList || this.data.speciesList.length === 0) {
       this.loadSpeciesList().finally(() => {
-        this.setData({ showAddEgg: true, startDate: todayStr, startTime: initTime })
+        this.setData({ showAddEgg: true, startDate: todayStr, startTime: initTime, formTouched: false })
         this.updateStartDateTime()
       })
     } else {
-      this.setData({ showAddEgg: true, startDate: todayStr, startTime: initTime })
+      this.setData({ showAddEgg: true, startDate: todayStr, startTime: initTime, formTouched: false })
       this.updateStartDateTime()
     }
   },
-  closeAddEggModal() { this.setData({ showAddEgg: false, editMode: false, currentEggId: null, startDate: '', startTime: '00:00' }) },
+  closeAddEggModal() { this.setData({ showAddEgg: false, editMode: false, currentEggId: null, startDate: '', startTime: '00:00', formTouched: false }) },
   noop() {},
 
   onInput(e) {
@@ -79,17 +80,17 @@ Page({
     const val = e.detail.value
     const form = Object.assign({}, this.data.form)
     form[field] = val
-    this.setData({ form })
+    this.setData({ form, formTouched: true })
   },
   onDateChange(e) {
     const field = e.currentTarget.dataset.field
     const val = e.detail.value
     const form = Object.assign({}, this.data.form)
     form[field] = val
-    this.setData({ form })
+    this.setData({ form, formTouched: true })
   },
   onStartDateChange(e) {
-    this.setData({ startDate: e.detail.value })
+    this.setData({ startDate: e.detail.value, formTouched: true })
     this.updateStartDateTime()
   },
   onStartTimeChange(e) {
@@ -101,7 +102,7 @@ Page({
       const d = String(t.getDate()).padStart(2,'0')
       this.setData({ startDate: `${y}-${m}-${d}` })
     }
-    this.setData({ startTime: v })
+    this.setData({ startTime: v, formTouched: true })
     this.updateStartDateTime()
   },
   updateStartDateTime() {
@@ -134,13 +135,17 @@ Page({
       const item = list[idx]
       const form = Object.assign({}, this.data.form)
       form.species_id = item ? item.id : ''
-      this.setData({ selectedSpeciesIndex: idx, form })
+      this.setData({ selectedSpeciesIndex: idx, form, formTouched: true })
     }catch(_){ }
   },
   formatDate(d) { return d ? String(d).slice(0, 10) : '' },
 
   async submitEgg() {
     try {
+      if (!this.data.formTouched) {
+        wx.showToast({ title: '请先填写至少一项信息', icon: 'none' })
+        return
+      }
       const payload = Object.assign({}, this.data.form)
       const sVal = String(payload.incubator_start_date || '').trim()
       if (!sVal) {
@@ -170,7 +175,7 @@ Page({
       }
       if (resp && resp.success) {
         wx.showToast({ title: this.data.editMode ? '更新成功' : '创建成功', icon: 'success' })
-        this.setData({ showAddEgg: false, editMode: false, currentEggId: null, form: { label: '', laid_date: '', incubator_start_date: '', species_id: '' }, selectedSpeciesIndex: -1, startDate: '', startTime: '00:00' })
+        this.setData({ showAddEgg: false, editMode: false, currentEggId: null, form: { label: '', laid_date: '', incubator_start_date: '', species_id: '' }, selectedSpeciesIndex: -1, startDate: '', startTime: '00:00', formTouched: false })
         if (this.data.editMode) {
           const id = this.data.currentEggId
           const submitted = payload.incubator_start_date
