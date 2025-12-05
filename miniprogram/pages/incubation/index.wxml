@@ -7,7 +7,18 @@
 
   <view class="page-content">
     <block wx:if="{{loading}}"><view class="loading">加载中...</view></block>
-    <block wx:elif="{{eggs.length === 0}}"><view class="empty">暂无蛋记录</view></block>
+    <block wx:elif="{{eggs.length === 0}}">
+      <view class="empty-state-card">
+        <view class="empty-content">
+          <view class="empty-icon">🥚</view>
+          <text class="empty-title">还没有蛋记录</text>
+          <text class="empty-subtitle">点击下方按钮添加您的第一枚蛋</text>
+          <view class="empty-btn" bindtap="openAddEggModal">
+            <view class="empty-btn-text">添加蛋</view>
+          </view>
+        </view>
+      </view>
+    </block>
     <block wx:else>
       <view class="egg-list">
         <view class="egg-item" wx:for="{{eggs}}" wx:key="id" bindtap="openDetail" data-id="{{item.id}}">
