@@ -18,7 +18,10 @@ Page({
     formSpeciesName: '',
     formSpeciesIds: [],
     formSpeciesDisplay: '',
-    showSpeciesMulti: false
+    showSpeciesMulti: false,
+    initialFormSpeciesIds: [],
+    initialGroupKey: '',
+    initialGroupItems: []
   },
   onLoad(){
     this.init()
@@ -116,7 +119,38 @@ Page({
       formSpeciesIds: preIds,
       formSpeciesDisplay: names.join('、'),
       showSpeciesMulti: true,
-      speciesList: list
+      speciesList: list,
+      initialFormSpeciesIds: preIds,
+      initialGroupKey: key,
+      initialGroupItems: g.items || []
+    })
+  },
+  copyGroup(e){
+    const key = e.currentTarget.dataset.key
+    const groups = this.data.groupedItems || []
+    const g = groups.find(x => x && x.key === key)
+    if (!g){ wx.showToast({ title:'分组不存在', icon:'none' }); return }
+    const sample = g.sample || {}
+    const allIds = (g.species_ids || []).filter(Boolean)
+    const uniqIds = Array.from(new Set(allIds))
+    const names = (g.species_names || []).filter(Boolean)
+    const idx = (this.data.speciesList || []).findIndex(sp => String(sp.id) === String(sample.species_id))
+    const s = this.data.speciesList[idx]
+    const preIds = uniqIds.map(id => Number(id))
+    const list = (this.data.speciesList || []).map(sp => ({ ...sp, selected: preIds.indexOf(Number(sp.id)) >= 0 }))
+    this.setData({
+      showModal: true,
+      modalTitle: '复制孵化建议',
+      form: { day_start: sample.day_start, day_end: sample.day_end, temperature_low: sample.temperature_low, temperature_high: sample.temperature_high, temperature_target: sample.temperature_target, humidity_low: sample.humidity_low, humidity_high: sample.humidity_high, turning_required: !!sample.turning_required, candling_required: !!sample.candling_required, tips: sample.tips },
+      formSpeciesIndex: idx >=0 ? idx : 0,
+      formSpeciesName: s ? s.name : (names[0] || ''),
+      formSpeciesIds: preIds,
+      formSpeciesDisplay: names.join('、'),
+      showSpeciesMulti: true,
+      speciesList: list,
+      initialFormSpeciesIds: [],
+      initialGroupKey: '',
+      initialGroupItems: []
     })
   },
   onSpeciesChange(e){
@@ -136,7 +170,9 @@ Page({
       formSpeciesName: s && s.name,
       formSpeciesIds: [],
       formSpeciesDisplay: '',
-      showSpeciesMulti: false
+      showSpeciesMulti: false,
+      initialFormSpeciesIds: [],
+      initialGroupItems: []
     })
     // 同步选中态到列表
     const ids = []
@@ -151,6 +187,21 @@ Page({
     const s = this.data.speciesList[idx]
     const preIds = item.species_id ? [Number(item.species_id)] : []
     const list = (this.data.speciesList || []).map(sp => ({ ...sp, selected: preIds.indexOf(Number(sp.id)) >= 0 }))
+    const keyOf = (it) => JSON.stringify({
+      day_start: it.day_start,
+      day_end: it.day_end,
+      temperature_low: String(it.temperature_low||''),
+      temperature_high: String(it.temperature_high||''),
+      temperature_target: String(it.temperature_target||''),
+      humidity_low: String(it.humidity_low||''),
+      humidity_high: String(it.humidity_high||''),
+      turning_required: !!it.turning_required,
+      candling_required: !!it.candling_required,
+      tips: it.tips || ''
+    })
+    const groupKey = keyOf(item)
+    const groupItems = (this.data.items || []).filter(x => keyOf(x) === groupKey)
+
     this.setData({
       showModal: true,
       modalTitle: '编辑孵化建议',
@@ -160,7 +211,10 @@ Page({
       formSpeciesIds: preIds,
       formSpeciesDisplay: item.species_name || (s ? s.name : ''),
       showSpeciesMulti: true,
-      speciesList: list
+      speciesList: list,
+      initialFormSpeciesIds: preIds,
+      initialGroupKey: groupKey,
+      initialGroupItems: groupItems
     })
   },
   closeModal(){ this.setData({ showModal:false }) },
@@ -252,37 +306,56 @@ Page({
         const selectedIds = this.data.formSpeciesIds || []
         const idx = this.data.formSpeciesIndex
         const s = this.data.speciesList[idx]
-        const currentSpeciesId = s ? s.id : form.species_id
-        const targets = selectedIds.length ? selectedIds : [currentSpeciesId].filter(Boolean)
-        if (!targets.length){ wx.showToast({ title:'请选择品种', icon:'none' }); return }
+        // 如果 selectedIds 为空，尝试使用当前单选的品种
+        let targetSpeciesIds = []
+        if (selectedIds.length > 0) {
+          targetSpeciesIds = selectedIds.map(n => Number(n))
+        } else {
+           const currentId = s ? s.id : form.species_id
+           if (currentId) targetSpeciesIds = [Number(currentId)]
+        }
+
+        if (!targetSpeciesIds.length){ wx.showToast({ title:'请选择品种', icon:'none' }); return }
+        
+        const initialItems = this.data.initialGroupItems || []
         let ok = 0, fail = 0
-        for (const sid of targets){
-          // 若为当前记录所属品种，更新该记录；否则为其他品种，尝试更新同天数范围，否则创建新记录
-          if (String(sid) === String(currentSpeciesId)){
-            const body = { ...form, species_id: sid }
-            const res = await app.request({ url: `/api/incubation/suggestions/${body.id}`, method: 'PUT', data: body })
+
+        // 1. 处理更新和创建
+        for (const sid of targetSpeciesIds){
+          // 尝试在初始组中找到对应品种的记录
+          const originalItem = initialItems.find(it => Number(it.species_id) === sid)
+          
+          if (originalItem) {
+            // 更新现有记录
+            const body = { ...form, id: originalItem.id, species_id: sid }
+            const res = await app.request({ url: `/api/incubation/suggestions/${originalItem.id}`, method: 'PUT', data: body })
             if (res && res.success) ok++; else fail++
           } else {
-            const existing = (this.data.items || []).find(x => String(x.species_id) === String(sid) && String(x.day_start) === String(form.day_start) && String(x.day_end) === String(form.day_end))
-            if (existing){
-              const body = { ...form, id: existing.id, species_id: sid }
-              const res = await app.request({ url: `/api/incubation/suggestions/${existing.id}`, method: 'PUT', data: body })
-              if (res && res.success) ok++; else fail++
-            } else {
-              const body = { ...form, species_id: sid }
-              // 去掉 id 字段以免后端误解析
-              delete body.id
-              const res = await app.request({ url: '/api/incubation/suggestions', method: 'POST', data: body })
-              if (res && res.success) ok++; else fail++
-            }
+            // 创建新记录
+            const body = { ...form, species_id: sid }
+            delete body.id
+            const res = await app.request({ url: '/api/incubation/suggestions', method: 'POST', data: body })
+            if (res && res.success) ok++; else fail++
           }
         }
+
+        // 2. 处理删除（存在于初始组中，但不在当前选中列表中的项）
+        const toRemoveItems = initialItems.filter(item => !targetSpeciesIds.includes(Number(item.species_id)))
+
+        for (const item of toRemoveItems) {
+          if (item && item.id) {
+            const res = await app.request({ url: `/api/incubation/suggestions/${item.id}`, method: 'DELETE' })
+            // 删除操作计入成功数（或者不计入，视需求而定，这里简单起见计入 ok）
+            if (res && res.success) ok++; else fail++
+          }
+        }
+
         if (ok > 0 && fail === 0){
-          wx.showToast({ title:`已保存${ok}条`, icon:'success' })
+          wx.showToast({ title:`保存成功`, icon:'success' })
           this.setData({ showModal:false })
           this.loadList()
         } else if (ok > 0){
-          wx.showToast({ title:`部分成功（${ok}/${targets.length}）`, icon:'none' })
+          wx.showToast({ title:`部分成功`, icon:'none' })
           this.setData({ showModal:false })
           this.loadList()
         } else {

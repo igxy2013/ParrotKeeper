@@ -18,11 +18,11 @@
         <view class="meta">
           <view class="meta-item">
             <text class="meta-label">开始</text>
-            <text class="meta-value">{{egg.incubator_start_date_text || '未设置'}}</text>
+            <text class="meta-value">{{egg.incubator_start_datetime_text || egg.incubator_start_date_text || '未设置'}}</text>
           </view>
           <view class="meta-item">
             <text class="meta-label">天数</text>
-            <text class="meta-value">{{egg.day_since_start_text}} 天</text>
+            <text class="meta-value">{{egg.day_since_start_text}}</text>
           </view>
           <view class="meta-item">
             <text class="meta-label">品种</text>
@@ -53,19 +53,22 @@
           <view class="weekday">六</view>
         </view>
         <view class="cal-grid">
-          <view class="cal-cell {{item.hasLog ? 'has-log' : ''}} {{item.isIncubating ? 'incubating' : ''}} {{item.isToday ? 'today' : ''}} {{item.date === selectedDate ? 'selected' : ''}}" wx:for="{{calendarDays}}" wx:key="date" catchtap="onTapDay" data-date="{{item.date}}" data-dayindex="{{item.dayIndex}}">
+          <view class="cal-cell {{item.hasLog ? 'has-log' : ''}} {{item.isIncubating ? 'incubating' : ''}} {{item.isHatchDay ? 'hatch' : ''}} {{item.isToday ? 'today' : ''}} {{item.date === selectedDate ? 'selected' : ''}}" wx:for="{{calendarDays}}" wx:key="date" catchtap="onTapDay" data-date="{{item.date}}" data-dayindex="{{item.dayIndex}}">
             <text class="day">{{item.day}}</text>
             <text class="day-index" wx:if="{{item.dayIndex && item.isIncubating}}">第{{item.dayIndex}}天</text>
-            <view class="candling-dot" wx:if="{{item.isCandlingDay}}"></view>
-            <view class="hatch-dot" wx:if="{{item.isHatchDay}}"></view>
+            <view class="dots-row">
+              <view class="turning-dot" wx:if="{{item.isTurningDay}}"></view>
+              <view class="candling-dot" wx:if="{{item.isCandlingDay}}"></view>
+            </view>
           </view>
         </view>
         <view class="cal-legend">
           <view class="legend-item"><view class="legend-dot dot-incubating"></view><text>孵化期</text></view>
           <view class="legend-item"><view class="legend-dot dot-haslog"></view><text>有记录</text></view>
           <view class="legend-item"><view class="legend-dot dot-today"></view><text>今天</text></view>
+          <view class="legend-item"><view class="legend-dot dot-turning"></view><text>翻蛋日</text></view>
           <view class="legend-item"><view class="legend-dot dot-candling"></view><text>照蛋日</text></view>
-          <view class="legend-item"><view class="legend-dot dot-hatch"></view><text>出壳日</text></view>
+          <view class="legend-item"><view class="legend-swatch swatch-hatch"></view><text>出壳日</text></view>
         </view>
       </view>
 

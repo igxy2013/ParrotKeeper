@@ -183,7 +183,7 @@ class Egg(db.Model):
     species_id = db.Column(db.Integer, db.ForeignKey('parrot_species.id'))
     label = db.Column(db.String(50))
     laid_date = db.Column(db.Date)
-    incubator_start_date = db.Column(db.Date)
+    incubator_start_date = db.Column(db.DateTime)
     status = db.Column(db.Enum('incubating', 'hatched', 'failed', 'stopped'), default='incubating')
     hatch_date = db.Column(db.Date)
     notes = db.Column(db.Text)

@@ -23,13 +23,18 @@
 .cal-cell.has-log{border-color:#22c55e}
 .cal-cell.incubating{background:#fff7ed;border-color:#fdba74}
 .cal-cell.incubating.has-log{border-color:#22c55e}
-.cal-cell.today{box-shadow:0 0 0 2px #2563eb inset}
+.cal-cell.today{background:#e2a059;border:none;box-shadow:none;color:#fff}
+.cal-cell.today .day-index{color:#fff}
+.cal-cell.hatch{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.cal-cell.hatch .day-index{color:#fff}
 .cal-cell.selected{box-shadow:0 0 0 2px #10b981 inset}
 .day{font-weight:600}
 .day-index{display:block;color:#9ca3af;font-size:10px;white-space:nowrap}
 .temp,.hum{display:block;color:#555;font-size:12px}
-.candling-dot{width:8px;height:8px;border-radius:50%;background:#a78bfa;margin:6px auto 0 auto}
-.hatch-dot{width:10px;height:10px;background:#f59e0b;transform:rotate(45deg);margin:6px auto 0 auto}
+.dots-row{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px;flex-wrap:wrap;min-height:8px}
+.turning-dot{width:8px;height:8px;border-radius:50%;background:#0ea5e9}
+.candling-dot{width:8px;height:8px;border-radius:50%;background:#a78bfa}
+.hatch-dot{width:10px;height:10px;background:#f59e0b;transform:rotate(45deg)}
 .suggest-card{background:linear-gradient(180deg,#ffffff,#fbfbfb);border-radius:14px;padding:14px;margin-top:14px;box-shadow:0 8px 20px rgba(31,41,55,0.08);border:1px solid #eef2f7}
 .suggest-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .title-day{font-weight:700;font-size:16px;color:#111827}
@@ -61,12 +66,15 @@
 .meta-chip.candling{background:#ede9fe;color:#4c1d95}
 .suggest-tips{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .tip-item{background:#f9fafb;border:1px solid #eef2f7;border-radius:10px;padding:8px;color:#374151;font-size:13px}
-.cal-legend{display:flex;gap:12px;margin-top:8px;color:#666;font-size:12px}
-.legend-item{display:flex;align-items:center;gap:6px}
-.legend-dot{width:10px;height:10px;border-radius:50%}
+.cal-legend{display:flex;gap:8px;margin-top:8px;color:#4b5563;font-size:11px;flex-wrap:wrap;justify-content:flex-start}
+.legend-item{display:flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+.legend-swatch{width:16px;height:10px;border-radius:4px;border:1px solid #e5e7eb}
+.swatch-hatch{background:#7c3aed;border-color:#7c3aed}
 .dot-incubating{background:#fdba74}
 .dot-haslog{background:#22c55e}
-.dot-today{background:#2563eb}
+.dot-today{background:#e2a059}
+.dot-turning{background:#0ea5e9}
 .dot-candling{background:#a78bfa}
 .dot-hatch{background:#f59e0b}
 .logs{margin-top:12px}

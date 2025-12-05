@@ -11,7 +11,9 @@ Page({
     hasOperationPermission: false,
     speciesList: [],
     speciesNames: [],
-    selectedSpeciesIndex: -1
+    selectedSpeciesIndex: -1,
+    startDate: '',
+    startTime: '00:00'
   },
 
   onShow() {
@@ -28,16 +30,18 @@ Page({
       const resp = await app.request({ url: '/api/incubation/eggs', method: 'GET' })
       const items = (resp && resp.data && resp.data.items) || []
       const mapped = items.map(it => {
-        const ds = (typeof it.day_since_start === 'number' ? it.day_since_start : this.computeDaySinceStart(it && it.incubator_start_date))
-        const dsText = (ds === null || ds === undefined || isNaN(ds)) ? '--' : String(ds)
+        const ds = this.computeDaySinceStart(it && it.incubator_start_date)
+        const dsText = this.computeDaysHoursText(it && it.incubator_start_date)
         const speciesName = (it && it.species && it.species.name) ? it.species.name : (it && it.species_name) || ''
         const hatchText = this.formatDate(it && it.hatch_date)
+        const startDateTimeText = app.formatDateTime(it && it.incubator_start_date, 'YYYY-MM-DD HH:mm')
         return {
           ...it,
           status_text: hatchText ? '已出雏' : this.mapStatusToCN(it && it.status),
           day_since_start: ds,
           day_since_start_text: dsText,
           incubator_start_date_text: this.formatDate(it && it.incubator_start_date),
+          incubator_start_datetime_text: startDateTimeText,
           species_name: speciesName,
           hatch_date_text: hatchText
         }
@@ -51,13 +55,23 @@ Page({
   },
 
   openAddEggModal() {
+    const today = new Date()
+    const y = today.getFullYear()
+    const m = String(today.getMonth()+1).padStart(2,'0')
+    const d = String(today.getDate()).padStart(2,'0')
+    const todayStr = `${y}-${m}-${d}`
+    const initTime = this.data.startTime || '00:00'
     if (!this.data.speciesList || this.data.speciesList.length === 0) {
-      this.loadSpeciesList().finally(() => this.setData({ showAddEgg: true }))
+      this.loadSpeciesList().finally(() => {
+        this.setData({ showAddEgg: true, startDate: todayStr, startTime: initTime })
+        this.updateStartDateTime()
+      })
     } else {
-      this.setData({ showAddEgg: true })
+      this.setData({ showAddEgg: true, startDate: todayStr, startTime: initTime })
+      this.updateStartDateTime()
     }
   },
-  closeAddEggModal() { this.setData({ showAddEgg: false, editMode: false, currentEggId: null }) },
+  closeAddEggModal() { this.setData({ showAddEgg: false, editMode: false, currentEggId: null, startDate: '', startTime: '00:00' }) },
   noop() {},
 
   onInput(e) {
@@ -73,6 +87,32 @@ Page({
     const form = Object.assign({}, this.data.form)
     form[field] = val
     this.setData({ form })
+  },
+  onStartDateChange(e) {
+    this.setData({ startDate: e.detail.value })
+    this.updateStartDateTime()
+  },
+  onStartTimeChange(e) {
+    const v = e.detail.value
+    if (!this.data.startDate){
+      const t = new Date()
+      const y = t.getFullYear()
+      const m = String(t.getMonth()+1).padStart(2,'0')
+      const d = String(t.getDate()).padStart(2,'0')
+      this.setData({ startDate: `${y}-${m}-${d}` })
+    }
+    this.setData({ startTime: v })
+    this.updateStartDateTime()
+  },
+  updateStartDateTime() {
+    const d = this.data.startDate
+    const t = this.data.startTime || '00:00'
+    if (d) {
+      const form = Object.assign({}, this.data.form)
+      const tt = t.length === 5 ? `${t}:00` : t
+      form.incubator_start_date = `${d}T${tt}`
+      this.setData({ form })
+    }
   },
   async loadSpeciesList(){
     try{
@@ -102,6 +142,26 @@ Page({
   async submitEgg() {
     try {
       const payload = Object.assign({}, this.data.form)
+      const sVal = String(payload.incubator_start_date || '').trim()
+      if (!sVal) {
+        const t = this.data.startTime || '00:00'
+        const tt = t.length === 5 ? `${t}:00` : t
+        payload.incubator_start_date = `${this.data.startDate}T${tt}`
+      } else {
+        const m = sVal.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(:\d{2})?)$/)
+        const m2 = sVal.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}(:\d{2})?)$/)
+        if (m) {
+          const datePart = m[1]
+          let timePart = m[2]
+          if (timePart.length === 5) timePart = `${timePart}:00`
+          payload.incubator_start_date = `${datePart}T${timePart}`
+        } else if (m2) {
+          const datePart = m2[1]
+          let timePart = m2[2]
+          if (timePart.length === 5) timePart = `${timePart}:00`
+          payload.incubator_start_date = `${datePart}T${timePart}`
+        }
+      }
       let resp
       if (this.data.editMode && this.data.currentEggId) {
         resp = await app.request({ url: `/api/incubation/eggs/${this.data.currentEggId}` , method: 'PUT', data: payload })
@@ -110,7 +170,7 @@ Page({
       }
       if (resp && resp.success) {
         wx.showToast({ title: this.data.editMode ? '更新成功' : '创建成功', icon: 'success' })
-        this.setData({ showAddEgg: false, editMode: false, currentEggId: null, form: { label: '', laid_date: '', incubator_start_date: '', species_id: '' }, selectedSpeciesIndex: -1 })
+        this.setData({ showAddEgg: false, editMode: false, currentEggId: null, form: { label: '', laid_date: '', incubator_start_date: '', species_id: '' }, selectedSpeciesIndex: -1, startDate: '', startTime: '00:00' })
         this.fetchEggs()
       } else {
         wx.showToast({ title: resp.message || (this.data.editMode ? '更新失败' : '创建失败'), icon: 'none' })
@@ -133,17 +193,34 @@ Page({
     try{
       if(!dStr) return null
       const s = String(dStr)
-      let dt
-      if(s.includes('T')){
-        dt = new Date(s)
-      } else {
-        dt = new Date(`${s}T00:00:00`)
+      let dt = new Date(s.replace(/-/g, '/').replace('T', ' '))
+      if(isNaN(dt.getTime())) {
+         // Fallback if replacing didn't work or format is different
+         dt = new Date(s)
       }
       if(isNaN(dt.getTime())) return null
-      const today = new Date()
-      const ms = today.setHours(0,0,0,0) - dt.setHours(0,0,0,0)
-      return Math.floor(ms / 86400000)
+      const now = new Date()
+      const diff = now - dt
+      const days = diff / 86400000
+      if (days < 0) return '0.0'
+      return days.toFixed(1)
     }catch(_){ return null }
+  }
+  ,
+  computeDaysHoursText(dStr){
+    try{
+      if(!dStr) return '--'
+      const s = String(dStr)
+      let dt = new Date(s.replace(/-/g,'/').replace('T',' '))
+      if(isNaN(dt.getTime())){ dt = new Date(s) }
+      if(isNaN(dt.getTime())) return '--'
+      const now = new Date()
+      const ms = now.getTime() - dt.getTime()
+      if (ms < 0) return '0天0小时'
+      const days = Math.floor(ms / 86400000)
+      const hours = Math.floor((ms % 86400000) / 3600000)
+      return `${days}天${hours}小时`
+    }catch(_){ return '--' }
   }
   ,
   async openEditEgg(e){
@@ -158,10 +235,44 @@ Page({
       if (list && list.length){
         speciesIdx = list.findIndex(s => s.name === speciesName || String(s.id) === String(item && (item.species_id || (item.species && item.species.id))))
       }
+      let startD = ''
+      let startT = '00:00'
+      if (item && item.incubator_start_date) {
+        const raw = String(item.incubator_start_date)
+        let dt
+        if (raw.includes('T')) {
+          dt = new Date(raw)
+        } else {
+          const hasTime = /\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?/.test(raw)
+          const normalized = hasTime
+            ? raw.replace(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})(?!:)/, '$1T$2:00')
+            : raw.replace(/-/g, '/')
+          dt = new Date(normalized)
+        }
+        if (isNaN(dt.getTime())) {
+          // 兜底：尝试去除毫秒/时区再解析
+          const cleaned = raw.replace('T', ' ').replace(/Z|\+\d{2}:?\d{2}$/,'')
+          dt = new Date(cleaned.replace(/-/g,'/'))
+        }
+        if (!isNaN(dt.getTime())) {
+          const y = dt.getFullYear()
+          const m = String(dt.getMonth()+1).padStart(2,'0')
+          const d = String(dt.getDate()).padStart(2,'0')
+          const hh = String(dt.getHours()).padStart(2,'0')
+          const mm = String(dt.getMinutes()).padStart(2,'0')
+          startD = `${y}-${m}-${d}`
+          startT = `${hh}:${mm}`
+        }
+      }
+      const _txt = String(item && item.incubator_start_datetime_text || '')
+      if ((!startD || startT === '00:00') && _txt) {
+        const _m = _txt.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/)
+        if (_m) { startD = _m[1]; startT = _m[2] }
+      }
       const form = {
         label: (item && item.label) || '',
         laid_date: this.formatDate(item && item.laid_date),
-        incubator_start_date: this.formatDate(item && item.incubator_start_date),
+        incubator_start_date: startD ? `${startD}T${startT}:00` : '',
         species_id: (item && (item.species_id || (item.species && item.species.id))) || ''
       }
       this.setData({
@@ -169,7 +280,9 @@ Page({
         editMode: true,
         currentEggId: id,
         form,
-        selectedSpeciesIndex: speciesIdx
+        selectedSpeciesIndex: speciesIdx,
+        startDate: startD,
+        startTime: startT
       })
     }catch(_){ wx.showToast({ title: '无法编辑', icon: 'none' }) }
   },

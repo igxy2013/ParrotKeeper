@@ -1,8 +1,11 @@
 <wxs module="utils">
 var isSelected = function(list, id) {
-  if (!list) return false;
-  // WXS 中的 indexOf 返回值判断
-  return list.indexOf(id) > -1 || list.indexOf(parseInt(id)) > -1 || list.indexOf(id.toString()) > -1;
+  if (!list || list.length === 0) return false;
+  for (var i = 0; i < list.length; i++) {
+    var v = list[i];
+    if (v == id) return true;
+  }
+  return false;
 }
 module.exports = {
   isSelected: isSelected
@@ -28,6 +31,7 @@ module.exports = {
             </view>
           <view class="actions">
             <text class="action" bindtap="openEditGroupModal" data-key="{{item.key}}">编辑</text>
+            <text class="action" bindtap="copyGroup" data-key="{{item.key}}">复制</text>
             <text class="action delete" bindtap="batchDeleteGroup" data-key="{{item.key}}">删除</text>
             <text class="action" bindtap="toggleGroupExpand" data-key="{{item.key}}">{{groupExpanded[item.key] ? '收起' : '展开'}}</text>
           </view>

@@ -70,21 +70,57 @@ Page({
         return { ...l, log_date_text: logDateText }
       })
       const startText = this.formatDate(egg && egg.incubator_start_date)
-      const dsCalc = (typeof egg.day_since_start === 'number') ? egg.day_since_start : this.computeDaySinceStart(egg && egg.incubator_start_date)
-      const dsText = (dsCalc === null || dsCalc === undefined || isNaN(dsCalc)) ? '--' : String(dsCalc)
+      const startDateTimeText = app.formatDateTime(egg && egg.incubator_start_date, 'YYYY-MM-DD HH:mm')
+      const dsCalc = this.computeDaySinceStart(egg && egg.incubator_start_date)
+      const dsText = this.computeDaysHoursText(egg && egg.incubator_start_date)
       const speciesName = (egg && egg.species && egg.species.name) ? egg.species.name : (egg && egg.species_name) || ''
       const hatchText = this.formatDate(egg && egg.hatch_date)
-      egg = { ...egg, incubator_start_date_text: startText, hatch_date_text: hatchText, day_since_start: dsCalc, day_since_start_text: dsText, species_name: speciesName }
+      egg = { ...egg, incubator_start_date_text: startText, incubator_start_datetime_text: startDateTimeText, hatch_date_text: hatchText, day_since_start: dsCalc, day_since_start_text: dsText, species_name: speciesName }
       const speciesSupported = this.isSpeciesSupported(speciesName)
       const statusText = hatchText ? '已出雏' : this.mapStatusToCN(egg && egg.status)
       const hasHatched = !!hatchText
       this.setData({ egg, statusText, speciesSupported, hasHatched, eggLogs: logsMapped })
       let speciesSuggestions = []
       try{
+        // 1. 拉取当前品种的建议
+        let p1 = Promise.resolve([])
         if (egg && egg.species_id){
-          const sResp = await app.request({ url: `/api/incubation/suggestions?species_id=${egg.species_id}`, method: 'GET' })
-          speciesSuggestions = (sResp && sResp.data && sResp.data.items) || []
+          p1 = app.request({ url: `/api/incubation/suggestions?species_id=${egg.species_id}`, method: 'GET' }).then(r => (r && r.data && r.data.items) || []).catch(()=>[])
         }
+        // 2. 拉取通用建议（不传 species_id 或传 0/null，这里假设请求所有建议然后过滤，或者后端支持 species_id=null）
+        // 假设后端支持不传 species_id 返回所有，或者我们尝试传一个代表通用的值（如 0）
+        // 但为了保险，如果蛋有关联品种，我们最好也拿到那些“未指定品种”的建议（即通用建议）
+        // 由于不知道后端接口细节，这里尝试拉取所有建议（如果不传参返回所有）或者尝试拉取通用建议
+        // 假设 /api/incubation/suggestions 返回列表，我们获取一次“通用”的（假设 species_id 为空）
+        // 如果后端逻辑是：不传 species_id 返回所有，那我们就传 species_id='' 来获取所有，然后在前端过滤
+        let p2 = app.request({ url: `/api/incubation/suggestions`, method: 'GET' }).then(r => (r && r.data && r.data.items) || []).catch(()=>[])
+
+        const [list1, list2] = await Promise.all([p1, p2])
+        
+        // list1 是特定品种的（如果有的话）
+        // list2 可能是所有的，或者是通用的。
+        // 我们合并 list1 和 list2 中属于“通用”或“当前品种”的建议
+        // 通用建议判定：species_id 为 null, 0, 或 ""
+        const currentSpeciesId = egg.species_id ? String(egg.species_id) : null
+        
+        const combined = []
+        const addedIds = new Set()
+        
+        // 先加特定品种的
+        list1.forEach(item => {
+          if(!addedIds.has(item.id)){ combined.push(item); addedIds.add(item.id) }
+        })
+        
+        // 再加 list2 中匹配的（或者是通用的）
+        list2.forEach(item => {
+           const sid = item.species_id ? String(item.species_id) : ''
+           // 如果是当前品种，或者通用（sid 为空或 '0'）
+           if (sid === currentSpeciesId || sid === '' || sid === '0'){
+             if(!addedIds.has(item.id)){ combined.push(item); addedIds.add(item.id) }
+           }
+        })
+        
+        speciesSuggestions = combined
       }catch(_){ speciesSuggestions = [] }
       const calResp = await app.request({ url: `/api/incubation/eggs/${this.data.id}/calendar`, method: 'GET' })
       const calMap = (calResp && calResp.data && calResp.data.calendar) || {}
@@ -138,6 +174,19 @@ Page({
     const hatchStr = egg.hatch_date_text || this.formatDate(egg.hatch_date)
     const endDate = hatchStr ? new Date(`${hatchStr}T00:00:00`) : todayMid
 
+    let candlingDatesSet = new Set()
+    let turningDatesSet = new Set()
+    try{
+      const cList = (calendar && (calendar.candling_dates || calendar.candling)) || []
+      if (Array.isArray(cList)){
+        cList.forEach(d => { const s = this.formatDate(d); if (s) candlingDatesSet.add(s) })
+      }
+      const tList = (calendar && (calendar.turning_dates || calendar.turning)) || []
+      if (Array.isArray(tList)){
+        tList.forEach(d => { const s = this.formatDate(d); if (s) turningDatesSet.add(s) })
+      }
+    }catch(_){ }
+
     for(let i=0;i<padStart;i++){ days.push({ day:'', date:'', hasLog:false }) }
     for(let d=1; d<=last.getDate(); d++){
       const dt = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
@@ -151,15 +200,52 @@ Page({
       const isToday = cellDate.getTime() === todayMid.getTime()
       let sTempTarget=null, sTempRangeText='', sHumRangeText=''
       let isCandlingDay=false
+      let isTurningDay=false
       const isHatchDay = !!(hatchStr && dt === hatchStr)
+      if (candlingDatesSet.has(dt)) { isCandlingDay = true }
+      if (turningDatesSet.has(dt)) { isTurningDay = true }
+      if (item && (item.candling_required || item.is_candling_day || item.candling === true || item.is_candling === true)) {
+        isCandlingDay = true
+      }
+      if (item && (item.turning_required || item.is_turning_day || item.turning === true)) {
+        isTurningDay = true
+      }
       if (dayIndex){
         const suggestions = this.data.speciesSuggestions || []
         if (suggestions && suggestions.length > 0){
-          const match = suggestions.find(x => x && x.day_start!=null && x.day_end!=null && x.candling_required === true && dayIndex >= x.day_start && dayIndex <= x.day_end)
-          isCandlingDay = !!match
+          const di = Number(dayIndex)
+          let hasCandling = false
+          let hasTurning = false
+          for (const x of suggestions){
+            if (!x) continue
+            const ds = x.day_start != null ? Number(x.day_start) : null
+            const de = x.day_end != null ? Number(x.day_end) : null
+            const sd = x.day != null ? Number(x.day) : null
+            let cList = []
+            if (Array.isArray(x.candling_days)) {
+              cList = x.candling_days.map(n => Number(n))
+            } else if (typeof x.candling_days === 'string') {
+              cList = x.candling_days.split(',').map(n => Number(n.trim())).filter(n => !isNaN(n))
+            }
+            let tList = []
+            if (Array.isArray(x.turning_days)) {
+              tList = x.turning_days.map(n => Number(n))
+            } else if (typeof x.turning_days === 'string') {
+              tList = x.turning_days.split(',').map(n => Number(n.trim())).filter(n => !isNaN(n))
+            }
+            if (cList.length && cList.includes(di)) hasCandling = true
+            if (tList.length && tList.includes(di)) hasTurning = true
+            if (!!x.candling_required && ((ds!=null && de!=null && di >= ds && di <= de) || (sd!=null && di === sd))) hasCandling = true
+            if (!!x.turning_required && ((ds!=null && de!=null && di >= ds && di <= de) || (sd!=null && di === sd))) hasTurning = true
+            if (hasCandling && hasTurning) break
+          }
+          isCandlingDay = isCandlingDay || hasCandling
+          isTurningDay = isTurningDay || hasTurning
         } else {
           const sCandling = this.suggestForDay(dayIndex).candling
-          isCandlingDay = !!(sCandling && sCandling.enabled)
+          isCandlingDay = isCandlingDay || !!(sCandling && sCandling.enabled)
+          const sTurning = this.suggestForDay(dayIndex).turning
+          isTurningDay = isTurningDay || !!(sTurning && sTurning.enabled)
         }
         const s = this.suggestForDay(dayIndex)
         const tr = s.temperature_c || {}
@@ -168,7 +254,12 @@ Page({
         sTempRangeText = `${tr.low}-${tr.high}℃`
         sHumRangeText = `${hr.low}-${hr.high}%`
       }
-      days.push({ day: d, date: dt, hasLog: !!item, temp: item && item.temperature_c, hum: item && item.humidity_pct, isIncubating, dayIndex, isToday, sTempTarget, sTempRangeText, sHumRangeText, isCandlingDay, isHatchDay })
+      if (!isCandlingDay){
+        const logs = this.data.eggLogs || []
+        const hasCandlingLog = logs.some(x => (x.log_date_text || this.formatDate(x.log_date)) === dt && (x.candling === true || x.is_candling === true))
+        if (hasCandlingLog) isCandlingDay = true
+      }
+      days.push({ day: d, date: dt, hasLog: !!item, temp: item && item.temperature_c, hum: item && item.humidity_pct, isIncubating, dayIndex, isToday, sTempTarget, sTempRangeText, sHumRangeText, isCandlingDay, isTurningDay, isHatchDay })
     }
     this.setData({ calendarDays: days, currentMonthText: `${year}年${month+1}月` })
     this.setDefaultSelection()
@@ -331,21 +422,12 @@ Page({
   },
 
   suggestForDay(dayIndex){
-    if (dayIndex == null || dayIndex < 0) dayIndex = 0
-    let temp
-    if (dayIndex >= 17){
-      temp = { low: 37.2, high: 37.3, target: 37.2 }
-    } else {
-      temp = { low: 37.4, high: 37.6, target: 37.5 }
+    return { 
+      temperature_c: { low: null, high: null, target: null }, 
+      humidity_pct: { low: null, high: null }, 
+      turning: { enabled: false, interval_min: null }, 
+      candling: { enabled: false } 
     }
-    let humLow, humHigh
-    if (dayIndex <= 7){ humLow = 40.0; humHigh = 50.0 }
-    else if (dayIndex <= 16){ humLow = 40.0; humHigh = 50.0 }
-    else if (dayIndex <= 21){ humLow = 55.0; humHigh = 65.0 }
-    else { humLow = 55.0; humHigh = 65.0 }
-    const turning = { enabled: dayIndex >= 7 && dayIndex <= 16, interval_min: 120 }
-    const candling = { enabled: dayIndex === 6 }
-    return { temperature_c: temp, humidity_pct: { low: humLow, high: humHigh }, turning, candling }
   },
 
   async fetchAdviceAndSet(dateText, dayIndex, afterHatch){
@@ -359,14 +441,16 @@ Page({
       const tipsArr = (resp && resp.data && Array.isArray(resp.data.user_tips)) ? resp.data.user_tips.filter(x => !!x) : []
       let turningText
       let candlingText
+      
       if (turningRequired === undefined || candlingRequired === undefined){
-        const s = this.suggestForDay(dayIndex)
-        turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
-        candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
+        // 无后端数据，且已移除硬编码兜底
+        turningText = '—'
+        candlingText = '—'
       } else {
         turningText = turningRequired ? '需要翻蛋' : '不翻蛋 (OFF)'
-        candlingText = candlingRequired ? '照蛋看受精情况' : '不照蛋'
+        candlingText = candlingRequired ? '照蛋查看孵化情况' : '不照蛋'
       }
+
       this.setData({
         selectedDate: dateText,
         selectedDateText: dateText,
@@ -380,20 +464,16 @@ Page({
       })
       this.updateSelectedLogs()
     }catch(_){
-      const s = this.suggestForDay(dayIndex)
-      const tr = s.temperature_c || {}; const hr = s.humidity_pct || {}
-      const turningText = (s.turning && s.turning.enabled) ? `每隔${s.turning.interval_min}分钟翻蛋一次` : '不翻蛋 (OFF)'
-      const candlingText = (s.candling && s.candling.enabled) ? '照蛋看受精情况' : '不照蛋'
-      const tipsArr = []
+      // 出错时也不使用硬编码
       this.setData({
         selectedDate: dateText,
         selectedDateText: dateText,
         selectedDayIndex: dayIndex,
-        selectedTempRangeText: `${tr.low}-${tr.high}℃`,
-        selectedHumRangeText: `${hr.low}-${hr.high}%`,
-        selectedTurningText: turningText,
-        selectedCandlingText: candlingText,
-        selectedTips: tipsArr,
+        selectedTempRangeText: '—',
+        selectedHumRangeText: '—',
+        selectedTurningText: '—',
+        selectedCandlingText: '—',
+        selectedTips: [],
         afterHatch
       })
       this.updateSelectedLogs()
@@ -404,13 +484,31 @@ Page({
     try{
       if(!dStr) return null
       const s = String(dStr)
-      let dt
-      if(s.includes('T')){ dt = new Date(s) } else { dt = new Date(`${s}T00:00:00`) }
+      let dt = new Date(s.replace(/-/g, '/').replace('T', ' '))
+      if(isNaN(dt.getTime())){ dt = new Date(s) }
       if(isNaN(dt.getTime())) return null
-      const today = new Date()
-      const ms = today.setHours(0,0,0,0) - dt.setHours(0,0,0,0)
-      return Math.floor(ms / 86400000)
+      const now = new Date()
+      const diff = now - dt
+      const days = diff / 86400000
+      if (days < 0) return '0.0'
+      return Number(days.toFixed(1))
     }catch(_){ return null }
+  },
+
+  computeDaysHoursText(dStr){
+    try{
+      if(!dStr) return '--'
+      const s = String(dStr)
+      let dt = new Date(s.replace(/-/g,'/').replace('T',' '))
+      if(isNaN(dt.getTime())) dt = new Date(s)
+      if(isNaN(dt.getTime())) return '--'
+      const now = new Date()
+      const ms = now.getTime() - dt.getTime()
+      if (ms < 0) return '0天0小时'
+      const days = Math.floor(ms / 86400000)
+      const hours = Math.floor((ms % 86400000) / 3600000)
+      return `${days}天${hours}小时`
+    }catch(_){ return '--' }
   },
 
   

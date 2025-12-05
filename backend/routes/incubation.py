@@ -2,7 +2,7 @@ from flask import Blueprint, request
 from models import db, Egg, IncubationLog, Parrot, BreedingRecord, ParrotSpecies
 from models import IncubationSuggestion
 from utils import login_required, success_response, error_response
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from decimal import Decimal
 
 incubation_bp = Blueprint('incubation', __name__, url_prefix='/api/incubation')
@@ -71,7 +71,14 @@ def _suggest_ranges(day_index: int, species: ParrotSpecies = None):
 def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None):
     day_idx = None
     if egg and egg.incubator_start_date and log_date:
-        day_idx = (log_date - egg.incubator_start_date).days + 1
+        start_dt = egg.incubator_start_date
+        if isinstance(start_dt, date) and not isinstance(start_dt, datetime):
+            start_dt = datetime.combine(start_dt, datetime.min.time())
+        log_dt = datetime.combine(log_date, datetime.min.time())
+        diff = log_dt - start_dt
+        day_idx = diff.days + 1
+        if day_idx < 1:
+            day_idx = 1
     ranges = _suggest_ranges(day_idx, egg.species)
     tips = []
     user_tips = []
@@ -132,7 +139,7 @@ def create_egg():
             species_id=data.get('species_id'),
             label=data.get('label'),
             laid_date=_parse_date(data.get('laid_date')),
-            incubator_start_date=_parse_date(data.get('incubator_start_date')),
+            incubator_start_date=_parse_datetime(data.get('incubator_start_date')),
             status=data.get('status') or 'incubating',
             notes=data.get('notes'),
             created_by_user_id=user.id,
@@ -198,7 +205,9 @@ def update_egg(egg_id):
         for f in ['label', 'laid_date', 'incubator_start_date', 'status', 'hatch_date', 'notes', 'species_id', 'mother_parrot_id', 'father_parrot_id', 'breeding_record_id']:
             if f in data:
                 val = data.get(f)
-                if f in ['laid_date', 'incubator_start_date', 'hatch_date']:
+                if f == 'incubator_start_date':
+                    val = _parse_datetime(val)
+                elif f in ['laid_date', 'hatch_date']:
                     val = _parse_date(val)
                 setattr(egg, f, val)
         db.session.commit()
@@ -515,6 +524,24 @@ def delete_suggestion(sug_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'删除失败: {str(e)}')
+
+def _parse_datetime(val):
+    if not val:
+        return None
+    try:
+        s = str(val)
+        from datetime import datetime
+        if 'T' in s:
+            s = s.replace('Z', '+00:00')
+            return datetime.fromisoformat(s)
+        if ' ' in s:
+            if len(s.split(':')) == 2:
+                return datetime.strptime(s, '%Y-%m-%d %H:%M')
+            return datetime.strptime(s, '%Y-%m-%d %H:%M:%S')
+        return datetime.strptime(s, '%Y-%m-%d')
+    except Exception:
+        return None
+
 def _parse_date(val):
     if not val:
         return None
