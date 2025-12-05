@@ -387,6 +387,7 @@ class Feedback(db.Model):
     content = db.Column(db.Text, nullable=False)
     contact = db.Column(db.String(255))
     image_urls = db.Column(db.Text)  # 存储为JSON字符串数组
+    is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 关系

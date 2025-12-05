@@ -220,10 +220,9 @@ def init_db(app):
                         raw = enum_match.group(1)
                         # 提取枚举值列表（含引号）
                         parts = [p.strip() for p in raw.split(',') if p.strip()]
-                        values = [p.strip("'\"") for p in parts]
+                        values = [p.strip("'\"") for v in parts for p in [v]]
                         if 'bath' not in values:
                             values.append('bath')
-                            # 重新拼接 SQL 的枚举值字符串（保留单引号）
                             enum_sql = ','.join([f"'{v}'" for v in values])
                             alter_sql = f"ALTER TABLE cleaning_records MODIFY COLUMN cleaning_type ENUM({enum_sql}) NULL"
                             connection.execute(text(alter_sql))
@@ -234,6 +233,21 @@ def init_db(app):
             except Exception:
                 pass
             print(f"更新 cleaning_type 枚举失败: {e}")
+
+        try:
+            # 自动为反馈表添加 is_read 字段（若不存在）
+            with db.engine.connect() as connection:
+                check = connection.execute(text("SHOW COLUMNS FROM feedbacks LIKE 'is_read'"))
+                exists = check.fetchone()
+                if not exists:
+                    connection.execute(text("ALTER TABLE feedbacks ADD COLUMN is_read BOOLEAN DEFAULT FALSE"))
+                    print("已为反馈表添加 is_read 字段")
+        except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            print(f"添加 is_read 字段失败: {e}")
 
 def init_scheduler(app):
     """初始化APScheduler并注册定时推送任务"""

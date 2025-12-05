@@ -93,8 +93,21 @@ def get_unread_feedback_count():
         if not user or user.role != 'super_admin':
             return error_response('无权限查看反馈统计', 403)
 
-        # 获取所有反馈数量（可以根据需要添加时间过滤等条件）
-        unread_count = Feedback.query.count()
+        unread_count = Feedback.query.filter_by(is_read=False).count()
         return success_response({'unread_count': unread_count})
     except Exception as e:
         return error_response(f'获取反馈统计失败: {str(e)}')
+
+@feedback_bp.route('/mark_all_read', methods=['POST'])
+@login_required
+def mark_all_read():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限操作', 403)
+        affected = Feedback.query.filter_by(is_read=False).update({Feedback.is_read: True})
+        db.session.commit()
+        return success_response({'affected': affected}, '已标记所有反馈为已读')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'标记失败: {str(e)}')
