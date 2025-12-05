@@ -146,6 +146,15 @@ Page({
         wx.showToast({ title: '请先填写至少一项信息', icon: 'none' })
         return
       }
+      const f = this.data.form || {}
+      if (!f.species_id) {
+        wx.showToast({ title: '请选择鹦鹉品种', icon: 'none' })
+        return
+      }
+      if (!f.laid_date) {
+        wx.showToast({ title: '请选择产蛋日期', icon: 'none' })
+        return
+      }
       const payload = Object.assign({}, this.data.form)
       const sVal = String(payload.incubator_start_date || '').trim()
       if (!sVal) {
