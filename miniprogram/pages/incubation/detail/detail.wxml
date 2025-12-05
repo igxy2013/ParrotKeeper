@@ -65,7 +65,7 @@
         <view class="cal-legend">
           <view class="legend-item"><view class="legend-dot dot-incubating"></view><text>孵化期</text></view>
           <view class="legend-item"><view class="legend-dot dot-haslog"></view><text>有记录</text></view>
-          <view class="legend-item"><view class="legend-dot dot-today"></view><text>今天</text></view>
+          <view class="legend-item"><view class="legend-swatch swatch-today"></view><text>今天</text></view>
           <view class="legend-item"><view class="legend-dot dot-turning"></view><text>翻蛋日</text></view>
           <view class="legend-item"><view class="legend-dot dot-candling"></view><text>照蛋日</text></view>
           <view class="legend-item"><view class="legend-swatch swatch-hatch"></view><text>出壳日</text></view>

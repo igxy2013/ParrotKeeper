@@ -7,13 +7,37 @@
 .row-right{display:flex;align-items:center;gap:10rpx}
 .label{font-weight:600}
 .status{font-size:12px;color:#10b981}
-.meta{display:flex;gap:12px;margin-top:6px;color:#666;font-size:12px}
 .header-btn{color:#10b981}
+.meta-grid {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 16rpx;
+}
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.meta-label {
+  font-size: 22rpx;
+  color: #888;
+  margin-bottom: 6rpx;
+}
+.meta-value {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: 500;
+}
 /* 顶部导航添加按钮统一尺寸与样式（与喂食记录一致） */
 .header-action{width:72rpx;height:72rpx;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10rpx)}
 .header-icon{width:36rpx;height:36rpx}
 .modal-overlay{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.3)}
-.modal{position:fixed;left:10px;right:10px;top:20%;background:#fff;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.15)}
+.modal{position:fixed;left:10px;right:10px;top:20%;background:#fff;border-radius:48rpx;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.15)}
+.modal-header-gradient{background:linear-gradient(135deg,#4CAF50 0%,#26A69A 50%,#00BCD4 100%);padding:24rpx 32rpx;position:relative;flex-shrink:0}
+.modal-header-row{display:flex;align-items:center;justify-content:space-between}
+.modal-title{color:#ffffff;font-size:36rpx;font-weight:700}
+.modal-close-btn{width:56rpx;height:56rpx;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;position:absolute;top:16rpx;right:16rpx}
+.modal-close-icon{color:#ffffff;font-size:32rpx}
 .modal-header{display:flex;justify-content:space-between;align-items:center;padding:12px}
 .modal-title{font-weight:600}
 .modal-close{font-size:18px;color:#999}

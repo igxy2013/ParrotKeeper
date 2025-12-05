@@ -130,7 +130,16 @@ def create_egg():
     try:
         user = request.current_user
         data = request.get_json() or {}
+        # DEBUG LOGGING
+        with open('backend_debug.log', 'a', encoding='utf-8') as log_f:
+            log_f.write(f"\n--- Create Egg ---\n")
+            log_f.write(f"Data received: {data}\n")
+
         team_id = _resolve_team_id(user)
+
+        parsed_start_date = _parse_datetime(data.get('incubator_start_date'))
+        with open('backend_debug.log', 'a', encoding='utf-8') as log_f:
+            log_f.write(f"Parsed start date: {parsed_start_date}\n")
 
         egg = Egg(
             breeding_record_id=data.get('breeding_record_id'),
@@ -139,7 +148,7 @@ def create_egg():
             species_id=data.get('species_id'),
             label=data.get('label'),
             laid_date=_parse_date(data.get('laid_date')),
-            incubator_start_date=_parse_datetime(data.get('incubator_start_date')),
+            incubator_start_date=parsed_start_date,
             status=data.get('status') or 'incubating',
             notes=data.get('notes'),
             created_by_user_id=user.id,
@@ -202,15 +211,28 @@ def update_egg(egg_id):
         if not _can_access_egg(user, egg):
             return error_response('权限不足', 403)
         data = request.get_json() or {}
+        # DEBUG LOGGING
+        with open('backend_debug.log', 'a', encoding='utf-8') as log_f:
+            log_f.write(f"\n--- Update Egg {egg_id} ---\n")
+            log_f.write(f"Data received: {data}\n")
+
         for f in ['label', 'laid_date', 'incubator_start_date', 'status', 'hatch_date', 'notes', 'species_id', 'mother_parrot_id', 'father_parrot_id', 'breeding_record_id']:
             if f in data:
                 val = data.get(f)
                 if f == 'incubator_start_date':
                     val = _parse_datetime(val)
+                    with open('backend_debug.log', 'a', encoding='utf-8') as log_f:
+                        log_f.write(f"Parsed incubator_start_date: {val} (type: {type(val)})\n")
                 elif f in ['laid_date', 'hatch_date']:
                     val = _parse_date(val)
                 setattr(egg, f, val)
+        
         db.session.commit()
+        # Refresh to check persistence
+        db.session.refresh(egg)
+        with open('backend_debug.log', 'a', encoding='utf-8') as log_f:
+             log_f.write(f"After commit: {egg.incubator_start_date}\n")
+
         from schemas import egg_schema
         return success_response(egg_schema.dump(egg), '更新成功')
     except Exception as e:

@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import config
 from models import db
+from sqlalchemy import text
 from routes.auth import auth_bp
 from routes.parrots import parrots_bp
 from routes.records import records_bp
@@ -193,6 +194,18 @@ def init_db(app):
     with app.app_context():
         db.create_all()
         print("数据库表创建完成")
+        try:
+            db_name = app.config.get('DB_NAME') or 'parrot_breeding'
+            q = text("SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=:db AND TABLE_NAME='eggs' AND COLUMN_NAME='incubator_start_date'")
+            r = db.session.execute(q, { 'db': db_name }).scalar()
+            if r and str(r).lower() == 'date':
+                db.session.execute(text("ALTER TABLE eggs MODIFY COLUMN incubator_start_date DATETIME NULL"))
+                db.session.commit()
+        except Exception:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
 
 def init_scheduler(app):
     """初始化APScheduler并注册定时推送任务"""

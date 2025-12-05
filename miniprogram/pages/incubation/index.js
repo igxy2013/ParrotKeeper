@@ -110,7 +110,7 @@ Page({
     if (d) {
       const form = Object.assign({}, this.data.form)
       const tt = t.length === 5 ? `${t}:00` : t
-      form.incubator_start_date = `${d}T${tt}`
+      form.incubator_start_date = `${d} ${tt}`
       this.setData({ form })
     }
   },
@@ -146,7 +146,7 @@ Page({
       if (!sVal) {
         const t = this.data.startTime || '00:00'
         const tt = t.length === 5 ? `${t}:00` : t
-        payload.incubator_start_date = `${this.data.startDate}T${tt}`
+        payload.incubator_start_date = `${this.data.startDate} ${tt}`
       } else {
         const m = sVal.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(:\d{2})?)$/)
         const m2 = sVal.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}(:\d{2})?)$/)
@@ -154,12 +154,12 @@ Page({
           const datePart = m[1]
           let timePart = m[2]
           if (timePart.length === 5) timePart = `${timePart}:00`
-          payload.incubator_start_date = `${datePart}T${timePart}`
+          payload.incubator_start_date = `${datePart} ${timePart}`
         } else if (m2) {
           const datePart = m2[1]
           let timePart = m2[2]
           if (timePart.length === 5) timePart = `${timePart}:00`
-          payload.incubator_start_date = `${datePart}T${timePart}`
+          payload.incubator_start_date = `${datePart} ${timePart}`
         }
       }
       let resp
@@ -171,6 +171,11 @@ Page({
       if (resp && resp.success) {
         wx.showToast({ title: this.data.editMode ? '更新成功' : '创建成功', icon: 'success' })
         this.setData({ showAddEgg: false, editMode: false, currentEggId: null, form: { label: '', laid_date: '', incubator_start_date: '', species_id: '' }, selectedSpeciesIndex: -1, startDate: '', startTime: '00:00' })
+        if (this.data.editMode) {
+          const id = this.data.currentEggId
+          const submitted = payload.incubator_start_date
+          this.verifySavedStartTime(submitted, id).catch(()=>{})
+        }
         this.fetchEggs()
       } else {
         wx.showToast({ title: resp.message || (this.data.editMode ? '更新失败' : '创建失败'), icon: 'none' })
@@ -178,6 +183,19 @@ Page({
     } catch (e) {
       wx.showToast({ title: e.message || (this.data.editMode ? '更新失败' : '创建失败'), icon: 'none' })
     }
+  },
+
+  async verifySavedStartTime(submitted, id){
+    try{
+      const res = await app.request({ url: `/api/incubation/eggs/${id}`, method: 'GET' })
+      const egg = (res && res.data && res.data.egg) || {}
+      const back = egg && egg.incubator_start_date
+      const subHM = (String(submitted).match(/\b(\d{2}:\d{2})\b/) || [,''])[1]
+      const backHM = (String(back).match(/\b(\d{2}:\d{2})\b/) || [,''])[1]
+      if (subHM && backHM && subHM !== backHM){
+        wx.showToast({ title: `后端时间为 ${backHM}，未更新`, icon: 'none' })
+      }
+    }catch(_){ }
   },
 
   openDetail(e) {
@@ -239,20 +257,9 @@ Page({
       let startT = '00:00'
       if (item && item.incubator_start_date) {
         const raw = String(item.incubator_start_date)
-        let dt
-        if (raw.includes('T')) {
-          dt = new Date(raw)
-        } else {
-          const hasTime = /\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?/.test(raw)
-          const normalized = hasTime
-            ? raw.replace(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})(?!:)/, '$1T$2:00')
-            : raw.replace(/-/g, '/')
-          dt = new Date(normalized)
-        }
+        let dt = new Date(raw.replace(/-/g, '/').replace('T', ' '))
         if (isNaN(dt.getTime())) {
-          // 兜底：尝试去除毫秒/时区再解析
-          const cleaned = raw.replace('T', ' ').replace(/Z|\+\d{2}:?\d{2}$/,'')
-          dt = new Date(cleaned.replace(/-/g,'/'))
+           dt = new Date(raw)
         }
         if (!isNaN(dt.getTime())) {
           const y = dt.getFullYear()
@@ -272,7 +279,7 @@ Page({
       const form = {
         label: (item && item.label) || '',
         laid_date: this.formatDate(item && item.laid_date),
-        incubator_start_date: startD ? `${startD}T${startT}:00` : '',
+        incubator_start_date: startD ? `${startD} ${startT}:00` : '',
         species_id: (item && (item.species_id || (item.species && item.species.id))) || ''
       }
       this.setData({
@@ -313,5 +320,18 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '删除失败', icon: 'none' })
     }
+  },
+  async verifySavedStartTime(submitted, id){
+    try{
+      const res = await app.request({ url: `/api/incubation/eggs/${id}`, method: 'GET' })
+      const egg = (res && res.data && res.data.egg) || {}
+      const back = egg && egg.incubator_start_date
+      const subHM = (String(submitted).match(/\b(\d{2}:\d{2})\b/) || [,''])[1]
+      const backHM = (String(back).match(/\b(\d{2}:\d{2})\b/) || [,''])[1]
+      if (subHM && backHM && subHM !== backHM){
+         console.error('Backend time mismatch:', subHM, backHM)
+         wx.showToast({ title: `后端时间为 ${backHM}，未更新`, icon: 'none', duration: 3000 })
+      }
+    }catch(e){ console.error(e) }
   }
 })

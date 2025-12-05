@@ -605,8 +605,11 @@ App({
   // 格式化日期
   formatDate(date, format = 'YYYY-MM-DD') {
     if (!date) return ''
-    
-    const d = new Date(date)
+    let d = new Date(date)
+    if (isNaN(d.getTime())) {
+      const s = String(date)
+      d = new Date(s.replace(/-/g, '/').replace('T', ' '))
+    }
     const year = d.getFullYear()
     const month = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')
@@ -626,8 +629,11 @@ App({
   // 格式化日期时间
   formatDateTime(date, format = 'YYYY-MM-DD HH:mm') {
     if (!date) return ''
-    
-    const d = new Date(date)
+    let d = new Date(date)
+    if (isNaN(d.getTime())) {
+      const s = String(date)
+      d = new Date(s.replace(/-/g, '/').replace('T', ' '))
+    }
     const year = d.getFullYear()
     const month = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')
