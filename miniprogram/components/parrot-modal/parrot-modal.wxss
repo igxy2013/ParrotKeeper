@@ -10,16 +10,13 @@
   justify-content: center;
   padding: 32rpx;
 }
+.modal-overlay.no-blur { backdrop-filter: none; }
 
-.modal-content {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2001;
+.modal-content { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 2001; display: flex; align-items: center; justify-content: center; }
+.modal-card {
   width: 100%;
   max-width: 700rpx;
-  height: 82vh; /* 固定高度以便内部scroll-view正确分配空间 */
+  height: 80vh;
   background: #ffffff;
   border-radius: 48rpx;
   overflow: hidden;

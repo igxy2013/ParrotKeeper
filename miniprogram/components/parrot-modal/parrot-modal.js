@@ -7,7 +7,8 @@ Component({
     title: { type: String, value: '' },
     parrot: { type: Object, value: null },
     parrotTypes: { type: Array, value: [] },
-    speciesList: { type: Array, value: [] }
+    speciesList: { type: Array, value: [] },
+    disableBlur: { type: Boolean, value: false }
   },
   data: {
     form: {

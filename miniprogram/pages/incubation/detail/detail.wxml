@@ -169,8 +169,13 @@
       </view>
 
       <view class="hatch-mask" wx:if="{{showUnifiedPanel}}" catchtouchmove="noop">
-        <view class="action-modal">
-          <view class="modal-title">孵化记录</view>
+        <view class="action-modal unified-modal">
+          <view class="modal-header-gradient">
+            <view class="modal-header-row">
+              <text class="modal-title">孵化记录</text>
+              <view class="modal-close-btn" bindtap="closeUnifiedPanel"><text class="modal-close-icon">✕</text></view>
+            </view>
+          </view>
           <view class="modal-content">
             <view class="section">
               <view class="form-row">
@@ -199,8 +204,8 @@
               </view>
             </view>
           </view>
-          <view class="modal-actions">
-            <button class="btn-cancel lg" bindtap="closeUnifiedPanel">取消</button>
+          <view class="modal-footer">
+            <button class="btn-secondary lg" bindtap="closeUnifiedPanel">取消</button>
             <button class="btn-primary lg" bindtap="submitUnifiedForm">保存</button>
           </view>
         </view>

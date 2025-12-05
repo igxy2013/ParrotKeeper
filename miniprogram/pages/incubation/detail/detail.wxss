@@ -98,8 +98,20 @@
 .btn-cancel{background:#f3f4f6;color:#111827;border-radius:10px;padding:10px 20px;font-size:14px}
 .btn-primary{background:#10b981;color:#fff;border-radius:10px;padding:10px 20px;font-size:14px}
 .btn-cancel.lg,.btn-primary.lg{padding:4px 32px;font-size:14px}
+
+.modal-header-gradient{background:linear-gradient(135deg,#4CAF50 0%,#26A69A 50%,#00BCD4 100%);padding:24rpx 32rpx;position:relative;flex-shrink:0}
+.modal-header-row{display:flex;align-items:center;justify-content:space-between}
+.unified-modal .modal-title{color:#ffffff;font-size:36rpx;font-weight:700;padding:0;border-bottom:none}
+.modal-close-btn{width:56rpx;height:56rpx;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;position:absolute;top:16rpx;right:16rpx}
+.modal-close-icon{color:#ffffff;font-size:32rpx}
+
+.modal-footer{display:flex;gap:12rpx;justify-content:flex-end;padding:20rpx 28rpx;border-top:2rpx solid #f3f4f6;background:#f9fafb}
+.unified-modal .btn-secondary,.unified-modal .btn-primary{flex:1;padding:18rpx 24rpx;border-radius:28rpx;font-size:26rpx}
+.unified-modal .btn-secondary{background:#e5e7eb;color:#374151}
+.unified-modal .btn-primary{background:linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4);color:#ffffff}
 .plus-menu-mask{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.25);z-index:998}
 .action-modal{width:86vw;max-width:640rpx;background:#fff;border-radius:14px;box-shadow:0 16px 40px rgba(17,24,39,0.2);overflow:hidden;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:999}
+.unified-modal{border-radius:48rpx}
 .action-list{display:flex;flex-direction:column;gap:10px}
 .action-item{background:#f3f4f6;color:#111827;border-radius:10px;padding:12px;text-align:center}
 .section{border-top:1px solid #f1f5f9;padding-top:12px;margin-top:8px}

@@ -1,5 +1,6 @@
-<view wx:if="{{visible}}" class="modal-overlay" catchtouchmove="true" bindtap="onOverlayTap"></view>
-<view wx:if="{{visible}}" class="modal-content" catchtap="stopPropagation">
+<view wx:if="{{visible}}" class="modal-overlay {{disableBlur ? 'no-blur' : ''}}" catchtouchmove="true" bindtap="onOverlayTap"></view>
+<view wx:if="{{visible}}" class="modal-content">
+    <view class="modal-card" catchtap="stopPropagation">
     <!-- 渐变头部 -->
     <view class="modal-header-gradient">
       <view class="modal-header-row">
@@ -116,7 +117,7 @@
         </view>
       </view>
 
-      <!-- 过户码认领内容 -->
+    <!-- 过户码认领内容 -->
       <view class="claim-section" wx:if="{{mode !== 'edit' && createMode === 'claim'}}">
         <view class="form-item">
           <text class="form-label">过户码 *</text>
@@ -136,5 +137,6 @@
       >
         {{ mode === 'edit' ? '保存' : (createMode === 'form' ? '添加鹦鹉' : '认领') }}
       </button>
+    </view>
     </view>
   </view>
