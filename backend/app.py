@@ -207,6 +207,34 @@ def init_db(app):
             except Exception:
                 pass
 
+        try:
+            # 自动校验并扩展 cleaning_records.cleaning_type 的枚举，确保包含 'bath'
+            with db.engine.connect() as connection:
+                result = connection.execute(text("SHOW CREATE TABLE cleaning_records"))
+                row = result.fetchone()
+                if row and len(row) >= 2:
+                    create_statement = row[1]
+                    import re
+                    enum_match = re.search(r"`cleaning_type`\s+enum\(([^)]+)\)", create_statement, re.IGNORECASE)
+                    if enum_match:
+                        raw = enum_match.group(1)
+                        # 提取枚举值列表（含引号）
+                        parts = [p.strip() for p in raw.split(',') if p.strip()]
+                        values = [p.strip("'\"") for p in parts]
+                        if 'bath' not in values:
+                            values.append('bath')
+                            # 重新拼接 SQL 的枚举值字符串（保留单引号）
+                            enum_sql = ','.join([f"'{v}'" for v in values])
+                            alter_sql = f"ALTER TABLE cleaning_records MODIFY COLUMN cleaning_type ENUM({enum_sql}) NULL"
+                            connection.execute(text(alter_sql))
+                            print("已更新 cleaning_records.cleaning_type 枚举，加入 'bath'")
+        except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            print(f"更新 cleaning_type 枚举失败: {e}")
+
 def init_scheduler(app):
     """初始化APScheduler并注册定时推送任务"""
     try:

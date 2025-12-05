@@ -176,7 +176,8 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
             'food_water': '食物和水清洁',
             'disinfection': '消毒',
             'water_change': '饮用水更换',
-            'water_bowl_clean': '水碗清洁'
+            'water_bowl_clean': '水碗清洁',
+            'bath': '鹦鹉洗澡'
         }
         return cleaning_type_map.get(obj.cleaning_type, obj.cleaning_type)
     
