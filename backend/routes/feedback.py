@@ -1,5 +1,9 @@
 from flask import Blueprint, request
 from models import db, Feedback, User
+from datetime import datetime
+from routes.notifications import get_access_token
+from flask import current_app
+import requests
 from utils import login_required, success_response, error_response
 import json
 
@@ -105,8 +109,43 @@ def mark_all_read():
         user = request.current_user
         if not user or user.role != 'super_admin':
             return error_response('无权限操作', 403)
-        affected = Feedback.query.filter_by(is_read=False).update({Feedback.is_read: True})
+        # 记录未读反馈列表，用于后续通知
+        unread_list = Feedback.query.filter_by(is_read=False).all()
+        affected = len(unread_list)
+        Feedback.query.filter_by(is_read=False).update({Feedback.is_read: True})
         db.session.commit()
+
+        # 发送通知（尽力而为，失败不影响标记结果）
+        try:
+            cfg = current_app.config if current_app else {}
+            template_id = cfg.get('WECHAT_TEMPLATE_ID_FEEDBACK') or cfg.get('WECHAT_TEMPLATE_ID_CLEANING') or cfg.get('WECHAT_TEMPLATE_ID_FEEDING')
+            access_token = get_access_token()
+            if template_id and access_token:
+                api_url = f'https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token={access_token}'
+                now = datetime.now().strftime('%Y-%m-%d %H:%M')
+                for fb in unread_list:
+                    try:
+                        u = fb.user
+                        if not u or not u.openid:
+                            continue
+                        data = {
+                            'thing1': { 'value': '您的反馈后台已收到，我们将尽快处理！' },
+                            'time2': { 'value': now },
+                            'thing3': { 'value': '鹦鹉管家AI' },
+                            'thing4': { 'value': '反馈通知' }
+                        }
+                        payload = {
+                            'touser': u.openid,
+                            'template_id': template_id,
+                            'page': 'pages/index/index',
+                            'data': data
+                        }
+                        requests.post(api_url, json=payload)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
         return success_response({'affected': affected}, '已标记所有反馈为已读')
     except Exception as e:
         db.session.rollback()

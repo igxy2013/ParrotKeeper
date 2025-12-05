@@ -95,6 +95,12 @@ Page({
 
       if (res && res.success) {
         app.showSuccess('反馈已提交，感谢您的宝贵意见！')
+        try {
+          const nm = app.globalData && app.globalData.notificationManager
+          if (nm && typeof nm.addFeedbackNotification === 'function') {
+            nm.addFeedbackNotification(new Date())
+          }
+        } catch (_) {}
         // 清空表单
         this.setData({ form: { content: '' }, photos: [], canSubmit: false })
       } else {

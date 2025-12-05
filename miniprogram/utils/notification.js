@@ -530,6 +530,20 @@ class NotificationManager {
     }
   }
 
+  // 添加反馈通知
+  addFeedbackNotification(submitTime) {
+    const settings = this.getNotificationSettings()
+    if (settings.enabled) {
+      this.addLocalNotification(
+        'feedback',
+        '反馈已收到',
+        '您的反馈后台已收到，我们将尽快处理！',
+        '',
+        this.formatTime(submitTime)
+      )
+    }
+  }
+
   // iOS 安全日期解析（支持多种常见格式）
   parseIOSDate(timeInput) {
     try {

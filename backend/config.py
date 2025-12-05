@@ -22,6 +22,7 @@ class Config:
     # 订阅消息模板ID（服务端定时推送使用）
     WECHAT_TEMPLATE_ID_FEEDING = os.environ.get('WECHAT_TEMPLATE_ID_FEEDING')
     WECHAT_TEMPLATE_ID_CLEANING = os.environ.get('WECHAT_TEMPLATE_ID_CLEANING')
+    WECHAT_TEMPLATE_ID_FEEDBACK = os.environ.get('WECHAT_TEMPLATE_ID_FEEDBACK')
     
     # 文件上传配置
     # 统一将用户上传的图片存储到指定目录（通过环境变量配置）
