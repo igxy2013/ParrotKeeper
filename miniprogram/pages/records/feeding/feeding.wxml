@@ -8,7 +8,7 @@
   </app-header>
 
   <!-- Main Content -->
-  <scroll-view class="pt-6 px-4 space-y-6" scroll-y="true" bindscrolltolower="onListScrollLower" lower-threshold="100">
+  <scroll-view class="pt-6 px-4 space-y-6" scroll-y="true" bindscrolltolower="onListScrollLower" lower-threshold="50">
     <!-- Filter Chips (aligned with health page design) -->
     <view class="filter-section">
       <scroll-view class="chip-scroll" scroll-x="true">

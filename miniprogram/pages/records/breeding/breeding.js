@@ -1,5 +1,6 @@
 // pages/breeding/breeding.js
 const app = getApp()
+const { parseServerTime } = require('../../../utils/time')
 
 Page({
   data: {
@@ -166,7 +167,7 @@ Page({
       
       // 记录时间：优先后端 record_time（最后添加/编辑时间），其次 created_at，再回退节点日期
       const rawTime = record.record_time || record.created_at || record.mating_date || record.egg_laying_date || record.hatching_date || ''
-      const parsedTime = this.parseServerTime(rawTime)
+      const parsedTime = parseServerTime(rawTime)
       const recordTime = parsedTime
         ? app.formatDateTime(parsedTime, 'YYYY-MM-DD HH:mm')
         : this.normalizeDisplayTime(rawTime)
@@ -235,8 +236,8 @@ Page({
     const hasStart = !!startDate
     const hasEnd = !!endDate
     if (hasStart || hasEnd) {
-      const startTs = hasStart ? this.parseServerTime(startDate)?.getTime() || 0 : null
-      const endBase = hasEnd ? (this.parseServerTime(endDate)?.getTime() || 0) : null
+      const startTs = hasStart ? parseServerTime(startDate)?.getTime() || 0 : null
+      const endBase = hasEnd ? (parseServerTime(endDate)?.getTime() || 0) : null
       const endTs = endBase != null ? (endBase + 24 * 60 * 60 * 1000 - 1) : null
 
       filtered = filtered.filter(r => {
@@ -330,7 +331,7 @@ Page({
   getBreedingRecordTs(rec) {
     const raw = rec && rec.rawData || {}
     const cand = raw.record_time || raw.created_at || raw.mating_date || raw.egg_laying_date || raw.hatching_date || rec.recordTime || ''
-    const d = this.parseServerTime(cand)
+    const d = parseServerTime(cand)
     return d ? d.getTime() : 0
   },
 
@@ -397,7 +398,7 @@ Page({
   // 格式化日期
   formatDate(dateString) {
     if (!dateString) return ''
-    const d = this.parseServerTime(dateString)
+    const d = parseServerTime(dateString)
     if (d) {
       return app.formatDateTime(d, 'YYYY-MM-DD')
     }
@@ -412,55 +413,7 @@ Page({
       return s.split(' ')[0]
     }
     return s
-  }
-  ,
-
-  // 统一解析服务端时间字符串（本地时间，兼容 iOS）
-  parseServerTime(value) {
-    if (!value) return null
-    try {
-      if (value instanceof Date) return value
-      if (typeof value === 'number') {
-        const dNum = new Date(value)
-        return isNaN(dNum.getTime()) ? null : dNum
-      }
-      if (typeof value === 'string') {
-        const s = value.trim()
-        // 仅日期：YYYY-MM-DD -> 当天本地 00:00:00
-        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-          const d0 = new Date(`${s}T00:00:00`)
-          return isNaN(d0.getTime()) ? null : d0
-        }
-        // 已包含 Z 或时区偏移，直接解析
-        if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s)) {
-          const dz = new Date(s)
-          return isNaN(dz.getTime()) ? null : dz
-        }
-        // 空格或 T 分隔：YYYY-MM-DD HH:mm[:ss] / YYYY-MM-DDTHH:mm[:ss]
-        if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s)) {
-          // 先尝试 iOS 友好的斜杠格式
-          let local = s.replace('T', ' ').replace(/-/g, '/')
-          if (/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/.test(local)) local = local + ':00'
-          const dLocal = new Date(local)
-          if (!isNaN(dLocal.getTime())) return dLocal
-          // 兜底：ISO T 格式并补秒
-          let iso = s.includes(' ') ? s.replace(' ', 'T') : s
-          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) iso = iso + ':00'
-          const dIso = new Date(iso)
-          if (!isNaN(dIso.getTime())) return dIso
-        }
-        // 其它情况：尝试直接解析或斜杠替换
-        let d = new Date(s)
-        if (!isNaN(d.getTime())) return d
-        d = new Date(s.replace(/-/g, '/'))
-        return isNaN(d.getTime()) ? null : d
-      }
-      return null
-    } catch (_) {
-      return null
-    }
-  }
-  ,
+  },
 
   // 归一化显示时间为 YYYY-MM-DD HH:mm（字符串兜底）
   normalizeDisplayTime(input) {

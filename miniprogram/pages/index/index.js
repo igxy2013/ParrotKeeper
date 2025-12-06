@@ -1,5 +1,6 @@
 // pages/index/index.js
 const app = getApp()
+const { parseServerTime } = require('../../utils/time')
 
 Page({
   data: {
@@ -641,7 +642,7 @@ Page({
           const name = (p && p.name) ? p.name : '你的鹦鹉'
           // 优先使用 acquisition_date，其次使用 created_at 作为兜底
           const startDateStr = p.acquisition_date || p.created_at || ''
-          const startDate = this.parseServerTime(startDateStr)
+          const startDate = parseServerTime(startDateStr)
           if (startDate) {
             // 以当天0点与开始日期0点计算相处天数，首日记为第1天
             const today = new Date()
@@ -689,52 +690,6 @@ Page({
     }
   },
 
-  // 解析服务端时间字符串，处理缺失时区的情况
-  parseServerTime(value) {
-    if (!value) return null
-    try {
-      if (value instanceof Date) return value
-      if (typeof value === 'number') {
-        const dNum = new Date(value)
-        return isNaN(dNum.getTime()) ? null : dNum
-      }
-      if (typeof value === 'string') {
-        const s = value.trim()
-        // 仅日期：YYYY-MM-DD
-        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-          return new Date(`${s}T00:00:00`)
-        }
-        // 含有 T 的 ISO 日期时间
-        if (s.includes('T')) {
-          // 已包含 Z 或时区偏移，直接解析
-          if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s)) {
-            const d = new Date(s)
-            return isNaN(d.getTime()) ? null : d
-          }
-          // 无时区信息，按 UTC 处理以纠正服务器以 UTC 存储的时间
-          const dUtc = new Date(s + 'Z')
-          if (!isNaN(dUtc.getTime())) return dUtc
-          // 兜底：按本地解析
-          const dLocal = new Date(s)
-          return isNaN(dLocal.getTime()) ? null : dLocal
-        }
-        // 空格分隔的日期时间
-        const isoLocal = s.replace(' ', 'T')
-        // 优先按 UTC 解析
-        let d = new Date(isoLocal + 'Z')
-        if (!isNaN(d.getTime())) return d
-        // 兜底：本地解析
-        d = new Date(isoLocal)
-        if (!isNaN(d.getTime())) return d
-        // iOS 兜底
-        d = new Date(s.replace(/-/g, '/'))
-        return isNaN(d.getTime()) ? null : d
-      }
-      return null
-    } catch (e) {
-      return null
-    }
-  },
 
   // 加载最近记录
   async loadRecentRecords() {
@@ -767,7 +722,7 @@ Page({
             const recordTypeText = healthTypeMap[typeKey] || '健康检查'
             // 兼容后端返回：优先 record_date，兜底 created_at
             const rawTime = record.record_date || record.created_at
-            const dt = this.parseServerTime(rawTime)
+            const dt = parseServerTime(rawTime)
             allRecords.push({
               id: `health_${record.id}`,
               title: `进行了${recordTypeText}`,
@@ -790,7 +745,7 @@ Page({
             const femaleName = record.female_parrot_name || (record.female_parrot && record.female_parrot.name) || ''
             // 真实时间字段优先：配对日期；兜底为记录创建时间
             const rawTime = record.mating_date || record.created_at
-            const dt = this.parseServerTime(rawTime)
+            const dt = parseServerTime(rawTime)
             allRecords.push({
               id: `breeding_${record.id}`,
               title: '进行了配对',
@@ -804,8 +759,8 @@ Page({
         
         // 按时间排序，最新的在前（使用解析后的时间）
         allRecords.sort((a, b) => {
-          const da = this.parseServerTime(a.timeValue || a.time)
-          const db = this.parseServerTime(b.timeValue || b.time)
+          const da = parseServerTime(a.timeValue || a.time)
+          const db = parseServerTime(b.timeValue || b.time)
           const ma = da ? da.getTime() : 0
           const mb = db ? db.getTime() : 0
           return mb - ma
@@ -921,7 +876,7 @@ Page({
     const grouped = {}
     records.forEach(record => {
       const time = record.cleaning_time
-      const dt = this.parseServerTime(time)
+      const dt = parseServerTime(time)
       // 与清洁列表页保持一致：按时间 + 备注 + 描述分组
       // 这样可将同一时间的多清洁类型合并为一组
       const key = `${time}_${record.notes || ''}_${record.description || ''}`
@@ -965,8 +920,8 @@ Page({
     })
     // 按时间倒序
     result.sort((a, b) => {
-      const da = this.parseServerTime(b.timeValue || b.time)
-      const db = this.parseServerTime(a.timeValue || a.time)
+      const da = parseServerTime(b.timeValue || b.time)
+      const db = parseServerTime(a.timeValue || a.time)
       const ma = da ? da.getTime() : 0
       const mb = db ? db.getTime() : 0
       return ma - mb

@@ -128,7 +128,7 @@
           <view class="parrot-status">
             <view class="status-item">
               <image class="status-icon-img" src="{{iconPaths.statusRestaurantOrange}}" mode="widthFix" binderror="onListIconError" data-key="statusRestaurantOrange" lazy-load="true"/>
-              <text class="status-text">{{item.last_feed || '2小时前'}}</text>
+              <text class="status-text">{{item.last_feed || ''}}</text>
             </view>
           </view>
         </view>

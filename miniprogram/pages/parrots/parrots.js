@@ -602,30 +602,6 @@ Page({
     this.setData({ parrots });
   },
 
-  // 统一解析服务端时间字符串，兼容无时区的格式
-  parseServerTime(ts) {
-    if (!ts || typeof ts !== 'string') return null
-    // 优先尝试标准可解析格式
-    const direct = new Date(ts)
-    if (!isNaN(direct.getTime())) return direct
-    // 手动解析常见格式：YYYY-MM-DD HH:mm[:ss]
-    const m = ts.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
-    if (m) {
-      const [_, y, mo, d, h, mi, s] = m
-      const date = new Date(
-        Number(y),
-        Number(mo) - 1,
-        Number(d),
-        Number(h),
-        Number(mi),
-        s ? Number(s) : 0
-      )
-      return isNaN(date.getTime()) ? null : date
-    }
-    // 尝试在末尾补 Z 作为UTC再解析
-    const utc = new Date(ts + 'Z')
-    return isNaN(utc.getTime()) ? null : utc
-  },
 
   // 计算最近喂食的相对时间文本
   computeLastFeedingText(lastTime) {

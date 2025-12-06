@@ -1,5 +1,6 @@
 // pages/records/cleaning/cleaning.js
 const app = getApp()
+const { parseServerTime } = require('../../../utils/time')
 
 Page({
   data: {
@@ -29,56 +30,16 @@ Page({
 
     // 虚拟化渲染（分块追加）
     virtualChunkIndex: 0,
-    virtualChunkSize: 40,
+    virtualChunkSize: 25,
     virtualDisplayRecords: [],
 
     menuRightPadding: 0
   },
 
-  // 解析服务端时间字符串，兼容无时区/ISO/空格分隔格式
-  parseServerTime(value) {
-    if (!value) return null
-    try {
-      if (value instanceof Date) return value
-      if (typeof value === 'number') {
-        const dNum = new Date(value)
-        return isNaN(dNum.getTime()) ? null : dNum
-      }
-      if (typeof value === 'string') {
-        const s = value.trim()
-        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-          return new Date(`${s}T00:00:00`)
-        }
-        if (s.includes('T')) {
-          // 优先按本地时间解析（无时区信息时不强制为 UTC）
-          if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s)) {
-            const d = new Date(s)
-            return isNaN(d.getTime()) ? null : d
-          }
-          const dLocalFirst = new Date(s)
-          if (!isNaN(dLocalFirst.getTime())) return dLocalFirst
-          const dUtcFallback = new Date(s + 'Z')
-          if (!isNaN(dUtcFallback.getTime())) return dUtcFallback
-          return null
-        }
-        const isoLocal = s.replace(' ', 'T')
-        // 先尝试本地解析，再回退到 UTC
-        let d = new Date(isoLocal)
-        if (!isNaN(d.getTime())) return d
-        d = new Date(isoLocal + 'Z')
-        if (!isNaN(d.getTime())) return d
-        d = new Date(s.replace(/-/g, '/'))
-        return isNaN(d.getTime()) ? null : d
-      }
-      return null
-    } catch (e) {
-      return null
-    }
-  },
 
   // 分钟/小时/天 相对时间格式（超过24小时显示天）
   formatMinutesHoursOnly(value) {
-    const dt = this.parseServerTime(value)
+    const dt = parseServerTime(value)
     if (!dt) return ''
     const now = new Date()
     const diffMs = now.getTime() - dt.getTime()
@@ -156,7 +117,7 @@ Page({
     const grouped = {}
     records.forEach(record => {
       const key = `${record.cleaning_time}_${record.notes || ''}_${record.description || ''}`
-      const dt = this.parseServerTime(record.cleaning_time)
+      const dt = parseServerTime(record.cleaning_time)
       if (!grouped[key]) {
         grouped[key] = {
           ...record,
@@ -241,8 +202,8 @@ Page({
       }
     })
     result.sort((a, b) => {
-      const ta = this.parseServerTime(a.timeValue || a.cleaning_time)
-      const tb = this.parseServerTime(b.timeValue || b.cleaning_time)
+      const ta = parseServerTime(a.timeValue || a.cleaning_time)
+      const tb = parseServerTime(b.timeValue || b.cleaning_time)
       const ma = ta ? ta.getTime() : 0
       const mb = tb ? tb.getTime() : 0
       // 按时间倒序，最近的在前
@@ -264,7 +225,7 @@ Page({
     const now = new Date()
     const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7)
     const weeklyCount = records.filter(r => {
-      const d = this.parseServerTime(r.timeValue || r.cleaning_time)
+      const d = parseServerTime(r.timeValue || r.cleaning_time)
       return d && d >= weekAgo
     }).length
     const uniqueTypes = this.buildFilterOptions(records).length - 1
@@ -305,7 +266,7 @@ Page({
       const startTs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : -Infinity
       const endTs = endDate ? new Date(`${endDate}T23:59:59`).getTime() : Infinity
       display = display.filter(r => {
-        const d = this.parseServerTime(r.timeValue || r.cleaning_time)
+        const d = parseServerTime(r.timeValue || r.cleaning_time)
         const ts = d ? d.getTime() : 0
         return ts >= startTs && ts <= endTs
       })
@@ -345,7 +306,7 @@ Page({
   },
 
   resetVirtualWindow() {
-    const size = this.data.virtualChunkSize || 40
+    const size = this.data.virtualChunkSize || 25
     const list = Array.isArray(this.data.displayRecords) ? this.data.displayRecords : []
     const initial = list.slice(0, size)
     this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: initial })
@@ -354,11 +315,15 @@ Page({
   onListScrollLower() {
     const { displayRecords, virtualDisplayRecords, virtualChunkIndex, virtualChunkSize } = this.data
     if (!Array.isArray(displayRecords) || !Array.isArray(virtualDisplayRecords)) return
-    if (virtualDisplayRecords.length >= displayRecords.length) return
+    const size = virtualChunkSize || 25
     const nextIndex = virtualChunkIndex + 1
-    const nextCount = Math.min(displayRecords.length, (nextIndex + 1) * (virtualChunkSize || 40))
-    const nextSlice = displayRecords.slice(0, nextCount)
-    this.setData({ virtualChunkIndex: nextIndex, virtualDisplayRecords: nextSlice })
+    const start = nextIndex * size
+    if (start >= displayRecords.length) return
+    const nextChunk = displayRecords.slice(start, start + size)
+    this.setData({
+      virtualChunkIndex: nextIndex,
+      virtualDisplayRecords: virtualDisplayRecords.concat(nextChunk)
+    })
   },
 
   addCleaningRecord() {

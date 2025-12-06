@@ -28,7 +28,7 @@ Page({
 
     // 虚拟化渲染（分块追加）
     virtualChunkIndex: 0,
-    virtualChunkSize: 40,
+    virtualChunkSize: 25,
     virtualDisplayRecords: []
   },
 
@@ -550,7 +550,7 @@ Page({
 
   // 虚拟化渲染：窗口重置与滚动加载
   resetVirtualWindow() {
-    const size = this.data.virtualChunkSize || 40;
+    const size = this.data.virtualChunkSize || 25;
     const list = Array.isArray(this.data.filteredRecords) ? this.data.filteredRecords : [];
     const initial = list.slice(0, size);
     this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: initial });
@@ -559,11 +559,12 @@ Page({
   onListScrollLower() {
     const { filteredRecords, virtualDisplayRecords, virtualChunkIndex, virtualChunkSize } = this.data;
     if (!Array.isArray(filteredRecords) || !Array.isArray(virtualDisplayRecords)) return;
-    if (virtualDisplayRecords.length >= filteredRecords.length) return;
+    const size = virtualChunkSize || 25;
     const nextIndex = virtualChunkIndex + 1;
-    const nextCount = Math.min(filteredRecords.length, (nextIndex + 1) * (virtualChunkSize || 40));
-    const nextSlice = filteredRecords.slice(0, nextCount);
-    this.setData({ virtualChunkIndex: nextIndex, virtualDisplayRecords: nextSlice });
+    const start = nextIndex * size;
+    if (start >= filteredRecords.length) return;
+    const nextChunk = filteredRecords.slice(start, start + size);
+    this.setData({ virtualChunkIndex: nextIndex, virtualDisplayRecords: virtualDisplayRecords.concat(nextChunk) });
   },
 
   // 格式化日期
