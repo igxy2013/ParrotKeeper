@@ -57,9 +57,13 @@ Component({
         typeIndex = idx >= 0 ? idx : 0
       }
       try {
-        const resolved = form.photo_url ? app.resolveUploadUrl(form.photo_url) : ''
-        const preview = resolved ? app.getThumbnailUrl(resolved, 128) : ''
-        form.photo_preview = preview || ''
+        let src = form.photo_url || ''
+        if (/^\/images\/parrot-avatar-.*\.svg$/.test(src)) {
+          src = src.replace(/\.svg$/i, '.png')
+          form.photo_url = src
+        }
+        const resolved = src ? app.resolveUploadUrl(src) : ''
+        form.photo_preview = resolved || ''
       } catch (_) {}
       this.setData({ form, typeIndex })
     }
@@ -148,6 +152,15 @@ Component({
       const preview = this.data.form.photo_preview || this.data.form.photo_url
       if (!preview) return
       wx.previewImage({ urls: [preview] })
+    },
+    onPreviewError() {
+      const url = this.data.form.photo_url || ''
+      if (url && this.data.form.photo_preview !== url) {
+        this.setData({ 'form.photo_preview': url })
+        return
+      }
+      const fallback = '/images/parrot-avatar-green.png'
+      this.setData({ 'form.photo_preview': fallback, 'form.photo_url': fallback })
     },
     deletePhoto() {
       wx.showModal({
