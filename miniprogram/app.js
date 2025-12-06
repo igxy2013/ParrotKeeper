@@ -23,7 +23,8 @@ App({
     // 网络与重试队列
     networkConnected: true,
     pendingRequests: [],
-    pendingForms: []
+    pendingForms: [],
+    imageCacheTTL: 604800000
   },
 
   // 初始化小程序版本号（优先使用微信官方版本号）
@@ -233,6 +234,87 @@ App({
     }
   },
 
+  hashString(s) {
+    const str = String(s)
+    let h1 = 0xdeadbeef ^ str.length
+    let h2 = 0x41c6ce57 ^ str.length
+    for (let i = 0, ch; i < str.length; i++) {
+      ch = str.charCodeAt(i)
+      h1 = Math.imul(h1 ^ ch, 2654435761)
+      h2 = Math.imul(h2 ^ ch, 1597334677)
+    }
+    h1 = (h1 ^ Math.imul(h2, 1566083941)) >>> 0
+    h2 = (h2 ^ Math.imul(h1, 1859775393)) >>> 0
+    const toHex = (n) => ('00000000' + n.toString(16)).slice(-8)
+    return toHex(h1) + toHex(h2)
+  },
+
+  ensureImageCacheDir() {
+    try {
+      const fs = wx.getFileSystemManager()
+      const base = wx.env.USER_DATA_PATH + '/image-cache'
+      try { fs.accessSync(base) } catch (_) { try { fs.mkdirSync(base, true) } catch (_) {} }
+      return base
+    } catch (_) {
+      return ''
+    }
+  },
+
+  getImageCacheIndex() {
+    try { return wx.getStorageSync('image_cache_index') || {} } catch (_) { return {} }
+  },
+
+  setImageCacheIndex(idx) {
+    try { wx.setStorageSync('image_cache_index', idx || {}) } catch (_) {}
+  },
+
+  getCachedLocalPath(url) {
+    try {
+      const idx = this.getImageCacheIndex()
+      const key = this.hashString(url)
+      const rec = idx[key]
+      if (!rec) return ''
+      const ttl = this.globalData.imageCacheTTL || 604800000
+      const valid = typeof rec.ts === 'number' && (Date.now() - rec.ts) < ttl
+      if (!valid) return ''
+      const fs = wx.getFileSystemManager()
+      try { fs.accessSync(rec.path) } catch (_) { return '' }
+      return rec.path || ''
+    } catch (_) {
+      return ''
+    }
+  },
+
+  cacheImageAsync(url) {
+    try {
+      this._imageCachingSet = this._imageCachingSet || new Set()
+      if (this._imageCachingSet.has(url)) return
+      this._imageCachingSet.add(url)
+      const dir = this.ensureImageCacheDir()
+      if (!dir) { this._imageCachingSet.delete(url); return }
+      const key = this.hashString(url)
+      wx.downloadFile({
+        url,
+        success: (res) => {
+          const tf = res.tempFilePath
+          if (!tf) { this._imageCachingSet.delete(url); return }
+          const fs = wx.getFileSystemManager()
+          const target = `${dir}/${key}.img`
+          try {
+            fs.saveFile({ tempFilePath: tf, filePath: target, success: (r) => {
+              const saved = r.savedFilePath || target
+              const idx = this.getImageCacheIndex()
+              idx[key] = { url, path: saved, ts: Date.now() }
+              this.setImageCacheIndex(idx)
+              this._imageCachingSet.delete(url)
+            }, fail: () => { this._imageCachingSet.delete(url) } })
+          } catch (_) { this._imageCachingSet.delete(url) }
+        },
+        fail: () => { this._imageCachingSet.delete(url) }
+      })
+    } catch (_) {}
+  },
+
   // 未读反馈状态更新（同步到底部导航红点）
   setFeedbackUnread(flag) {
     try {
@@ -247,29 +329,35 @@ App({
   resolveUploadUrl(path) {
     if (!path) return ''
     const str = String(path)
-    // 若是完整URL，且包含 /uploads/，则统一重写到当前 baseUrl，避免跨域失效
     if (/^https?:\/\//.test(str)) {
-      // 如果是生产域名 bimai.xyz 的绝对地址，保持原样，避免在本地将其重写为本地 baseUrl 导致 404
       if (/^https?:\/\/([^.]*\.)?bimai\.xyz\//.test(str)) {
+        const cached = this.getCachedLocalPath(str)
+        if (cached) return cached
+        this.cacheImageAsync(str)
         return str
       }
-      // 其他包含 /uploads/ 的绝对路径，按当前 baseUrl 统一
       const m = str.match(/\/uploads\/(.+)$/)
       if (m && m[1]) {
         const suffix = m[1].replace(/^images\/?/, '')
-        return this.globalData.baseUrl + '/uploads/' + suffix
+        const finalUrl = this.globalData.baseUrl + '/uploads/' + suffix
+        const cached = this.getCachedLocalPath(finalUrl)
+        if (cached) return cached
+        this.cacheImageAsync(finalUrl)
+        return finalUrl
       }
       return str
     }
-    // 保留本地静态资源：以 /images/ 开头的路径为小程序内置资源，直接返回
     if (/^\/?images\//.test(str)) {
       return str.startsWith('/') ? str : '/' + str
     }
-    // 兼容后端上传路径：去掉前导的 /uploads/images 或 /uploads
     const normalized = str
       .replace(/^\/?uploads\/?images\/?/, '')
       .replace(/^\/?uploads\/?/, '')
-    return this.globalData.baseUrl + '/uploads/' + normalized
+    const finalUrl = this.globalData.baseUrl + '/uploads/' + normalized
+    const cached = this.getCachedLocalPath(finalUrl)
+    if (cached) return cached
+    this.cacheImageAsync(finalUrl)
+    return finalUrl
   },
 
   // 基于性别/品种生成本地默认彩色头像（稳定且无需网络）
