@@ -152,10 +152,12 @@ Page({
             avatar = '/images/parrot-avatar-green.svg'
           }
 
+          const thumb = avatar ? app.getThumbnailUrl(avatar, 128) : ''
+
           return {
             ...r,
-            parrot_avatar: avatar,
-            parrot_avatars: avatar ? [avatar] : []
+            parrot_avatar: thumb || avatar,
+            parrot_avatars: (thumb || avatar) ? [thumb || avatar] : []
           }
         })
         this.setData({ healthRecords: mapped })

@@ -257,16 +257,16 @@ Page({
         }
         // 统一解析一次，避免相对路径问题
         const finalUrl = app.resolveUploadUrl(url)
-        return { idx, url: finalUrl };
+        const thumbUrl = app.getThumbnailUrl(finalUrl, 128)
+        return { idx, url: finalUrl, thumb: thumbUrl };
       }).filter(Boolean);
 
       // 单头像需为 URL 字符串（WXML 中直接用于 image.src）
-      let firstAvatarUrl = parrot_avatars.length ? parrot_avatars[0].url : (function(){
+      let firstAvatarUrl = parrot_avatars.length ? (parrot_avatars[0].thumb || parrot_avatars[0].url) : (function(){
         if (g.parrot_avatar) {
           const r = app.resolveUploadUrl(g.parrot_avatar)
-          return r || '/images/parrot-avatar-green.svg'
+          return r ? app.getThumbnailUrl(r, 128) : '/images/parrot-avatar-green.svg'
         }
-        // 如果组头像为空，依据首个鹦鹉名称生成彩色头像
         const firstName = (g.parrot_names && g.parrot_names[0]) || ''
         return firstName ? app.getDefaultAvatarForParrot({ name: firstName }) : '/images/parrot-avatar-green.svg'
       })();

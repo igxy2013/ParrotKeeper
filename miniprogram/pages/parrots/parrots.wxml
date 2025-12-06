@@ -3,7 +3,7 @@
   <!-- 顶部导航统一为组件 -->
   <app-header title="我的鹦鹉" subtitle="管理您的鹦鹉宝贝们">
     <view slot="actions" class="header-btn" bindtap="addParrot">
-      <image class="header-btn-icon-img" src="{{iconPaths.headerAddEmerald}}" mode="widthFix" binderror="onListIconError" data-key="headerAddEmerald"/>
+      <image class="header-btn-icon-img" src="{{iconPaths.headerAddEmerald}}" mode="widthFix" binderror="onListIconError" data-key="headerAddEmerald" lazy-load="true"/>
     </view>
   </app-header>
 
@@ -57,7 +57,7 @@
   <!-- 搜索和筛选 -->
   <view class="search-filter-card">
     <view class="search-bar">
-          <image class="search-icon-img" src="{{iconPaths.searchGray}}" mode="widthFix" binderror="onListIconError" data-key="searchGray"/>
+          <image class="search-icon-img" src="{{iconPaths.searchGray}}" mode="widthFix" binderror="onListIconError" data-key="searchGray" lazy-load="true"/>
       <input 
         class="search-input" 
         placeholder="搜索鹦鹉名称、编号或脚环号..." 
@@ -71,19 +71,19 @@
       <picker mode="selector" range="{{speciesPickerRange}}" bindchange="onSpeciesPickerChange">
         <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}">
           <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
-            <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown" lazy-load="true"/>
         </view>
       </picker>
       <picker mode="selector" range="{{statusPickerRange}}" bindchange="onStatusPickerChange">
         <view class="filter-item {{selectedStatus ? 'active' : ''}}">
           <text class="filter-text">{{selectedStatus ? selectedStatusText : '状态'}}</text>
-            <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown" lazy-load="true"/>
         </view>
       </picker>
       <picker mode="selector" range="{{sortPickerRange}}" bindchange="onSortPickerChange">
         <view class="filter-item {{sortText !== '默认排序' ? 'active' : ''}}">
           <text class="filter-text">{{sortText}}</text>
-            <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown"/>
+          <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown" lazy-load="true"/>
          </view>
       </picker>
     </view>
@@ -97,10 +97,11 @@
         <view class="parrot-avatar">
           <image 
             class="parrot-image" 
-            src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" 
-            mode="aspectFit"
+            src="{{item.photo_thumb || item.avatar_thumb || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" 
+            mode="aspectFill"
             binderror="handleImageError"
             data-id="{{item.id}}"
+            lazy-load="true"
           />
         </view>
         
@@ -110,9 +111,9 @@
           <view class="parrot-title">
             <text class="parrot-name">{{item.name}}</text>
             <view class="gender-badge gender-{{item.gender}}">
-                <image wx:if="{{item.gender === 'male'}}" class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" />
-                <image wx:elif="{{item.gender === 'female'}}" class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" />
-                <image wx:else class="gender-icon-img" src="/images/remix/question-mark.png" mode="widthFix" />
+                <image wx:if="{{item.gender === 'male'}}" class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" lazy-load="true" />
+                <image wx:elif="{{item.gender === 'female'}}" class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" lazy-load="true" />
+                <image wx:else class="gender-icon-img" src="/images/remix/question-mark.png" mode="widthFix" lazy-load="true" />
             </view>
           </view>
             <view class="health-badge health-{{item.current_health_status || item.health_status}}">
@@ -126,7 +127,7 @@
           <text class="parrot-species">{{item.species_name}} • {{item.age_days ? item.age_days + '天' : '未知'}} • {{item.weight_display || '未记录'}}</text>
           <view class="parrot-status">
             <view class="status-item">
-              <image class="status-icon-img" src="{{iconPaths.statusRestaurantOrange}}" mode="widthFix" binderror="onListIconError" data-key="statusRestaurantOrange"/>
+              <image class="status-icon-img" src="{{iconPaths.statusRestaurantOrange}}" mode="widthFix" binderror="onListIconError" data-key="statusRestaurantOrange" lazy-load="true"/>
               <text class="status-text">{{item.last_feed || '2小时前'}}</text>
             </view>
           </view>
@@ -134,7 +135,7 @@
         
         <!-- 箭头图标 -->
         <view class="parrot-arrow">
-            <image class="arrow-icon-img" src="{{iconPaths.arrowRight}}" mode="widthFix" binderror="onListIconError" data-key="arrowRight"/>
+            <image class="arrow-icon-img" src="{{iconPaths.arrowRight}}" mode="widthFix" binderror="onListIconError" data-key="arrowRight" lazy-load="true"/>
         </view>
       </view>
     </view>
@@ -144,7 +145,7 @@
   <view class="add-parrot-action" wx:if="{{parrots.length > 0}}">
     <view class="add-parrot-card">
       <view class="add-parrot-btn" bindtap="addParrot">
-          <image class="add-parrot-btn-icon-img" src="{{iconPaths.addParrotEmerald}}" mode="widthFix" binderror="onListIconError" data-key="addParrotEmerald"/>
+          <image class="add-parrot-btn-icon-img" src="{{iconPaths.addParrotEmerald}}" mode="widthFix" binderror="onListIconError" data-key="addParrotEmerald" lazy-load="true"/>
         <text class="add-parrot-btn-text">添加鹦鹉</text>
       </view>
     </view>

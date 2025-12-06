@@ -41,6 +41,40 @@ def save_uploaded_file(file, folder='parrots'):
         return f"{subfolder}/{filename}" if subfolder else filename
     return None
 
+def get_or_create_square_thumbnail(relative_path: str, size: int = 128) -> str:
+    try:
+        rel = str(relative_path or '').strip().lstrip('/').replace('\\', '/')
+        if not rel:
+            return ''
+        if rel.startswith('http://') or rel.startswith('https://'):
+            return rel
+        base = current_app.config['UPLOAD_FOLDER']
+        orig_path = os.path.join(base, rel)
+        if not os.path.exists(orig_path):
+            return rel
+        thumb_root = os.path.join(base, 'thumbs', str(int(size) if size else 128))
+        thumb_path = os.path.join(thumb_root, rel)
+        os.makedirs(os.path.dirname(thumb_path), exist_ok=True)
+        if os.path.exists(thumb_path):
+            return f"thumbs/{int(size) if size else 128}/{rel}"
+        img = Image.open(orig_path)
+        w, h = img.size
+        m = min(w, h)
+        left = (w - m) // 2
+        top = (h - m) // 2
+        crop = img.crop((left, top, left + m, top + m))
+        out = crop.resize((int(size), int(size)), Image.LANCZOS)
+        if out.mode in ('RGBA', 'LA'):
+            bg = Image.new('RGB', (int(size), int(size)), (255, 255, 255))
+            bg.paste(out, mask=out.split()[-1])
+            out = bg
+        else:
+            out = out.convert('RGB')
+        out.save(thumb_path, format='JPEG', quality=85)
+        return f"thumbs/{int(size) if size else 128}/{rel}"
+    except Exception:
+        return str(relative_path or '')
+
 def auto_crop_image(image_path):
     """自动裁剪图片，去除空白区域并将主体放大"""
     try:

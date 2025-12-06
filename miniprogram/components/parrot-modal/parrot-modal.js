@@ -24,7 +24,8 @@ Component({
       parrot_number: '',
       ring_number: '',
       acquisition_date: '',
-      photo_url: ''
+      photo_url: '',
+      photo_preview: ''
     },
     typeIndex: 0,
     createMode: 'form',
@@ -55,6 +56,11 @@ Component({
         const idx = types.indexOf(form.type)
         typeIndex = idx >= 0 ? idx : 0
       }
+      try {
+        const resolved = form.photo_url ? app.resolveUploadUrl(form.photo_url) : ''
+        const preview = resolved ? app.getThumbnailUrl(resolved, 128) : ''
+        form.photo_preview = preview || ''
+      } catch (_) {}
       this.setData({ form, typeIndex })
     }
   },
@@ -102,6 +108,8 @@ Component({
         sourceType: ['album', 'camera'],
         success: (res) => {
           const tempFilePath = res.tempFiles[0].tempFilePath
+          // 先用本地临时文件做即时预览
+          this.setData({ 'form.photo_preview': tempFilePath })
           this.uploadPhoto(tempFilePath)
         }
       })
@@ -123,7 +131,8 @@ Component({
         const result = JSON.parse(uploadRes.data)
         if (result.success) {
           const fullUrl = app.globalData.baseUrl + '/uploads/' + result.data.url
-          this.setData({ 'form.photo_url': fullUrl })
+          const fullThumb = result.data.thumb_url ? (app.globalData.baseUrl + '/uploads/' + result.data.thumb_url) : app.getThumbnailUrl(fullUrl, 128)
+          this.setData({ 'form.photo_url': fullUrl, 'form.photo_preview': fullThumb })
           app.showSuccess('上传成功')
         } else {
           throw new Error(result.message)
@@ -136,8 +145,9 @@ Component({
       }
     },
     previewPhoto() {
-      if (!this.data.form.photo_url) return
-      wx.previewImage({ urls: [this.data.form.photo_url] })
+      const preview = this.data.form.photo_preview || this.data.form.photo_url
+      if (!preview) return
+      wx.previewImage({ urls: [preview] })
     },
     deletePhoto() {
       wx.showModal({
@@ -145,7 +155,7 @@ Component({
         content: '确定要删除这张照片吗？',
         success: (res) => {
           if (res.confirm) {
-            this.setData({ 'form.photo_url': '' })
+            this.setData({ 'form.photo_url': '', 'form.photo_preview': '' })
           }
         }
       })

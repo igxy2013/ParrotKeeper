@@ -33,8 +33,11 @@ def upload_image():
         if not file_path:
             return error_response('文件格式不支持')
         
+        from utils import get_or_create_square_thumbnail
+        thumb = get_or_create_square_thumbnail(file_path, 128)
         return success_response({
-            'url': file_path
+            'url': file_path,
+            'thumb_url': thumb
         }, '上传成功')
         
     except Exception as e:

@@ -241,7 +241,8 @@ Page({
           if (p) {
             const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
             const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
-            avatar = resolvedPhoto || resolvedAvatar
+            const base = resolvedPhoto || resolvedAvatar
+            avatar = base ? app.getThumbnailUrl(base, 128) : ''
             if (!avatar) {
               const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
               avatar = app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
@@ -283,9 +284,15 @@ Page({
           // 取公母两只鹦鹉头像
           const male = r.male_parrot || allParrots.find(x => (r.male_parrot_id && x.id === r.male_parrot_id) || (r.male_parrot_name && x.name === r.male_parrot_name))
           const female = r.female_parrot || allParrots.find(x => (r.female_parrot_id && x.id === r.female_parrot_id) || (r.female_parrot_name && x.name === r.female_parrot_name))
-          const maleAvatar = male ? (male.photo_url || male.avatar_url) : null
-          const femaleAvatar = female ? (female.photo_url || female.avatar_url) : null
-          const parrot_avatars = [maleAvatar, femaleAvatar].filter(Boolean)
+          const maleResolvedPhoto = male && male.photo_url ? app.resolveUploadUrl(male.photo_url) : ''
+          const maleResolvedAvatar = male && male.avatar_url ? app.resolveUploadUrl(male.avatar_url) : ''
+          const femaleResolvedPhoto = female && female.photo_url ? app.resolveUploadUrl(female.photo_url) : ''
+          const femaleResolvedAvatar = female && female.avatar_url ? app.resolveUploadUrl(female.avatar_url) : ''
+          const maleBase = maleResolvedPhoto || maleResolvedAvatar
+          const femaleBase = femaleResolvedPhoto || femaleResolvedAvatar
+          const maleThumb = maleBase ? app.getThumbnailUrl(maleBase, 128) : null
+          const femaleThumb = femaleBase ? app.getThumbnailUrl(femaleBase, 128) : null
+          const parrot_avatars = [maleThumb, femaleThumb].filter(Boolean)
           return {
             ...formatted,
             parrot_avatars,
@@ -379,10 +386,24 @@ Page({
           groupedRecords[key].parrot_ids.push(record.parrot.id)
         }
         const pid = record.parrot.id
-        let pavatar = record.parrot.photo_url || record.parrot.avatar_url
+        let pavatar = (function(){
+          const resolvedPhoto = record.parrot.photo_url ? app.resolveUploadUrl(record.parrot.photo_url) : ''
+          const resolvedAvatar = record.parrot.avatar_url ? app.resolveUploadUrl(record.parrot.avatar_url) : ''
+          const base = resolvedPhoto || resolvedAvatar
+          return base ? app.getThumbnailUrl(base, 128) : ''
+        })()
         if (!pavatar && pid) {
           const p = allParrots.find(x => x.id === pid || (record.parrot.name && x.name === record.parrot.name))
-          pavatar = p ? (p.photo_url || p.avatar_url) : null
+          if (p) {
+            const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
+            const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
+            const base = resolvedPhoto || resolvedAvatar
+            pavatar = base ? app.getThumbnailUrl(base, 128) : ''
+            if (!pavatar) {
+              const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+              pavatar = app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
+            }
+          }
         }
         if (pid && pavatar && !groupedRecords[key].parrot_avatar_map[pid]) {
           groupedRecords[key].parrot_avatar_map[pid] = pavatar
@@ -409,9 +430,18 @@ Page({
     // 生成显示文本
     const result = Object.values(groupedRecords).map(item => {
       const parrot_avatars = (item.parrot_ids || []).map(pid => {
-        if (item.parrot_avatar_map[pid]) return item.parrot_avatar_map[pid]
+        if (item.parrot_avatar_map[pid]) {
+          const u = app.resolveUploadUrl(item.parrot_avatar_map[pid])
+          return app.getThumbnailUrl(u || item.parrot_avatar_map[pid], 128)
+        }
         const p = allParrots.find(x => x.id === pid)
-        return p ? (p.photo_url || p.avatar_url) : null
+        if (p) {
+          const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
+          const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
+          const url = resolvedPhoto || resolvedAvatar
+          if (url) return app.getThumbnailUrl(url, 128)
+        }
+        return null
       }).filter(Boolean)
       const firstAvatar = parrot_avatars.length ? parrot_avatars[0] : null
       return {

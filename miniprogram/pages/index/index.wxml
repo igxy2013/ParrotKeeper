@@ -170,15 +170,15 @@
       <scroll-view class="parrot-card-scroll" scroll-x="true" enable-flex="true" scroll-with-animation="true">
         <view class="parrot-card-row">
           <view class="parrot-mini-card" wx:for="{{myParrots}}" wx:key="id" data-id="{{item.id}}" bindtap="openParrotDetail">
-            <image class="parrot-mini-avatar" src="{{item.photo_url || item.avatar_url || iconPaths.defaultParrot}}" mode="aspectFit" data-id="{{item.id}}" binderror="handleIndexParrotImageError"/>
-          <view class="parrot-mini-title">
-            <text class="parrot-mini-name">{{item.name}}</text>
-            <view class="mini-gender-badge gender-{{item.gender}}">
+            <image class="parrot-mini-avatar" src="{{item.photo_thumb || item.avatar_thumb || item.photo_url || item.avatar_url || iconPaths.defaultParrot}}" mode="aspectFill" data-id="{{item.id}}" binderror="handleIndexParrotImageError" lazy-load="true"/>
+            <view class="parrot-mini-title">
+              <text class="parrot-mini-name">{{item.name}}</text>
+              <view class="mini-gender-badge gender-{{item.gender}}">
                 <image wx:if="{{item.gender === 'male'}}" class="mini-gender-icon-img" src="{{iconPaths.genderMale}}" mode="widthFix" binderror="handleIconError" data-key="genderMale" />
                 <image wx:elif="{{item.gender === 'female'}}" class="mini-gender-icon-img" src="{{iconPaths.genderFemale}}" mode="widthFix" binderror="handleIconError" data-key="genderFemale" />
                 <image wx:else class="mini-gender-icon-img" src="{{iconPaths.genderUnknown}}" mode="widthFix" binderror="handleIconError" data-key="genderUnknown" />
+              </view>
             </view>
-          </view>
             <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
             <view class="health-badge health-{{item.current_health_status || 'healthy'}}">{{item.current_health_status_text || '健康'}}</view>
           </view>

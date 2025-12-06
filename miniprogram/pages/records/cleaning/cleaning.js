@@ -215,13 +215,16 @@ Page({
     })
     const result = Object.values(grouped).map(item => {
       const parrot_avatars = (item.parrot_ids || []).map(pid => {
-        if (item.parrot_avatar_map[pid]) return app.resolveUploadUrl(item.parrot_avatar_map[pid])
+        if (item.parrot_avatar_map[pid]) {
+          const u = app.resolveUploadUrl(item.parrot_avatar_map[pid])
+          return app.getThumbnailUrl(u, 128)
+        }
         const p = allParrots.find(x => x.id === pid)
         if (p) {
           const resolvedPhoto = p.photo_url ? app.resolveUploadUrl(p.photo_url) : ''
           const resolvedAvatar = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : ''
           const url = resolvedPhoto || resolvedAvatar
-          if (url) return url
+          if (url) return app.getThumbnailUrl(url, 128)
           const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
           return app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
         }

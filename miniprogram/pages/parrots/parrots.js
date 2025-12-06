@@ -288,6 +288,8 @@ Page({
             species_name: speciesName,
             name: p.name
           })
+          const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
+          const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 128) : ''
           // 预计算体重展示，避免 WXML 表达式出现 undefinedg
           let weightDisplay = ''
           try {
@@ -308,7 +310,9 @@ Page({
             weight_display: weightDisplay,
             acquisition_date_formatted: app.formatDate(p.acquisition_date),
             photo_url: photoUrl,
-            avatar_url: avatarUrl
+            avatar_url: avatarUrl,
+            photo_thumb: photoThumb,
+            avatar_thumb: avatarThumb
           }
         })
         

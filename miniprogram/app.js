@@ -360,6 +360,39 @@ App({
     return finalUrl
   },
 
+  getThumbnailUrl(url, size) {
+    if (!url) return ''
+    const s = Number(size) || 0
+    const str = String(url)
+    try {
+      // 本地缓存文件不做缩略图转换
+      if (/^(wxfile|ttfile):\/\//.test(str)) {
+        return str
+      }
+      // 仅处理 uploads 路径
+      const mThumb = str.match(/\/(uploads\/thumbs)\/(\d+)\/(.+)$/)
+      if (mThumb) {
+        const rel = mThumb[3]
+        const sz = s > 0 ? s : Number(mThumb[2]) || 0
+        if (sz > 0) {
+          return str.replace(/\/uploads\/thumbs\/\d+\//, `/uploads/thumbs/${sz}/`)
+        }
+        return str
+      }
+      const m = str.match(/\/(uploads)\/(.+)$/)
+      if (!m) {
+        return str
+      }
+      // 去掉 images/ 前缀，统一为 uploads/thumbs/{size}/{relative}
+      let rel = m[2].replace(/^images\//, '')
+      const sz = s > 0 ? s : 128
+      const base = str.split('/uploads/')[0]
+      return `${base}/uploads/thumbs/${sz}/${rel}`
+    } catch (_) {
+      return str
+    }
+  },
+
   // 基于性别/品种生成本地默认彩色头像（稳定且无需网络）
   getDefaultAvatarForParrot(parrot) {
     try {

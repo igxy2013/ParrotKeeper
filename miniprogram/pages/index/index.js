@@ -615,13 +615,17 @@ Page({
             species_name: speciesName,
             name: p.name
           })
+          const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
+          const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 160) : ''
           return {
             ...p,
             species_name: speciesName,
             // 统一使用后端最近健康状态文本
             health_text: p.current_health_status_text || '健康',
             photo_url: photoUrl,
-            avatar_url: avatarUrl
+            avatar_url: avatarUrl,
+            photo_thumb: photoThumb,
+            avatar_thumb: avatarThumb
           }
         })
         // 展示全部供横向滑动

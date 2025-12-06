@@ -80,7 +80,7 @@
               <view class="avatar-cluster">
                 <block wx:for="{{item.parrot_avatars}}" wx:for-index="idx" wx:for-item="avatar" wx:key="idx">
                   <view wx:if="{{idx < 3}}" class="cluster-item pos-{{idx}} count-{{item.parrot_avatars.length >= 3 ? 3 : item.parrot_avatars.length}}">
-                    <image src="{{avatar.url || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFit" />
+                    <image src="{{avatar.thumb || avatar.url || '/images/default-parrot.png'}}" class="cluster-img" mode="aspectFill" lazy-load="true" />
                   </view>
                 </block>
               </view>
@@ -90,7 +90,8 @@
                 <image 
                   src="{{item.parrot_avatar || '/images/default-parrot.png'}}" 
                   class="w-full h-full object-cover"
-                  mode="aspectFit"
+                  mode="aspectFill"
+                  lazy-load="true"
                 />
               </view>
             </block>
@@ -99,7 +100,7 @@
                 <image 
                   src="/images/default-parrot.png" 
                   class="w-full h-full object-cover"
-                  mode="aspectFit"
+                  mode="aspectFill"
                 />
               </view>
             </block>

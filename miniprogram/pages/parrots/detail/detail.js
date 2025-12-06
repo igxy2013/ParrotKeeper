@@ -297,6 +297,12 @@ Page({
             name: rawParrot.name
           })
         }
+        try {
+          const photoThumb = parrot.photo_url ? app.getThumbnailUrl(parrot.photo_url, 160) : ''
+          const avatarThumb = parrot.avatar_url ? app.getThumbnailUrl(parrot.avatar_url, 128) : ''
+          parrot.photo_thumb = photoThumb
+          parrot.avatar_thumb = avatarThumb
+        } catch (_) {}
         // 规范化体重展示，避免 WXML 中方法调用导致的 undefinedg
         try {
           const w = parrot.weight

@@ -27,6 +27,8 @@ class ParrotSchema(SQLAlchemyAutoSchema):
     # 统一健康状态：从最近的健康检查记录获取；若无则默认健康
     current_health_status = fields.Method('get_current_health_status', dump_only=True)
     current_health_status_text = fields.Method('get_current_health_status_text', dump_only=True)
+    photo_thumb = fields.Method('get_photo_thumb', dump_only=True)
+    avatar_thumb = fields.Method('get_avatar_thumb', dump_only=True)
     
     def get_species_name(self, obj):
         return obj.species.name if obj.species else None
@@ -56,6 +58,20 @@ class ParrotSchema(SQLAlchemyAutoSchema):
         }
         return status_map.get(status, '健康')
 
+    def get_photo_thumb(self, obj):
+        try:
+            from utils import get_or_create_square_thumbnail
+            return get_or_create_square_thumbnail(obj.photo_url or '', 128)
+        except Exception:
+            return obj.photo_url or ''
+
+    def get_avatar_thumb(self, obj):
+        try:
+            from utils import get_or_create_square_thumbnail
+            return get_or_create_square_thumbnail(obj.avatar_url or '', 128)
+        except Exception:
+            return obj.avatar_url or ''
+
 class FeedTypeSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = FeedType
@@ -68,7 +84,7 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
         load_instance = True
         exclude = ('created_at',)
     
-    parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name', 'avatar_url', 'photo_url'))
+    parrot = fields.Nested(ParrotSchema, dump_only=True, only=('id', 'name', 'avatar_url', 'photo_url', 'avatar_thumb', 'photo_thumb'))
     feed_type = fields.Nested(FeedTypeSchema, dump_only=True)
     created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
     parrot_name = fields.Method('get_parrot_name', dump_only=True)
