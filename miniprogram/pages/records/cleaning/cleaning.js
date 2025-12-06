@@ -177,7 +177,9 @@ Page({
     const result = Object.values(grouped).map(item => {
       const parrot_avatars = (item.parrot_ids || []).map(pid => {
         if (item.parrot_avatar_map[pid]) {
-          const u = app.resolveUploadUrl(item.parrot_avatar_map[pid])
+          // parrot_avatar_map 中的值已经是经过 resolveUploadUrl 处理过的（可能是 http 也可能是 wxfile），
+          // 不需要再次调用 resolveUploadUrl，否则会导致 wxfile 路径被错误地拼接 baseUrl
+          const u = item.parrot_avatar_map[pid]
           return app.getThumbnailUrl(u, 128)
         }
         const p = allParrots.find(x => x.id === pid)
