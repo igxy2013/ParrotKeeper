@@ -797,6 +797,60 @@ const app = getApp()
     this.setData({ recordType: type })
     this.validateForm()
   },
+
+  // 触摸开始
+  touchStart: function(e) {
+    if (e.changedTouches.length === 1) {
+      this.touchStartX = e.changedTouches[0].clientX;
+      this.touchStartY = e.changedTouches[0].clientY;
+    }
+  },
+
+  // 触摸结束
+  touchEnd: function(e) {
+    if (e.changedTouches.length === 1) {
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const diffX = touchEndX - this.touchStartX;
+      const diffY = touchEndY - this.touchStartY;
+
+      // 判断是否是水平滑动（X轴移动距离大于Y轴，且X轴距离大于阈值50）
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+        if (diffX > 0) {
+          // 向右滑动 -> 上一个
+          this.switchRecordType('prev');
+        } else {
+          // 向左滑动 -> 下一个
+          this.switchRecordType('next');
+        }
+      }
+    }
+  },
+
+  // 切换记录类型
+  switchRecordType: function(direction) {
+    const types = ['feeding', 'cleaning', 'health', 'breeding'];
+    const currentType = this.data.recordType;
+    const currentIndex = types.indexOf(currentType);
+    let newIndex;
+
+    if (direction === 'next') {
+      newIndex = currentIndex + 1;
+      // 循环切换
+      if (newIndex >= types.length) newIndex = 0;
+    } else {
+      newIndex = currentIndex - 1;
+      // 循环切换
+      if (newIndex < 0) newIndex = types.length - 1;
+    }
+
+    const newType = types[newIndex];
+    this.setData({ recordType: newType });
+    this.validateForm();
+    
+    // 震动反馈
+    wx.vibrateShort({ type: 'light' });
+  },
   
   // 显示/隐藏各类选择弹窗
   showParrotPicker: function() { this.setData({ showParrotModal: true }) },

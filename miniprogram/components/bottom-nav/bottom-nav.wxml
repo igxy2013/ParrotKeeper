@@ -1,9 +1,14 @@
 <view class="bn-tabbar">
-  <view class="bn-item {{active === item.key ? 'active' : ''}}" wx:for="{{items}}" wx:key="text" data-page="{{item.pagePath}}" bindtap="onTap" hover-class="none">
-    <view class="bn-icon-wrap">
-      <image class="bn-icon" src="{{active === item.key ? item.selectedIconPath : item.iconPath}}" mode="aspectFit"></image>
-      <view class="bn-dot" wx:if="{{item.key==='profile' && hasUnreadFeedback}}"></view>
+  <block wx:for="{{items}}" wx:key="key">
+    <view class="bn-item {{active === item.key ? 'active' : ''}}" data-page="{{item.pagePath}}" bindtap="onTap" hover-class="none">
+      <view class="bn-icon-wrap">
+        <image class="bn-icon" src="{{active === item.key ? item.selectedIconPath : item.iconPath}}" mode="aspectFit"></image>
+        <view class="bn-dot" wx:if="{{item.key==='profile' && hasUnreadFeedback}}"></view>
+      </view>
+      <text class="bn-text" style="color: {{active === item.key ? selectedColor : defaultColor}}">{{item.text}}</text>
     </view>
-    <text class="bn-text" style="color: {{active === item.key ? selectedColor : defaultColor}}">{{item.text}}</text>
-  </view>
+    <view class="bn-center" wx:if="{{item.key === 'parrots'}}">
+      <image class="bn-plus-icon" src="/images/add-circle-fill.png" mode="widthFix" bindtap="onTapAdd" hover-class="none"></image>
+    </view>
+  </block>
 </view>

@@ -52,5 +52,9 @@ Component({
         wx.reLaunch({ url: page })
       }
     }
+    ,
+    onTapAdd() {
+      wx.navigateTo({ url: '/pages/records/add-record/add-record' })
+    }
   }
 })
