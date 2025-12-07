@@ -119,8 +119,8 @@ def create_expense():
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin']:
-                return error_response('只有团队管理员才能添加支出记录', 403)
+            if not member or member.role not in ['owner', 'admin', 'member']:
+                return error_response('只有团队成员才能添加支出记录', 403)
         
         data = request.get_json()
         print(f"[DEBUG] 接收到的数据: {data}")
@@ -481,8 +481,8 @@ def create_income():
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin']:
-                return error_response('只有团队管理员才能添加收入记录', 403)
+            if not member or member.role not in ['owner', 'admin', 'member']:
+                return error_response('只有团队成员才能添加收入记录', 403)
         
         data = request.get_json()
         print(f"[DEBUG] 接收到的数据: {data}")

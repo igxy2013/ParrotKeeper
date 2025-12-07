@@ -223,8 +223,8 @@ def create_parrot():
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin']:
-                return error_response('只有团队管理员才能添加鹦鹉', 403)
+            if not member or member.role not in ['owner', 'admin', 'member']:
+                return error_response('只有团队成员才能添加鹦鹉', 403)
         
         data = request.get_json()
         
@@ -301,8 +301,8 @@ def update_parrot(parrot_id):
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin']:
-                return error_response('只有团队管理员才能修改鹦鹉信息', 403)
+            if not member or member.role not in ['owner', 'admin', 'member']:
+                return error_response('只有团队成员才能修改鹦鹉信息', 403)
         
         # 使用团队模式过滤逻辑检查访问权限
         accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)

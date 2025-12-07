@@ -497,10 +497,6 @@ Page({
 
   // 快速喂食
   quickFeeding() {
-    if (!this.data.hasOperationPermission) {
-      app.showError('您没有操作权限')
-      return
-    }
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=feeding${pid ? `&parrot_ids=${pid}` : ''}`
     wx.navigateTo({ url })
@@ -508,71 +504,15 @@ Page({
 
   // 快速健康检查
   quickHealthCheck() {
-    if (!this.data.hasOperationPermission) {
-      app.showError('您没有操作权限')
-      return
-    }
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=health${pid ? `&parrot_ids=${pid}` : ''}`
     wx.navigateTo({ url })
   },
 
-  // 快速训练记录
-  quickTraining() {
-    if (!this.data.hasOperationPermission) {
-      app.showError('您没有操作权限')
-      return
-    }
-    wx.navigateTo({
-      url: `/pages/records/add-record/add-record?type=training&parrotId=${this.data.parrotId}&parrotName=${this.data.parrot.name}`
-    })
-  },
-
-  // 快速拍照
-  quickPhoto() {
-    if (!this.data.hasOperationPermission) {
-      app.showError('您没有操作权限')
-      return
-    }
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      success: (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath
-        // 上传到通用接口并分类到 parrots
-        wx.uploadFile({
-          url: app.globalData.baseUrl + '/api/upload/image',
-          filePath: tempFilePath,
-          name: 'file',
-          formData: { category: 'parrots' },
-          header: { 'X-OpenID': app.globalData.openid },
-          success: (uploadRes) => {
-            try {
-              const data = JSON.parse(uploadRes.data)
-              if (data && data.success && data.data && data.data.url) {
-                const fullUrl = app.globalData.baseUrl + '/uploads/' + data.data.url
-                wx.previewImage({ urls: [fullUrl] })
-                wx.showToast({ title: '上传成功', icon: 'success' })
-              } else {
-                wx.showToast({ title: data.message || '上传失败', icon: 'none' })
-              }
-            } catch (_) {
-              wx.showToast({ title: '上传失败', icon: 'none' })
-            }
-          },
-          fail: () => wx.showToast({ title: '上传失败', icon: 'none' })
-        })
-      }
-    })
-  },
+  
 
   // 快速清洁（保留原有功能）
   quickCleaning() {
-    if (!this.data.hasOperationPermission) {
-      app.showError('您没有操作权限')
-      return
-    }
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=cleaning${pid ? `&parrot_ids=${pid}` : ''}`
     wx.navigateTo({ url })
@@ -580,10 +520,6 @@ Page({
 
   // 快速繁殖记录
   quickBreeding() {
-    if (!this.data.hasOperationPermission) {
-      app.showError('您没有操作权限')
-      return
-    }
     // 跳转到繁殖记录新页面
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=breeding${pid ? `&parrot_ids=${pid}` : ''}`

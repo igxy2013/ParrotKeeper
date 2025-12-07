@@ -1160,8 +1160,8 @@ def delete_feeding_record(record_id):
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin']:
-                return error_response('只有团队管理员才能删除喂食记录', 403)
+            if not member or member.role not in ['owner', 'admin', 'member']:
+                return error_response('只有团队成员才能批量编辑喂食记录', 403)
         
         # 检查记录是否可访问
         accessible_ids = get_accessible_feeding_record_ids_by_mode(user)
