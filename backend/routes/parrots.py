@@ -568,8 +568,8 @@ def delete_parrot(parrot_id):
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin']:
-                return error_response('只有团队管理员才能删除鹦鹉', 403)
+            if not member or member.role not in ['owner', 'admin', 'member']:
+                return error_response('只有团队成员才能删除鹦鹉', 403)
         
         # 使用团队模式过滤逻辑检查访问权限
         accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)

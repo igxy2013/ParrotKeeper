@@ -1106,8 +1106,8 @@ def update_feeding_record(record_id):
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin']:
-                return error_response('只有团队管理员才能修改喂食记录', 403)
+            if not member or member.role not in ['owner', 'admin', 'member']:
+                return error_response('只有团队成员才能修改喂食记录', 403)
         
         record = db.session.query(FeedingRecord).join(Parrot).filter(
             FeedingRecord.id == record_id,
