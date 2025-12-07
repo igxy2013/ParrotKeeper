@@ -238,7 +238,7 @@ def join_team():
             team_member = TeamMember(
                 team_id=team.id,
                 user_id=user.id,
-                role='member',
+                role='admin',
                 permissions={'all': True}
             )
             db.session.add(team_member)
@@ -252,7 +252,7 @@ def join_team():
         return success_response({
             'team_id': team.id,
             'team_name': team.name,
-            'role': 'member'
+            'role': 'admin'
         }, '加入团队成功')
         
     except Exception as e:

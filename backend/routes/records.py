@@ -1632,8 +1632,8 @@ def upsert_feeding_records_by_time(data):
             user_id=user.id,
             is_active=True
         ).first()
-        if not member or member.role not in ['owner', 'admin']:
-            return error_response('只有团队管理员才能批量编辑喂食记录', 403)
+        if not member or member.role not in ['owner', 'admin', 'member']:
+            return error_response('只有团队成员才能批量编辑喂食记录', 403)
 
     parrot_ids = data.get('parrot_ids') or []
     if not parrot_ids:
