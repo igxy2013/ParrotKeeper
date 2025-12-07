@@ -239,7 +239,7 @@ def join_team():
                 team_id=team.id,
                 user_id=user.id,
                 role='member',
-                permissions={'view': True, 'add_record': True}
+                permissions={'all': True}
             )
             db.session.add(team_member)
         
@@ -348,10 +348,10 @@ def change_member_role(team_id, user_id):
         if new_role not in ['member', 'admin']:
             return error_response('无效的角色类型')
         
-        # 检查操作权限（仅团队创建者可修改成员角色）
+        # 检查操作权限（移除限制：普通成员也可以修改角色）
         operator_member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
-        if not operator_member or operator_member.role != 'owner':
-            return error_response('只有团队创建者可以修改成员角色', 403)
+        if not operator_member:
+            return error_response('您不是该团队成员', 403)
         
         # 查找要修改的成员
         target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
@@ -383,10 +383,10 @@ def remove_team_member(team_id, user_id):
     try:
         user = request.current_user
         
-        # 检查操作权限（仅团队创建者可移除成员）
+        # 检查操作权限（移除限制：普通成员也可以移除成员）
         operator_member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
-        if not operator_member or operator_member.role != 'owner':
-            return error_response('只有团队创建者可以移除成员', 403)
+        if not operator_member:
+            return error_response('您不是该团队成员', 403)
         
         # 查找要移除的成员
         target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
@@ -547,10 +547,10 @@ def update_team(team_id):
         user = request.current_user
         data = request.get_json()
         
-        # 检查用户是否是团队创建者
+        # 检查用户是否是团队成员
         member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
-        if not member or member.role != 'owner':
-            return error_response('只有团队创建者可以修改团队信息', 403)
+        if not member:
+            return error_response('您不是该团队成员', 403)
         
         team = member.team
         if not team.is_active:
@@ -590,10 +590,10 @@ def dissolve_team(team_id):
     """解散团队（仅创建者）"""
     try:
         user = request.current_user
-        # 验证操作者成员身份与创建者角色
+        # 验证操作者成员身份
         operator_member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
-        if not operator_member or operator_member.role != 'owner':
-            return error_response('只有团队创建者可以解散团队', 403)
+        if not operator_member:
+            return error_response('您不是该团队成员', 403)
 
         team = operator_member.team
         if not team or not team.is_active:
