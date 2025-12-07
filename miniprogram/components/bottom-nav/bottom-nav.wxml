@@ -1,5 +1,5 @@
 <view class="bn-tabbar">
-  <view class="bn-item {{active === item.key ? 'active' : ''}}" wx:for="{{items}}" wx:key="text" data-page="{{item.pagePath}}" bindtap="onTap">
+  <view class="bn-item {{active === item.key ? 'active' : ''}}" wx:for="{{items}}" wx:key="text" data-page="{{item.pagePath}}" bindtap="onTap" hover-class="none">
     <view class="bn-icon-wrap">
       <image class="bn-icon" src="{{active === item.key ? item.selectedIconPath : item.iconPath}}" mode="aspectFit"></image>
       <view class="bn-dot" wx:if="{{item.key==='profile' && hasUnreadFeedback}}"></view>

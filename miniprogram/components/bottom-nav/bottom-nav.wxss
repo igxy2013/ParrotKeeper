@@ -13,6 +13,7 @@
   z-index: 1000;
   padding-bottom: env(safe-area-inset-bottom);
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 
 .bn-item {
@@ -23,31 +24,18 @@
   justify-content: center;
   gap: 8rpx;
   position: relative;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
   border-radius: 24rpx;
   padding: 16rpx 8rpx;
 }
 
 /* 鼠标悬停效果 */
-.bn-item:hover {
-  background: rgba(16, 185, 129, 0.06);
-  transform: translateY(-2rpx);
-}
-
-.bn-item:hover .bn-icon {
-  transform: scale(1.05);
-}
-
-.bn-item:hover .bn-text {
-  opacity: 0.9;
-  color: #10B981;
-}
+.bn-item:hover { background: transparent; transform: none; }
+.bn-item:hover .bn-icon { transform: none; }
+.bn-item:hover .bn-text { opacity: 1; }
 
 /* 点击效果 */
-.bn-item:active {
-  transform: scale(0.95);
-  background: rgba(16, 185, 129, 0.08);
-}
+.bn-item:active { transform: none; background: transparent; }
 
 /* 激活状态 */
 .bn-item.active {
@@ -55,10 +43,7 @@
 }
 
 /* 激活状态下的悬停效果 */
-.bn-item.active:hover {
-  background: rgba(16, 185, 129, 0.15);
-  transform: translateY(-1rpx);
-}
+.bn-item.active:hover { background: rgba(16, 185, 129, 0.12); transform: none; }
 
 .bn-icon {
   width: 48rpx;
@@ -86,7 +71,6 @@
 .bn-item.active .bn-text {
   opacity: 1;
   font-weight: 600;
-  transform: translateY(-2rpx);
 }
 
 /* 添加底部指示器 */
@@ -108,7 +92,4 @@
 }
 
 /* 悬停时的指示器效果 */
-.bn-item:hover::after {
-  width: 16rpx;
-  opacity: 0.6;
-}
+.bn-item:hover::after { width: 0; opacity: 1; }
