@@ -36,7 +36,7 @@
       <view class="card-content">
         <view class="invite-row">
           <text class="invite-code">{{teamInfo.invite_code || '暂无'}}</text>
-          <button class="btn btn-secondary small" bindtap="copyInviteCode" disabled="{{!teamInfo.invite_code}}">复制</button>
+          <button class="btn btn-secondary wide short" bindtap="copyInviteCode" disabled="{{!teamInfo.invite_code}}">复制</button>
         </view>
         <text class="tips">使用邀请码让成员加入团队</text>
       </view>
@@ -56,8 +56,12 @@
               <text class="role">角色：{{item.role_display}}</text>
             </view>
             <view class="member-actions">
-              <button class="btn small" bindtap="changeMemberRole" data-user-id="{{item.id}}" disabled="{{!isTeamOwner || item.role === 'owner'}}">修改角色</button>
-              <button class="btn btn-danger small" bindtap="removeMember" data-user-id="{{item.id}}" disabled="{{!isTeamOwner || item.role === 'owner'}}">移除</button>
+              <button class="icon-btn icon-edit small" bindtap="changeMemberRole" data-user-id="{{item.id}}" disabled="{{!isTeamOwner || item.role === 'owner'}}">
+                <image class="icon-img" src="/images/remix/edit-line.png" mode="aspectFit" />
+              </button>
+              <button class="icon-btn icon-delete small" bindtap="removeMember" data-user-id="{{item.id}}" disabled="{{!isTeamOwner || item.role === 'owner'}}">
+                <image class="icon-img" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
+              </button>
             </view>
           </view>
         </block>
@@ -74,8 +78,8 @@
       </view>
       <view class="card-content">
         <view class="btn-row">
-          <button class="btn btn-secondary" bindtap="confirmLeaveTeam" disabled="{{isTeamOwner}}">离开团队</button>
-          <button class="btn btn-danger" bindtap="confirmDissolveTeam" wx:if="{{isTeamOwner}}">解散团队</button>
+          <button class="btn btn-secondary wide short" bindtap="confirmLeaveTeam" disabled="{{isTeamOwner}}">离开团队</button>
+          <button class="btn btn-danger wide short" bindtap="confirmDissolveTeam" wx:if="{{isTeamOwner}}">解散团队</button>
         </view>
       </view>
     </view>

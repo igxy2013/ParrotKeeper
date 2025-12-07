@@ -8,29 +8,32 @@
       </view>
     </view>
     <view class="modal-body">
-      <!-- 团队头像上传 -->
-      <view class="form-group">
-        <text class="form-label">团队头像</text>
-        <view class="avatar-upload">
-          <image class="avatar-preview" wx:if="{{formData.avatar_url}}" src="{{formData.avatar_url}}" mode="aspectFill" bindtap="previewAvatar" />
-          <view class="avatar-placeholder" wx:else bindtap="chooseAvatar">
-            <text class="placeholder-text">+</text>
+      <view class="modal-scroll">
+        <view class="form-section">
+          <view class="form-group">
+            <text class="form-label">团队头像</text>
+            <view class="avatar-upload">
+              <image class="avatar-preview" wx:if="{{formData.avatar_url}}" src="{{formData.avatar_url}}" mode="aspectFill" bindtap="previewAvatar" />
+              <view class="avatar-placeholder" wx:else bindtap="chooseAvatar">
+                <text class="placeholder-text">+</text>
+              </view>
+              <view class="avatar-actions" wx:if="{{formData.avatar_url}}">
+                <button class="action-btn preview-btn" bindtap="previewAvatar">预览</button>
+                <button class="action-btn delete-btn" bindtap="deleteAvatar">删除</button>
+              </view>
+              <button class="upload-btn" bindtap="chooseAvatar">上传头像</button>
+            </view>
           </view>
-          <view class="avatar-actions" wx:if="{{formData.avatar_url}}">
-            <button class="action-btn preview-btn" bindtap="previewAvatar">预览</button>
-            <button class="action-btn delete-btn" bindtap="deleteAvatar">删除</button>
+          
+          <view class="form-group">
+            <text class="form-label">团队名称</text>
+            <input class="form-input" placeholder="请输入团队名称" value="{{formData.name}}" bindinput="onNameInput" maxlength="20" focus="{{visible}}" disabled="{{false}}" />
           </view>
-          <button class="upload-btn" bindtap="chooseAvatar">上传头像</button>
+          <view class="form-group">
+            <text class="form-label">团队描述</text>
+            <textarea class="form-textarea" placeholder="团队简介（可选）" value="{{formData.description}}" bindinput="onDescInput" maxlength="100" disabled="{{false}}" />
+          </view>
         </view>
-      </view>
-      
-      <view class="form-group">
-        <text class="form-label">团队名称</text>
-        <input class="form-input" placeholder="请输入团队名称" value="{{formData.name}}" bindinput="onNameInput" maxlength="20" focus="{{visible}}" disabled="{{false}}" />
-      </view>
-      <view class="form-group">
-        <text class="form-label">团队描述</text>
-        <textarea class="form-textarea" placeholder="团队简介（可选）" value="{{formData.description}}" bindinput="onDescInput" maxlength="100" disabled="{{false}}" />
       </view>
     </view>
     <view class="modal-footer">

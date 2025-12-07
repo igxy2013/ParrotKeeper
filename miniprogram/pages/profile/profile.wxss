@@ -1995,6 +1995,8 @@ button.menu-item::after { border: none; }
   display: flex;
   flex-direction: column;
   max-height: 85vh;
+  border-radius: 48rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.18);
 }
 
 /* 团队管理弹窗尺寸与滚动 */
@@ -2062,9 +2064,9 @@ button.menu-item::after { border: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 32rpx 32rpx 24rpx;
+  padding: 24rpx 32rpx;
   border-bottom: 1rpx solid #f0f2f5;
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
 }
 
 .modal-header-content {
@@ -2091,16 +2093,18 @@ button.menu-item::after { border: none; }
 .team-modal-header .modal-title {
   font-size: 36rpx;
   font-weight: 700;
-  color: #1f2937;
+  color: #ffffff;
   margin: 0;
 }
 
 .team-modal-header .modal-close {
-  position: static;
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
   width: 56rpx;
   height: 56rpx;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2108,7 +2112,7 @@ button.menu-item::after { border: none; }
 }
 
 .team-modal-header .modal-close:active {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.3);
   transform: scale(0.95);
 }
 
@@ -2122,6 +2126,7 @@ button.menu-item::after { border: none; }
   padding: 0;
   flex: 1;
   overflow-y: auto;
+  min-height: 60vh;
 }
 
 /* 团队基本信息卡片 */
@@ -2151,9 +2156,9 @@ button.menu-item::after { border: none; }
 .team-role-tag {
   display: inline-block;
   padding: 8rpx 16rpx;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.12);
 }
 
 .team-role-text {
@@ -2185,13 +2190,13 @@ button.menu-item::after { border: none; }
 }
 
 .team-stat-label {
-  font-size: 24rpx;
+  font-size: 28rpx;
   color: #9ca3af;
   font-weight: 500;
 }
 
 .team-stat-value {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: 700;
   color: #111827;
 }
@@ -2204,7 +2209,7 @@ button.menu-item::after { border: none; }
 }
 
 .team-stat-value.invite-code-empty {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #9ca3af;
 }
 
@@ -2218,6 +2223,7 @@ button.menu-item::after { border: none; }
 .members-section-card {
   padding: 32rpx;
   background: #ffffff;
+  min-height: 280rpx;
 }
 
 .members-section-header {
@@ -2243,6 +2249,8 @@ button.menu-item::after { border: none; }
   display: flex;
   flex-direction: column;
   gap: 16rpx;
+  max-height: 45vh;
+  overflow-y: auto;
 }
 
 /* 成员卡片 */
@@ -2379,12 +2387,14 @@ button.menu-item::after { border: none; }
 .btn-modal {
   flex: 1;
   min-width: 140rpx;
-  padding: 20rpx 24rpx;
-  border-radius: 16rpx;
-  font-size: 28rpx;
+  height: 72rpx;
+  padding: 0 24rpx;
+  border-radius: 28rpx;
+  font-size: 26rpx;
   font-weight: 600;
   border: none;
-  transition: all 0.2s ease;
+  line-height: 72rpx;
+  transition: transform 0.2s ease;
 }
 
 .btn-modal:active {
@@ -2451,4 +2461,37 @@ button.menu-item::after { border: none; }
 .theme-dark .team-modal-footer {
   background: rgba(255,255,255,0.03);
   border-top-color: rgba(255,255,255,0.1);
+}
+.team-modal-header .modal-icon-wrapper {
+  background: transparent;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #4CAF50, #26A69A, #00BCD4);
+  color: #ffffff;
+}
+.btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+.icon-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+}
+.icon-btn.small { width: 56rpx; height: 56rpx; }
+.icon-img { width: 36rpx; height: 36rpx; filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%); }
+.icon-edit { background: #3b82f6; }
+.icon-delete { background: #ef4444; }
+.icon-btn[disabled] { opacity: 0.5; }
+
+.icon-edit .icon-img,
+.icon-delete .icon-img { filter: none; }
+.team-modal-header .modal-icon-img {
+  width: 40rpx;
+  height: 40rpx;
 }

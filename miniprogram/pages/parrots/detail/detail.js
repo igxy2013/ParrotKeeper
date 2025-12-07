@@ -681,15 +681,18 @@ Page({
         data: payload
       })
       if (res && res.success) {
+        app.hideLoading()
         app.showSuccess('过户成功')
         this.setData({ showTransferModal: false })
         // 刷新详情
         await this.loadParrotDetail()
       } else {
+        app.hideLoading()
         app.showError((res && res.message) || '过户失败')
       }
     } catch (e) {
       console.error('过户失败:', e)
+      app.hideLoading()
       app.showError('网络错误，请稍后重试')
     } finally {
       app.hideLoading()
@@ -767,14 +770,17 @@ Page({
       app.showLoading('保存中...')
       const res = await app.request({ url: `/api/parrots/${id}`, method: 'PUT', data })
       if (res.success) {
+        app.hideLoading()
         app.showSuccess('编辑成功')
         this.setData({ showParrotModal: false, currentParrotForm: null })
         // 刷新详情
         this.loadParrotDetail()
       } else {
+        app.hideLoading()
         app.showError(res.message || '编辑失败')
       }
     } catch (error) {
+      app.hideLoading()
       app.showError('网络错误，请稍后重试')
     } finally {
       app.hideLoading()
@@ -807,45 +813,47 @@ Page({
             })
             
             if (result.success) {
+              app.hideLoading() // 先隐藏loading，避免覆盖showSuccess
               app.showSuccess('删除成功')
               
               // 返回上一页并刷新
               setTimeout(() => {
                 wx.navigateBack({
-                  success: () => {
-                    // 通知上一页刷新数据
-                    const pages = getCurrentPages()
-                    const prevPage = pages[pages.length - 2]
-                    console.log('删除成功，尝试刷新上一页数据', prevPage)
-                    if (prevPage) {
-                      console.log('上一页路由:', prevPage.route)
-                      // 检查是否是鹦鹉档案页面
-                      if (prevPage.route === 'pages/parrots/parrots' && prevPage.refreshData) {
-                        console.log('调用鹦鹉档案页面的refreshData方法')
-                        // 延迟刷新，确保页面完全返回
-                        setTimeout(() => {
-                          prevPage.refreshData() // 使用refreshData确保完全刷新
-                        }, 100)
-                      }
-                      // 检查是否是首页
-                      else if (prevPage.route === 'pages/index/index' && prevPage.onShow) {
-                        console.log('调用首页的onShow方法')
-                        setTimeout(() => {
-                          prevPage.onShow()
-                        }, 100)
-                      }
+                success: () => {
+                  // 通知上一页刷新数据
+                  const pages = getCurrentPages()
+                  const prevPage = pages[pages.length - 2]
+                  console.log('删除成功，尝试刷新上一页数据', prevPage)
+                  if (prevPage) {
+                    console.log('上一页路由:', prevPage.route)
+                    // 检查是否是鹦鹉档案页面
+                    if (prevPage.route === 'pages/parrots/parrots' && prevPage.refreshData) {
+                      console.log('调用鹦鹉档案页面的refreshData方法')
+                      // 延迟刷新，确保页面完全返回
+                      setTimeout(() => {
+                        prevPage.refreshData() // 使用refreshData确保完全刷新
+                      }, 100)
+                    }
+                    // 检查是否是首页
+                    else if (prevPage.route === 'pages/index/index' && prevPage.onShow) {
+                      console.log('调用首页的onShow方法')
+                      setTimeout(() => {
+                        prevPage.onShow()
+                      }, 100)
                     }
                   }
+                  }
                 })
-              }, 1500)
+              }, 2000)
             } else {
               throw new Error(result.message)
             }
           } catch (error) {
             console.error('删除失败:', error)
-            app.showError(error.message || '删除失败')
-          } finally {
-            app.hideLoading()
+            app.hideLoading() // 先隐藏loading
+            setTimeout(() => {
+              app.showError(error.message || '删除失败')
+            }, 100)
           }
         }
       }

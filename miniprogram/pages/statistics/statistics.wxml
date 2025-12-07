@@ -103,30 +103,36 @@
         </view>
       </view>
       <view class="card-content">
-        <view class="legend-container" wx:if="{{weightLegend.length > 0}}">
-          <view class="legend-item" wx:for="{{weightLegend}}" wx:key="parrot_id">
-            <view class="legend-dot" style="background: {{item.color}};"></view>
-            <text class="legend-name">{{item.parrot_name}}</text>
+        <block wx:if="{{weightSeries.length > 0}}">
+          <view class="legend-container" wx:if="{{weightLegend.length > 0}}">
+            <view class="legend-item" wx:for="{{weightLegend}}" wx:key="parrot_id">
+              <view class="legend-dot" style="background: {{item.color}};"></view>
+              <text class="legend-name">{{item.parrot_name}}</text>
+            </view>
           </view>
-        </view>
-        <!-- 平均体重显示（当前筛选范围与鹦鹉选择下的均值） -->
-        <view class="chart-meta">
-          <text class="meta-label">平均体重</text>
-          <text class="meta-value">{{weightAvgChart || '--'}}</text>
-        </view>
-        <view class="weight-chart-container">
-          <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;" bindtouchstart="onWeightCanvasTap"></canvas>
-        </view>
-        <!-- 自定义时间范围滑块 -->
-        <view class="weight-range-control" wx:if="{{weightRangeDates.length > 1}}">
-          <view class="range-labels">
-            <text class="range-start">{{weightStartDate}}</text>
-            <text class="range-end">{{weightEndDate}}</text>
+          <!-- 平均体重显示（当前筛选范围与鹦鹉选择下的均值） -->
+          <view class="chart-meta">
+            <text class="meta-label">平均体重</text>
+            <text class="meta-value">{{weightAvgChart || '--'}}</text>
           </view>
-          <view class="range-sliders">
-            <slider min="0" max="{{weightRangeDates.length - 1}}" step="1" value="{{weightStartIndex}}" show-value="{{false}}" bindchange="onWeightRangeStartChange" bindchanging="onWeightRangeStartChange" class="range-slider"/>
-            <slider min="0" max="{{weightRangeDates.length - 1}}" step="1" value="{{weightEndIndex}}" show-value="{{false}}" bindchange="onWeightRangeEndChange" bindchanging="onWeightRangeEndChange" class="range-slider"/>
+          <view class="weight-chart-container">
+            <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;" bindtouchstart="onWeightCanvasTap"></canvas>
           </view>
+          <!-- 自定义时间范围滑块 -->
+          <view class="weight-range-control" wx:if="{{weightRangeDates.length > 1}}">
+            <view class="range-labels">
+              <text class="range-start">{{weightStartDate}}</text>
+              <text class="range-end">{{weightEndDate}}</text>
+            </view>
+            <view class="range-sliders">
+              <slider min="0" max="{{weightRangeDates.length - 1}}" step="1" value="{{weightStartIndex}}" show-value="{{false}}" bindchange="onWeightRangeStartChange" bindchanging="onWeightRangeStartChange" class="range-slider"/>
+              <slider min="0" max="{{weightRangeDates.length - 1}}" step="1" value="{{weightEndIndex}}" show-value="{{false}}" bindchange="onWeightRangeEndChange" bindchanging="onWeightRangeEndChange" class="range-slider"/>
+            </view>
+          </view>
+        </block>
+        <view class="empty-placeholder horizontal" wx:else>
+          <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.lineChartPurple}}" mode="widthFix" binderror="onStatIconError" data-key="lineChartPurple"/></view>
+          <text class="placeholder-text">暂无体重数据</text>
         </view>
       </view>
     </view>
@@ -161,9 +167,9 @@
             <canvas id="expensePieCanvas" type="2d" style="width: 100%; height: 360rpx;"></canvas>
           </view>
         </view>
-        <view class="empty-placeholder" wx:else>
+        <view class="empty-placeholder horizontal" wx:else>
           <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.walletPurple}}" mode="widthFix" binderror="onStatIconError" data-key="walletPurple"/></view>
-          <text class="placeholder-text">暂无支出记录</text>
+          <text class="placeholder-text">暂无支出数据</text>
         </view>
       </view>
     </view>
@@ -193,7 +199,7 @@
             </view>
           </view>
         </view>
-        <view class="empty-placeholder" wx:else>
+        <view class="empty-placeholder horizontal" wx:else>
           <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.restaurantOrange}}" mode="widthFix" binderror="onStatIconError" data-key="restaurantOrange"/></view>
           <text class="placeholder-text">暂无喂食数据</text>
         </view>

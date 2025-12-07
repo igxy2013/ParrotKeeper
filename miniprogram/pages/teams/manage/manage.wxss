@@ -45,6 +45,7 @@
   height: 36rpx;
   filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
 }
+.icon-delete .icon-img { filter: none; }
 
 .form-row { margin-bottom: 20rpx; }
 .form-label { display: block; font-size: 28rpx; color: #333; font-weight: 500; margin-bottom: 12rpx; }
@@ -66,9 +67,17 @@
 .member-item { display: flex; align-items: center; gap: 16rpx; padding: 16rpx 0; border-bottom: 2rpx solid #f5f5f5; }
 .member-item:last-child { border-bottom: none; }
 .avatar { width: 72rpx; height: 72rpx; border-radius: 50%; background: #f0f0f0; }
-.member-info { flex: 1; }
+.member-info { flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
 .name { font-size: 28rpx; color: #333; }
 .role { font-size: 24rpx; color: #666; }
 .member-actions { display: flex; gap: 12rpx; }
+
+.icon-btn.small { width: 56rpx; height: 56rpx; }
+.icon-edit { background: #3b82f6; }
+.icon-delete { background: #ef4444; }
+.icon-btn[disabled] { opacity: 0.5; }
+
+.btn.wide { padding-left: 36rpx; padding-right: 36rpx; }
+.btn.short { padding-top: 4rpx; padding-bottom: 4rpx; }
 
 .empty { text-align: center; color: #999; font-size: 26rpx; padding: 30rpx 0; }

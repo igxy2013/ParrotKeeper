@@ -112,7 +112,7 @@
     <view class="modal-header team-modal-header">
       <view class="modal-header-content">
         <view class="modal-icon-wrapper">
-          <image class="modal-icon-img" src="{{iconPaths.userLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="userLine" />
+          <image class="modal-icon-img" src="/images/remix/group-fill-white.png" mode="aspectFit" binderror="onProfileIconError" data-key="groupFillWhite" />
         </view>
         <text class="modal-title">当前团队</text>
       </view>
@@ -166,10 +166,12 @@
                   </view>
                 </view>
                 <view class="member-actions-group" wx:if="{{isTeamAdmin && item.role !== 'owner'}}">
-                  <button class="member-action-btn btn-role" size="mini" data-user-id="{{item.id}}" bindtap="changeMemberRole">
-                    {{item.role === 'admin' ? '设为成员' : '设为管理员'}}
+                  <button class="icon-btn icon-edit small" data-user-id="{{item.id}}" bindtap="changeMemberRole">
+                    <image class="icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
                   </button>
-                  <button class="member-action-btn btn-remove" size="mini" data-user-id="{{item.id}}" bindtap="removeMember">移除</button>
+                  <button class="icon-btn icon-delete small" data-user-id="{{item.id}}" bindtap="removeMember">
+                    <image class="icon-img" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
+                  </button>
                 </view>
               </view>
             </block>
@@ -183,9 +185,8 @@
       </view>
     </view>
     <view class="modal-footer team-modal-footer">
-      <button class="btn btn-secondary btn-modal" bindtap="copyInviteCode" disabled="{{!(teamInfo && teamInfo.invite_code)}}">
-        <text wx:if="{{teamInfo && teamInfo.invite_code}}">复制邀请码</text>
-        <text wx:else>邀请码不可用</text>
+      <button class="btn btn-primary btn-modal" bindtap="copyInviteCode" disabled="{{!(teamInfo && teamInfo.invite_code)}}">
+        <text class="btn-text">{{(teamInfo && teamInfo.invite_code) ? '复制邀请码' : '邀请码不可用'}}</text>
       </button>
       <button class="btn btn-danger btn-modal" bindtap="confirmLeaveTeam" wx:if="{{teamInfo && (teamInfo.user_role || teamInfo.role) !== 'owner'}}">退出团队</button>
       <button class="btn btn-primary btn-modal" bindtap="hideTeamInfoModal">关闭</button>
