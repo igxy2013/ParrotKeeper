@@ -62,12 +62,20 @@ def team_admin_required(f):
 
 def can_access_parrot(user, parrot_id, permission='view'):
     """检查用户是否可以访问指定鹦鹉"""
-    # 检查是否是鹦鹉的拥有者
-    parrot = Parrot.query.filter_by(id=parrot_id, user_id=user.id, is_active=True).first()
-    if parrot:
+    parrot = Parrot.query.filter_by(id=parrot_id, is_active=True).first()
+    if not parrot:
+        return False, None
+
+    # 1. 如果是拥有者，直接允许
+    if parrot.user_id == user.id:
         return True, parrot
     
-    # 检查是否通过团队共享访问
+    # 2. 团队模式逻辑：如果鹦鹉属于用户当前团队，允许访问
+    if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+        if parrot.team_id == user.current_team_id:
+            return True, parrot
+
+    # 3. 检查是否通过团队共享访问（兼容旧逻辑）
     if user.current_team_id:
         team_parrot = TeamParrot.query.filter_by(
             team_id=user.current_team_id,
@@ -76,12 +84,10 @@ def can_access_parrot(user, parrot_id, permission='view'):
         ).first()
         
         if team_parrot:
-            parrot = team_parrot.parrot
-            if parrot and parrot.is_active:
-                # 检查权限
-                permissions = team_parrot.permissions or {}
-                if permissions.get(permission, False) or permissions.get('all', False):
-                    return True, parrot
+            # 检查权限
+            permissions = team_parrot.permissions or {}
+            if permissions.get(permission, False) or permissions.get('all', False):
+                return True, parrot
     
     return False, None
 
