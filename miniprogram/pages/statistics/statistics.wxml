@@ -164,7 +164,7 @@
             </view>
           </view>
           <view class="chart-container">
-            <canvas id="expensePieCanvas" type="2d" style="width: 100%; height: 360rpx;"></canvas>
+            <canvas id="expensePieCanvas" type="2d" style="width: 100%; height: 360rpx;" bindtap="handleExpensePieTap"></canvas>
           </view>
         </view>
         <view class="empty-placeholder horizontal" wx:else>

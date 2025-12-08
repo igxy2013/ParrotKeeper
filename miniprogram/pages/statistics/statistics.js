@@ -21,6 +21,7 @@ const app = getApp()
     expenseData: [],
     expensePeriod: 'month',
     selectedPeriod: '本月',
+    selectedExpenseIndex: -1,
     
     // 体重趋势数据
     weightSeries: [],
@@ -200,7 +201,10 @@ const app = getApp()
       if (res.success) {
         const analysis = this.processExpenseAnalysis(res.data)
         console.log('处理后的支出分析数据:', analysis)
-        this.setData({ expenseAnalysis: analysis })
+        this.setData({ 
+          expenseAnalysis: analysis,
+          selectedExpenseIndex: -1
+        })
         wx.nextTick(() => this.drawExpensePieChart())
       } else {
         console.error('支出分析API返回失败:', res)
@@ -259,9 +263,138 @@ const app = getApp()
     })
   },
 
+  // 处理支出饼图点击
+  handleExpensePieTap(e) {
+    console.log('点击事件触发:', e)
+    
+    // 优先使用 changedTouches 中的 clientX/Y，因为它们是相对于视口的
+    // 如果没有，退回到 detail.x/y (这是相对于文档的，如果有滚动会有偏差)
+    let clientX, clientY
+    if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX
+        clientY = e.changedTouches[0].clientY
+    } else {
+        // 只有 detail，可能是电脑端模拟器，或者某种特殊情况
+        // 如果这里只有 pageX/Y，我们需要减去 scrollTop 才能得到 clientY
+        // 但这里没法同步获取 scrollTop。
+        // 不过通常 bindtap 在真机上也有 changedTouches
+        clientX = e.detail.x
+        clientY = e.detail.y
+    }
+
+    const query = wx.createSelectorQuery().in(this)
+    query.select('#expensePieCanvas').boundingClientRect()
+    query.exec(res => {
+      const rect = res[0]
+      if (!rect) {
+        console.error('未找到 Canvas 节点信息')
+        return
+      }
+      console.log('Canvas 区域:', rect)
+      
+      // rect.left/top 是相对于视口的
+      // 如果我们用 e.detail.x (pageX)，则 canvasX = pageX - (rect.left + scrollLeft)
+      // 如果我们用 clientX (viewX)，则 canvasX = clientX - rect.left
+      
+      // 为了兼容性，如果发现 clientY 明显比 rect.top 大很多（可能是包含了 scrollTop），
+      // 或者我们确定 e.detail.x 是 pageX。
+      // 最稳妥的是：如果 changedTouches 存在，用它。
+      
+      let canvasX, canvasY
+      if (e.changedTouches && e.changedTouches.length > 0) {
+          canvasX = clientX - rect.left
+          canvasY = clientY - rect.top
+      } else {
+          // 如果只有 detail，且页面有滚动，这里会有问题。
+          // 尝试获取 scrollOffset
+          // 但这里为了简化，先假设 detail.x - rect.left 大致可用，或者用户没有滚动太远
+          // 实际上，如果用 detail.x (pageX) 减去 rect.left (viewLeft)，
+          // 结果 = (viewX + scrollX) - viewLeft = canvasX + scrollX。
+          // 所以如果页面横向滚动了，X 会偏；纵向滚动了，Y 会偏。
+          // 这是一个已知的小程序 Canvas 点击痛点。
+          
+          // 临时方案：直接使用 detail，但在长列表中可能有 bug
+          canvasX = clientX - rect.left
+          canvasY = clientY - rect.top
+      }
+
+      const width = rect.width
+      const height = rect.height
+      const cx = width / 2
+      const cy = height / 2
+      
+      console.log('点击坐标(相对):', canvasX, canvasY, '中心点:', cx, cy)
+
+      // 计算点击点相对于圆心的距离和角度
+      const dx = canvasX - cx
+      const dy = canvasY - cy
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const radius = Math.min(width, height) / 2 - 10
+      const inner = radius * 0.65
+      
+      console.log('距离:', dist, '外半径:', radius, '内半径:', inner)
+
+      // 如果点击在圆环外或圆环内空心区域
+      if (dist > radius + 20) { // 放宽外部点击范围
+          console.log('点击在圆环外')
+          this.setData({ selectedExpenseIndex: -1 })
+          this.drawExpensePieChart()
+          return
+      }
+
+      if (dist < inner - 10) { // 稍微放宽内部点击范围
+        console.log('点击在圆环内')
+        // 点击中间空白区域，切换回总览
+        this.setData({ selectedExpenseIndex: -1 })
+        this.drawExpensePieChart()
+        return
+      }
+      
+      // 计算角度
+      let angle = Math.atan2(dy, dx)
+      // 转换为 [-PI/2, 3PI/2) 范围，起始点为 -PI/2 (12点钟)
+      if (angle < -Math.PI / 2) {
+        angle += Math.PI * 2
+      }
+      
+      console.log('点击角度(弧度):', angle)
+
+      // 查找命中的扇区
+      const data = this.data.expenseAnalysis || []
+      let start = -Math.PI / 2
+      let foundIndex = -1
+      
+      for (let i = 0; i < data.length; i++) {
+        const item = data[i]
+        const sweep = (item.percentage / 100) * Math.PI * 2
+        const end = start + sweep
+        
+        // 增加一点点容错，处理浮点数边界
+        if (angle >= start - 0.01 && angle < end + 0.01) {
+          foundIndex = i
+          break
+        }
+        start = end
+      }
+      
+      console.log('命中索引:', foundIndex)
+
+      // 如果点击的是当前已选中的，则取消选中；否则选中新的
+      const newIndex = (this.data.selectedExpenseIndex === foundIndex) ? -1 : foundIndex
+      
+      if (newIndex !== -1 && newIndex !== this.data.selectedExpenseIndex) {
+          wx.vibrateShort({ type: 'light' }).catch(() => {})
+      }
+
+      this.setData({ selectedExpenseIndex: newIndex })
+      this.drawExpensePieChart()
+    })
+  },
+
   // 绘制支出分析饼图（对齐APP：圆环+中心总额+标签）
   drawExpensePieChart() {
     const data = this.data.expenseAnalysis || []
+    const selectedIndex = this.data.selectedExpenseIndex
     const query = wx.createSelectorQuery()
     query.select('#expensePieCanvas').node()
     query.select('#expensePieCanvas').boundingClientRect()
@@ -292,74 +425,79 @@ const app = getApp()
 
       const cx = width / 2
       const cy = height / 2
-      const radius = Math.min(width, height) / 2 - 10 // 进一步减少边距，增大图表尺寸
-      const inner = radius * 0.4 // 进一步调整圆环内径，使环形更粗
+      const baseRadius = Math.min(width, height) / 2 - 10
+      const innerRadius = baseRadius * 0.65 
       const totalAmount = data.reduce((s, i) => s + (i.amount || 0), 0)
 
       // 绘制圆环分片
       let start = -Math.PI / 2
-      data.forEach(item => {
+      data.forEach((item, index) => {
         const angle = (item.percentage / 100) * Math.PI * 2
+        // 修正：确保最小角度以便于点击，但这里主要是绘制
         const end = start + angle
-        if (angle > 0) {
+        const isSelected = index === selectedIndex
+        
+        // 选中时半径稍微变大
+        const outerRadius = isSelected ? baseRadius + 6 : baseRadius
+        
+        if (angle > 0) { // 这里之前是 angle > 0，如果 percentage 很小可能是 0
           ctx.beginPath()
-          // 外圈
-          ctx.arc(cx, cy, radius, start, end)
-          // 内圈反向，形成圆环扇形
-          ctx.arc(cx, cy, inner, end, start, true)
+          ctx.arc(cx, cy, outerRadius, start, end)
+          ctx.arc(cx, cy, innerRadius, end, start, true)
           ctx.closePath()
+          
           ctx.fillStyle = item.color || '#667eea'
+          
+          // 如果有选中项且当前项不是选中项，则降低透明度
+          if (selectedIndex !== -1 && !isSelected) {
+              ctx.globalAlpha = 0.3
+          } else {
+              ctx.globalAlpha = 1.0
+          }
+          
           ctx.fill()
+          
+          // 选中项加白色描边，使视觉更清晰
+          if (isSelected) {
+            ctx.lineWidth = 2
+            ctx.strokeStyle = '#ffffff'
+            ctx.stroke()
+          }
         }
         start = end
       })
+      
+      // 恢复透明度
+      ctx.globalAlpha = 1.0
 
-      // 扇区标签（大于5%显示，带指引线）- 已移除
-      // start = -Math.PI / 2
-      // ctx.font = '12px sans-serif'
-      // ctx.textAlign = 'left'
-      // ctx.textBaseline = 'middle'
-      // ctx.fillStyle = '#333'
-      // data.forEach(item => {
-      //   const angle = (item.percentage / 100) * Math.PI * 2
-      //   const end = start + angle
-      //   if (item.percentage >= 5 && angle > 0) {
-      //     const mid = (start + end) / 2
-      //     const ex = cx + Math.cos(mid) * (radius + 8)
-      //     const ey = cy + Math.sin(mid) * (radius + 8)
-      //     const lx = cx + Math.cos(mid) * (radius + 30)
-      //     const ly = cy + Math.sin(mid) * (radius + 30)
-      //     // 指引线
-      //     ctx.strokeStyle = item.color || '#667eea'
-      //     ctx.lineWidth = 1
-      //     ctx.beginPath()
-      //     ctx.moveTo(ex, ey)
-      //     ctx.lineTo(lx, ly)
-      //     ctx.stroke()
-      //     // 文本位置与对齐
-      //     const alignRight = Math.cos(mid) > 0
-      //     ctx.textAlign = alignRight ? 'left' : 'right'
-      //     const label = `${item.category} ${item.percentage}%`
-      //     // 确保文本不超出画布边界
-      //     const textX = alignRight ? 
-      //       Math.min(lx + 8, width - 10) : 
-      //       Math.max(lx - 8, 10)
-      //     ctx.fillText(label, textX, ly)
-      //   }
-      //   start = end
-      // })
-
-      // 中心总额与标题
+      // 中心文字
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      // 标题样式
-      ctx.fillStyle = '#6b7280'
-      ctx.font = '12px sans-serif'
-      ctx.fillText('总支出', cx, cy - 16)
-      // 金额样式
-      ctx.fillStyle = '#1f2937'
-      ctx.font = 'bold 20px sans-serif'
-      ctx.fillText(`¥${(totalAmount || 0).toFixed(2)}`, cx, cy + 8)
+      
+      if (selectedIndex !== -1) {
+          const selectedItem = data[selectedIndex]
+          // 选中类别名
+          ctx.fillStyle = selectedItem.color || '#6b7280'
+          ctx.font = 'bold 16px sans-serif'
+          ctx.fillText(selectedItem.category, cx, cy - 18)
+          // 选中金额
+          ctx.fillStyle = '#1f2937'
+          ctx.font = 'bold 22px sans-serif'
+          ctx.fillText(`¥${(selectedItem.amount || 0).toFixed(2)}`, cx, cy + 10)
+          // 选中比例
+          ctx.fillStyle = '#9ca3af'
+          ctx.font = '14px sans-serif'
+          ctx.fillText(`${selectedItem.percentage}%`, cx, cy + 32)
+      } else {
+          // 标题样式
+          ctx.fillStyle = '#6b7280'
+          ctx.font = '12px sans-serif'
+          ctx.fillText('总支出', cx, cy - 16)
+          // 金额样式
+          ctx.fillStyle = '#1f2937'
+          ctx.font = 'bold 20px sans-serif'
+          ctx.fillText(`¥${(totalAmount || 0).toFixed(2)}`, cx, cy + 8)
+      }
     })
   },
 
