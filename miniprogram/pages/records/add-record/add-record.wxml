@@ -433,7 +433,7 @@
         <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
           <view class="parrot-left">
             <view class="parrot-avatar">
-              <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFit" />
+              <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFill" />
             </view>
             <view class="parrot-info">
               <view class="name-section">
@@ -461,7 +461,7 @@
         <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
           <view class="parrot-left">
             <view class="parrot-avatar">
-              <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFit" />
+              <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFill" />
             </view>
             <view class="parrot-info">
               <view class="name-section">
@@ -604,7 +604,7 @@
           bindtap="selectMaleParrot"
         >
           <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFit" />
+            <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFill" />
           </view>
           <view class="parrot-info">
             <view class="name-section">
@@ -644,7 +644,7 @@
           bindtap="selectFemaleParrot"
         >
           <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFit" />
+            <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFill" />
           </view>
           <view class="parrot-info">
             <view class="name-section">

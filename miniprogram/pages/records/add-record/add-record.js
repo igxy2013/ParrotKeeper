@@ -371,7 +371,9 @@ const app = getApp()
             species_name: speciesName,
             name: p.name
           })
-          return { ...p, photo_url: photoUrl, avatar_url: avatarUrl }
+          const displayUrl = photoUrl || avatarUrl
+          const thumbUrl = app.getThumbnailUrl(displayUrl, 128)
+          return { ...p, photo_url: photoUrl, avatar_url: avatarUrl, thumb_url: thumbUrl }
         })
         
         // 过滤雄性鹦鹉（包括性别未知的）
