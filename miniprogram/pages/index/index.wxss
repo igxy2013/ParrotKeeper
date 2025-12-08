@@ -836,7 +836,7 @@
 
 .more-link {
   font-size: 28rpx;
-  color: #4CAF50;
+  color: #10b981;
   font-weight: 500;
 }
 
@@ -898,7 +898,7 @@
 }
 
 .green-theme .activity-icon-container {
-  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
 }
 
 .purple-theme .activity-icon-container {
@@ -951,7 +951,7 @@
 }
 
 .activity-dot.green {
-  background: #4CAF50;
+  background: #10b981;
 }
 
 .activity-dot.purple {
@@ -1000,7 +1000,7 @@
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  background: linear-gradient(135deg, #10b981 0%, #26A69A 50%, #00BCD4 100%);
   color: #ffffff;
   border: none;
   border-radius: 48rpx;
@@ -1178,7 +1178,7 @@
   color: #ffffff;
 }
 .health-badge.health-healthy {
-  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
 }
 .health-badge.health-sick {
   background: linear-gradient(135deg, #f44336 0%, #EF5350 100%);

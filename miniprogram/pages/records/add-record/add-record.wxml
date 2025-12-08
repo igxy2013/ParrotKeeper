@@ -11,37 +11,40 @@
         <view class="section-title">记录类型</view>
         
         <view class="type-selector">
+          <!-- 动态滑块 -->
+          <view class="type-cursor {{recordType}}" style="left: {{recordType === 'feeding' ? '2%' : recordType === 'cleaning' ? '27%' : recordType === 'health' ? '52%' : '77%'}}"></view>
+          
           <view 
-            class="type-item feeding {{recordType === 'feeding' ? 'active' : ''}}"
+            class="type-item {{recordType === 'feeding' ? 'active' : ''}}"
             bindtap="selectType"
             data-type="feeding"
           >
             <image class="type-icon-img" src="/images/remix/ri-restaurant-fill-orange.png" mode="aspectFit"></image>
-            <text class="type-text">喂食记录</text>
+            <text class="type-text">喂食</text>
           </view>
           <view 
-            class="type-item cleaning {{recordType === 'cleaning' ? 'active' : ''}}"
+            class="type-item {{recordType === 'cleaning' ? 'active' : ''}}"
             bindtap="selectType"
             data-type="cleaning"
           >
             <image class="type-icon-img" src="/images/remix/ri-calendar-fill-blue.png" mode="aspectFit"></image>
-            <text class="type-text">清洁记录</text>
+            <text class="type-text">清洁</text>
           </view>
           <view 
-            class="type-item health {{recordType === 'health' ? 'active' : ''}}"
+            class="type-item {{recordType === 'health' ? 'active' : ''}}"
             bindtap="selectType"
             data-type="health"
           >
             <image class="type-icon-img" src="/images/remix/ri-heart-fill-purple.png" mode="aspectFit"></image>
-            <text class="type-text">健康检查</text>
+            <text class="type-text">健康</text>
           </view>
           <view 
-            class="type-item breeding {{recordType === 'breeding' ? 'active' : ''}}"
+            class="type-item {{recordType === 'breeding' ? 'active' : ''}}"
             bindtap="selectType"
             data-type="breeding"
           >
             <image class="type-icon-img" src="/images/remix/ri-book-fill-green.png" mode="aspectFit"></image>
-            <text class="type-text">繁殖记录</text>
+            <text class="type-text">繁殖</text>
           </view>
         </view>
       </view>
@@ -93,36 +96,46 @@
 
     <!-- 智能录入（实验） -->
     <view class="form-section">
-      <view class="section-title">智能录入（实验）</view>
-      <view class="form-item">
-        <text class="form-label">自然语言输入</text>
-        <textarea
-          class="form-textarea"
+      <view class="section-title">
+        <image class="section-icon" src="/images/remix/ri-edit-line-purple.png" />
+        <text>智能解析</text>
+      </view>
+      
+      <view class="form-item no-border">
+        <textarea 
+          class="form-textarea" 
           placeholder="示例：今天下午清洁笼子并更换饮水，鹦鹉：小绿、花花。"
           value="{{aiInputText}}"
           bindinput="onAIInputChange"
           maxlength="500"
           show-confirm-bar="{{false}}"
         />
+        <view class="char-count">{{aiInputText.length}}/500</view>
       </view>
       <view class="form-actions">
-        <button class="btn btn-secondary" bindtap="parseWithAI" loading="{{aiParsing}}" disabled="{{aiParsing}}">一键解析</button>
+        <button class="btn btn-ai" bindtap="parseWithAI" loading="{{aiParsing}}" disabled="{{aiParsing}}">
+          <image class="btn-icon" src="/images/remix/ri-ai-white.png" />
+          <text>一键解析</text>
+        </button>
       </view>
     </view>
 
     <!-- 喂食记录特有字段 -->
     <view class="form-section" wx:if="{{recordType === 'feeding'}}">
-      <view class="section-title">喂食详情</view>
+      <view class="section-title">
+        <image class="section-icon" src="/images/remix/ri-restaurant-fill-orange.png" />
+        <text>喂食详情</text>
+      </view>
         
         <view class="form-item">
           <text class="form-label">食物类型</text>
           <view class="form-picker" bindtap="showFeedTypePicker">
-            <text class="picker-text {{formData.food_types.length > 0 ? '' : 'placeholder'}}">
+            <text class="picker-text {{selectedFeedTypeNames ? '' : 'placeholder'}}">
               {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
-          </text>
-          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+            </text>
+            <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+          </view>
         </view>
-      </view>
       
       <!-- 当选择 0 或 1 个食物类型时，使用单个食物量输入 -->
       <view class="form-item" wx:if="{{formData.food_types.length <= 1}}">
@@ -158,7 +171,10 @@
 
     <!-- 清洁记录特有字段 -->
     <view class="form-section" wx:if="{{recordType === 'cleaning'}}">
-      <view class="section-title">清洁详情</view>
+      <view class="section-title">
+        <image class="section-icon" src="/images/remix/ri-calendar-fill-blue.png" />
+        <text>清洁详情</text>
+      </view>
       
       <view class="form-item">
         <text class="form-label required">清洁类型</text>
@@ -214,7 +230,10 @@
 
     <!-- 繁殖记录特有字段 -->
     <view class="form-section" wx:if="{{recordType === 'breeding'}}">
-      <view class="section-title">繁殖详情</view>
+      <view class="section-title">
+        <image class="section-icon" src="/images/remix/ri-book-fill-green.png" />
+        <text>繁殖详情</text>
+      </view>
       
       <view class="form-item">
         <text class="form-label required">雄性鹦鹉</text>
@@ -323,7 +342,10 @@
 
     <!-- 照片上传 -->
     <view class="form-section">
-      <view class="section-title">记录照片 (可选)</view>
+      <view class="section-title">
+        <image class="section-icon" src="/images/remix/ri-camera-fill-pink.png" />
+        <text>记录照片 (可选)</text>
+      </view>
       
       <view class="photo-upload">
         <view class="photo-list" wx:if="{{formData.photos.length > 0}}">

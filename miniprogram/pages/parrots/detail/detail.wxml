@@ -113,35 +113,59 @@
         <view wx:if="{{activeTab === '基本信息'}}" class="tab-panel">
           <view class="info-grid">
             <view class="info-grid-item type-info">
-              <view class="grid-label">品种</view>
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-book-fill-green.png" />
+                <text class="grid-label">品种</text>
+              </view>
               <view class="grid-value">{{parrot.species_name || '未设置'}}</view>
             </view>
             <view class="info-grid-item age-info">
-              <view class="grid-label">年龄</view>
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-calendar-fill-blue.png" />
+                <text class="grid-label">年龄</text>
+              </view>
               <view class="grid-value">{{age || '未知'}}</view>
             </view>
             <view class="info-grid-item gender-info">
-              <view class="grid-label">性别</view>
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-user-fill-emerald.png" />
+                <text class="grid-label">性别</text>
+              </view>
               <view class="grid-value">{{parrot.gender === 'male' ? '雄性' : parrot.gender === 'female' ? '雌性' : '未知'}}</view>
             </view>
             <view class="info-grid-item color-info">
-              <view class="grid-label">主要颜色</view>
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-camera-fill-pink.png" />
+                <text class="grid-label">主要颜色</text>
+              </view>
               <view class="grid-value">{{parrot.color || '未设置'}}</view>
             </view>
             <view class="info-grid-item weight-info">
-              <view class="grid-label">体重</view>
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-scales-fill-green.png" />
+                <text class="grid-label">体重</text>
+              </view>
               <view class="grid-value">{{parrot.weight_display || '未记录'}}</view>
             </view>
             <view class="info-grid-item number-info">
-              <view class="grid-label">鹦鹉编号</view>
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-information-fill-amber.png" />
+                <text class="grid-label">鹦鹉编号</text>
+              </view>
               <view class="grid-value">{{parrot.parrot_number || '未设置'}}</view>
             </view>
             <view class="info-grid-item ring-info">
-              <view class="grid-label">脚环号</view>
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-shield-check-fill-blue.png" />
+                <text class="grid-label">脚环号</text>
+              </view>
               <view class="grid-value">{{parrot.ring_number || '未设置'}}</view>
             </view>
             <view class="info-grid-item admission-info">
-              <view class="grid-label">入住日期</view>
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-home-5-fill-green.png" />
+                <text class="grid-label">入住日期</text>
+              </view>
               <view class="grid-value">{{parrot.acquisition_date || '未设置'}}</view>
             </view>
           </view>
