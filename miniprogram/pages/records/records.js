@@ -1,5 +1,6 @@
 // pages/records/records.js
 const app = getApp()
+const { parseServerTime } = require('../../utils/time')
 
 Page({
   data: {
@@ -225,7 +226,7 @@ Page({
       case 'health': {
         const list = Array.isArray(records) ? records : []
         const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
-        return list.map(r => {
+        const mapped = list.map(r => {
           const formatted = {
             ...r,
             feeding_time_formatted: r.feeding_time ? app.formatDateTime(r.feeding_time) : '',
@@ -257,11 +258,45 @@ Page({
             parrot_avatars: avatar ? [avatar] : []
           }
         })
+        mapped.sort((a, b) => {
+          const rdA = String(a.record_date || '').trim()
+          const rtA0 = String(a.record_time || '').trim()
+          const rdB = String(b.record_date || '').trim()
+          const rtB0 = String(b.record_time || '').trim()
+          let mA = ''
+          let mB = ''
+          if (rdA || rtA0) {
+            if (rdA && rtA0) {
+              let rt = rtA0
+              if (rt.length === 5) rt = `${rt}:00`
+              if (rt.length > 8) rt = rt.substring(0, 8)
+              mA = `${rdA}T${rt}`
+            } else {
+              const s = rdA || rtA0
+              mA = s.includes(' ') ? s.replace(' ', 'T') : s
+            }
+          }
+          if (rdB || rtB0) {
+            if (rdB && rtB0) {
+              let rt = rtB0
+              if (rt.length === 5) rt = `${rt}:00`
+              if (rt.length > 8) rt = rt.substring(0, 8)
+              mB = `${rdB}T${rt}`
+            } else {
+              const s = rdB || rtB0
+              mB = s.includes(' ') ? s.replace(' ', 'T') : s
+            }
+          }
+          const tA = (parseServerTime(mA) || parseServerTime(a.record_time || '') || parseServerTime(a.created_at || '') || new Date(0)).getTime()
+          const tB = (parseServerTime(mB) || parseServerTime(b.record_time || '') || parseServerTime(b.created_at || '') || new Date(0)).getTime()
+          return tB - tA
+        })
+        return mapped
       }
       case 'breeding': {
         const list = Array.isArray(records) ? records : []
         const allParrots = Array.isArray(this.data.parrotsList) ? this.data.parrotsList : []
-        return list.map(r => {
+        const mapped = list.map(r => {
           const formatted = {
             ...r,
             created_at_formatted: r.created_at ? app.formatDateTime(r.created_at) : '',
@@ -299,6 +334,14 @@ Page({
             parrot_avatar: parrot_avatars[0] || null
           }
         })
+        mapped.sort((a, b) => {
+          const candA = a.record_time || a.created_at || a.mating_date || a.egg_laying_date || a.hatching_date || ''
+          const candB = b.record_time || b.created_at || b.mating_date || b.egg_laying_date || b.hatching_date || ''
+          const tA = (parseServerTime(candA) || new Date(0)).getTime()
+          const tB = (parseServerTime(candB) || new Date(0)).getTime()
+          return tB - tA
+        })
+        return mapped
       }
       default:
         return records
@@ -353,7 +396,11 @@ Page({
       parrot_name: item.parrot_names.join('、'),
       feed_type_names_text: item.feed_type_names.join('、')
     }))
-    
+    result.sort((a, b) => {
+      const tA = (parseServerTime(a.feeding_time) || new Date(0)).getTime()
+      const tB = (parseServerTime(b.feeding_time) || new Date(0)).getTime()
+      return tB - tA
+    })
     return result
   },
 

@@ -279,16 +279,14 @@ def add_health_record_internal(data):
                 team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
             )
             db.session.add(record)
-            # 如填写了体重，则同步更新到鹦鹉详情的体重字段
-            if weight is not None:
-                try:
-                    parrot_obj = Parrot.query.filter_by(id=parrot_id).first()
-                    if parrot_obj:
-                        parrot_obj.weight = weight
-                except Exception:
-                    pass
             created_records.append(record)
         
+        # 根据最新健康记录时间同步每只鹦鹉的体重
+        try:
+            for parrot_id in set(parrot_ids):
+                _sync_parrot_weight_with_latest(parrot_id)
+        except Exception:
+            pass
         db.session.commit()
         
         # 增加健康记录积分（每日首次添加健康记录获得1积分）
@@ -854,15 +852,6 @@ def update_health_record_internal(record_id, data):
         if weight_error:
             return error_response(weight_error)
         record.weight = data['weight']
-        # 如填写了体重，则同步更新到鹦鹉详情的体重字段
-        try:
-            if data['weight'] is not None and str(data['weight']).strip() != '':
-                parrot_obj = Parrot.query.filter_by(id=record.parrot_id).first()
-                if parrot_obj:
-                    parrot_obj.weight = data['weight']
-        except Exception:
-            # 为确保更新健康记录不受影响，这里容错处理
-            pass
     if 'temperature' in data:
         record.temperature = data['temperature']
     if 'health_status' in data:
@@ -900,6 +889,11 @@ def update_health_record_internal(record_id, data):
         except Exception:
             pass
     
+    # 根据最新健康记录时间同步体重
+    try:
+        _sync_parrot_weight_with_latest(record.parrot_id)
+    except Exception:
+        pass
     db.session.commit()
     
     return success_response(health_record_schema.dump(record), '更新成功')
@@ -1264,6 +1258,11 @@ def delete_health_record(record_id):
             return error_response('记录不存在', 404)
         
         db.session.delete(record)
+        try:
+            # 同步体重到最新健康记录
+            _sync_parrot_weight_with_latest(record.parrot_id)
+        except Exception:
+            pass
         db.session.commit()
         
         return success_response(message='删除成功')
@@ -1271,6 +1270,21 @@ def delete_health_record(record_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'删除健康记录失败: {str(e)}')
+
+def _sync_parrot_weight_with_latest(parrot_id):
+    """同步鹦鹉体重为该鹦鹉最新健康记录(按 record_date)的体重"""
+    try:
+        from models import Parrot, HealthRecord
+        latest = HealthRecord.query.filter(
+            HealthRecord.parrot_id == parrot_id,
+            HealthRecord.weight.isnot(None)
+        ).order_by(HealthRecord.record_date.desc()).first()
+        parrot = Parrot.query.filter_by(id=parrot_id).first()
+        if parrot:
+            parrot.weight = (latest.weight if latest and latest.weight is not None else None)
+    except Exception:
+        # 容错：不影响主流程
+        pass
 
 # 清洁记录相关
 @records_bp.route('/cleaning', methods=['GET'])

@@ -212,7 +212,7 @@
         <!-- 喂食记录 -->
         <view wx:elif="{{activeTab === '喂食记录'}}" class="tab-panel">
           <view wx:if="{{hasFeedingRecords}}" class="records-list">
-            <view class="record-item feeding-record" wx:for="{{feedingRecords}}" wx:key="id">
+            <view class="record-item feeding-record" wx:for="{{feedingRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="feeding" data-id="{{item.id}}">
               <view class="record-header">
                 <text class="record-food">{{item.data && (item.data.feed_type_name || (item.data.feed_type && item.data.feed_type.name)) || '未知食物'}}</text>
                 <text class="record-amount" wx:if="{{item.data && item.data.amount !== undefined && item.data.amount !== null}}">{{item.data.amount}} g</text>
@@ -234,7 +234,7 @@
         <!-- 健康档案 -->
         <view wx:elif="{{activeTab === '健康档案'}}" class="tab-panel">
           <view wx:if="{{healthRecords && healthRecords.length > 0}}" class="records-list">
-            <view class="record-item health-record" wx:for="{{healthRecords}}" wx:key="id">
+            <view class="record-item health-record" wx:for="{{healthRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="health" data-id="{{item.id}}">
               <view class="record-header">
                 <!-- 固定显示实际发生时间（统一为 created_at，经 JS 格式化） -->
                 <text class="record-date">{{item.created_at}}</text>
@@ -260,7 +260,7 @@
         <!-- 繁殖记录 -->
         <view wx:elif="{{activeTab === '繁殖记录'}}" class="tab-panel">
           <view wx:if="{{breedingRecords && breedingRecords.length > 0}}" class="records-list">
-            <view class="record-item training-record" wx:for="{{breedingRecords}}" wx:key="id">
+            <view class="record-item training-record" wx:for="{{breedingRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="breeding" data-id="{{item.id}}">
               <view class="record-header">
                 <text class="record-skill">
                   {{(item.male_parrot_name || (item.male_parrot && item.male_parrot.name) || '雄性')}} × {{(item.female_parrot_name || (item.female_parrot && item.female_parrot.name) || '雌性')}}

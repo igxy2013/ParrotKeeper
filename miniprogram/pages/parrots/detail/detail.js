@@ -427,6 +427,161 @@ Page({
         })
       }
       
+      const healthReq = app.request({
+        url: '/api/records/health',
+        method: 'GET',
+        data: { parrot_id: this.data.parrotId, page: 1, per_page: 50 }
+      })
+      const breedingMaleReq = app.request({
+        url: '/api/records/breeding',
+        method: 'GET',
+        data: { male_parrot_id: this.data.parrotId, per_page: 50 }
+      })
+      const breedingFemaleReq = app.request({
+        url: '/api/records/breeding',
+        method: 'GET',
+        data: { female_parrot_id: this.data.parrotId, per_page: 50 }
+      })
+      const [healthRes, breedingMaleRes, breedingFemaleRes] = await Promise.all([healthReq, breedingMaleReq, breedingFemaleReq])
+      if (healthRes && healthRes.success) {
+        const items = Array.isArray(healthRes.data?.items) ? healthRes.data.items : (Array.isArray(healthRes.data) ? healthRes.data : [])
+        const mapped = items.map(r => {
+          let merged = ''
+          const rd = (r.record_date || '').trim()
+          const rt0 = (r.record_time || '').trim()
+          if (rd || rt0) {
+            if (rd && rt0) {
+              let rt = rt0
+              if (rt.length === 5) rt = `${rt}:00`
+              if (rt.length > 8) rt = rt.substring(0, 8)
+              merged = `${rd}T${rt}`
+            } else {
+              const s = rd || rt0
+              merged = s.includes(' ') ? s.replace(' ', 'T') : s
+            }
+          }
+          const dt = this.parseServerTime(merged) || this.parseServerTime(r.record_time || '') || this.parseServerTime(r.created_at || '')
+          const ts = dt ? dt.getTime() : 0
+          return {
+            id: r.id,
+            type: 'health',
+            created_at: dt ? getApp().formatDateTime(dt, 'YYYY-MM-DD HH:mm') : (r.record_date || ''),
+            ts,
+            data: {
+              health_status_text: r.health_status_text || r.health_status,
+              health_status: r.health_status,
+              weight: r.weight,
+              notes: r.notes
+            }
+          }
+        }).sort((a, b) => (b.ts - a.ts))
+        this.setData({ healthRecords: mapped })
+      }
+      const feedingRes = await app.request({
+        url: '/api/records/feeding',
+        method: 'GET',
+        data: { parrot_id: this.data.parrotId, page: 1, per_page: 100 }
+      })
+      if (feedingRes && feedingRes.success) {
+        const items = Array.isArray(feedingRes.data?.items) ? feedingRes.data.items : (Array.isArray(feedingRes.data) ? feedingRes.data : [])
+        const normalized = (items || []).map(rec => {
+          const ft = []
+          if (rec.feed_type) {
+            const name = rec.feed_type.name || rec.feed_type_name || '食物'
+            ft.push({ id: rec.feed_type.id, name, amount: rec.amount })
+          } else if (rec.feed_type_name) {
+            ft.push({ id: rec.feed_type_id, name: rec.feed_type_name, amount: rec.amount })
+          }
+          const feeding_time = rec.feeding_time || rec.record_time || rec.time || ''
+          return { ...rec, feeding_time, food_types: ft }
+        })
+        const groups = {}
+        normalized.forEach(r => {
+          const timeStr = r.feeding_time || ''
+          const notesStr = r.notes || ''
+          const amt = r.amount
+          const amtStr = typeof amt === 'number' ? String(amt) : (amt ? String(amt) : '')
+          const key = `${timeStr}|${amtStr}|${notesStr}`
+          if (!groups[key]) {
+            groups[key] = {
+              key,
+              feeding_time: timeStr,
+              notes: notesStr,
+              record_ids: [],
+              food_types_map: {}
+            }
+          }
+          const g = groups[key]
+          if (r.id && !g.record_ids.includes(r.id)) g.record_ids.push(r.id)
+          if (Array.isArray(r.food_types)) {
+            r.food_types.forEach(ft => {
+              const id = ft.id || r.feed_type_id
+              const name = ft.name || r.feed_type_name || '食物'
+              const amount = typeof ft.amount === 'number' ? ft.amount : parseFloat(ft.amount || 0)
+              const kid = id || name
+              if (!g.food_types_map[kid]) {
+                g.food_types_map[kid] = { id, name, amount: amount || 0 }
+              }
+            })
+          } else {
+            const kid = r.feed_type_id || 'none'
+            const name = r.feed_type_name || '总用量'
+            const amount = typeof r.amount === 'number' ? r.amount : parseFloat(r.amount || 0)
+            if (!g.food_types_map[kid]) {
+              g.food_types_map[kid] = { id: r.feed_type_id, name, amount: amount || 0 }
+            }
+          }
+        })
+        const aggregated = Object.values(groups)
+        aggregated.sort((a, b) => {
+          const ta = this.parseServerTime(a.feeding_time)?.getTime() || 0
+          const tb = this.parseServerTime(b.feeding_time)?.getTime() || 0
+          return tb - ta
+        })
+        const feedingMapped = aggregated.map(g => {
+          const dt = this.parseServerTime(g.feeding_time || '')
+          const list = Object.values(g.food_types_map)
+          const nameJoin = list.map(x => x.name).join('、')
+          const amtSum = list.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0)
+          return {
+            id: (g.record_ids && g.record_ids.length ? g.record_ids[0] : g.key),
+            created_at: dt ? getApp().formatDateTime(dt, 'YYYY-MM-DD HH:mm') : (g.feeding_time || ''),
+            data: {
+              feed_type_name: nameJoin,
+              amount: Number(amtSum.toFixed(1)),
+              notes: g.notes || ''
+            }
+          }
+        })
+        this.setData({ hasFeedingRecords: feedingMapped.length > 0, feedingRecords: feedingMapped })
+      }
+      const maleItems = (breedingMaleRes && breedingMaleRes.success && Array.isArray(breedingMaleRes.data?.items)) ? breedingMaleRes.data.items : []
+      const femaleItems = (breedingFemaleRes && breedingFemaleRes.success && Array.isArray(breedingFemaleRes.data?.items)) ? breedingFemaleRes.data.items : []
+      const mergedMap = new Map()
+      maleItems.concat(femaleItems).forEach(r => { if (r && r.id != null) mergedMap.set(r.id, r) })
+      const merged = Array.from(mergedMap.values())
+      merged.sort((a, b) => {
+        const ta = this.parseServerTime(a.record_time || a.created_at || '')?.getTime() || 0
+        const tb = this.parseServerTime(b.record_time || b.created_at || '')?.getTime() || 0
+        return tb - ta
+      })
+      const breedingMapped = merged.map(r => {
+        const dt = this.parseServerTime(r.record_time || r.created_at || '')
+        return {
+          id: r.id,
+          created_at: dt ? getApp().formatDateTime(dt, 'YYYY-MM-DD HH:mm') : (r.record_time || ''),
+          male_parrot_name: r.male_parrot_name || (r.male_parrot && r.male_parrot.name) || '',
+          female_parrot_name: r.female_parrot_name || (r.female_parrot && r.female_parrot.name) || '',
+          mating_date: r.mating_date || '',
+          egg_laying_date: r.egg_laying_date || '',
+          hatching_date: r.hatching_date || '',
+          egg_count: r.egg_count,
+          chick_count: r.chick_count,
+          notes: r.notes || ''
+        }
+      })
+      this.setData({ breedingRecords: breedingMapped })
+      
       // 将后端统计数据映射到前端所需字段
       if (statsRes.success) {
         const monthStats = (statsRes.data && statsRes.data.month) ? statsRes.data.month : {}
@@ -453,6 +608,14 @@ Page({
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  viewRecordDetail(e) {
+    const ds = e.currentTarget.dataset || {}
+    const type = ds.type || ''
+    const id = ds.id || ''
+    if (!type || !id) return
+    wx.navigateTo({ url: `/pages/records/detail/detail?type=${type}&id=${id}` })
   },
 
   // 计算年龄

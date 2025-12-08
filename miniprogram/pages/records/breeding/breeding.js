@@ -248,7 +248,7 @@ Page({
       })
     }
 
-    // 更新数据并重置虚拟窗口
+    filtered = filtered.slice().sort((a, b) => this.getBreedingRecordTs(b) - this.getBreedingRecordTs(a))
     this.setData({ filteredRecords: filtered })
     this.setData({ virtualChunkIndex: 0, virtualDisplayRecords: filtered.slice(0, virtualChunkSize) })
   },

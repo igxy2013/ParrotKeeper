@@ -306,7 +306,11 @@ Page({
       })
     }
 
-    // 更新完整展示列表
+    working = working.slice().sort((a, b) => {
+      const ta = this.parseRecordDateTs(a.record_date_raw)
+      const tb = this.parseRecordDateTs(b.record_date_raw)
+      return tb - ta
+    })
     this.setData({ displayRecords: working })
 
     // 初始化虚拟窗口
