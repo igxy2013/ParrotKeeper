@@ -72,7 +72,10 @@ def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None)
     day_idx = None
     if egg and egg.incubator_start_date and log_date:
         start_dt = egg.incubator_start_date
-        if isinstance(start_dt, date) and not isinstance(start_dt, datetime):
+        # 统一按日期计算（忽略时间），避免因时间导致天数偏移
+        if isinstance(start_dt, datetime):
+            start_dt = datetime.combine(start_dt.date(), datetime.min.time())
+        elif isinstance(start_dt, date):
             start_dt = datetime.combine(start_dt, datetime.min.time())
         log_dt = datetime.combine(log_date, datetime.min.time())
         diff = log_dt - start_dt
@@ -85,11 +88,18 @@ def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None)
     
     try:
         if egg.species and egg.species.id is not None and day_idx is not None and day_idx >= 1:
-            sug = IncubationSuggestion.query.filter(
+            # 团队过滤：团队模式优先匹配当前团队的建议；个人模式或无团队时匹配 team_id IS NULL 的通用建议；都允许通用建议回退
+            team_id = getattr(egg, 'team_id', None)
+            base_filters = [
                 IncubationSuggestion.species_id == egg.species.id,
                 IncubationSuggestion.day_start <= day_idx,
                 IncubationSuggestion.day_end >= day_idx
-            ).order_by(IncubationSuggestion.day_start.asc()).first()
+            ]
+            if team_id:
+                from sqlalchemy import or_
+                sug = IncubationSuggestion.query.filter(*base_filters, or_(IncubationSuggestion.team_id == team_id, IncubationSuggestion.team_id.is_(None))).order_by(IncubationSuggestion.day_start.asc()).first()
+            else:
+                sug = IncubationSuggestion.query.filter(*base_filters, IncubationSuggestion.team_id.is_(None)).order_by(IncubationSuggestion.day_start.asc()).first()
             if sug and sug.tips:
                 tips.append(sug.tips)
                 user_tips.append(sug.tips)
@@ -101,9 +111,25 @@ def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None)
     except Exception:
         turning_required = None
         candling_required = None
-    tips.append('每日翻蛋3-5次，均匀受热，避免标记面长期朝上')
-    tips.append('定期照蛋观察气室与血管生长，发现血环及时处理')
-    if day_idx is not None and day_idx >= 18:
+    # 动态添加翻蛋提示
+    should_turn = True
+    if turning_required is not None:
+        should_turn = turning_required
+    elif day_idx is not None and day_idx >= 17:
+        should_turn = False
+    
+    if should_turn:
+        tips.append('每日翻蛋3-5次，均匀受热，避免标记面长期朝上')
+
+    # 动态添加照蛋提示
+    should_candle = True
+    if candling_required is not None:
+        should_candle = candling_required
+    
+    if should_candle:
+        tips.append('定期照蛋观察气室与血管生长，发现血环及时处理')
+
+    if day_idx is not None and day_idx >= 17:
         tips.append('临近出雏，适度提高湿度并减少翻蛋')
     if t is not None:
         if t < ranges['temperature_c']['low']:
@@ -363,7 +389,68 @@ def get_calendar(egg_id):
                 'advice': l.advice,
                 'notes': l.notes
             }
-        return success_response({'calendar': calendar})
+        # 统一来源：根据后台管理的孵化建议生成照蛋/翻蛋日期集合
+        candling_dates = []
+        turning_dates = []
+        try:
+            # 计算孵化区间（从开始日期到出壳日或建议的最大结束日）
+            start_dt = egg.incubator_start_date
+            if isinstance(start_dt, datetime):
+                start_dt = datetime.combine(start_dt.date(), datetime.min.time())
+            elif isinstance(start_dt, date):
+                start_dt = datetime.combine(start_dt, datetime.min.time())
+            end_dt = None
+            if egg.hatch_date:
+                end_dt = egg.hatch_date
+                if isinstance(end_dt, datetime):
+                    end_dt = datetime.combine(end_dt.date(), datetime.min.time())
+                elif isinstance(end_dt, date):
+                    end_dt = datetime.combine(end_dt, datetime.min.time())
+            # 若无出壳日，使用建议的最大 day_end 或默认 21 天
+            max_days = 21
+            try:
+                if egg.species and egg.species.id is not None:
+                    q = IncubationSuggestion.query.filter(IncubationSuggestion.species_id == egg.species.id)
+                    max_row = q.order_by(IncubationSuggestion.day_end.desc()).first()
+                    if max_row and max_row.day_end:
+                        max_days = int(max_row.day_end)
+            except Exception:
+                pass
+            if not end_dt and start_dt:
+                end_dt = start_dt + timedelta(days=max_days - 1)
+
+            if start_dt and end_dt and end_dt >= start_dt:
+                total_days = (end_dt - start_dt).days + 1
+                for i in range(total_days):
+                    cur_dt = start_dt + timedelta(days=i)
+                    cur_date = cur_dt.date()
+                    advice_obj = _generate_advice(egg, cur_date, None, None)
+                    di = advice_obj.get('day_index') or (i + 1)
+                    tr_req = advice_obj.get('turning_required')
+                    cd_req = advice_obj.get('candling_required')
+                    should_turn = True
+                    if tr_req is not None:
+                        should_turn = bool(tr_req)
+                    elif di is not None and di >= 17:
+                        should_turn = False
+                    should_candle = True
+                    if cd_req is not None:
+                        should_candle = bool(cd_req)
+                    if should_turn:
+                        cand = cur_dt.strftime('%Y-%m-%d')
+                        turning_dates.append(cand)
+                    if should_candle:
+                        candling_dates.append(cur_dt.strftime('%Y-%m-%d'))
+        except Exception:
+            # 出错时，返回已有日志日历，不附加标记
+            pass
+        # 同步嵌入到 calendar 以兼容前端读取
+        try:
+            calendar['candling_dates'] = candling_dates
+            calendar['turning_dates'] = turning_dates
+        except Exception:
+            pass
+        return success_response({'calendar': calendar, 'candling_dates': candling_dates, 'turning_dates': turning_dates})
     except Exception as e:
         return error_response(f'获取失败: {str(e)}')
 

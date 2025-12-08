@@ -9,30 +9,48 @@
     <block wx:else>
       <view class="egg-card">
         <view class="row">
-          <text class="label">{{egg.label || ('蛋 ' + egg.id)}}</text>
-          <view class="status-wrap">
-            <text class="status">{{statusText}}</text>
-            <text class="hatch-badge" wx:if="{{hasHatched && egg.hatch_date_text === selectedDate}}">今日出壳</text>
+            <view class="label-wrap">
+              <image class="icon-md" src="/images/remix/ri-heart-fill-red.png" />
+              <text class="label">{{egg.label || ('蛋 ' + egg.id)}}</text>
+            </view>
+            <view class="status-wrap">
+              <text class="status">{{statusText}}</text>
+              <view class="hatch-badge-wrap" wx:if="{{hasHatched && egg.hatch_date_text === selectedDate}}">
+                <image class="icon-sm" src="/images/remix/ri-home-5-fill-green.png" />
+                <text class="hatch-badge-text">今日出壳</text>
+              </view>
+            </view>
           </view>
-        </view>
-        <view class="meta">
-          <view class="meta-item">
-            <text class="meta-label">开始</text>
-            <text class="meta-value">{{egg.incubator_start_datetime_text || egg.incubator_start_date_text || '未设置'}}</text>
+          <view class="meta">
+            <view class="meta-item">
+              <view class="meta-label-wrap">
+                <image class="icon-xs" src="/images/remix/ri-calendar-fill-blue.png" />
+                <text class="meta-label">开始</text>
+              </view>
+              <text class="meta-value">{{egg.incubator_start_datetime_text || egg.incubator_start_date_text || '未设置'}}</text>
+            </view>
+            <view class="meta-item">
+              <view class="meta-label-wrap">
+                <image class="icon-xs" src="/images/remix/ri-time-line.png" />
+                <text class="meta-label">天数</text>
+              </view>
+              <text class="meta-value">{{egg.day_since_start_text}}</text>
+            </view>
+            <view class="meta-item">
+              <view class="meta-label-wrap">
+                <image class="icon-xs" src="/images/remix/ri-book-fill-green.png" />
+                <text class="meta-label">品种</text>
+              </view>
+              <text class="meta-value">{{egg.species_name || '未设置'}}</text>
+            </view>
+            <view class="meta-item" wx:if="{{egg.hatch_date_text}}">
+              <view class="meta-label-wrap">
+                <image class="icon-xs" src="/images/remix/ri-home-5-fill-green.png" />
+                <text class="meta-label">出壳</text>
+              </view>
+              <text class="meta-value">{{egg.hatch_date_text}}</text>
+            </view>
           </view>
-          <view class="meta-item">
-            <text class="meta-label">天数</text>
-            <text class="meta-value">{{egg.day_since_start_text}}</text>
-          </view>
-          <view class="meta-item">
-            <text class="meta-label">品种</text>
-            <text class="meta-value">{{egg.species_name || '未设置'}}</text>
-          </view>
-          <view class="meta-item" wx:if="{{egg.hatch_date_text}}">
-            <text class="meta-label">出壳</text>
-            <text class="meta-value">{{egg.hatch_date_text}}</text>
-          </view>
-        </view>
       </view>
 
       <view class="calendar" wx:if="{{calendarDays.length > 0}}">
@@ -73,7 +91,10 @@
       </view>
 
       <view class="logs-section" wx:if="{{selectedLogs && selectedLogs.length > 0}}">
-        <view class="logs-title">孵化日志</view>
+        <view class="logs-title-wrap">
+          <image class="icon-md" src="/images/remix/edit-fill-orange.png" />
+          <text class="logs-title">孵化日志</text>
+        </view>
         <view class="logs-list">
           <view class="log-card" wx:for="{{selectedLogs}}" wx:key="id">
             <view class="log-header">
@@ -121,7 +142,10 @@
       </view>
 
       <view class="suggest-card" wx:if="{{selectedDayIndex}}">
-        <view class="suggest-heading">孵化建议</view>
+        <view class="suggest-heading">
+          <image class="icon-md" src="/images/remix/ri-information-fill-amber.png" />
+          <text>孵化建议</text>
+        </view>
         <view class="suggest-title">
           <text class="title-day">第{{selectedDayIndex}}天</text>
           <text class="title-date">{{selectedDateText}}</text>
@@ -134,11 +158,17 @@
         </view>
         <view class="suggest-grid" wx:if="{{!(hasHatched && afterHatch)}}">
           <view class="sg-box temp">
-            <text class="sg-label">温度</text>
+            <view class="sg-label-wrap">
+              <image class="icon-sm" src="/images/remix/ri-bar-chart-fill-orange.png" />
+              <text class="sg-label">温度</text>
+            </view>
             <text class="sg-value">{{selectedTempRangeText}}</text>
           </view>
           <view class="sg-box hum">
-            <text class="sg-label">湿度</text>
+            <view class="sg-label-wrap">
+              <image class="icon-sm" src="/images/remix/ri-pie-chart-2-fill-blue.png" />
+              <text class="sg-label">湿度</text>
+            </view>
             <text class="sg-value">{{selectedHumRangeText}}</text>
           </view>
         </view>

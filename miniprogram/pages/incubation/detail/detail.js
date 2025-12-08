@@ -80,54 +80,18 @@ Page({
       const statusText = hatchText ? '已出雏' : this.mapStatusToCN(egg && egg.status)
       const hasHatched = !!hatchText
       this.setData({ egg, statusText, speciesSupported, hasHatched, eggLogs: logsMapped })
-      let speciesSuggestions = []
-      try{
-        // 1. 拉取当前品种的建议
-        let p1 = Promise.resolve([])
-        if (egg && egg.species_id){
-          p1 = app.request({ url: `/api/incubation/suggestions?species_id=${egg.species_id}`, method: 'GET' }).then(r => (r && r.data && r.data.items) || []).catch(()=>[])
-        }
-        // 2. 拉取通用建议（不传 species_id 或传 0/null，这里假设请求所有建议然后过滤，或者后端支持 species_id=null）
-        // 假设后端支持不传 species_id 返回所有，或者我们尝试传一个代表通用的值（如 0）
-        // 但为了保险，如果蛋有关联品种，我们最好也拿到那些“未指定品种”的建议（即通用建议）
-        // 由于不知道后端接口细节，这里尝试拉取所有建议（如果不传参返回所有）或者尝试拉取通用建议
-        // 假设 /api/incubation/suggestions 返回列表，我们获取一次“通用”的（假设 species_id 为空）
-        // 如果后端逻辑是：不传 species_id 返回所有，那我们就传 species_id='' 来获取所有，然后在前端过滤
-        let p2 = app.request({ url: `/api/incubation/suggestions`, method: 'GET' }).then(r => (r && r.data && r.data.items) || []).catch(()=>[])
-
-        const [list1, list2] = await Promise.all([p1, p2])
-        
-        // list1 是特定品种的（如果有的话）
-        // list2 可能是所有的，或者是通用的。
-        // 我们合并 list1 和 list2 中属于“通用”或“当前品种”的建议
-        // 通用建议判定：species_id 为 null, 0, 或 ""
-        const currentSpeciesId = egg.species_id ? String(egg.species_id) : null
-        
-        const combined = []
-        const addedIds = new Set()
-        
-        // 先加特定品种的
-        list1.forEach(item => {
-          if(!addedIds.has(item.id)){ combined.push(item); addedIds.add(item.id) }
-        })
-        
-        // 再加 list2 中匹配的（或者是通用的）
-        list2.forEach(item => {
-           const sid = item.species_id ? String(item.species_id) : ''
-           // 如果是当前品种，或者通用（sid 为空或 '0'）
-           if (sid === currentSpeciesId || sid === '' || sid === '0'){
-             if(!addedIds.has(item.id)){ combined.push(item); addedIds.add(item.id) }
-           }
-        })
-        
-        speciesSuggestions = combined
-      }catch(_){ speciesSuggestions = [] }
       const calResp = await app.request({ url: `/api/incubation/eggs/${this.data.id}/calendar`, method: 'GET' })
       const calMap = (calResp && calResp.data && calResp.data.calendar) || {}
+      try{
+        const cDates = (calResp && calResp.data && calResp.data.candling_dates) || []
+        const tDates = (calResp && calResp.data && calResp.data.turning_dates) || []
+        if (Array.isArray(cDates)) calMap.candling_dates = cDates
+        if (Array.isArray(tDates)) calMap.turning_dates = tDates
+      }catch(_){ }
       const today = new Date()
       const y = today.getFullYear()
       const m = today.getMonth()
-      this.setData({ calendarMap: calMap, calendarYear: y, calendarMonth: m, speciesSuggestions })
+      this.setData({ calendarMap: calMap, calendarYear: y, calendarMonth: m })
       this.buildCalendarFromMap(calMap)
       this.updateSelectedLogs()
     } catch (e) {
@@ -210,50 +174,7 @@ Page({
       if (item && (item.turning_required || item.is_turning_day || item.turning === true)) {
         isTurningDay = true
       }
-      if (dayIndex){
-        const suggestions = this.data.speciesSuggestions || []
-        if (suggestions && suggestions.length > 0){
-          const di = Number(dayIndex)
-          let hasCandling = false
-          let hasTurning = false
-          for (const x of suggestions){
-            if (!x) continue
-            const ds = x.day_start != null ? Number(x.day_start) : null
-            const de = x.day_end != null ? Number(x.day_end) : null
-            const sd = x.day != null ? Number(x.day) : null
-            let cList = []
-            if (Array.isArray(x.candling_days)) {
-              cList = x.candling_days.map(n => Number(n))
-            } else if (typeof x.candling_days === 'string') {
-              cList = x.candling_days.split(',').map(n => Number(n.trim())).filter(n => !isNaN(n))
-            }
-            let tList = []
-            if (Array.isArray(x.turning_days)) {
-              tList = x.turning_days.map(n => Number(n))
-            } else if (typeof x.turning_days === 'string') {
-              tList = x.turning_days.split(',').map(n => Number(n.trim())).filter(n => !isNaN(n))
-            }
-            if (cList.length && cList.includes(di)) hasCandling = true
-            if (tList.length && tList.includes(di)) hasTurning = true
-            if (!!x.candling_required && ((ds!=null && de!=null && di >= ds && di <= de) || (sd!=null && di === sd))) hasCandling = true
-            if (!!x.turning_required && ((ds!=null && de!=null && di >= ds && di <= de) || (sd!=null && di === sd))) hasTurning = true
-            if (hasCandling && hasTurning) break
-          }
-          isCandlingDay = isCandlingDay || hasCandling
-          isTurningDay = isTurningDay || hasTurning
-        } else {
-          const sCandling = this.suggestForDay(dayIndex).candling
-          isCandlingDay = isCandlingDay || !!(sCandling && sCandling.enabled)
-          const sTurning = this.suggestForDay(dayIndex).turning
-          isTurningDay = isTurningDay || !!(sTurning && sTurning.enabled)
-        }
-        const s = this.suggestForDay(dayIndex)
-        const tr = s.temperature_c || {}
-        const hr = s.humidity_pct || {}
-        sTempTarget = tr.target
-        sTempRangeText = `${tr.low}-${tr.high}℃`
-        sHumRangeText = `${hr.low}-${hr.high}%`
-      }
+      
       if (!isCandlingDay){
         const logs = this.data.eggLogs || []
         const hasCandlingLog = logs.some(x => (x.log_date_text || this.formatDate(x.log_date)) === dt && (x.candling === true || x.is_candling === true))
@@ -438,7 +359,7 @@ Page({
       const hr = ranges.humidity_pct || {}
       const turningRequired = (resp && resp.data) ? resp.data.turning_required : undefined
       const candlingRequired = (resp && resp.data) ? resp.data.candling_required : undefined
-      const tipsArr = (resp && resp.data && Array.isArray(resp.data.user_tips)) ? resp.data.user_tips.filter(x => !!x) : []
+      const tipsArr = (resp && resp.data && Array.isArray(resp.data.tips)) ? resp.data.tips.filter(x => !!x) : []
       let turningText
       let candlingText
       
