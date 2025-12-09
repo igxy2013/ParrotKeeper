@@ -154,13 +154,19 @@ Component({
       wx.previewImage({ urls: [preview] })
     },
     onPreviewError() {
-      const url = this.data.form.photo_url || ''
-      if (url && this.data.form.photo_preview !== url) {
-        this.setData({ 'form.photo_preview': url })
-        return
+      try {
+        const url = this.data.form.photo_url || ''
+        if (url && this.data.form.photo_preview !== url) {
+          // 回退到原图地址作为预览，不修改表单提交值
+          this.setData({ 'form.photo_preview': url })
+          return
+        }
+        // 最终兜底：使用通用默认图片，仅影响预览，不篡改 photo_url
+        const fallback = '/images/default-parrot.png'
+        this.setData({ 'form.photo_preview': fallback })
+      } catch (_) {
+        this.setData({ 'form.photo_preview': '/images/default-parrot.png' })
       }
-      const fallback = '/images/parrot-avatar-green.png'
-      this.setData({ 'form.photo_preview': fallback, 'form.photo_url': fallback })
     },
     deletePhoto() {
       wx.showModal({
@@ -283,6 +289,26 @@ Component({
         if (!isNaN(num)) f.weight = num
       }
 
+      // 规范化照片路径：后端偏好接收 uploads 相对路径，避免完整 URL 导致解析异常
+      let normalizedPhoto = f.photo_url || ''
+      try {
+        const s = String(normalizedPhoto || '').trim()
+        if (s) {
+          if (/^https?:\/\//.test(s)) {
+            const m = s.match(/\/uploads\/(.+)$/)
+            if (m && m[1]) {
+              normalizedPhoto = m[1].replace(/^images\//, '')
+            }
+          } else {
+            if (/^\/?uploads\//.test(s)) {
+              normalizedPhoto = s.replace(/^\/?uploads\//, '')
+            } else if (/^\/?images\//.test(s)) {
+              normalizedPhoto = s.startsWith('/') ? s : '/' + s
+            }
+          }
+        }
+      } catch (_) {}
+
       const submitData = {
         name: f.name,
         species_id,
@@ -294,7 +320,7 @@ Component({
         parrot_number: f.parrot_number || '',
         ring_number: f.ring_number || '',
         acquisition_date: f.acquisition_date || '',
-        photo_url: f.photo_url || ''
+        photo_url: normalizedPhoto || ''
       }
 
       // 空值清理：保留可为空字符串的字段（包括 photo_url 用于清空照片）

@@ -700,6 +700,26 @@ Page({
     wx.navigateTo({ url })
   },
 
+  // 照片加载失败时回退为默认头像
+  onPhotoError(e) {
+    try {
+      const p = this.data.parrot || {}
+      const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+      const fallback = getApp().getDefaultAvatarForParrot({
+        gender: p.gender,
+        species_name: speciesName,
+        name: p.name
+      })
+      const resolved = fallback ? getApp().resolveUploadUrl(fallback) : '/images/default-parrot.png'
+      this.setData({
+        parrot: { ...p, photo_url: '', photo_thumb: '', avatar_url: resolved, avatar_thumb: '' }
+      })
+    } catch (_) {
+      const p = this.data.parrot || {}
+      this.setData({ parrot: { ...p, photo_url: '', photo_thumb: '', avatar_url: '/images/default-parrot.png', avatar_thumb: '' } })
+    }
+  },
+
   // 切换菜单显示状态
   toggleMenu() {
     this.setData({

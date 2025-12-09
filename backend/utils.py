@@ -111,6 +111,25 @@ def auto_crop_image(image_path):
         print(f"自动裁剪图片失败: {str(e)}")
         return image_path
 
+def ensure_square_image_with_padding(image_path):
+    try:
+        img = Image.open(image_path)
+        if img.mode != 'RGBA':
+            img = img.convert('RGBA')
+        w, h = img.size
+        size = max(w, h)
+        canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+        left = (size - w) // 2
+        top = (size - h) // 2
+        canvas.paste(img, (left, top), img if img.mode == 'RGBA' else None)
+        name, _ = os.path.splitext(image_path)
+        out_path = f"{name}_square.png"
+        canvas.save(out_path, 'PNG')
+        return out_path
+    except Exception as e:
+        print(f"生成方形图片失败: {str(e)}")
+        return image_path
+
 def remove_background(image_path):
     """调用 remove.bg API 移除图片背景，并自动裁剪空白区域"""
     try:
@@ -166,11 +185,17 @@ def remove_background(image_path):
                     with open(processed_filename, 'wb') as f:
                         f.write(resp.content)
                     cropped_filename = auto_crop_image(processed_filename)
+                    square_filename = ensure_square_image_with_padding(cropped_filename or processed_filename)
                     out = processed_filename
-                    if cropped_filename and cropped_filename != processed_filename:
-                        if os.path.exists(processed_filename):
-                            os.remove(processed_filename)
-                        out = cropped_filename
+                    if square_filename and square_filename != processed_filename:
+                        try:
+                            if os.path.exists(processed_filename):
+                                os.remove(processed_filename)
+                            if cropped_filename and os.path.exists(cropped_filename) and cropped_filename != square_filename:
+                                os.remove(cropped_filename)
+                        except Exception:
+                            pass
+                        out = square_filename
                     try:
                         ident = hashlib.sha1((k or '').encode('utf-8')).hexdigest()
                         ym = datetime.now().strftime('%Y%m')

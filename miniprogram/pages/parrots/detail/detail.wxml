@@ -26,6 +26,7 @@
             src="{{parrot.photo_thumb || parrot.avatar_thumb || parrot.photo_url || parrot.avatar_url || '/images/default-parrot.png'}}" 
             mode="aspectFill"
             bindtap="previewPhoto"
+            binderror="onPhotoError"
           />
         </view>
         <view class="parrot-details">
@@ -192,6 +193,7 @@
                 src="{{parrot.photo_url}}" 
                 mode="aspectFit"
                 bindtap="previewPhoto"
+                binderror="onPhotoError"
               />
 
             </view>
