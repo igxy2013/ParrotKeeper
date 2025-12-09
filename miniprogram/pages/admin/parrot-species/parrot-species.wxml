@@ -15,8 +15,12 @@
           <view class="item-header">
             <text class="name">{{item.name}}</text>
             <view class="actions">
-              <text class="action" bindtap="openEditModal" data-id="{{item.id}}">编辑</text>
-              <text class="action delete" bindtap="deleteSpecies" data-id="{{item.id}}">删除</text>
+              <view class="action-btn edit-btn" catchtap="openEditModal" data-id="{{item.id}}">
+                <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
+              </view>
+              <view class="action-btn delete-btn" catchtap="deleteSpecies" data-id="{{item.id}}">
+                <image class="action-icon-img" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
+              </view>
             </view>
           </view>
           <view class="item-body">

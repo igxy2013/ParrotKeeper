@@ -80,7 +80,7 @@ Page({
       editLine: '/images/remix/edit-line.png',
       editLine_white: '/images/remix/edit-line-white.png',
       loginAvatar: '/images/parrot-avatar-green.png',
-      sectionSettings: '/images/remix/settings-3-line.png',
+      sectionSettings: '/images/remix/settings-3-line-white.png',
       closeLine: '/images/remix/close-line.png',
       statHeartRed: '/images/remix/ri-heart-fill-red.png',
       statFeedingOrange: '/images/remix/ri-restaurant-fill-orange.png',

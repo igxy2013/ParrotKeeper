@@ -5,16 +5,19 @@
 .list { display: flex; flex-direction: column; gap: 20rpx; }
 .item { background: #fff; border-radius: 32rpx; box-shadow: 0 16rpx 40rpx rgba(16, 185, 129, 0.08); border: 1rpx solid #eef2f7; overflow: hidden; }
 .item-header { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 32rpx; background: linear-gradient(135deg, #f8fff9 0%, #f1fffa 100%); }
-.name { color: #111827; font-weight: 800; font-size: 32rpx; }
+.name { color: #111827; font-weight: 800; font-size: 30rpx; }
 .actions { display: flex; gap: 16rpx; }
-.action { color: #3498db; }
-.action.delete { color: #f44336; }
+.action-btn { width: 60rpx; height: 60rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1); }
+.edit-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.delete-btn { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.action-btn:active { transform: scale(0.95); box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15); }
+.action-icon-img { width: 32rpx; height: 32rpx; }
 .item-body { padding: 24rpx; }
 .kv-row { display: flex; gap: 12rpx; margin: 8rpx 0; }
-.kv-label { color: #6b7280; min-width: 140rpx; }
-.kv-value { color: #374151; }
+.kv-label { color: #6b7280; min-width: 140rpx; font-size: 24rpx; }
+.kv-value { color: #374151; font-size: 26rpx; }
 .badge-group { margin-top: 6rpx; display: flex; gap: 12rpx; flex-wrap: wrap; }
-.badge { display: inline-block; padding: 8rpx 16rpx; border-radius: 9999rpx; font-size: 22rpx; border: 2rpx solid #e5e7eb; color: #374151; background: #ffffff; }
+.badge { display: inline-block; padding: 8rpx 16rpx; border-radius: 9999rpx; font-size: 20rpx; border: 2rpx solid #e5e7eb; color: #374151; background: #ffffff; }
 .badge.difficulty.easy { color: #047857; border-color: #a7f3d0; background: #ecfdf5; }
 .badge.difficulty.medium { color: #7c3aed; border-color: #ddd6fe; background: #f5f3ff; }
 .badge.difficulty.hard { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
