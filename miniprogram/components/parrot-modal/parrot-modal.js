@@ -136,7 +136,22 @@ Component({
         if (result.success) {
           const fullUrl = app.globalData.baseUrl + '/uploads/' + result.data.url
           const fullThumb = result.data.thumb_url ? (app.globalData.baseUrl + '/uploads/' + result.data.thumb_url) : app.getThumbnailUrl(fullUrl, 128)
-          this.setData({ 'form.photo_url': fullUrl, 'form.photo_preview': fullThumb })
+          // 先只更新提交值，保持本地临时预览不被远程缩略图覆盖
+          this.setData({ 'form.photo_url': fullUrl })
+          // 预加载远程缩略图，成功后再切换预览
+          try {
+            wx.getImageInfo({
+              src: fullThumb,
+              success: () => {
+                this.setData({ 'form.photo_preview': fullThumb })
+              },
+              fail: () => {
+                // 远程缩略图不可达则保持当前本地预览
+              }
+            })
+          } catch (_) {
+            // 忽略预加载异常，保留现有预览
+          }
           app.showSuccess('上传成功')
         } else {
           throw new Error(result.message)
@@ -227,9 +242,23 @@ Component({
         const m = String(processedUrl).match(/\/uploads\/(.+)$/)
         if (m && m[1]) storagePath = m[1]
 
-        // 更新表单中的照片URL
+        // 更新表单中的照片URL，并立即更新预览为抠图后的图片
         const fullUrl = app.resolveUploadUrl(storagePath)
-        this.setData({ 'form.photo_url': fullUrl })
+        const fullThumb = app.getThumbnailUrl(fullUrl, 128)
+        // 先立即切换到原图，保证立刻看到效果
+        this.setData({ 'form.photo_url': fullUrl, 'form.photo_preview': fullUrl })
+        // 预加载缩略图，成功后再平滑替换为缩略图
+        try {
+          wx.getImageInfo({
+            src: fullThumb,
+            success: () => {
+              this.setData({ 'form.photo_preview': fullThumb })
+            },
+            fail: () => {
+              // 缩略图不可达则保持原图预览
+            }
+          })
+        } catch (_) {}
         app.showSuccess('抠图成功')
       } catch (e) {
         console.error('抠图失败:', e)
