@@ -150,17 +150,27 @@ Page({
       app.showLoading('抠图处理中...');
       isLoading = true;
       const currentUrl = this.data.parrot.photo_url;
+      const rawUrl = this.data.parrot.photo_url_raw || '';
       console.log('发送抠图请求，图片路径:', currentUrl); // 添加日志以便调试
       
       // 检查图片路径是否为空
-      if (!currentUrl) {
+      if (!currentUrl && !rawUrl) {
         throw new Error('图片路径为空');
       }
       
+      let raw = String(rawUrl || currentUrl).trim()
+      let imagePath = raw
+      if (/^https?:\/\//.test(raw)) {
+        const m = raw.match(/\/uploads\/(.+)$/)
+        if (m && m[1]) imagePath = m[1]
+        else throw new Error('图片URL不合法')
+      } else {
+        imagePath = raw.replace(/^\/?uploads\/?/, '').replace(/^\/?images\/?/, '')
+      }
       const res = await app.request({
         url: '/api/image/process-existing',
         method: 'POST',
-        data: { image_path: currentUrl }
+        data: { image_path: imagePath }
       });
 
       // 接口约定：成功时返回 processed_url
@@ -290,6 +300,7 @@ Page({
         const speciesName = rawParrot.species && rawParrot.species.name ? rawParrot.species.name : (rawParrot.species_name || '')
         const parrot = {
           ...rawParrot,
+          photo_url_raw: rawParrot.photo_url,
           photo_url: app.resolveUploadUrl(rawParrot.photo_url),
           avatar_url: rawParrot.avatar_url ? app.resolveUploadUrl(rawParrot.avatar_url) : app.getDefaultAvatarForParrot({
             gender: rawParrot.gender,
