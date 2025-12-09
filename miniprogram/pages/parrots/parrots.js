@@ -306,10 +306,12 @@ Page({
           } catch (e) {
             weightDisplay = ''
           }
+          const ageDisplay = this.computeAgeDisplay(p.birth_date)
           return {
             ...p,
             weight: p.weight ? parseFloat(p.weight) : null,
             weight_display: weightDisplay,
+            age_display: ageDisplay,
             acquisition_date_formatted: app.formatDate(p.acquisition_date),
             photo_url: photoUrl,
             avatar_url: avatarUrl,
@@ -687,6 +689,35 @@ Page({
           this.setData(setter)
         }
       }
+    }
+  },
+
+  // 计算年龄显示（与详情页一致：天/个月/岁+个月）
+  computeAgeDisplay(birthDate) {
+    try {
+      if (!birthDate) return ''
+      const birth = new Date(birthDate)
+      if (isNaN(birth.getTime())) {
+        const s = String(birthDate)
+        const d = new Date(s.replace(/-/g, '/').replace('T', ' '))
+        if (isNaN(d.getTime())) return ''
+        return this.computeAgeDisplay(d)
+      }
+      const now = new Date()
+      const diffMs = now.getTime() - birth.getTime()
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+      if (diffDays < 30) {
+        return `${diffDays}天`
+      } else if (diffDays < 365) {
+        const months = Math.floor(diffDays / 30)
+        return `${months}个月`
+      } else {
+        const years = Math.floor(diffDays / 365)
+        const remainingMonths = Math.floor((diffDays % 365) / 30)
+        return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
+      }
+    } catch (_) {
+      return ''
     }
   },
 

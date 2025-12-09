@@ -179,7 +179,7 @@
                 <image wx:else class="mini-gender-icon-img" src="{{iconPaths.genderUnknown}}" mode="widthFix" binderror="handleIconError" data-key="genderUnknown" />
               </view>
             </view>
-            <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
+            <text class="parrot-mini-species">{{(item.species_name || (item.species && item.species.name) || '') + (item.age_display ? (' • ' + item.age_display) : '')}}</text>
             <view class="health-badge health-{{item.current_health_status || 'healthy'}}">{{item.current_health_status_text || '健康'}}</view>
           </view>
         </view>

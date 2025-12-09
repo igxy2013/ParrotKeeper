@@ -623,6 +623,7 @@ Page({
             species_name: speciesName,
             // 统一使用后端最近健康状态文本
             health_text: p.current_health_status_text || '健康',
+            age_display: this.computeAgeDisplay(p.birth_date),
             photo_url: photoUrl,
             avatar_url: avatarUrl,
             photo_thumb: photoThumb,
@@ -671,6 +672,34 @@ Page({
       }
     } catch (error) {
       console.error('加载我的鹦鹉失败:', error)
+    }
+  },
+
+  computeAgeDisplay(birthDate) {
+    try {
+      if (!birthDate) return ''
+      const birth = new Date(birthDate)
+      if (isNaN(birth.getTime())) {
+        const s = String(birthDate)
+        const d = new Date(s.replace(/-/g, '/').replace('T', ' '))
+        if (isNaN(d.getTime())) return ''
+        return this.computeAgeDisplay(d)
+      }
+      const now = new Date()
+      const diffMs = now.getTime() - birth.getTime()
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+      if (diffDays < 30) {
+        return `${diffDays}天`
+      } else if (diffDays < 365) {
+        const months = Math.floor(diffDays / 30)
+        return `${months}个月`
+      } else {
+        const years = Math.floor(diffDays / 365)
+        const remainingMonths = Math.floor((diffDays % 365) / 30)
+        return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
+      }
+    } catch (_) {
+      return ''
     }
   },
 
