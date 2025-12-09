@@ -8,6 +8,178 @@ from sqlalchemy import func, desc
 
 expenses_bp = Blueprint('expenses', __name__, url_prefix='/api/expenses')
 
+@expenses_bp.route('/transactions', methods=['GET'])
+@login_required
+def get_transactions():
+    """获取收支记录聚合列表（统一分页）"""
+    try:
+        user = request.current_user
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        record_type = request.args.get('record_type', '全部')  # 全部/支出/收入
+        category = request.args.get('category', '')
+        parrot_id = request.args.get('parrot_id', type=int)
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
+        
+        # 1. 获取所有符合条件的记录（内存合并）
+        all_records = []
+        
+        # --- 获取支出 ---
+        if record_type in ['全部', '支出']:
+            expense_ids = get_accessible_expense_ids_by_mode(user)
+            query = Expense.query.filter(Expense.id.in_(expense_ids))
+            if category and record_type != '全部': # 只有明确选支出时才按category过滤，否则category可能属于收入
+                query = query.filter(Expense.category == category)
+            elif category and record_type == '全部':
+                # 在全部模式下，如果传入了category，需要判断这个category属于支出还是收入
+                # 简单起见，如果category在支出列表里，就过滤，否则不查支出（或者查空）
+                expense_cats = ['food', 'medical', 'toys', 'cage', 'baby_bird', 'breeding_bird', 'other']
+                if category in expense_cats:
+                    query = query.filter(Expense.category == category)
+                else:
+                    # 传入的是收入类别，则支出为空
+                    query = query.filter(Expense.id == -1)
+            
+            if parrot_id:
+                query = query.filter(Expense.parrot_id == parrot_id)
+            if start_date:
+                try:
+                    start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                    query = query.filter(Expense.expense_date >= start_dt.date())
+                except ValueError: pass
+            if end_date:
+                try:
+                    end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                    query = query.filter(Expense.expense_date < end_dt.date())
+                except ValueError: pass
+            
+            expenses = query.all()
+            for e in expenses:
+                all_records.append({
+                    'raw': e,
+                    'type': '支出',
+                    'date': e.expense_date,
+                    'created_at': e.created_at
+                })
+
+        # --- 获取收入 ---
+        if record_type in ['全部', '收入']:
+            income_ids = get_accessible_income_ids_by_mode(user)
+            query = Income.query.filter(Income.id.in_(income_ids))
+            if category and record_type != '全部':
+                query = query.filter(Income.category == category)
+            elif category and record_type == '全部':
+                income_cats = ['breeding_sale', 'bird_sale', 'service', 'competition', 'other']
+                if category in income_cats:
+                    query = query.filter(Income.category == category)
+                else:
+                    query = query.filter(Income.id == -1)
+
+            if parrot_id:
+                query = query.filter(Income.parrot_id == parrot_id)
+            if start_date:
+                try:
+                    start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                    query = query.filter(Income.income_date >= start_dt.date())
+                except ValueError: pass
+            if end_date:
+                try:
+                    end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                    query = query.filter(Income.income_date < end_dt.date())
+                except ValueError: pass
+            
+            incomes = query.all()
+            for i in incomes:
+                all_records.append({
+                    'raw': i,
+                    'type': '收入',
+                    'date': i.income_date,
+                    'created_at': i.created_at
+                })
+        
+        # 2. 统一排序 (按 日期 desc, created_at desc)
+        # 注意：date是date对象，created_at是datetime对象。
+        # 为了比较，统一转为时间戳或元组
+        def sort_key(item):
+            d = item['date']
+            t = item['created_at']
+            # 构造一个datetime用于比较
+            dt = datetime(d.year, d.month, d.day, t.hour, t.minute, t.second)
+            return dt.timestamp()
+
+        all_records.sort(key=sort_key, reverse=True)
+        
+        # 3. 分页切片
+        total = len(all_records)
+        start = (page - 1) * per_page
+        end = start + per_page
+        sliced = all_records[start:end]
+        
+        # 4. 补充详情（鹦鹉信息等）
+        items = []
+        parrot_ids = set()
+        for item in sliced:
+            obj = item['raw']
+            if obj.parrot_id:
+                parrot_ids.add(obj.parrot_id)
+        
+        parrots = {p.id: p for p in Parrot.query.filter(Parrot.id.in_(parrot_ids)).all()} if parrot_ids else {}
+        
+        expense_cat_map = {
+            'food': '食物', 'medical': '医疗', 'toys': '玩具', 'cage': '笼具',
+            'baby_bird': '幼鸟', 'breeding_bird': '种鸟', 'other': '其他'
+        }
+        income_cat_map = {
+            'breeding_sale': '繁殖销售', 'bird_sale': '鸟类销售', 'service': '服务收入',
+            'competition': '比赛奖金', 'other': '其他收入' # 注意：收入也有other
+        }
+        
+        for item in sliced:
+            obj = item['raw']
+            rtype = item['type']
+            parrot = parrots.get(obj.parrot_id) if obj.parrot_id else None
+            
+            if rtype == '支出':
+                cat_text = expense_cat_map.get(obj.category, obj.category)
+                date_str = obj.expense_date.strftime('%Y-%m-%d')
+                amount = float(obj.amount)
+                # 前端需要 id: 'expense_1' 这种格式
+                frontend_id = f"expense_{obj.id}"
+            else:
+                cat_text = income_cat_map.get(obj.category, obj.category)
+                date_str = obj.income_date.strftime('%Y-%m-%d')
+                amount = float(obj.amount)
+                frontend_id = f"income_{obj.id}"
+
+            items.append({
+                'id': frontend_id,
+                'type': rtype,
+                'originalType': 'expense' if rtype == '支出' else 'income',
+                'category': obj.category,
+                'category_text': cat_text, # 前端实际上直接显示category字段（已经是中文转换过的或者前端转换）
+                # 这里后端直接返回原始category值，前端有map。但也返回text供参考
+                'amount': amount,
+                'description': obj.description,
+                'date': date_str,
+                'created_at': obj.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'parrot_id': obj.parrot_id,
+                'parrot_name': parrot.name if parrot else None
+            })
+            
+        return success_response({
+            'items': items,
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'has_next': end < total
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return error_response(f'获取聚合收支记录失败: {str(e)}')
+
 @expenses_bp.route('', methods=['GET'])
 @login_required
 def get_expenses():

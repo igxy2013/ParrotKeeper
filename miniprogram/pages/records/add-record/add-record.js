@@ -939,9 +939,46 @@ const app = getApp()
         const twoParrots = parrotList.filter(p => idSet.has(p.id))
         maleParrotList = twoParrots.map(p => ({ ...p }))
         femaleParrotList = twoParrots.map(p => ({ ...p }))
+        const maleCandidate = twoParrots.find(p => p.gender === 'male')
+        const femaleCandidate = twoParrots.find(p => p.gender === 'female')
+        const newFormDataAuto = { ...this.data.formData }
+        let autoMaleName = this.data.selectedMaleParrotName
+        let autoFemaleName = this.data.selectedFemaleParrotName
+        if (maleCandidate && femaleCandidate) {
+          newFormDataAuto.male_parrot_id = maleCandidate.id
+          newFormDataAuto.female_parrot_id = femaleCandidate.id
+          autoMaleName = maleCandidate.name
+          autoFemaleName = femaleCandidate.name
+        } else if (twoParrots.length === 2) {
+          const onlyKnown = twoParrots.find(p => p.gender === 'male' || p.gender === 'female')
+          if (onlyKnown) {
+            if (onlyKnown.gender === 'male') {
+              newFormDataAuto.male_parrot_id = onlyKnown.id
+              autoMaleName = onlyKnown.name
+            } else if (onlyKnown.gender === 'female') {
+              newFormDataAuto.female_parrot_id = onlyKnown.id
+              autoFemaleName = onlyKnown.name
+            }
+          }
+        }
+        this.setData({ formData: newFormDataAuto, selectedMaleParrotName: autoMaleName, selectedFemaleParrotName: autoFemaleName })
       } else {
         maleParrotList = parrotList.filter(p => p.gender === 'male' || p.gender === 'unknown' || !p.gender).map(p => ({ ...p }))
         femaleParrotList = parrotList.filter(p => p.gender === 'female' || p.gender === 'unknown' || !p.gender).map(p => ({ ...p }))
+        if (selectedIds.length === 1) {
+          const one = parrotList.find(p => p.id === selectedIds[0])
+          const newFormDataAuto = { ...this.data.formData }
+          let autoMaleName = this.data.selectedMaleParrotName
+          let autoFemaleName = this.data.selectedFemaleParrotName
+          if (one && one.gender === 'male') {
+            newFormDataAuto.male_parrot_id = one.id
+            autoMaleName = one.name
+          } else if (one && one.gender === 'female') {
+            newFormDataAuto.female_parrot_id = one.id
+            autoFemaleName = one.name
+          }
+          this.setData({ formData: newFormDataAuto, selectedMaleParrotName: autoMaleName, selectedFemaleParrotName: autoFemaleName })
+        }
       }
 
       const currentMaleId = parseInt(this.data.formData.male_parrot_id)
@@ -1823,7 +1860,20 @@ const app = getApp()
       if (prevPage && typeof prevPage.refreshData === 'function') {
         prevPage.refreshData()
       }
-      setTimeout(() => { wx.navigateBack({ delta: 1 }) }, 300)
+      const cameFromParrots = !!(prevPage && (prevPage.route === 'pages/parrots/parrots'))
+      if (cameFromParrots) {
+        const type = this.data.recordType
+        const map = {
+          feeding: '/pages/records/feeding/feeding',
+          cleaning: '/pages/records/cleaning/cleaning',
+          health: '/pages/records/health/health',
+          breeding: '/pages/records/breeding/breeding'
+        }
+        const url = map[type] || '/pages/records/records'
+        wx.redirectTo({ url })
+      } else {
+        setTimeout(() => { wx.navigateBack({ delta: 1 }) }, 300)
+      }
     } catch (err) {
       console.error('保存失败', err)
       wx.showToast({ title: err.message || '保存失败', icon: 'none' })

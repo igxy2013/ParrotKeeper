@@ -276,110 +276,62 @@ Page({
       }
       const incomeCategoryValue = incomeReverseMap[selectedCategoryLabel]
 
-      // 请求参数：分别为支出与收入接口组装，按需附加类别过滤
-      const expenseParams = {
-        page: this.data.page,
-        per_page: 20,
+      // 构造通用参数
+      const commonParams = {
+        per_page: 50, // 适中页大小
         ...dateParams,
-        // 当选择支出或全部且选择的是支出类别时，传递支出类别到后端
-        ...((selectedCategoryLabel !== '全部' && (selectedType === '支出' || (selectedType === '全部' && this.data.expenseCategories.includes(selectedCategoryLabel))) && expenseCategoryValue) ? { category: expenseCategoryValue } : {})
-      }
-      const incomeParams = {
-        page: this.data.page,
-        per_page: 20,
-        ...dateParams,
-        // 当选择收入或全部且选择的是收入类别时，传递收入类别到后端
+        ...((selectedCategoryLabel !== '全部' && (selectedType === '支出' || (selectedType === '全部' && this.data.expenseCategories.includes(selectedCategoryLabel))) && expenseCategoryValue) ? { category: expenseCategoryValue } : {}),
         ...((selectedCategoryLabel !== '全部' && (selectedType === '收入' || (selectedType === '全部' && this.data.incomeCategories.includes(selectedCategoryLabel))) && incomeCategoryValue) ? { category: incomeCategoryValue } : {})
       }
       
-      console.log('加载记录参数 - 支出:', expenseParams, '收入:', incomeParams)
+      // 如果筛选了特定类型，传给后端
+      if (selectedType !== '全部') {
+        commonParams.record_type = selectedType
+      }
+      
+      // 如果筛选了特定类别，覆盖 category 参数（后端会根据record_type判断是收入还是支出类别）
+      // 注意：上面的逻辑已经根据 categoryMap 设置了 category，这里其实已经包含了。
+      // 但为了兼容新接口的逻辑：
+      // 1. 如果选了支出类别，category就是支出类别值
+      // 2. 如果选了收入类别，category就是收入类别值
+      // 3. 如果是全部类别，category为空
+      
+      // 最终请求参数
+      const apiParams = {
+        page: this.data.page,
+        ...commonParams
+      }
 
-      // 同时获取支出和收入记录
-      const [expenseRes, incomeRes] = await Promise.all([
-        app.request({
-          url: '/api/expenses',
-          method: 'GET',
-          data: expenseParams
-        }),
-        app.request({
-          url: '/api/expenses/incomes',
-          method: 'GET',
-          data: incomeParams
-        })
-      ])
-      
-      console.log('支出API响应:', expenseRes)
-      console.log('收入API响应:', incomeRes)
-      
-      let newRecords = []
-      
-      // 处理支出记录
-      if (expenseRes.success && expenseRes.data) {
-        const expenseRecords = expenseRes.data.items.map(item => ({
-          id: `expense_${item.id}`,
-          type: '支出',
-          parrot: item.parrot_name || '未指定',
-          category: this.data.categoryMap[item.category] || item.category,
-          amount: item.amount,
-          description: item.description || '',
-          date: item.expense_date,
-          time: this.formatTimeForIOS(item.created_at),
-          originalType: 'expense'
-        }))
-        newRecords = [...newRecords, ...expenseRecords]
-      }
-      
-      // 处理收入记录
-      if (incomeRes.success && incomeRes.data) {
-        // 收入类别映射
-        const incomeMap = {
-          'breeding_sale': '繁殖销售',
-          'bird_sale': '鸟类销售',
-          'service': '服务收入',
-          'competition': '比赛奖金',
-          'other': '其他收入'
-        }
-        
-        const incomeRecords = incomeRes.data.items.map(item => ({
-          id: `income_${item.id}`,
-          type: '收入',
-          parrot: item.parrot_name || '未指定',
-          category: incomeMap[item.category] || item.category,
-          amount: item.amount,
-          description: item.description || '',
-          date: item.income_date,
-          time: this.formatTimeForIOS(item.created_at),
-          originalType: 'income'
-        }))
-        newRecords = [...newRecords, ...incomeRecords]
-      }
-      
-      // 按日期排序（最新的在前）
-      newRecords.sort((a, b) => new Date(b.date) - new Date(a.date))
-      
-      const records = this.data.page === 1 ? newRecords : [...this.data.records, ...newRecords]
-      
-      // 计算总数和是否有更多数据
-      const expenseTotal = expenseRes.success ? (expenseRes.data.total || 0) : 0
-      const incomeTotal = incomeRes.success ? (incomeRes.data.total || 0) : 0
-      const totalCount = expenseTotal + incomeTotal
-      
-      const expenseHasNext = expenseRes.success ? (expenseRes.data.has_next || false) : false
-      const incomeHasNext = incomeRes.success ? (incomeRes.data.has_next || false) : false
-      const hasMore = expenseHasNext || incomeHasNext
-      
-      console.log(`加载完成，记录数: ${newRecords.length}, 总数: ${totalCount}, 当前时间段: ${this.data.selectedPeriod}`)
-      
-      this.setData({
-        records,
-        filteredRecords: records,
-        page: this.data.page + 1,
-        hasMore,
-        totalCount
-      }, () => {
-        // 加载后应用筛选
-        this.applyFilters()
+      // 使用新的聚合接口
+      const res = await app.request({
+        url: '/api/expenses/transactions',
+        method: 'GET',
+        data: apiParams
       })
+      
+      if (res.success && res.data) {
+        const newItems = res.data.items || []
+        // 格式化时间
+        const formattedItems = newItems.map(item => ({
+          ...item,
+          time: this.formatTimeForIOS(item.created_at)
+        }))
+        
+        const records = this.data.page === 1 ? formattedItems : [...this.data.records, ...formattedItems]
+        const hasMore = res.data.has_next
+        const totalCount = res.data.total
+        
+        this.setData({
+          records,
+          filteredRecords: records, // 后端已经过滤好了
+          page: this.data.page + 1,
+          hasMore,
+          totalCount,
+          displayTotalCount: totalCount
+        })
+      } else {
+        throw new Error(res.message || '加载失败')
+      }
     } catch (error) {
       console.error('加载记录失败:', error)
       wx.showToast({
@@ -508,12 +460,13 @@ Page({
       // 记录类型匹配
       const typeMatch = selectedType === '全部' ? true : rec.type === selectedType
       if (!typeMatch) return false
-      // 类别匹配：当选择具体类别时，两个类型都按显示的类别文字匹配
-      const categoryMatch = selectedCategory === '全部' ? true : rec.category === selectedCategory
+      // 类别匹配：按中文类别文本匹配
+      const recCategoryLabel = (rec.category_text || (this.data.categoryMap && this.data.categoryMap[rec.category]) || rec.category)
+      const categoryMatch = selectedCategory === '全部' ? true : recCategoryLabel === selectedCategory
       if (!categoryMatch) return false
       // 关键字匹配：匹配类型、类别、描述、鹦鹉名、日期、时间
       if (!keyword) return true
-      const haystack = `${rec.type} ${rec.category} ${rec.description || ''} ${rec.parrot || ''} ${rec.date || ''} ${rec.time || ''}`.toLowerCase()
+      const haystack = `${rec.type} ${recCategoryLabel} ${rec.description || ''} ${rec.parrot || ''} ${rec.date || ''} ${rec.time || ''}`.toLowerCase()
       return haystack.includes(keyword)
     })
     // 仅更新列表，不再覆盖统计卡片的后端汇总值
@@ -772,10 +725,12 @@ Page({
 
   // 编辑记录相关方法
   onEditRecord(e) {
-    const record = e.currentTarget.dataset.record;
-    console.log('编辑记录:', record);
-    
-    // 设置编辑记录数据
+    const id = e.currentTarget.dataset.id
+    const record = (this.data.filteredRecords || []).find(r => r.id === id)
+    if (!record) {
+      wx.showToast({ title: '记录未找到', icon: 'none' })
+      return
+    }
     this.setData({
       editRecord: {
         id: record.id,
@@ -787,10 +742,8 @@ Page({
         date: record.date
       },
       showEditRecord: true
-    });
-    
-    // 计算弹窗避让参数
-    this.computeModalCapsulePadding();
+    })
+    this.computeModalCapsulePadding()
   },
 
 onHideEditRecord() {
@@ -801,21 +754,20 @@ showEditRecord: false
 
   // 删除记录功能
   onDeleteRecord(e) {
-    const record = e.currentTarget.dataset.record;
-    console.log('删除记录:', record);
-    
+    const id = e.currentTarget.dataset.id
+    const record = (this.data.filteredRecords || []).find(r => r.id === id)
+    if (!record) {
+      wx.showToast({ title: '记录未找到', icon: 'none' })
+      return
+    }
     wx.showModal({
       title: '确认删除',
-      content: `确定要删除这条${record.type}记录吗？\n\n类别：${record.category}\n金额：¥${record.amount}\n描述：${record.description || '无描述'}`,
+      content: `确定要删除这条${record.type}记录吗？\n\n类别：${record.category_text || (this.data.categoryMap && this.data.categoryMap[record.category]) || record.category}\n金额：¥${record.amount}\n描述：${record.description || '无描述'}`,
       confirmText: '删除',
       confirmColor: '#dc2626',
       cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          this.deleteRecord(record);
-        }
-      }
-    });
+      success: (res) => { if (res.confirm) { this.deleteRecord(record) } }
+    })
   },
 
   async deleteRecord(record) {

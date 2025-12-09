@@ -76,7 +76,7 @@
             <view class="list-item-main">
               <view class="list-item-title">
                 <text class="type-tag {{item.type === '收入' ? 'income' : 'expense'}}">{{item.type}}</text>
-                <text class="category-tag">{{item.category}}</text>
+                <text class="category-tag">{{item.category_text || item.category}}</text>
               </view>
               <view class="list-item-desc">{{item.description || '无描述'}}</view>
               <view class="list-item-meta">
@@ -86,10 +86,10 @@
             <view class="list-item-right">
               <view class="list-item-value {{item.type === '收入' ? 'income' : 'expense'}}">¥{{item.amount}}</view>
               <view class="list-item-actions">
-                <button class="action-btn edit-btn" bindtap="onEditRecord" data-record="{{item}}">
+                <button class="action-btn edit-btn" bindtap="onEditRecord" data-id="{{item.id}}">
                   <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="widthFix" />
                 </button>
-                <button class="action-btn delete-btn" bindtap="onDeleteRecord" data-record="{{item}}">
+                <button class="action-btn delete-btn" bindtap="onDeleteRecord" data-id="{{item.id}}">
                   <image class="action-icon-img" src="/images/remix/delete-bin-line-white.png" mode="widthFix" />
                 </button>
               </view>
