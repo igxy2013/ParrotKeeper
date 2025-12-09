@@ -1,0 +1,115 @@
+<view class="page-container">
+  <app-header title="全局API管理" subtitle="配置外部服务接入" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">该页面仅限超级管理员访问</view>
+    </block>
+    <block wx:else>
+      <block wx:if="{{loading}}">
+        <view class="loading">加载中...</view>
+      </block>
+      <block wx:else>
+        <view class="card">
+          <view class="card-header">
+            <text class="card-title">移除背景 API（remove.bg）</text>
+          </view>
+          <view class="card-content">
+            <block wx:for="{{removeBgList}}" wx:key="index">
+              <view class="api-item">
+                <view class="api-item-info">
+                  <text class="badge">{{item.tag || '未标记'}}</text>
+                  <text class="api-key-mask">{{item.api_key_masked}}</text>
+                  <text class="quota">剩余额度 {{item.remaining_quota}}/50</text>
+                </view>
+                <view class="api-item-actions">
+                  <view class="icon-action-btn edit" bindtap="openEditModal" data-group="remove" data-index="{{index}}">
+                    <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
+                  </view>
+                  <view class="icon-action-btn delete" bindtap="deleteItem" data-group="remove" data-index="{{index}}">
+                    <image class="action-icon-img" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
+                  </view>
+                </view>
+              </view>
+            </block>
+            <view class="row-actions">
+              <view class="add-api-btn" bindtap="openAddModal" data-group="remove">
+                <text class="add-api-btn-icon">＋</text>
+                <text class="add-api-btn-text">添加API</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="card">
+          <view class="card-header">
+            <text class="card-title">阿里云通义大模型</text>
+          </view>
+          <view class="card-content">
+            <block wx:for="{{aliyunList}}" wx:key="index">
+              <view class="api-item">
+                <view class="api-item-info">
+                  <text class="badge">{{item.tag || '未标记'}}</text>
+                  <text class="api-key-mask">{{item.api_key_masked}}</text>
+                </view>
+                <view class="api-item-actions">
+                  <view class="icon-action-btn edit" bindtap="openEditModal" data-group="aliyun" data-index="{{index}}">
+                    <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
+                  </view>
+                  <view class="icon-action-btn delete" bindtap="deleteItem" data-group="aliyun" data-index="{{index}}">
+                    <image class="action-icon-img" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
+                  </view>
+                </view>
+              </view>
+            </block>
+            <view class="row-actions">
+              <view class="add-api-btn" bindtap="openAddModal" data-group="aliyun">
+                <text class="add-api-btn-icon">＋</text>
+                <text class="add-api-btn-text">添加API</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="modal-overlay" wx:if="{{showAddModal}}" bindtap="closeAddModal"></view>
+        <view class="modal-content" wx:if="{{showAddModal}}" catchtap="stopPropagation">
+          <view class="modal-card">
+            <view class="modal-header">
+              <text class="modal-title">添加{{currentGroup === 'remove' ? '移除背景' : '阿里云'}}API</text>
+              <view class="modal-close" bindtap="closeAddModal">×</view>
+            </view>
+            <view class="modal-body">
+              <view class="form-item">
+                <text class="form-label">API标签</text>
+                <input class="form-input" placeholder="用于标记不同API" value="{{addForm.tag}}" bindinput="onAddInput" data-field="tag" />
+              </view>
+              <view class="form-item">
+                <text class="form-label">API Key</text>
+                <input class="form-input" placeholder="示例：sk_xxx" value="{{addForm.api_key}}" bindinput="onAddInput" data-field="api_key" />
+              </view>
+              <block wx:if="{{currentGroup === 'remove'}}">
+                <view class="form-item">
+                  <text class="form-label">API URL</text>
+                  <input class="form-input" placeholder="https://api.remove.bg/v1.0/removebg" value="{{addForm.api_url}}" bindinput="onAddInput" data-field="api_url" />
+                </view>
+              </block>
+              <block wx:if="{{currentGroup === 'aliyun'}}">
+                <view class="form-item">
+                  <text class="form-label">Base URL</text>
+                  <input class="form-input" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1" value="{{addForm.base_url}}" bindinput="onAddInput" data-field="base_url" />
+                </view>
+                <view class="form-item">
+                  <text class="form-label">Model</text>
+                  <input class="form-input" placeholder="qwen-plus" value="{{addForm.model}}" bindinput="onAddInput" data-field="model" />
+                </view>
+              </block>
+            </view>
+            <view class="modal-actions">
+              <button class="modal-btn cancel-btn" bindtap="closeAddModal">取消</button>
+              <button class="modal-btn submit-btn" bindtap="submitAdd">添加</button>
+            </view>
+          </view>
+        </view>
+      </block>
+    </block>
+  </view>
+</view>

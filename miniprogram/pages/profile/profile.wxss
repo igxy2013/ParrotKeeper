@@ -1768,8 +1768,15 @@
 .team-item-icon-img { width: 32rpx; height: 32rpx; }
 .team-item-title { font-weight: 700; color: #111827; font-size: 28rpx; }
 .team-item-desc { font-size: 24rpx; color: #6b7280; margin-top: 4rpx; font-weight: 500; }
-.team-item .arrow { color: #9ca3af; margin-left: auto; }
+.menu-item .arrow { color: #9ca3af; margin-left: auto; }
 .arrow-icon { width: 32rpx; height: 32rpx; margin-left: auto; }
+
+/* 后台管理入口按钮（参考添加鹦鹉按钮样式，宽度对齐） */
+.admin-entry-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20rpx); border-radius: 32rpx; padding: 24rpx; margin: 0 20rpx 24rpx; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); border: 1rpx solid rgba(255,255,255,0.6); }
+.admin-entry-btn { height: 96rpx; border-radius: 48rpx; background: #10b981; display: flex; align-items: center; justify-content: center; gap: 16rpx; box-shadow: 0 8rpx 24rpx rgba(16, 185, 129, 0.25); }
+.admin-entry-btn:active { transform: translateY(2rpx) scale(0.98); box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.35); }
+.admin-entry-icon { width: 36rpx; height: 36rpx; }
+.admin-entry-text { color: #ffffff; font-size: 32rpx; font-weight: 600; }
 
 /* 主题化背景，匹配图片式卡片色板 */
 .team-item.theme-blue { background: #f1f6ff; border-color: #e5efff; }

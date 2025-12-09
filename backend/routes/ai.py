@@ -1,6 +1,6 @@
 from flask import Blueprint, request, current_app
 from utils import login_required, success_response, error_response, cache_get_json, cache_set_json
-from models import db, Parrot, ParrotSpecies, FeedingRecord, HealthRecord, CleaningRecord, UserSetting
+from models import db, Parrot, ParrotSpecies, FeedingRecord, HealthRecord, CleaningRecord, UserSetting, SystemSetting
 from datetime import datetime, timedelta, date
 from team_mode_utils import get_accessible_parrot_ids_by_mode
 from sqlalchemy import func
@@ -497,57 +497,104 @@ def _build_llm_prompt(parrot: Parrot, metrics: dict, knowledge: dict, season: st
 
 
 def _llm_generate_advice(parrot: Parrot, metrics: dict, knowledge: dict, season: str, age_cat: str, prefs: dict) -> dict:
-    """调用 LLM 生成护理建议；若不可用或失败则回退到规则版。"""
-    client = _get_openai_client()
-    model = os.environ.get('OPENAI_MODEL') or os.environ.get('AI_MODEL') or 'gpt-4o-mini'
-    timeout_s = float(os.environ.get('AI_TIMEOUT', '15') or 15)
+    providers = []
+    try:
+        row = SystemSetting.query.filter_by(key='ALIYUN_LIST').first()
+        if row and row.value:
+            arr = json.loads(row.value)
+            if isinstance(arr, list):
+                for it in arr:
+                    providers.append({
+                        'api_key': str((it or {}).get('api_key') or ''),
+                        'base_url': str((it or {}).get('base_url') or ''),
+                        'model': str((it or {}).get('model') or '')
+                    })
+    except Exception:
+        providers = []
+    if not providers:
+        try:
+            ak = current_app.config.get('ALIYUN_API_KEY')
+            bu = current_app.config.get('ALIYUN_BASE_URL')
+            mm = current_app.config.get('ALIYUN_MODEL')
+            if not ak:
+                r = SystemSetting.query.filter_by(key='ALIYUN_API_KEY').first()
+                ak = r.value if r and r.value else ''
+            if not bu:
+                r = SystemSetting.query.filter_by(key='ALIYUN_BASE_URL').first()
+                bu = r.value if r and r.value else ''
+            if not mm:
+                r = SystemSetting.query.filter_by(key='ALIYUN_MODEL').first()
+                mm = r.value if r and r.value else ''
+            if ak or bu or mm:
+                providers = [{'api_key': ak or '', 'base_url': bu or '', 'model': mm or ''}]
+        except Exception:
+            providers = []
+    if not providers:
+        ak = os.environ.get('OPENAI_API_KEY') or os.environ.get('AI_API_KEY') or ''
+        bu = os.environ.get('OPENAI_BASE_URL') or os.environ.get('AI_BASE_URL') or ''
+        mm = os.environ.get('OPENAI_MODEL') or os.environ.get('AI_MODEL') or 'gpt-4o-mini'
+        if ak or bu or mm:
+            providers = [{'api_key': ak, 'base_url': bu, 'model': mm}]
 
-    if not client:
-        # 回退规则版
+    if not providers:
         return _generate_advice(parrot, metrics, knowledge, season, age_cat, prefs)
 
     system_msg, user_msg = _build_llm_prompt(parrot, metrics, knowledge, season, age_cat)
     llm_advice = []
+    used_provider = None
+    used_model = None
     try:
-        resp = client.chat.completions.create(
-            model=model,
-            temperature=0.2,
-            messages=[
-                {"role": "system", "content": system_msg},
-                {"role": "user", "content": user_msg}
-            ]
-        )
-        content = resp.choices[0].message.content if resp and resp.choices else None
-        data = None
-        if content:
-            try:
-                data = json.loads(content)
-            except Exception:
-                # 尝试截取到第一个/最后一个大括号
-                start = content.find('{')
-                end = content.rfind('}')
-                if start != -1 and end != -1 and end > start:
-                    try:
-                        data = json.loads(content[start:end+1])
-                    except Exception:
-                        data = None
-        if isinstance(data, dict):
-            for item in (data.get('advice') or []):
-                llm_advice.append({
-                    'category': item.get('category') or 'health',
-                    'suggestion': item.get('suggestion') or item.get('content') or '',
-                    'priority': item.get('priority') or 'medium',
-                    'tags': item.get('tags') or [],
-                    'short_reason': item.get('short_reason') or item.get('reason') or ''
-                })
+        from openai import OpenAI
     except Exception:
-        traceback.print_exc()
+        return _generate_advice(parrot, metrics, knowledge, season, age_cat, prefs)
+    for p in providers:
+        k = p.get('api_key') or ''
+        b = p.get('base_url') or ''
+        m = p.get('model') or (os.environ.get('OPENAI_MODEL') or os.environ.get('AI_MODEL') or 'gpt-4o-mini')
+        if not k:
+            continue
+        try:
+            client = OpenAI(api_key=k, base_url=b) if b else OpenAI(api_key=k)
+            resp = client.chat.completions.create(
+                model=m,
+                temperature=0.2,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_msg}
+                ]
+            )
+            content = resp.choices[0].message.content if resp and resp.choices else None
+            data = None
+            if content:
+                try:
+                    data = json.loads(content)
+                except Exception:
+                    start = content.find('{')
+                    end = content.rfind('}')
+                    if start != -1 and end != -1 and end > start:
+                        try:
+                            data = json.loads(content[start:end+1])
+                        except Exception:
+                            data = None
+            if isinstance(data, dict):
+                for item in (data.get('advice') or []):
+                    llm_advice.append({
+                        'category': item.get('category') or 'health',
+                        'suggestion': item.get('suggestion') or item.get('content') or '',
+                        'priority': item.get('priority') or 'medium',
+                        'tags': item.get('tags') or [],
+                        'short_reason': item.get('short_reason') or item.get('reason') or ''
+                    })
+            if llm_advice:
+                used_provider = 'aliyun' if ('dashscope.aliyuncs.com' in (b or '').lower()) else 'openai'
+                used_model = m
+                break
+        except Exception:
+            continue
 
-    # 若LLM输出不可用则回退规则版
     if not llm_advice:
         return _generate_advice(parrot, metrics, knowledge, season, age_cat, prefs)
 
-    # 构造与规则版一致的返回结构
     result = {
         'parrot_id': parrot.id,
         'parrot_name': parrot.name,
@@ -562,11 +609,10 @@ def _llm_generate_advice(parrot: Parrot, metrics: dict, knowledge: dict, season:
             'diet_refs': knowledge.get('diet'),
             'environment_refs': knowledge.get('environment'),
             'health_refs': knowledge.get('health'),
-            'llm': {'provider': 'openai', 'model': model}
+            'llm': {'provider': used_provider or 'openai', 'model': used_model or (os.environ.get('OPENAI_MODEL') or os.environ.get('AI_MODEL') or 'gpt-4o-mini')}
         }
     }
 
-    # 若开启订阅建议（偏好），附上简要payload建议
     delivery = prefs.get('delivery', {})
     if bool(delivery.get('subscription_enabled')):
         summary = llm_advice[0]['suggestion'] if llm_advice else '保持规律护理与健康监测'

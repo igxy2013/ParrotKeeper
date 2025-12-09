@@ -91,11 +91,6 @@ def process_existing_image():
             print(f"图片文件不存在: {absolute_path}")  # 添加日志
             return jsonify({'error': '图片文件不存在'}), 404
 
-        # 在调用前校验 remove.bg 配置以提供更清晰的错误
-        if not current_app.config.get('REMOVE_BG_API_KEY'):
-            print("未配置抠图服务API密钥（REMOVE_BG_API_KEY）")  # 添加日志
-            return jsonify({'error': '未配置抠图服务API密钥（REMOVE_BG_API_KEY）'}), 400
-
         # 进行抠图处理
         processed_path = remove_background(absolute_path)
         print(f"抠图处理结果路径: {processed_path}")  # 添加日志

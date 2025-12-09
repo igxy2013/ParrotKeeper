@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "全局API管理",
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
+}

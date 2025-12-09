@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from sqlalchemy import func
-from models import db, User, Announcement, Parrot, Expense
+from models import db, User, Announcement, Parrot, Expense, SystemSetting
 from utils import login_required, success_response, error_response, paginate_query
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -272,3 +272,152 @@ def delete_announcement(ann_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'删除公告失败: {str(e)}')
+
+
+@admin_bp.route('/api-configs', methods=['GET'])
+@login_required
+def get_api_configs():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        keys = [
+            'REMOVE_BG_API_KEY', 'REMOVE_BG_API_URL',
+            'ALIYUN_API_KEY', 'ALIYUN_BASE_URL', 'ALIYUN_MODEL'
+        ]
+        items = {}
+        for k in keys:
+            row = SystemSetting.query.filter_by(key=k).first()
+            val = row.value if row and row.value is not None else ''
+            masked = ''
+            if val:
+                tail = val[-4:] if len(val) > 4 else val
+                masked = ('*' * max(0, len(val) - len(tail))) + tail
+            items[k] = {
+                'key': k,
+                'value_masked': masked,
+                'is_set': bool(val),
+                'updated_at': (row.updated_at.isoformat() if row and getattr(row, 'updated_at', None) else None)
+            }
+        remove_list = []
+        aliyun_list = []
+        usage_map = {}
+        try:
+            import json, hashlib
+            from datetime import datetime
+            ym = datetime.now().strftime('%Y%m')
+            usage_key = f'REMOVE_BG_USAGE_{ym}'
+            ur = SystemSetting.query.filter_by(key=usage_key).first()
+            if ur and ur.value:
+                usage_map = json.loads(ur.value) if ur.value else {}
+        except Exception:
+            usage_map = {}
+        try:
+            rlist = SystemSetting.query.filter_by(key='REMOVE_BG_LIST').first()
+            if rlist and rlist.value:
+                import json
+                arr = json.loads(rlist.value)
+                if isinstance(arr, list):
+                    for it in arr:
+                        api_key = str(it.get('api_key') or '')
+                        url = str(it.get('api_url') or '')
+                        tag = str(it.get('tag') or '')
+                        mk = ('*' * max(0, len(api_key) - 4)) + (api_key[-4:] if api_key else '')
+                        mu = url
+                        rem = 50
+                        try:
+                            ident = hashlib.sha1((api_key or '').encode('utf-8')).hexdigest()
+                            used = int((usage_map.get(ident) or 0) or 0)
+                            rem = max(0, 50 - used)
+                        except Exception:
+                            rem = 50
+                        remove_list.append({'api_key_masked': mk, 'api_url': mu, 'tag': tag, 'api_key': api_key, 'remaining_quota': rem})
+        except Exception:
+            pass
+        try:
+            alist = SystemSetting.query.filter_by(key='ALIYUN_LIST').first()
+            if alist and alist.value:
+                import json
+                arr = json.loads(alist.value)
+                if isinstance(arr, list):
+                    for it in arr:
+                        api_key = str(it.get('api_key') or '')
+                        base_url = str(it.get('base_url') or '')
+                        model = str(it.get('model') or '')
+                        tag = str(it.get('tag') or '')
+                        mk = ('*' * max(0, len(api_key) - 4)) + (api_key[-4:] if api_key else '')
+                        aliyun_list.append({'api_key_masked': mk, 'base_url': base_url, 'model': model, 'tag': tag, 'api_key': api_key})
+        except Exception:
+            pass
+        return success_response({'configs': items, 'lists': {'remove_bg_list': remove_list, 'aliyun_list': aliyun_list}})
+    except Exception as e:
+        return error_response(f'获取API配置失败: {str(e)}')
+
+
+@admin_bp.route('/api-configs', methods=['PUT'])
+@login_required
+def update_api_configs():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        body = request.get_json() or {}
+        mapping = {
+            'remove_bg_api_key': 'REMOVE_BG_API_KEY',
+            'remove_bg_api_url': 'REMOVE_BG_API_URL',
+            'aliyun_api_key': 'ALIYUN_API_KEY',
+            'aliyun_base_url': 'ALIYUN_BASE_URL',
+            'aliyun_model': 'ALIYUN_MODEL'
+        }
+        updated = {}
+        for field, key in mapping.items():
+            if field in body:
+                val = body.get(field) or ''
+                row = SystemSetting.query.filter_by(key=key).first()
+                if not row:
+                    row = SystemSetting(key=key, value=val)
+                    db.session.add(row)
+                else:
+                    row.value = val
+                updated[key] = bool(val)
+        try:
+            import json
+            if isinstance(body.get('remove_bg_list'), list):
+                val = json.dumps(body.get('remove_bg_list'), ensure_ascii=False)
+                row = SystemSetting.query.filter_by(key='REMOVE_BG_LIST').first()
+                if not row:
+                    row = SystemSetting(key='REMOVE_BG_LIST', value=val)
+                    db.session.add(row)
+                else:
+                    row.value = val
+                updated['REMOVE_BG_LIST'] = True
+            if isinstance(body.get('aliyun_list'), list):
+                val = json.dumps(body.get('aliyun_list'), ensure_ascii=False)
+                row = SystemSetting.query.filter_by(key='ALIYUN_LIST').first()
+                if not row:
+                    row = SystemSetting(key='ALIYUN_LIST', value=val)
+                    db.session.add(row)
+                else:
+                    row.value = val
+                updated['ALIYUN_LIST'] = True
+        except Exception:
+            pass
+        db.session.commit()
+
+        # 即时更新运行时配置（若存在对应键）
+        try:
+            from flask import current_app
+            for k, is_set in updated.items():
+                if is_set:
+                    row = SystemSetting.query.filter_by(key=k).first()
+                    if row:
+                        current_app.config[k] = row.value
+        except Exception:
+            pass
+
+        return success_response({'updated': updated}, 'API配置已更新')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新API配置失败: {str(e)}')

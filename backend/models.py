@@ -409,6 +409,17 @@ class Announcement(db.Model):
     # 关系
     creator = db.relationship('User', backref='announcements', lazy=True)
 
+class SystemSetting(db.Model):
+    __tablename__ = 'system_settings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('key', name='unique_system_setting_key'),)
+
 class ParrotTransferCode(db.Model):
     __tablename__ = 'parrot_transfer_codes'
 

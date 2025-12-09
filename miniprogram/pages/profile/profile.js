@@ -109,6 +109,15 @@ Page({
     wx.navigateTo({ url: '/pages/admin/announcements/announcements' })
   },
 
+  goAdminApiConfigs() {
+    try {
+      const userInfo = this.data.userInfo || app.globalData.userInfo || {}
+      const role = String(userInfo.role || '')
+      if (role !== 'super_admin') { app.showError && app.showError('仅超级管理员可进入'); return }
+      wx.navigateTo({ url: '/pages/admin/api-configs/api-configs' })
+    } catch(_) { wx.navigateTo({ url: '/pages/admin/api-configs/api-configs' }) }
+  },
+
   goAdminParrotSpecies() {
     try {
       const userInfo = this.data.userInfo || app.globalData.userInfo || {}
@@ -120,6 +129,10 @@ Page({
 
   goAnnouncementsCenter() {
     wx.navigateTo({ url: '/pages/announcements/center/center' })
+  },
+
+  goAdminHome() {
+    wx.navigateTo({ url: '/pages/admin/index/index' })
   },
 
   onLoad() {

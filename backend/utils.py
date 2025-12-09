@@ -115,32 +115,90 @@ def remove_background(image_path):
     """调用 remove.bg API 移除图片背景，并自动裁剪空白区域"""
     try:
         from flask import current_app
-        api_key = current_app.config.get('REMOVE_BG_API_KEY')
-        if not api_key:
+        from models import SystemSetting, db
+        import hashlib
+        from datetime import datetime
+        providers = []
+        try:
+            rlist = SystemSetting.query.filter_by(key='REMOVE_BG_LIST').first()
+            if rlist and rlist.value:
+                import json
+                arr = json.loads(rlist.value)
+                if isinstance(arr, list):
+                    for it in arr:
+                        providers.append({
+                            'api_key': str((it or {}).get('api_key') or ''),
+                            'api_url': str((it or {}).get('api_url') or '') or 'https://api.remove.bg/v1.0/removebg'
+                        })
+        except Exception:
+            providers = []
+        if not providers:
+            api_key = current_app.config.get('REMOVE_BG_API_KEY')
+            api_url = current_app.config.get('REMOVE_BG_API_URL') or 'https://api.remove.bg/v1.0/removebg'
+            if not api_key:
+                try:
+                    row = SystemSetting.query.filter_by(key='REMOVE_BG_API_KEY').first()
+                    url_row = SystemSetting.query.filter_by(key='REMOVE_BG_API_URL').first()
+                    api_key = (row.value if row and row.value else '')
+                    api_url = (url_row.value if url_row and url_row.value else api_url)
+                except Exception:
+                    api_key = ''
+            if api_key:
+                providers = [{ 'api_key': api_key, 'api_url': api_url }]
+        if not providers:
             return None
-            
-        response = requests.post(
-            'https://api.remove.bg/v1.0/removebg',
-            files={'image_file': open(image_path, 'rb')},
-            data={'size': 'auto'},
-            headers={'X-Api-Key': api_key},
-        )
-        if response.status_code == 200:
-            # 保存处理后的图片
-            processed_filename = image_path.replace('.', '_processed.')
-            with open(processed_filename, 'wb') as f:
-                f.write(response.content)
-            
-            # 自动裁剪空白区域
-            cropped_filename = auto_crop_image(processed_filename)
-            
-            # 如果裁剪成功，返回裁剪后的文件，否则返回处理后的文件
-            if cropped_filename and cropped_filename != processed_filename:
-                # 删除未裁剪的中间文件
-                if os.path.exists(processed_filename):
-                    os.remove(processed_filename)
-                return cropped_filename
-            return processed_filename
+        last_err = None
+        for p in providers:
+            k = p.get('api_key')
+            u = p.get('api_url') or 'https://api.remove.bg/v1.0/removebg'
+            if not k:
+                continue
+            try:
+                resp = requests.post(
+                    u,
+                    files={'image_file': open(image_path, 'rb')},
+                    data={'size': 'auto'},
+                    headers={'X-Api-Key': k},
+                    timeout=30
+                )
+                if resp.status_code == 200:
+                    processed_filename = image_path.replace('.', '_processed.')
+                    with open(processed_filename, 'wb') as f:
+                        f.write(resp.content)
+                    cropped_filename = auto_crop_image(processed_filename)
+                    out = processed_filename
+                    if cropped_filename and cropped_filename != processed_filename:
+                        if os.path.exists(processed_filename):
+                            os.remove(processed_filename)
+                        out = cropped_filename
+                    try:
+                        ident = hashlib.sha1((k or '').encode('utf-8')).hexdigest()
+                        ym = datetime.now().strftime('%Y%m')
+                        usage_key = f'REMOVE_BG_USAGE_{ym}'
+                        row = SystemSetting.query.filter_by(key=usage_key).first()
+                        import json
+                        data = {}
+                        if row and (row.value or '').strip():
+                            try:
+                                data = json.loads(row.value)
+                            except Exception:
+                                data = {}
+                        cnt = int((data.get(ident) or 0) or 0) + 1
+                        data[ident] = cnt
+                        val = json.dumps(data, ensure_ascii=False)
+                        if not row:
+                            row = SystemSetting(key=usage_key, value=val)
+                            db.session.add(row)
+                        else:
+                            row.value = val
+                        db.session.commit()
+                    except Exception:
+                        pass
+                    return out
+                last_err = f'status={resp.status_code}'
+            except Exception as e:
+                last_err = str(e)
+                continue
         return None
     except Exception as e:
         print(f"背景移除失败: {e}")

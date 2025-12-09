@@ -1,0 +1,94 @@
+<view class="page-container">
+  <app-header title="后台管理" subtitle="系统与内容维护" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">仅超级管理员可访问该页面</view>
+    </block>
+    <block wx:else>
+      <view class="menu-card">
+        <view class="section-title">
+          <image class="section-icon-img" src="/images/remix/settings-3-line.png" mode="aspectFit" />
+          <text>后台管理</text>
+        </view>
+        <view class="menu-list">
+          <view class="menu-item" bindtap="goAdminFeedbacks">
+            <view class="menu-item-icon bg-amber">
+              <image class="menu-item-icon-img" src="/images/remix/feedback-line.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">反馈管理</view>
+              <view class="menu-item-desc">查看与处理用户反馈</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+
+          <view class="menu-item" bindtap="goAdminCareGuideEditor">
+            <view class="menu-item-icon bg-green">
+              <image class="menu-item-icon-img" src="/images/remix/edit-line.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">护理指南编辑</view>
+              <view class="menu-item-desc">编辑护理指南配置</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+
+          <view class="menu-item" bindtap="goAdminIncubationSuggestions">
+            <view class="menu-item-icon bg-purple">
+              <image class="menu-item-icon-img" src="/images/remix/edit-line.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">孵化建议管理</view>
+              <view class="menu-item-desc">按品种编辑孵化建议</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+
+          <view class="menu-item" bindtap="goAdminParrotSpecies">
+            <view class="menu-item-icon bg-green">
+              <image class="menu-item-icon-img" src="/images/remix/edit-line.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">鹦鹉品种管理</view>
+              <view class="menu-item-desc">维护品种信息与养护难度</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+
+          <view class="menu-item" bindtap="goAdminUserRole">
+            <view class="menu-item-icon bg-gray">
+              <image class="menu-item-icon-img" src="/images/remix/user-line.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">用户与角色管理</view>
+              <view class="menu-item-desc">查看用户、分配或调整角色</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+
+          <view class="menu-item" bindtap="goAdminAnnouncements">
+            <view class="menu-item-icon bg-indigo">
+              <image class="menu-item-icon-img" src="/images/remix/information-line.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">系统公告发布</view>
+              <view class="menu-item-desc">创建公告、设置投放范围与时效</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+
+          <view class="menu-item" bindtap="goAdminApiConfigs">
+            <view class="menu-item-icon bg-gray">
+              <image class="menu-item-icon-img" src="/images/remix/settings-3-line.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">全局API管理</view>
+              <view class="menu-item-desc">配置移除背景与大模型API</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

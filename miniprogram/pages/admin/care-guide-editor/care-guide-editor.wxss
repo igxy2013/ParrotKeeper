@@ -4,5 +4,8 @@
 .tips { font-size: 24rpx; color: #6b7280; margin-bottom: 10rpx; }
 .editor { width: 100%; min-height: 500rpx; background: #fff; border: 1rpx solid #e5e7eb; border-radius: 16rpx; padding: 20rpx; font-size: 26rpx; color: #111827; }
 .actions { margin-top: 16rpx; display: flex; gap: 16rpx; }
-.btn-primary { background-color: #10b981; color: #fff; border: none; }
-.btn-secondary { background-color: #e5e7eb; color: #111827; border: none; }
+.btn { height: 96rpx; border-radius: 48rpx; display: flex; align-items: center; justify-content: center; padding: 0 32rpx; font-size: 32rpx; font-weight: 600; box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.25); }
+button.btn::after { border: none; }
+.btn-primary { background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%); color: #fff; border: none; }
+.btn-secondary { background: #e5e7eb; color: #111827; border: none; box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08); }
+.btn:active { transform: translateY(2rpx) scale(0.98); }

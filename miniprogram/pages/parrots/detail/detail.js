@@ -193,7 +193,7 @@ Page({
       console.error('抠图失败:', e);
       wx.showModal({
         title: '温馨提示',
-        content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+        content: '本月AI免费抠图名额已耗尽，请下个月再来试试吧！',
         showCancel: false
       })
     } finally {
