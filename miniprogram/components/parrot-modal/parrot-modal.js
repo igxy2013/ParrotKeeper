@@ -264,7 +264,7 @@ Component({
         console.error('抠图失败:', e)
         wx.showModal({
           title: '温馨提示',
-          content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
+          content: '本月AI免费抠图名额已耗尽，请下个月再来试试吧！',
           showCancel: false
         })
       } finally {
@@ -292,7 +292,7 @@ Component({
       if (this.data.mode !== 'edit' && this.data.createMode === 'claim') {
         const code = (this.data.claimCode || '').trim()
         if (!code || code.length !== 8) {
-          app.showError('请输入 8 位过户码')
+          app.showError('请输入8位过户码')
           return
         }
         const payload = { id: '', data: { code }, mode: 'claim' }
