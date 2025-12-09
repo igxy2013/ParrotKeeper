@@ -4,6 +4,7 @@ const app = getApp()
 Page({
   data: {
     parrots: [],
+    displayParrots: [],
     speciesList: [],
     speciesPickerRange: ['全部品种'],
     loading: false,
@@ -25,6 +26,7 @@ Page({
     // 性别统计
     maleCount: 0,
     femaleCount: 0,
+    activeGenderFilter: '',
     
     // 筛选和排序相关
     showSpeciesModal: false,
@@ -332,6 +334,8 @@ Page({
           femaleCount
         })
 
+        this.applyGenderFilter()
+
         // 异步填充每只鹦鹉的“最近喂食时间”文本
         this.updateLastFeedForParrots(updatedParrots)
         
@@ -362,6 +366,23 @@ Page({
   // 执行搜索
   onSearch() {
     this.refreshData()
+  },
+
+  onOverviewFilterTap(e) {
+    const filter = e.currentTarget.dataset.filter || ''
+    this.setData({ activeGenderFilter: filter })
+    this.applyGenderFilter()
+  },
+
+  applyGenderFilter() {
+    const list = Array.isArray(this.data.parrots) ? this.data.parrots : []
+    let display = list
+    if (this.data.activeGenderFilter === 'male') {
+      display = list.filter(p => p.gender === 'male')
+    } else if (this.data.activeGenderFilter === 'female') {
+      display = list.filter(p => p.gender === 'female')
+    }
+    this.setData({ displayParrots: display })
   },
 
   // 显示品种筛选
@@ -600,6 +621,7 @@ Page({
       return parrot;
     });
     this.setData({ parrots });
+    this.applyGenderFilter()
   },
 
 

@@ -16,19 +16,20 @@
     <view class="stats-content">
       <text class="stats-title">鹦鹉总览</text>
       <view class="stats-grid-overview">
-        <view class="stat-overview-item">
+        <view class="stat-overview-item {{activeGenderFilter === 'all' ? 'active' : ''}}" bindtap="onOverviewFilterTap" data-filter="all">
           <text class="stat-overview-value">{{parrots.length}}</text>
           <text class="stat-overview-label">总数量</text>
         </view>
-        <view class="stat-overview-item">
+        <view class="stat-overview-item {{activeGenderFilter === 'male' ? 'active' : ''}}" bindtap="onOverviewFilterTap" data-filter="male">
           <text class="stat-overview-value">{{maleCount}}</text>
           <text class="stat-overview-label">雄性鹦鹉</text>
         </view>
-        <view class="stat-overview-item">
+        <view class="stat-overview-item {{activeGenderFilter === 'female' ? 'active' : ''}}" bindtap="onOverviewFilterTap" data-filter="female">
           <text class="stat-overview-value">{{femaleCount}}</text>
           <text class="stat-overview-label">雌性鹦鹉</text>
-</view>
-</view>
+        </view>
+      </view>
+    </view>
 
 <!-- 通过过户码添加弹窗 -->
 <view class="modal-overlay" wx:if="{{showClaimByCodeModal}}" bindtap="closeClaimByCodeModal"></view>
@@ -52,7 +53,6 @@
 <!-- 自定义底部导航 -->
 <bottom-nav active="parrots" />
     </view>
-  </view>
 
   <!-- 搜索和筛选 -->
   <view class="search-filter-card">
@@ -90,8 +90,8 @@
   </view>
 
   <!-- 鹦鹉列表 -->
-  <view class="parrot-list" wx:if="{{parrots.length > 0}}">
-    <view class="parrot-card" wx:for="{{parrots}}" wx:key="id" bindtap="viewParrotDetail" data-id="{{item.id}}">
+  <view class="parrot-list" wx:if="{{displayParrots.length > 0}}">
+    <view class="parrot-card" wx:for="{{displayParrots}}" wx:key="id" bindtap="viewParrotDetail" data-id="{{item.id}}">
       <view class="parrot-main">
         <!-- 鹦鹉头像 -->
         <view class="parrot-avatar">
