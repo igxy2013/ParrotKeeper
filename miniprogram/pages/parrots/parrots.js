@@ -673,19 +673,29 @@ Page({
         const last = times.length > 0 ? times[0] : null
         const text = this.computeLastFeedingText(last)
         const idx = (this.data.parrots || []).findIndex(function(item){ return item.id === p.id })
+        const dIdx = (this.data.displayParrots || []).findIndex(function(item){ return item.id === p.id })
+        const setter = {}
         if (idx >= 0) {
-          const key = `parrots[${idx}].last_feed`
-          const setter = {}
-          setter[key] = text
+          setter[`parrots[${idx}].last_feed`] = text
+        }
+        if (dIdx >= 0) {
+          setter[`displayParrots[${dIdx}].last_feed`] = text
+        }
+        if (Object.keys(setter).length > 0) {
           this.setData(setter)
         }
       } catch (e) {
         // 请求失败则保持原样或标记暂无
         const idx = (this.data.parrots || []).findIndex(function(item){ return item.id === p.id })
+        const dIdx = (this.data.displayParrots || []).findIndex(function(item){ return item.id === p.id })
+        const setter = {}
         if (idx >= 0 && !this.data.parrots[idx].last_feed) {
-          const key = `parrots[${idx}].last_feed`
-          const setter = {}
-          setter[key] = '暂无喂食记录'
+          setter[`parrots[${idx}].last_feed`] = '暂无喂食记录'
+        }
+        if (dIdx >= 0 && !(this.data.displayParrots[dIdx] || {}).last_feed) {
+          setter[`displayParrots[${dIdx}].last_feed`] = '暂无喂食记录'
+        }
+        if (Object.keys(setter).length > 0) {
           this.setData(setter)
         }
       }
