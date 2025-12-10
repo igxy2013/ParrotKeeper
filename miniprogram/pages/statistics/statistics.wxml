@@ -82,10 +82,10 @@
           <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.lineChartPurple}}" mode="widthFix" binderror="onStatIconError" data-key="lineChartPurple"/></view>
           <text class="card-title">体重趋势曲线</text>
         </view>
-        <view class="parrot-selector">
+          <view class="parrot-selector">
           <view class="selector-wrapper" bindtap="toggleParrotDropdown">
             <text class="selector-text">{{selectedParrotName || '全部鹦鹉'}}</text>
-            <image class="selector-arrow-img {{showParrotDropdown ? 'rotate' : ''}}" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix"/>
+            <image class="selector-arrow-img {{showParrotDropdown ? 'rotate' : ''}}" src="{{iconPaths.arrowDownGray}}" mode="widthFix"/>
           </view>
           <view class="dropdown-menu {{showParrotDropdown ? 'show' : ''}}">
             <view class="dropdown-item" bindtap="selectWeightParrot" data-id="">

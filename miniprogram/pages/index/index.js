@@ -861,10 +861,10 @@ Page({
         grouped[key] = {
           id: 'feeding_group_' + (record && record.id ? record.id : key),
           type: 'feeding',
-          // 用毫秒时间戳进行排序，避免跨端解析差异
-          timeValue: dt ? String(dt.getTime()) : (time || ''),
-          // 改为绝对时间展示，避免“x小时前”误判
-          timeText: dt ? app.formatDateTime(dt, 'YYYY-MM-DD HH:mm') : (time ? app.formatDateTime(time, 'YYYY-MM-DD HH:mm') : ''),
+          // 统一使用 ISO 字符串，配合 parseServerTime 跨类型一致排序
+          timeValue: dt ? dt.toISOString() : (time || ''),
+          // 与其他类型保持一致，使用相对时间展示
+          timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(time),
           parrot_names: [],
           feed_type_names: []
         }
@@ -889,13 +889,13 @@ Page({
         timeText: item.timeText
       }
     })
-    // 按时间倒序
+    // 按时间倒序（跨端一致：使用 parseServerTime 再取时间戳）
     result.sort(function(a, b){
-      const ta = parseInt(b.timeValue, 10)
-      const tb = parseInt(a.timeValue, 10)
-      const ma = isNaN(ta) ? 0 : ta
-      const mb = isNaN(tb) ? 0 : tb
-      return ma - mb
+      const da = parseServerTime(a.timeValue || a.time)
+      const db = parseServerTime(b.timeValue || b.time)
+      const ma = da ? da.getTime() : 0
+      const mb = db ? db.getTime() : 0
+      return mb - ma
     })
     return result
   },

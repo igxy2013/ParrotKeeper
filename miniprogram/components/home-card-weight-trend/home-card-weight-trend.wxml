@@ -14,9 +14,9 @@
       <view class="parrot-selector" catchtap="toggleParrotDropdown">
         <view class="selector-wrapper">
           <text class="selector-text">{{selectedParrotName || '全部鹦鹉'}}</text>
-          <image class="selector-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.svg" mode="widthFix" />
+          <image class="selector-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="widthFix" />
         </view>
-        <view class="dropdown-menu" wx:if="{{showParrotDropdown}}">
+      <view class="dropdown-menu" wx:if="{{showParrotDropdown}}">
           <view class="dropdown-item" catchtap="selectParrot" data-id="" data-name="">
             <text class="item-text">全部鹦鹉</text>
             <text class="check-icon">{{!selectedParrotId ? '✓' : ''}}</text>
