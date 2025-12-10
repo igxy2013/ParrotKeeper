@@ -114,7 +114,6 @@
       </view>
       <view class="form-actions">
         <button class="btn btn-ai" bindtap="parseWithAI" loading="{{aiParsing}}" disabled="{{aiParsing}}">
-          <image class="btn-icon" src="/images/remix/ri-ai-white.png" />
           <text>一键解析</text>
         </button>
       </view>
