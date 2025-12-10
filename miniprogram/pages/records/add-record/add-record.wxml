@@ -94,30 +94,7 @@
       </view>
     </view>
 
-    <!-- 智能录入（实验） -->
-    <view class="form-section">
-      <view class="section-title">
-        <image class="section-icon" src="/images/remix/ri-edit-line-purple.png" />
-        <text>智能解析</text>
-      </view>
-      
-      <view class="form-item no-border">
-        <textarea 
-          class="form-textarea" 
-          placeholder="示例：今天下午清洁笼子并更换饮水，鹦鹉：小绿、花花。"
-          value="{{aiInputText}}"
-          bindinput="onAIInputChange"
-          maxlength="500"
-          show-confirm-bar="{{false}}"
-        />
-        <view class="char-count">{{aiInputText.length}}/500</view>
-      </view>
-      <view class="form-actions">
-        <button class="btn btn-ai" bindtap="parseWithAI" loading="{{aiParsing}}" disabled="{{aiParsing}}">
-          <text>一键解析</text>
-        </button>
-      </view>
-    </view>
+    
 
     <!-- 喂食记录特有字段 -->
     <view class="form-section" wx:if="{{recordType === 'feeding'}}">
