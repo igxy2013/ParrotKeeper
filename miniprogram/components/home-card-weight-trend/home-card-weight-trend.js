@@ -224,7 +224,7 @@ Component({
         // 折线绘制与填充（平滑曲线），样式与统计页一致
         ctx.lineJoin = 'round'
         ctx.lineCap = 'round'
-        const lineWidth = 3
+        const lineWidth = 2
         for (let si = 0; si < series.length; si++) {
           const s = series[si]
           const rawPoints = (Array.isArray(s.points) ? s.points : [])
@@ -246,10 +246,6 @@ Component({
             points.push({ x, y })
           }
           if (points.length < 2) {
-            // 仅一个点时不填充，仅画点
-            ctx.fillStyle = s.color
-            const p = points[0]
-            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill()
             continue
           }
 
@@ -324,21 +320,7 @@ Component({
           }
           ctx.stroke()
 
-          // 圆点标记
-          ctx.fillStyle = s.color
-          for (let i = 0; i < rawPoints.length; i++) {
-            const xIndex = dates.indexOf(rawPoints[i].date)
-            if (xIndex === -1) continue
-            const x = (dates.length === 1)
-              ? paddingLeft + chartW / 2
-              : paddingLeft + (xIndex / (dates.length - 1)) * chartW
-            const norm = (rawPoints[i].weight - minW) / (maxW - minW)
-            if (!isFinite(norm) || isNaN(norm)) continue
-            const y = paddingTop + (1 - norm) * chartH
-            ctx.beginPath()
-            ctx.arc(x, y, 3, 0, Math.PI * 2)
-            ctx.fill()
-          }
+          
         }
       })
     }

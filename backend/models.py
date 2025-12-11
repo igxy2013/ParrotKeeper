@@ -39,6 +39,7 @@ class ParrotSpecies(db.Model):
     avg_lifespan = db.Column(db.Integer)
     avg_size = db.Column(db.String(50))
     care_level = db.Column(db.Enum('easy', 'medium', 'hard'), default='medium')
+    reference_weight_g = db.Column(db.Numeric(6, 2))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 关系

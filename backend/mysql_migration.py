@@ -15,6 +15,20 @@ def migrate_database():
     with app.app_context():
         try:
             print("开始MySQL数据库迁移...")
+            print("检查 parrot_species 表的参考体重字段...")
+            result = db.session.execute(text("""
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'parrot_species' 
+                AND COLUMN_NAME = 'reference_weight_g'
+            """)).fetchone()
+            if not result:
+                print("为 parrot_species 表添加 reference_weight_g 字段...")
+                db.session.execute(text("""
+                    ALTER TABLE parrot_species 
+                    ADD COLUMN reference_weight_g DECIMAL(6,2) NULL
+                """))
             
             # 检查并添加 feeding_records 表的 created_by_user_id 字段
             print("检查 feeding_records 表...")

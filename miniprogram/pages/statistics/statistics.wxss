@@ -443,6 +443,11 @@
   padding: 20rpx 0;
 }
 
+/* 体重趋势图：扩大可视宽度，降低与卡片的左右边距 */
+.weight-chart-container {
+  margin: 0 -24rpx;
+}
+
 .chart-placeholder {
   display: flex;
   flex-direction: column;
@@ -500,6 +505,10 @@
   font-weight: 700;
   color: #1f2937;
 }
+ .meta-value + .meta-value {
+   font-weight: 600;
+   color: #6b7280;
+ }
 
 .chart-item {
   display: flex;

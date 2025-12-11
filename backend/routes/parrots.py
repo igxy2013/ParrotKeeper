@@ -40,7 +40,8 @@ def create_species():
             description=data.get('description'),
             avg_lifespan=avg_lifespan,
             avg_size=avg_size,
-            care_level=care_level
+            care_level=care_level,
+            reference_weight_g=data.get('reference_weight_g')
         )
         db.session.add(species)
         db.session.commit()
@@ -77,6 +78,8 @@ def update_species(species_id):
             if care_level not in ['easy', 'medium', 'hard']:
                 return error_response('养护难度取值无效')
             species.care_level = care_level
+        if 'reference_weight_g' in data:
+            species.reference_weight_g = data.get('reference_weight_g')
         db.session.commit()
         from schemas import ParrotSpeciesSchema
         return success_response(ParrotSpeciesSchema().dump(species), '更新成功')

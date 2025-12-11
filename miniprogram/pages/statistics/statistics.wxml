@@ -102,7 +102,7 @@
           <text>全屏</text>
         </view>
       </view>
-      <view class="card-content">
+      <view class="card-content" bindtap="closeWeightHoverLabel">
         <block wx:if="{{weightSeries.length > 0}}">
           <view class="legend-container" wx:if="{{weightLegend.length > 0}}">
             <view class="legend-item" wx:for="{{weightLegend}}" wx:key="parrot_id">
@@ -114,9 +114,11 @@
           <view class="chart-meta">
             <text class="meta-label">平均体重</text>
             <text class="meta-value">{{weightAvgChart || '--'}}</text>
+            <text class="meta-label" wx:if="{{weightRefChart}}">参考体重</text>
+            <text class="meta-value" wx:if="{{weightRefChart}}">{{weightRefChart}}</text>
           </view>
           <view class="weight-chart-container">
-            <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;" bindtouchstart="onWeightTouchStart" bindtouchmove="onWeightTouchMove" bindtouchend="onWeightTouchEnd"></canvas>
+            <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;" bindtouchstart="onWeightTouchStart" bindtouchmove="onWeightTouchMove" bindtouchend="onWeightTouchEnd" catchtap="preventBubble"></canvas>
           </view>
           <!-- 自定义时间范围滑块 -->
           <view class="weight-range-control" wx:if="{{weightRangeDates.length > 1}}">

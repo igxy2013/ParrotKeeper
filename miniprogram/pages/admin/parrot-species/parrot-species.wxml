@@ -36,6 +36,10 @@
               <text class="kv-label">体型</text>
               <text class="kv-value">{{item.avg_size}}</text>
             </view>
+            <view class="kv-row" wx:if="{{item.reference_weight_g}}">
+              <text class="kv-label">参考体重</text>
+              <text class="kv-value">{{item.reference_weight_g}} g</text>
+            </view>
             <view class="badge-group">
               <text class="badge difficulty {{item.care_level}}">养护难度：{{item.care_level === 'easy' ? '容易' : item.care_level === 'hard' ? '困难' : '一般'}}</text>
             </view>
@@ -72,6 +76,10 @@
               <text class="form-label">体型</text>
               <input class="text-input" placeholder="如：15cm" value="{{form.avg_size}}" bindinput="onFormInput" data-field="avg_size" />
             </view>
+          </view>
+          <view class="form-item">
+            <text class="form-label">参考体重(g)</text>
+            <input class="text-input" type="number" placeholder="如：35" value="{{form.reference_weight_g}}" bindinput="onFormInput" data-field="reference_weight_g" />
           </view>
           <view class="form-item">
             <text class="form-label">养护难度</text>

@@ -8,7 +8,7 @@ Page({
     showModal: false,
     modalTitle: '新增品种',
     editingId: null,
-    form: { name: '', description: '', avg_lifespan: '', avg_size: '', care_level: 'medium' },
+    form: { name: '', description: '', avg_lifespan: '', avg_size: '', care_level: 'medium', reference_weight_g: '' },
     careLevels: ['容易', '一般', '困难'],
     careLevelIndex: 1
   },
@@ -42,7 +42,7 @@ Page({
       showModal: true,
       modalTitle: '新增品种',
       editingId: null,
-      form: { name: '', description: '', avg_lifespan: '', avg_size: '', care_level: 'medium' },
+      form: { name: '', description: '', avg_lifespan: '', avg_size: '', care_level: 'medium', reference_weight_g: '' },
       careLevelIndex: 1
     })
   },
@@ -61,7 +61,8 @@ Page({
         description: item.description || '',
         avg_lifespan: item.avg_lifespan || '',
         avg_size: item.avg_size || '',
-        care_level: item.care_level || 'medium'
+        care_level: item.care_level || 'medium',
+        reference_weight_g: (item.reference_weight_g != null ? String(item.reference_weight_g) : '')
       },
       careLevelIndex: careMap[item.care_level || 'medium']
     })
@@ -92,7 +93,8 @@ Page({
       description: (f.description || '').trim(),
       avg_lifespan: f.avg_lifespan ? Number(f.avg_lifespan) : null,
       avg_size: (f.avg_size || '').trim(),
-      care_level: f.care_level || 'medium'
+      care_level: f.care_level || 'medium',
+      reference_weight_g: f.reference_weight_g ? Number(f.reference_weight_g) : null
     }
     try {
       let res

@@ -527,6 +527,7 @@ def get_weight_trends():
             HealthRecord.parrot_id.label('parrot_id'),
             Parrot.name.label('parrot_name'),
             ParrotSpecies.name.label('species_name'),
+            ParrotSpecies.reference_weight_g.label('species_ref_weight_g'),
             func.date(HealthRecord.record_date).label('date'),
             func.avg(HealthRecord.weight).label('avg_weight')
         ).join(Parrot, HealthRecord.parrot_id == Parrot.id).outerjoin(ParrotSpecies, Parrot.species_id == ParrotSpecies.id).filter(
@@ -553,6 +554,7 @@ def get_weight_trends():
                     'parrot_id': pid,
                     'parrot_name': r.parrot_name,
                     'species_name': r.species_name,
+                    'species_ref_weight_g': float(r.species_ref_weight_g) if r.species_ref_weight_g is not None else None,
                     'points': []
                 }
             series_map[pid]['points'].append({
