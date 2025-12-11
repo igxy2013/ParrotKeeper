@@ -88,11 +88,11 @@
             <image class="selector-arrow-img {{showParrotDropdown ? 'rotate' : ''}}" src="{{iconPaths.arrowDownGray}}" mode="widthFix"/>
           </view>
           <view class="dropdown-menu {{showParrotDropdown ? 'show' : ''}}">
-            <view class="dropdown-item" bindtap="selectWeightParrot" data-id="">
+            <view class="dropdown-item" catchtap="selectWeightParrot" data-id="">
               <text>全部鹦鹉</text>
               <text class="check-icon">{{!selectedParrotId ? '✓' : ''}}</text>
             </view>
-            <view class="dropdown-item" wx:for="{{weightSeries}}" wx:key="parrot_id" bindtap="selectWeightParrot" data-id="{{item.parrot_id}}">
+            <view class="dropdown-item" wx:for="{{weightSeries}}" wx:key="parrot_id" catchtap="selectWeightParrot" data-id="{{item.parrot_id}}">
               <text>{{item.parrot_name}}</text>
               <text class="check-icon">{{selectedParrotId == item.parrot_id ? '✓' : ''}}</text>
             </view>
@@ -116,7 +116,7 @@
             <text class="meta-value">{{weightAvgChart || '--'}}</text>
           </view>
           <view class="weight-chart-container">
-            <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;" bindtouchstart="onWeightCanvasTap"></canvas>
+            <canvas type="2d" id="weightCanvas" style="width: 100%; height: 280rpx;" bindtouchstart="onWeightTouchStart" bindtouchmove="onWeightTouchMove" bindtouchend="onWeightTouchEnd"></canvas>
           </view>
           <!-- 自定义时间范围滑块 -->
           <view class="weight-range-control" wx:if="{{weightRangeDates.length > 1}}">

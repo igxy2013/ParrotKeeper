@@ -16,7 +16,7 @@
           <text class="selector-text">{{selectedParrotName || '全部鹦鹉'}}</text>
           <image class="selector-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="widthFix" />
         </view>
-      <view class="dropdown-menu" wx:if="{{showParrotDropdown}}">
+      <scroll-view class="dropdown-menu dropdown-scroll" wx:if="{{showParrotDropdown}}" scroll-y="true">
           <view class="dropdown-item" catchtap="selectParrot" data-id="" data-name="">
             <text class="item-text">全部鹦鹉</text>
             <text class="check-icon">{{!selectedParrotId ? '✓' : ''}}</text>
@@ -25,7 +25,7 @@
             <text class="item-text">{{item.parrot_name}}</text>
             <text class="check-icon">{{selectedParrotId == item.parrot_id ? '✓' : ''}}</text>
           </view>
-        </view>
+        </scroll-view>
       </view>
     </view>
   </view>

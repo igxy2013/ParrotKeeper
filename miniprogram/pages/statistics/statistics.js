@@ -1264,7 +1264,7 @@ const app = getApp()
 
       // 计算当前显示范围的平均体重并展示
       const sumW = weights.reduce((s, v) => s + (typeof v === 'number' && !isNaN(v) ? v : 0), 0)
-      const avgWStr = weights.length > 0 ? (Math.round(sumW / weights.length) + 'g') : '--'
+      const avgWStr = weights.length > 0 ? ((sumW / weights.length).toFixed(1) + 'g') : '--'
       this.setData({ weightAvgChart: avgWStr })
   
       // 内边距（为坐标轴标签预留空间）
@@ -1323,7 +1323,7 @@ const app = getApp()
               ctx.lineTo(width - paddingRight, yRef)
               ctx.stroke()
               ctx.restore()
-              const label = `体重参考线: ${Math.round(ref)}g`
+              const label = `体重参考线: ${ref.toFixed(1)}g`
               ctx.save()
               ctx.font = '12px sans-serif'
               ctx.fillStyle = '#7c3aed'
@@ -1596,7 +1596,7 @@ const app = getApp()
         ctx.restore()
 
         // 绘制标签背景与文字（显示体重值）
-        const label = (typeof active.weight === 'number' && !isNaN(active.weight)) ? (Math.round(active.weight) + 'g') : '--'
+        const label = (typeof active.weight === 'number' && !isNaN(active.weight)) ? (active.weight.toFixed(1) + 'g') : '--'
         ctx.font = '12px sans-serif'
         const textW = ctx.measureText(label).width
         const paddingX = 6
@@ -1691,6 +1691,60 @@ const app = getApp()
         })
       }
     })
+  },
+
+  // 单指左右滑动：按手势平移当前选择的时间窗口
+  onWeightTouchStart(e) {
+    const t = (e && e.touches && e.touches[0]) || (e && e.changedTouches && e.changedTouches[0]) || null
+    const x = t ? (typeof t.x === 'number' ? t.x : (typeof t.pageX === 'number' ? t.pageX : (typeof t.clientX === 'number' ? t.clientX : 0))) : 0
+    this._panStartX = x
+    this._panLastX = x
+    this._panMoved = false
+  },
+  onWeightTouchMove(e) {
+    const t = (e && e.touches && e.touches[0]) || null
+    if (!t) return
+    const x = (typeof t.x === 'number') ? t.x : (typeof t.pageX === 'number' ? t.pageX : (typeof t.clientX === 'number' ? t.clientX : 0))
+    const dx = x - (this._panLastX || x)
+    if (Math.abs(dx) <= 0) return
+    this._panMoved = true
+    this._panLastX = x
+    this._panShiftByPixels(dx)
+  },
+  onWeightTouchEnd(e) {
+    // 若未产生显著位移，按点击处理以显示点标签
+    const moved = !!this._panMoved
+    this._panStartX = null
+    this._panLastX = null
+    this._panMoved = false
+    if (!moved) {
+      this.onWeightCanvasTap(e)
+    }
+  },
+  _panShiftByPixels(dx) {
+    const dates = this.data.weightRangeDates || []
+    if (!dates.length) return
+    const rect = this.weightCanvasRect || { width: 300 }
+    // 与绘图一致的左右内边距
+    const chartW = (rect.width || 300) - 48 - 18
+    const stepPx = chartW / Math.max(1, (dates.length - 1))
+    if (stepPx <= 0) return
+    const rawShift = Math.round(dx / stepPx)
+    if (rawShift === 0) return
+    // 手指向左移动（dx<0）视为向后移动日期窗口（索引增大）
+    const shift = -rawShift
+    const windowSize = Math.max(0, this.data.weightEndIndex - this.data.weightStartIndex)
+    let startIdx = this.data.weightStartIndex + shift
+    startIdx = Math.max(0, Math.min(startIdx, Math.max(0, dates.length - 1 - windowSize)))
+    let endIdx = startIdx + windowSize
+    endIdx = Math.max(startIdx, Math.min(endIdx, Math.max(0, dates.length - 1)))
+    this.setData({
+      weightStartIndex: startIdx,
+      weightEndIndex: endIdx,
+      weightStartDate: dates[startIdx] || '',
+      weightEndDate: dates[endIdx] || ''
+    })
+    this.drawWeightChart()
   },
 
   onLoad() {
