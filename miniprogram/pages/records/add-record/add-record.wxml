@@ -1,7 +1,7 @@
 <!--pages/records/add-record/add-record.wxml-->
 <view class="page-container" bindtouchstart="touchStart" bindtouchend="touchEnd">
   <!-- 使用项目通用顶部导航组件 -->
-  <app-header title="{{(recordId ? '编辑' : '添加') + (recordType === 'feeding' ? '喂食' : recordType === 'cleaning' ? '清洁' : recordType === 'health' ? '健康' : recordType === 'breeding' ? '繁殖' : '') + '记录'}}" subtitle="记录鹦鹉的日常护理" showBack="{{true}}" theme="blue">
+  <app-header title="{{(recordId ? '编辑' : '添加') + (recordType === 'feeding' ? '喂食' : recordType === 'cleaning' ? '清洁' : recordType === 'health' ? '健康' : recordType === 'breeding' ? '繁殖' : '') + '记录'}}" subtitle="记录鹦鹉的日常护理" showBack="{{true}}" theme="{{navTheme}}">
   </app-header>
 
   <view class="form-content">
@@ -164,20 +164,28 @@
       
       <view class="form-item">
         <text class="form-label">清洁描述</text>
-        <textarea 
-          class="form-textarea" 
-          placeholder="请输入清洁的详细描述" 
-          value="{{formData.description}}"
-          bindinput="onInputChange"
-          data-field="description"
-          maxlength="500"
-        />
+        <block wx:if="{{!showCleaningTypeModal && !showFeedTypeModal && !showParrotModal && !showMaleParrotModal && !showFemaleParrotModal && !showHealthStatusModal}}">
+          <textarea 
+            class="form-textarea" 
+            placeholder="请输入清洁的详细描述" 
+            value="{{formData.description}}"
+            bindinput="onInputChange"
+            data-field="description"
+            maxlength="500"
+          />
+        </block>
+        <view wx:else class="form-textarea" style="color: {{formData.description ? '#111827' : '#9ca3af'}};">
+          {{formData.description || '请输入清洁的详细描述'}}
+        </view>
       </view>
     </view>
 
     <!-- 健康检查特有字段 -->
     <view class="form-section" wx:if="{{recordType === 'health'}}">
-      <view class="section-title">健康详情</view>
+      <view class="section-title">
+        <image class="section-icon" src="/images/remix/ri-heart-fill-purple.png" />
+        <text>健康详情</text>
+      </view>
       
       <view class="form-item">
         <text class="form-label">体重 (g)</text>
@@ -369,15 +377,20 @@
       
       <view class="form-item">
         <text class="form-label">备注</text>
-        <textarea 
-          class="form-textarea" 
-          placeholder="请输入备注信息（可选）" 
-          value="{{formData.notes}}"
-          bindinput="onInputChange"
-          data-field="notes"
-          maxlength="500"
-          show-confirm-bar="{{false}}"
-        />
+        <block wx:if="{{!showCleaningTypeModal && !showFeedTypeModal && !showParrotModal && !showMaleParrotModal && !showFemaleParrotModal && !showHealthStatusModal}}">
+          <textarea 
+            class="form-textarea" 
+            placeholder="请输入备注信息（可选）" 
+            value="{{formData.notes}}"
+            bindinput="onInputChange"
+            data-field="notes"
+            maxlength="500"
+            show-confirm-bar="{{false}}"
+          />
+        </block>
+        <view wx:else class="form-textarea" style="color: {{formData.notes ? '#111827' : '#9ca3af'}};">
+          {{formData.notes || '请输入备注信息（可选）'}}
+        </view>
         <view class="char-count">{{formData.notes.length}}/500</view>
       </view>
     </view>
@@ -397,13 +410,13 @@
 </view>
 
 <!-- 鹦鹉选择弹窗 -->
-<view class="modal-overlay" wx:if="{{showParrotModal}}" bindtap="hideParrotPicker">
-  <view class="modal-content" catchtap="stopPropagation">
+<view class="modal-overlay bottom-sheet" wx:if="{{showParrotModal}}" bindtap="hideParrotPicker" catchtouchmove="preventTouchMove">
+  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">选择鹦鹉</text>
       <view class="modal-close" bindtap="hideParrotPicker">×</view>
     </view>
-    <view class="modal-body">
+    <scroll-view scroll-y="true" class="modal-body">
       <!-- 健康记录：单选 -->
       <radio-group wx:if="{{recordType === 'health'}}" bindchange="onParrotRadioChange">
         <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
@@ -459,7 +472,7 @@
           </view>
         </label>
       </checkbox-group>
-    </view>
+    </scroll-view>
     <view class="modal-footer" wx:if="{{recordType !== 'health'}}">
       <button class="confirm-btn" bindtap="confirmParrotSelection">确定</button>
     </view>
@@ -467,21 +480,25 @@
 </view>
 
 <!-- 清洁类型选择器模态框 -->
-<view class="modal-overlay" wx:if="{{showCleaningTypeModal}}" bindtap="hideCleaningTypePicker">
-  <view class="modal-content" catchtap="stopPropagation">
+<view class="modal-overlay bottom-sheet" wx:if="{{showCleaningTypeModal}}" bindtap="hideCleaningTypePicker" catchtouchmove="preventTouchMove">
+  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">选择清洁类型</text>
-      <text class="modal-close" bindtap="hideCleaningTypePicker">×</text>
+      <view class="modal-close" bindtap="hideCleaningTypePicker">×</view>
     </view>
-    <view class="modal-body">
-      <checkbox-group bindchange="onCleaningTypeChange">
-        <label class="cleaning-type-item" wx:for="{{cleaningTypeList}}" wx:key="id">
-          <text class="cleaning-type-name">{{item.name}}</text>
-          <checkbox class="cleaning-checkbox" value="{{item.id}}" checked="{{item.selected}}" />
-          <image class="check-icon-img" wx:if="{{item.selected}}" src="{{checkIconSrc}}" mode="aspectFit" />
+    <scroll-view scroll-y="true" class="modal-body">
+      <checkbox-group class="cleaning-type-grid" bindchange="onCleaningTypeChange">
+        <label class="cleaning-type-item {{item.selected ? 'selected' : ''}}" wx:for="{{cleaningTypeList}}" wx:key="id">
+          <view class="cleaning-content">
+            <text class="cleaning-type-name">{{item.name}}</text>
+          </view>
+          <view class="checkbox-wrapper">
+             <checkbox class="cleaning-checkbox" value="{{item.id}}" checked="{{item.selected}}" />
+             <image class="check-icon-img" wx:if="{{item.selected}}" src="{{checkIconSrc}}" mode="aspectFit" />
+          </view>
         </label>
       </checkbox-group>
-    </view>
+    </scroll-view>
     <view class="modal-footer">
       <button class="confirm-btn" bindtap="confirmCleaningTypeSelection">确定</button>
     </view>
@@ -489,31 +506,36 @@
 </view>
 
 <!-- 食物类型选择器模态框 -->
-<view class="modal-overlay" wx:if="{{showFeedTypeModal}}" bindtap="hideFeedTypePicker">
-  <view class="modal-content" catchtap="stopPropagation">
+<view class="modal-overlay bottom-sheet" wx:if="{{showFeedTypeModal}}" bindtap="hideFeedTypePicker" catchtouchmove="preventTouchMove">
+  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">选择食物类型</text>
-      <text class="modal-close" bindtap="hideFeedTypePicker">×</text>
+      <view class="modal-close" bindtap="hideFeedTypePicker">×</view>
     </view>
-    <view class="modal-body">
-      <view 
-        class="feed-type-item {{item.selected ? 'selected' : ''}}" 
-        wx:for="{{feedTypeList}}" 
-        wx:key="id"
-        bindtap="selectFeedType"
-        data-id="{{item.id}}"
-        data-name="{{item.displayName || item.name}}"
-      >
-        <view class="feed-type-info">
-          <text class="feed-type-name">{{item.displayName || item.name}}</text>
-          <view class="feed-type-details">
-            <text class="feed-type-brand">{{item.brand}}</text>
-            <text class="feed-type-type">{{item.typeText}}</text>
+    <scroll-view scroll-y="true" class="modal-body">
+      <view class="feed-type-list">
+        <view 
+          class="feed-type-item {{item.selected ? 'selected' : ''}}" 
+          wx:for="{{feedTypeList}}" 
+          wx:key="id"
+          bindtap="selectFeedType"
+          data-id="{{item.id}}"
+          data-name="{{item.displayName || item.name}}"
+        >
+          <view class="feed-type-icon-wrapper">
+             <image class="feed-type-icon" src="/images/remix/ri-restaurant-fill-orange.png" mode="aspectFit"></image>
           </view>
+          <view class="feed-type-info">
+            <text class="feed-type-name">{{item.displayName || item.name}}</text>
+            <view class="feed-type-details">
+              <text class="feed-type-brand" wx:if="{{item.brand}}">{{item.brand}}</text>
+              <text class="feed-type-type" wx:if="{{item.typeText}}">{{item.typeText}}</text>
+            </view>
+          </view>
+          <view class="selection-indicator" wx:if="{{item.selected}}">✓</view>
         </view>
-        <view class="selection-indicator" wx:if="{{item.selected}}">✓</view>
       </view>
-    </view>
+    </scroll-view>
     <view class="modal-footer">
       <button class="confirm-btn" bindtap="confirmFeedTypeSelection">确定</button>
     </view>
@@ -521,14 +543,14 @@
 </view>
 
 <!-- 健康状态选择弹窗 -->
-<view class="modal-overlay" wx:if="{{showHealthStatusModal}}" bindtap="hideHealthStatusPicker">
-  <view class="modal-content" catchtap="stopPropagation">
+<view class="modal-overlay bottom-sheet" wx:if="{{showHealthStatusModal}}" bindtap="hideHealthStatusPicker" catchtouchmove="preventTouchMove">
+  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">选择健康状态</text>
       <view class="modal-close" bindtap="hideHealthStatusPicker">×</view>
     </view>
-    <view class="modal-body">
-      <radio-group bindchange="onHealthStatusChange">
+    <scroll-view scroll-y="true" class="modal-body">
+      <radio-group class="status-list" bindchange="onHealthStatusChange">
         <label class="status-item">
           <view class="status-left">
             <view class="status-indicator healthy"></view>
@@ -558,18 +580,18 @@
           <radio class="status-radio" value="observation" checked="{{formData.health_status === 'observation'}}" />
         </label>
       </radio-group>
-    </view>
+    </scroll-view>
   </view>
 </view>
 
 <!-- 雄性鹦鹉选择弹窗 -->
-<view class="modal-overlay" wx:if="{{showMaleParrotModal}}" bindtap="hideMaleParrotPicker">
-  <view class="modal-content" catchtap="stopPropagation">
+<view class="modal-overlay bottom-sheet" wx:if="{{showMaleParrotModal}}" bindtap="hideMaleParrotPicker" catchtouchmove="preventTouchMove">
+  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">选择雄性鹦鹉</text>
       <text class="modal-close" bindtap="hideMaleParrotPicker">×</text>
     </view>
-    <view class="modal-body">
+    <scroll-view scroll-y="true" class="modal-body">
       <view class="parrot-list">
         <view 
           class="parrot-item" 
@@ -597,19 +619,19 @@
           </view>
         </view>
       </view>
-    </view>
+    </scroll-view>
   </view>
 </view>
 </view>
 
 <!-- 雌性鹦鹉选择弹窗 -->
-<view class="modal-overlay" wx:if="{{showFemaleParrotModal}}" bindtap="hideFemaleParrotPicker">
-  <view class="modal-content" catchtap="stopPropagation">
+<view class="modal-overlay bottom-sheet" wx:if="{{showFemaleParrotModal}}" bindtap="hideFemaleParrotPicker" catchtouchmove="preventTouchMove">
+  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">选择雌性鹦鹉</text>
       <text class="modal-close" bindtap="hideFemaleParrotPicker">×</text>
     </view>
-    <view class="modal-body">
+    <scroll-view scroll-y="true" class="modal-body">
       <view class="parrot-list">
         <view 
           class="parrot-item" 
@@ -637,6 +659,6 @@
           </view>
         </view>
       </view>
-    </view>
+    </scroll-view>
   </view>
 </view>

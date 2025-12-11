@@ -5,6 +5,13 @@ const app = getApp()
     data: {
     // 记录类型
     recordType: 'feeding',
+    navTheme: 'orange', // 导航栏主题色
+    themeColorMap: {
+      feeding: '#FF9F1C',
+      cleaning: '#42A5F5',
+      health: '#AB47BC',
+      breeding: '#2ECC71'
+    },
     
     // 表单数据
     formData: {
@@ -91,6 +98,36 @@ const app = getApp()
   },
 
 
+  // 阻止弹窗背景滑动穿透
+  preventTouchMove: function() {
+    return
+  },
+
+  // 更新主题色
+  updateTheme: function(type) {
+    const themeMap = {
+      feeding: 'orange',
+      cleaning: 'blue',
+      health: 'purple',
+      breeding: 'green'
+    }
+    const colorMap = this.data.themeColorMap
+    
+    const navTheme = themeMap[type] || 'blue'
+    const navColor = colorMap[type] || '#42A5F5'
+    
+    this.setData({ navTheme })
+    
+    wx.setNavigationBarColor({
+      frontColor: '#ffffff',
+      backgroundColor: navColor,
+      animation: {
+        duration: 300,
+        timingFunc: 'easeIn'
+      }
+    })
+  },
+
   onLoad: async function(options) {
     // 解析列表页传入的预填ID（支持喂食和清洁记录）
     const prefillParrotIds = options.parrot_ids ? decodeURIComponent(String(options.parrot_ids)).split(',').map(x => parseInt(x)).filter(x => !isNaN(x)) : []
@@ -123,6 +160,8 @@ const app = getApp()
     
     // 检查是否是编辑模式
     const incomingType = options.type || this.data.recordType
+    this.updateTheme(incomingType)
+    
     if (options.id) {
       this.setData({
         recordId: parseInt(options.id),
@@ -615,6 +654,7 @@ const app = getApp()
   selectType: function(e) {
     const type = e.currentTarget.dataset.type
     this.setData({ recordType: type })
+    this.updateTheme(type)
     this.validateForm()
   },
 
@@ -666,6 +706,7 @@ const app = getApp()
 
     const newType = types[newIndex];
     this.setData({ recordType: newType });
+    this.updateTheme(newType);
     this.validateForm();
     
     // 震动反馈

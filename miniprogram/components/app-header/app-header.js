@@ -16,6 +16,11 @@ Component({
     menuRightPadding: 0,
     themeClass: ''
   },
+  observers: {
+    'theme': function(theme) {
+      this.updateThemeClass(theme)
+    }
+  },
   lifetimes: {
     attached() {
       try {
@@ -29,39 +34,34 @@ Component({
             menuRightPadding = rightGap + rect.width + 8 // 额外留一点间距
           }
         } catch (e) { /* 胶囊获取失败则不留白 */ }
-        let themeClass = ''
-        switch (this.properties.theme) {
-          case 'orange':
-            themeClass = 'ah-theme-orange'; break;
-          case 'blue':
-            themeClass = 'ah-theme-blue'; break;
-          case 'purple':
-            themeClass = 'ah-theme-purple'; break;
-          case 'pink':
-            themeClass = 'ah-theme-pink'; break;
-          default:
-            themeClass = '';
-        }
-        this.setData({ statusBarPadding: padding, menuRightPadding, themeClass })
+        
+        this.setData({ statusBarPadding: padding, menuRightPadding })
+        this.updateThemeClass(this.properties.theme)
       } catch (e) {
-        let themeClass = ''
-        switch (this.properties.theme) {
-          case 'orange':
-            themeClass = 'ah-theme-orange'; break;
-          case 'blue':
-            themeClass = 'ah-theme-blue'; break;
-          case 'purple':
-            themeClass = 'ah-theme-purple'; break;
-          case 'pink':
-            themeClass = 'ah-theme-pink'; break;
-          default:
-            themeClass = '';
-        }
-        this.setData({ statusBarPadding: 20, menuRightPadding: 0, themeClass })
+        this.setData({ statusBarPadding: 20, menuRightPadding: 0 })
+        this.updateThemeClass(this.properties.theme)
       }
     }
   },
   methods: {
+    updateThemeClass(theme) {
+      let themeClass = ''
+      switch (theme) {
+        case 'orange':
+          themeClass = 'ah-theme-orange'; break;
+        case 'blue':
+          themeClass = 'ah-theme-blue'; break;
+        case 'purple':
+          themeClass = 'ah-theme-purple'; break;
+        case 'pink':
+          themeClass = 'ah-theme-pink'; break;
+        case 'green':
+          themeClass = ''; break; // 绿色为默认样式
+        default:
+          themeClass = '';
+      }
+      this.setData({ themeClass })
+    },
     onBack() {
       if (this.properties.customBack) {
         this.triggerEvent('back')
