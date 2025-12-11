@@ -1,21 +1,23 @@
 <view class="page-container">
-  <app-header title="健康提醒" subtitle="查看全部健康提醒" showBack="true"></app-header>
+  <app-header title="健康提醒（{{alertsCount || (alerts && alerts.length) || 0}}）" subtitle="查看全部健康提醒" showBack="true"></app-header>
   <view class="main-content">
     <view class="health-alerts">
       <view class="card">
         <view class="card-header">
-          <text class="card-title">健康提醒</text>
+          <text class="card-title">健康提醒（{{alertsCount || (alerts && alerts.length) || 0}}）</text>
         </view>
         <view class="card-content">
           <view class="alert-list">
-            <view class="alert-item {{item.severity}}" wx:for="{{alerts}}" wx:key="id">
-              <view class="alert-icon">
-                <image class="alert-icon-img" src="{{item.severity === 'high' ? iconPaths.alertInfoHigh : (item.severity === 'medium' ? iconPaths.alertInfoMedium : iconPaths.alertInfoLow)}}" mode="widthFix" binderror="handleIconError" data-key="{{item.severity === 'high' ? 'alertInfoHigh' : (item.severity === 'medium' ? 'alertInfoMedium' : 'alertInfoLow')}}"/>
-              </view>
-              <view class="alert-content">
-                <view class="alert-title">{{item.title}}</view>
-                <view class="alert-subtitle">{{item.description}}</view>
-              </view>
+            <view class="alert-item {{item.severity}}" wx:for="{{alerts}}" wx:key="id"
+                  bindtap="handleAlertTap" bindlongpress="onAlertLongPress"
+                  data-id="{{item.id}}" data-type="{{item.type}}" data-egg-id="{{item.egg_id || ''}}">
+                <view class="alert-icon">
+                  <image class="alert-icon-img" src="{{item.severity === 'high' ? iconPaths.alertInfoHigh : (item.severity === 'medium' ? iconPaths.alertInfoMedium : iconPaths.alertInfoLow)}}" mode="widthFix" binderror="handleIconError" data-key="{{item.severity === 'high' ? 'alertInfoHigh' : (item.severity === 'medium' ? 'alertInfoMedium' : 'alertInfoLow')}}"/>
+                </view>
+                <view class="alert-content">
+                  <view class="alert-title">{{item.title}}</view>
+                  <view class="alert-subtitle">{{item.description}}</view>
+                </view>
             </view>
           </view>
         </view>

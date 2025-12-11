@@ -235,9 +235,13 @@ Page({
       }
       if (!sel) {
         const startStr = egg.incubator_start_date_text || this.formatDate(egg.incubator_start_date)
-        if (startStr){ sel = { date: todayStr, dayIndex: this.computeDaySinceStart(startStr)+1 } }
+        if (startStr){ sel = { date: todayStr, dayIndex: this.computePreciseDayIndex(startStr) } }
       }
       if (sel){
+        if (sel.date === todayStr) {
+          const startStr = egg.incubator_start_date_text || this.formatDate(egg.incubator_start_date)
+          if (startStr) sel.dayIndex = this.computePreciseDayIndex(startStr)
+        }
         {
           const afterHatch = !!(hatchStr && sel.date >= hatchStr)
           this.fetchAdviceAndSet(sel.date, sel.dayIndex, afterHatch)
@@ -438,10 +442,25 @@ Page({
       const now = new Date()
       const ms = now.getTime() - dt.getTime()
       if (ms < 0) return '0天0小时'
-      const days = Math.floor(ms / 86400000)
+      const days = Math.floor(ms / 86400000) + 1
       const hours = Math.floor((ms % 86400000) / 3600000)
       return `${days}天${hours}小时`
     }catch(_){ return '--' }
+  },
+
+  computePreciseDayIndex(dStr){
+    try{
+      if(!dStr) return 1
+      const s = String(dStr)
+      let dt = new Date(s.replace(/-/g,'/').replace('T',' '))
+      if(isNaN(dt.getTime())) dt = new Date(s)
+      if(isNaN(dt.getTime())) return 1
+      const now = new Date()
+      const ms = now.getTime() - dt.getTime()
+      if (ms < 0) return 1
+      const di = Math.floor(ms / 86400000) + 1
+      return di > 0 ? di : 1
+    }catch(_){ return 1 }
   },
 
   

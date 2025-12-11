@@ -16,10 +16,13 @@ Page({
     // 智能建议弹窗状态
     smartAdviceVisible: false,
     smartAdviceItems: [],
-    smartAdviceError: ''
+    smartAdviceError: '',
+    preselectTabKey: ''
   },
 
-  onLoad() {
+  onLoad(options) {
+    const preselectTabKey = (options && (options.tab || options.key || options.category)) ? String(options.tab || options.key || options.category) : ''
+    if (preselectTabKey) this.setData({ preselectTabKey })
     // 简单主题适配：若全局提供主题信息可应用暗色主题类
     try {
       const theme = app.globalData.theme || 'system'
@@ -56,7 +59,9 @@ Page({
           const chickSections = chickCare.getChickCareGuideSections()
           const nextTabs = tabs.concat([{ key: chickKey, name: chickName }])
           const nextGuides = { ...guides, [chickKey]: { display_name: chickName, sections: chickSections } }
-          const firstKey = nextTabs[0]?.key || 'general'
+          const desired = this.data.preselectTabKey || ''
+          const candidates = nextTabs.map(t => t.key)
+          const firstKey = (desired && candidates.includes(desired)) ? desired : (nextTabs[0]?.key || 'general')
           this.setData({
             speciesTabs: nextTabs,
             guidesMap: nextGuides,
@@ -91,12 +96,16 @@ Page({
           const chickSections = chickCare.getChickCareGuideSections()
           const tabs = [{ key: 'general', name: '通用建议' }, { key: chickKey, name: chickName }]
           const guides = { [chickKey]: { display_name: chickName, sections: chickSections } }
+          const desired = this.data.preselectTabKey || ''
+          const keys = tabs.map(t => t.key)
+          const active = (desired && keys.includes(desired)) ? desired : 'general'
+          const nextSections = active === 'general' ? sections : ((guides[active] && guides[active].sections) || [])
           this.setData({
-            sections,
+            sections: nextSections,
             generalSections: sections,
             speciesTabs: tabs,
             guidesMap: guides,
-            activeTabKey: 'general',
+            activeTabKey: active,
             loading: false
           })
         } else {

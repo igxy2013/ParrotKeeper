@@ -23,6 +23,7 @@ Page({
     },
     recentRecords: [],
     healthAlerts: [],
+    healthAlertsTotal: 0,
     weather: null,
     menuRightPadding: 0,
     // 新增：我的鹦鹉（首页展示最多三只）
@@ -202,6 +203,7 @@ Page({
 
   onShow() {
     this.checkLoginStatus()
+    try { this.loadHealthAlerts() } catch (_) {}
     // 到点后补偿生成当天的本地定时提醒（避免仅在onLoad时触发）
     try {
       const app = getApp();
@@ -834,6 +836,7 @@ Page({
     const grouped = {}
     // iOS 安全日期解析：尽量按本地时间解析常见格式，避免错误的时区偏移
     function parseIOSDateSafe(input) {
+      let incubationAlerts = []
       try {
         if (!input) return null
         if (input instanceof Date) return input
@@ -1068,7 +1071,19 @@ Page({
         })
       })
 
-      alerts.sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
+      const nmPrefs = (() => {
+        try {
+          const nm = app.globalData.notificationManager
+          const s = nm && nm.getNotificationSettings ? nm.getNotificationSettings() : null
+          return (s && s.healthAlertPreferences) || {}
+        } catch (_) { return {} }
+      })()
+      const allowType = (t) => {
+        const v = nmPrefs && nmPrefs[t]
+        return typeof v === 'undefined' ? true : !!v
+      }
+      const alertsF = alerts.filter(a => allowType(a.type))
+      alertsF.sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
 
       let parrots = Array.isArray(this.data.myParrots) ? this.data.myParrots : []
       if (!parrots || parrots.length === 0) {
@@ -1099,13 +1114,12 @@ Page({
         }
       })
 
-      let topAlerts = alerts.slice(0, 3)
-      if (careAlerts.length > 0) {
-        topAlerts = careAlerts.slice(0, 3)
-      }
+      const careF = careAlerts.filter(a => allowType(a.type))
+      let topAlerts = []
 
+      let incubationAlerts = []
       try {
-        const eggsResp = await app.request({ url: '/api/incubation/eggs', method: 'GET', data: { page: 1, per_page: 50 } })
+        const eggsResp = await app.request({ url: '/api/incubation/eggs', method: 'GET', data: { page: 1, per_page: 100 } })
         const eggs = (eggsResp && eggsResp.data && eggsResp.data.items) || (eggsResp && eggsResp.data && eggsResp.data.eggs) || []
         const incubating = eggs.filter(e => {
           const s = (e && (e.status || e.state)) || ''
@@ -1115,14 +1129,14 @@ Page({
         this.setData({ overview_status_text: this.getHealthStatusText(this.data.overview) })
         const today = new Date()
         const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
-        const adviceCalls = incubating.slice(0, 10).map(e => {
+        const adviceCalls = incubating.slice(0, 20).map(e => {
           const id = e.id || e.egg_id || e.eggId
           return app.request({ url: `/api/incubation/eggs/${id}/advice`, method: 'GET', data: { date: todayStr } })
             .then(r => ({ ok: true, egg: e, resp: r }))
             .catch(err => ({ ok: false, egg: e, err }))
         })
         const adviceResults = await Promise.all(adviceCalls)
-        const incubationAlerts = []
+        incubationAlerts = []
         adviceResults.forEach(ar => {
           if (!ar || !ar.ok || !ar.resp || !ar.resp.success) return
           const e = ar.egg || {}
@@ -1138,10 +1152,11 @@ Page({
           let dayIndexDisplay = ''
           try {
             if (startStr) {
-              const start = new Date(String(startStr).replace(/-/g,'/').replace('T',' '))
-              if (!isNaN(start.getTime())) {
+              const onlyDate = String(startStr).slice(0,10)
+              const startMid = new Date(`${onlyDate}T00:00:00`)
+              if (!isNaN(startMid.getTime())) {
                 const todayMid = new Date(`${todayStr}T00:00:00`)
-                const di = Math.floor((todayMid.getTime() - start.getTime())/86400000) + 1
+                const di = Math.floor((todayMid.getTime() - startMid.getTime())/86400000) + 1
                 if (di > 0 && isFinite(di)) dayIndexDisplay = String(di)
               }
             }
@@ -1154,22 +1169,70 @@ Page({
           incubationAlerts.push({
             id: `incubation-${e.id || e.egg_id}-${todayStr}`,
             parrot_id: e.parrot_id || '',
+            egg_id: e.id || e.egg_id || e.eggId || '',
             title: dayIndexDisplay ? `${parrotName}：第${dayIndexDisplay}天孵化建议` : `${parrotName}：孵化建议`,
             description: `温度${tempText}；湿度${humText}；${turningText}；${candlingText}${tipsText ? '；' + tipsText : ''}`,
             severity: 'medium',
             type: 'incubation_advice'
           })
         })
-        if (incubationAlerts.length) {
-          // 若首页已有雏鸟提醒，则在其后继续展示孵化建议（最多3条裁剪）
-          const merged = careAlerts.length ? careAlerts.concat(incubationAlerts) : incubationAlerts.concat(alerts)
-          topAlerts = merged.slice(0, 3)
-        }
+        const incubF = incubationAlerts.filter(a => allowType(a.type))
+        // 统一列表构建与排序，确保与“健康提醒”页一致
+        const allUnified = (typeof generalAdvice !== 'undefined' && generalAdvice ? [generalAdvice] : [])
+          .concat(careF)
+          .concat(incubF)
+          .concat(alertsF)
+        allUnified.sort((a, b) => {
+          const wa = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
+          const wb = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
+          return wb - wa
+        })
+        const todayKey = this.getTodayKey()
+        const dismissed = this.getDismissedSet(todayKey)
+        const filteredUnified = allUnified.filter(a => a && a.id && !dismissed.has(a.id))
+        topAlerts = filteredUnified.slice(0, 3)
       } catch (_) {
       }
 
+      try {
+        const today = new Date()
+        const dayIndex = Math.floor(today.getTime() / 86400000)
+        const topics = [
+          { key: 'diet', name: '饮食与营养', desc: '均衡配比、清洁水源、避免高脂高盐' },
+          { key: 'environment', name: '环境与丰富化', desc: '稳定温湿度、适度光照，提供玩具与觅食丰富化' },
+          { key: 'interaction', name: '互动与训练', desc: '短时高频正向训练，尊重边界，避免过度应激' },
+          { key: 'health', name: '健康与观察', desc: '每日观察粪便、食欲与体重趋势，异常及时记录' }
+        ]
+        const t = topics[dayIndex % topics.length]
+        const generalAdvice = {
+          id: `care-general-${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}-${t.key}`,
+          parrot_id: '',
+          title: `护理指南：${t.name}`,
+          description: t.desc,
+          severity: 'low',
+          type: 'care_general_topic',
+          category: t.key
+        }
+        const todayKey = this.getTodayKey()
+        const dismissed = this.getDismissedSet(todayKey)
+        if (allowType('care_general_topic') && !dismissed.has(generalAdvice.id)) {
+          topAlerts = [generalAdvice].concat(topAlerts).slice(0, 3)
+        }
+      } catch (_) {}
+
+      // 统一总数：与健康提醒页一致（去重后数量）
+      const todayKey = this.getTodayKey()
+      const dismissed = this.getDismissedSet(todayKey)
+      const allForCount = (topAlerts || []).concat(alertsF).concat(careF).concat((typeof incubF !== 'undefined' ? incubF : []))
+      const countReducer = allForCount.reduce((acc, a) => {
+        if (a && a.id && !dismissed.has(a.id) && !acc.has(a.id)) acc.add(a.id)
+        return acc
+      }, new Set())
+      const filledTop = topAlerts
+
       this.setData({
-        healthAlerts: topAlerts
+        healthAlerts: filledTop,
+        healthAlertsTotal: countReducer.size
       })
 
       try {
@@ -1180,7 +1243,7 @@ Page({
           const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
           const existing = nm.getLocalNotifications() || []
           const exists = (title) => existing.some(n => n && n.type === 'health_alert' && n.title === title && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey))
-          const mergedAll = (careAlerts.length ? careAlerts : []).concat(topAlerts.filter(a => a.type !== 'chick_care')).concat(alerts)
+          const mergedAll = (careF.length ? careF : []).concat(filledTop.filter(a => a.type !== 'chick_care')).concat(alertsF)
           mergedAll.slice(0, 10).forEach(a => {
             const t = a.title || '健康提醒'
             const d = a.description || ''
@@ -1194,6 +1257,75 @@ Page({
       console.error('加载健康提醒失败:', error)
       this.setData({ healthAlerts: [] })
     }
+  },
+
+  getTodayKey() {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  },
+
+  getDismissedSet(todayKey) {
+    try {
+      const list = wx.getStorageSync(`dismissedHealthAlerts_${todayKey}`) || []
+      return new Set(Array.isArray(list) ? list : [])
+    } catch (_) { return new Set() }
+  },
+
+  addDismissedId(id) {
+    if (!id) return
+    const key = this.getTodayKey()
+    try {
+      const list = wx.getStorageSync(`dismissedHealthAlerts_${key}`) || []
+      const next = Array.isArray(list) ? list.slice() : []
+      if (!next.includes(id)) next.push(id)
+      wx.setStorageSync(`dismissedHealthAlerts_${key}`, next)
+    } catch (_) {}
+  },
+
+  onHealthAlertLongPress(e) {
+    const id = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || ''
+    if (!id) return
+    wx.showActionSheet({
+      itemList: ['删除'],
+      success: (res) => { if (res.tapIndex === 0) this.deleteHealthAlert({ currentTarget: { dataset: { id } } }) }
+    })
+  },
+
+  deleteHealthAlert(e) {
+    const id = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || ''
+    if (!id) return
+    this.addDismissedId(id)
+    const todayKey = this.getTodayKey()
+    const dismissed = this.getDismissedSet(todayKey)
+    const remaining = (this.data.healthAlerts || []).filter(a => a.id !== id)
+    const total = Math.max(0, (this.data.healthAlertsTotal || 0) - 1)
+    this.setData({ healthAlerts: remaining, healthAlertsTotal: Math.max(0, total) })
+  },
+
+  handleHealthAlertTap(e) {
+    try {
+      const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+      const type = ds.type || ''
+      const eggId = ds.eggId || ''
+      if (type === 'care_general_topic') {
+        wx.navigateTo({ url: '/pages/care-guide/care-guide?tab=general' })
+        return
+      }
+      if (type === 'chick_care') {
+        wx.navigateTo({ url: '/pages/care-guide/care-guide?tab=chick_0_30' })
+        return
+      }
+      if (type === 'incubation_advice') {
+        const url = eggId ? `/pages/incubation/detail/detail?id=${encodeURIComponent(eggId)}` : '/pages/incubation/index'
+        wx.navigateTo({ url })
+        return
+      }
+      if (type === 'feeding_gap' || type === 'feeding_frequency_low') {
+        wx.navigateTo({ url: '/pages/records/feeding/feeding' })
+        return
+      }
+      wx.navigateTo({ url: '/pages/records/health/health' })
+    } catch (_) {}
   },
 
   // 查看全部健康提醒

@@ -26,6 +26,15 @@ class NotificationManager {
       feedingReminderTime: '08:00',
       cleaningReminderTime: '18:00',
       medicationReminderTime: '09:00'
+      ,
+      healthAlertPreferences: {
+        chick_care: true,
+        incubation_advice: true,
+        feeding_gap: true,
+        feeding_frequency_low: true,
+        weight_decline: true,
+        care_general_topic: true
+      }
     }
   }
 

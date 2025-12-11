@@ -249,7 +249,7 @@ Page({
       const now = new Date()
       const ms = now.getTime() - dt.getTime()
       if (ms < 0) return '0天0小时'
-      const days = Math.floor(ms / 86400000)
+      const days = Math.floor(ms / 86400000)+1
       const hours = Math.floor((ms % 86400000) / 3600000)
       return `${days}天${hours}小时`
     }catch(_){ return '--' }

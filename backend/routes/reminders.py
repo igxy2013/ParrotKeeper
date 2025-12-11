@@ -1,6 +1,7 @@
 from flask import Blueprint, request
 from datetime import datetime, timedelta
-from models import db, Reminder, FeedingRecord, CleaningRecord, Parrot
+from models import db, Reminder, FeedingRecord, CleaningRecord, Parrot, UserSetting
+import json
 from utils import login_required, success_response, error_response
 
 reminders_bp = Blueprint('reminders', __name__, url_prefix='/api/reminders')
@@ -144,14 +145,30 @@ def get_reminder_settings():
         def time_to_str(t):
             return t.strftime('%H:%M') if t else None
 
-        data = {
+        base = {
             'feedingReminderTime': time_to_str(feeding.reminder_time) if feeding else None,
             'cleaningReminderTime': time_to_str(cleaning.reminder_time) if cleaning else None,
             'feedingReminder': feeding.is_active if feeding else True,
             'cleaningReminder': cleaning.is_active if cleaning else True
         }
+        # 合并用户偏好设置（启用、多类型开关、药物提醒时间、健康提醒类型偏好）
+        try:
+            us = UserSetting.query.filter_by(user_id=user.id, team_id=team_id, key='notification_settings').first()
+            if us and us.value:
+                extra = json.loads(us.value)
+                if isinstance(extra, dict):
+                    base.update({
+                        'enabled': extra.get('enabled'),
+                        'healthReminder': extra.get('healthReminder'),
+                        'medicationReminder': extra.get('medicationReminder'),
+                        'breedingReminder': extra.get('breedingReminder'),
+                        'medicationReminderTime': extra.get('medicationReminderTime'),
+                        'healthAlertPreferences': extra.get('healthAlertPreferences')
+                    })
+        except Exception:
+            pass
 
-        return success_response(data, '获取提醒设置成功')
+        return success_response(base, '获取提醒设置成功')
     except Exception as e:
         return error_response(f'获取提醒设置失败: {str(e)}')
 
@@ -215,6 +232,31 @@ def update_reminder_settings():
             cleaning.reminder_time = cleaning_time
 
         db.session.commit()
+
+        # 保存完整通知偏好到 UserSetting
+        try:
+            store = {
+                'enabled': bool(data.get('enabled', False)),
+                'feedingReminder': feeding_active,
+                'healthReminder': bool(data.get('healthReminder', True)),
+                'cleaningReminder': cleaning_active,
+                'medicationReminder': bool(data.get('medicationReminder', True)),
+                'breedingReminder': bool(data.get('breedingReminder', True)),
+                'feedingReminderTime': feeding_time_str,
+                'cleaningReminderTime': cleaning_time_str,
+                'medicationReminderTime': data.get('medicationReminderTime'),
+                'healthAlertPreferences': data.get('healthAlertPreferences') or {}
+            }
+            us = UserSetting.query.filter_by(user_id=user.id, team_id=team_id, key='notification_settings').first()
+            if not us:
+                us = UserSetting(user_id=user.id, team_id=team_id, key='notification_settings', value=json.dumps(store, ensure_ascii=False))
+                db.session.add(us)
+            else:
+                us.value = json.dumps(store, ensure_ascii=False)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            # 不影响主流程，忽略偏好保存异常
 
         return success_response({'updated': True}, '提醒设置已更新')
     except Exception as e:
@@ -321,4 +363,3 @@ def predict_and_apply():
     except Exception as e:
         db.session.rollback()
         return error_response(f'预测应用失败: {str(e)}')
-

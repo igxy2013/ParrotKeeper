@@ -5,13 +5,17 @@ Page({
   data: {
     alerts: [],
     iconPaths: {
-      alertInfoLow: '/images/remix/ri-information-fill-blue.png',
+      alertInfoLow: '/images/remix/ri-information-fill-green.png',
       alertInfoMedium: '/images/remix/ri-information-fill-amber.png',
       alertInfoHigh: '/images/remix/ri-information-fill-red.png'
-    }
+    },
+    alertsCount: 0
   },
 
   onLoad() {
+    this.loadAllHealthAlerts()
+  },
+  onShow() {
     this.loadAllHealthAlerts()
   },
 
@@ -124,10 +128,11 @@ Page({
           let dayIndexDisplay = ''
           try {
             if (startStr) {
-              const start = new Date(String(startStr).replace(/-/g,'/').replace('T',' '))
-              if (!isNaN(start.getTime())) {
+              const onlyDate = String(startStr).slice(0,10)
+              const startMid = new Date(`${onlyDate}T00:00:00`)
+              if (!isNaN(startMid.getTime())) {
                 const todayMid = new Date(`${todayStr}T00:00:00`)
-                const di = Math.floor((todayMid.getTime() - start.getTime())/86400000) + 1
+                const di = Math.floor((todayMid.getTime() - startMid.getTime())/86400000) + 1
                 if (di > 0 && isFinite(di)) dayIndexDisplay = String(di)
               }
             }
@@ -148,14 +153,52 @@ Page({
         }).filter(Boolean)
       } catch (_) {}
 
-      const all = careAlerts.concat(incubationAlerts).concat(alerts)
-      all.sort((a, b) => {
+      let generalAdvice = null
+      try {
+        const today = new Date()
+        const dayIndex = Math.floor(today.getTime() / 86400000)
+        const topics = [
+          { key: 'diet', name: '饮食与营养', desc: '均衡配比、清洁水源、避免高脂高盐' },
+          { key: 'environment', name: '环境与丰富化', desc: '稳定温湿度、适度光照，提供玩具与觅食丰富化' },
+          { key: 'interaction', name: '互动与训练', desc: '短时高频正向训练，尊重边界，避免过度应激' },
+          { key: 'health', name: '健康与观察', desc: '每日观察粪便、食欲与体重趋势，异常及时记录' }
+        ]
+        const t = topics[dayIndex % topics.length]
+        generalAdvice = {
+          id: `care-general-${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}-${t.key}`,
+          parrot_id: '',
+          title: `护理指南：${t.name}`,
+          description: t.desc,
+          severity: 'low',
+          type: 'care_general_topic',
+          category: t.key
+        }
+      } catch (_) {}
+
+      const all = (generalAdvice ? [generalAdvice] : []).concat(careAlerts).concat(incubationAlerts).concat(alerts)
+      const nmPrefs = (() => {
+        try {
+          const nm = app.globalData.notificationManager
+          const s = nm && nm.getNotificationSettings ? nm.getNotificationSettings() : null
+          return (s && s.healthAlertPreferences) || {}
+        } catch (_) { return {} }
+      })()
+      const allowType = (t) => {
+        const v = nmPrefs && nmPrefs[t]
+        return typeof v === 'undefined' ? true : !!v
+      }
+      const list = all.filter(a => allowType(a.type))
+      list.sort((a, b) => {
         const wa = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
         const wb = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
         return wb - wa
       })
 
-      this.setData({ alerts: all })
+      const todayKey = this.getTodayKey()
+      const dismissed = this.getDismissedSet(todayKey)
+      const filtered = list.filter(a => !dismissed.has(a.id))
+
+      this.setData({ alerts: filtered, alertsCount: filtered.length })
 
       try {
         const nm = app.globalData.notificationManager
@@ -165,7 +208,7 @@ Page({
           const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
           const existing = nm.getLocalNotifications() || []
           const exists = (title) => existing.some(n => n && n.type === 'health_alert' && n.title === title && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey))
-          all.slice(0, 20).forEach(a => {
+          filtered.slice(0, 20).forEach(a => {
             const t = a.title || '健康提醒'
             const d = a.description || ''
             if (!exists(t)) {
@@ -215,5 +258,69 @@ Page({
         this.setData({ iconPaths: next })
       }
     } catch (_) {}
+  },
+
+  handleAlertTap(e) {
+    try {
+      const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+      const type = ds.type || ''
+      const eggId = ds.eggId || ''
+      if (type === 'care_general_topic') {
+        wx.navigateTo({ url: '/pages/care-guide/care-guide?tab=general' })
+        return
+      }
+      if (type === 'chick_care') {
+        wx.navigateTo({ url: '/pages/care-guide/care-guide?tab=chick_0_30' })
+        return
+      }
+      if (type === 'incubation_advice') {
+        const url = eggId ? `/pages/incubation/detail/detail?id=${encodeURIComponent(eggId)}` : '/pages/incubation/index'
+        wx.navigateTo({ url })
+        return
+      }
+      if (type === 'feeding_gap' || type === 'feeding_frequency_low') {
+        wx.navigateTo({ url: '/pages/records/feeding/feeding' })
+        return
+      }
+      wx.navigateTo({ url: '/pages/records/health/health' })
+    } catch (_) {}
+  }
+  ,
+  getTodayKey() {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  },
+  getDismissedSet(todayKey) {
+    try {
+      const list = wx.getStorageSync(`dismissedHealthAlerts_${todayKey}`) || []
+      return new Set(Array.isArray(list) ? list : [])
+    } catch (_) { return new Set() }
+  },
+  addDismissedId(id) {
+    if (!id) return
+    const key = this.getTodayKey()
+    try {
+      const list = wx.getStorageSync(`dismissedHealthAlerts_${key}`) || []
+      const next = Array.isArray(list) ? list.slice() : []
+      if (!next.includes(id)) next.push(id)
+      wx.setStorageSync(`dismissedHealthAlerts_${key}`, next)
+    } catch (_) {}
+  },
+  onAlertLongPress(e) {
+    const id = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || ''
+    if (!id) return
+    wx.showActionSheet({
+      itemList: ['删除'],
+      success: (res) => { if (res.tapIndex === 0) this.deleteAlert({ currentTarget: { dataset: { id } } }) }
+    })
+  },
+  deleteAlert(e) {
+    const id = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || ''
+    if (!id) return
+    this.addDismissedId(id)
+    const todayKey = this.getTodayKey()
+    const dismissed = this.getDismissedSet(todayKey)
+    const remaining = (this.data.alerts || []).filter(a => a.id !== id)
+    this.setData({ alerts: remaining, alertsCount: remaining.length })
   }
 })

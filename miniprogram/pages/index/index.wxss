@@ -133,9 +133,9 @@
   mask-size: contain;
 }
 .activity-icon-img { 
-  width: 48rpx; 
-  height: 48rpx; 
-  display: block; /* 避免内联元素被基线裁剪 */
+  width: 40rpx; 
+  height: 40rpx; 
+  display: block;
 }
 
 /* 背景图方式渲染活动图标，避免 <image> 对 SVG 的裁剪问题 */
@@ -880,8 +880,8 @@
 }
 
 .activity-icon-container {
-  width: 96rpx; /* 原80rpx */
-  height: 96rpx; /* 原80rpx */
+  width: 80rpx;
+  height: 80rpx;
   border-radius: 24rpx; /* 背景圆角与APP一致 */
   display: flex; /* 居中图标 */
   align-items: center;
@@ -1557,3 +1557,4 @@
   pointer-events: none;
   box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.15);
 }
+/* 删除左滑样式，改为长按弹出ActionSheet，因此不再需要 */

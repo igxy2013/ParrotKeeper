@@ -21,6 +21,15 @@ Page({
     cleaningReminderTime: '18:00',
     // 模板ID配置有效性（用于提示与按钮可用态）
     hasTemplateIds: false
+    ,
+    healthAlertPreferences: {
+      chick_care: true,
+      incubation_advice: true,
+      feeding_gap: true,
+      feeding_frequency_low: true,
+      weight_decline: true,
+      care_general_topic: true
+    }
   },
 
   onLoad() {
@@ -48,6 +57,8 @@ Page({
         feedingReminderTime: notificationSettings.feedingReminderTime || '08:00',
         cleaningReminderTime: notificationSettings.cleaningReminderTime || '18:00',
         hasTemplateIds: !!hasValidTemplateIds()
+        ,
+        healthAlertPreferences: notificationSettings.healthAlertPreferences || this.data.healthAlertPreferences
       })
 
       // 同步后端提醒设置（若已登录）
@@ -73,7 +84,9 @@ Page({
         medicationReminder: this.data.medicationReminder,
         breedingReminder: this.data.breedingReminder,
         feedingReminderTime: this.data.feedingReminderTime,
-        cleaningReminderTime: this.data.cleaningReminderTime
+        cleaningReminderTime: this.data.cleaningReminderTime,
+        medicationReminderTime: prevSettings.medicationReminderTime || '09:00',
+        healthAlertPreferences: this.data.healthAlertPreferences
       }
       
       notificationManager.saveNotificationSettings(notificationSettings)
@@ -96,16 +109,22 @@ Page({
       // 立即尝试生成当天的本地定时提醒（若时间已到且未生成）
       try { notificationManager.generateDailyRemindersForToday() } catch (_) {}
 
-      // 调用后端保存提醒时间（若已登录）
+      // 调用后端保存完整通知设置（若已登录）
       if (app.globalData && app.globalData.openid) {
         app.request({
           url: '/api/reminders/settings',
           method: 'PUT',
           data: {
-            feedingReminderTime: this.data.feedingReminderTime,
-            cleaningReminderTime: this.data.cleaningReminderTime,
-            feedingReminder: this.data.feedingReminder,
-            cleaningReminder: this.data.cleaningReminder
+            enabled: notificationSettings.enabled,
+            feedingReminder: notificationSettings.feedingReminder,
+            healthReminder: notificationSettings.healthReminder,
+            cleaningReminder: notificationSettings.cleaningReminder,
+            medicationReminder: notificationSettings.medicationReminder,
+            breedingReminder: notificationSettings.breedingReminder,
+            feedingReminderTime: notificationSettings.feedingReminderTime,
+            cleaningReminderTime: notificationSettings.cleaningReminderTime,
+            medicationReminderTime: notificationSettings.medicationReminderTime,
+            healthAlertPreferences: notificationSettings.healthAlertPreferences
           }
         }).catch(err => {
           console.warn('更新后端提醒设置失败:', err)
@@ -114,6 +133,15 @@ Page({
     } catch (error) {
       console.error('保存偏好设置失败:', error)
     }
+  },
+
+  toggleHealthAlertType(e) {
+    const key = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.key) || ''
+    const val = (e && e.detail && typeof e.detail.value !== 'undefined') ? !!e.detail.value : true
+    if (!key) return
+    const next = { ...(this.data.healthAlertPreferences || {}), [key]: val }
+    this.setData({ healthAlertPreferences: next })
+    this.savePreferences()
   },
 
   // 切换通知开关
@@ -219,8 +247,14 @@ Page({
           const updated = {}
           if (data.feedingReminderTime) updated.feedingReminderTime = data.feedingReminderTime
           if (data.cleaningReminderTime) updated.cleaningReminderTime = data.cleaningReminderTime
+          if (data.medicationReminderTime) updated.medicationReminderTime = data.medicationReminderTime
           if (typeof data.feedingReminder !== 'undefined') updated.feedingReminder = !!data.feedingReminder
           if (typeof data.cleaningReminder !== 'undefined') updated.cleaningReminder = !!data.cleaningReminder
+          if (typeof data.healthReminder !== 'undefined') updated.healthReminder = !!data.healthReminder
+          if (typeof data.medicationReminder !== 'undefined') updated.medicationReminder = !!data.medicationReminder
+          if (typeof data.breedingReminder !== 'undefined') updated.breedingReminder = !!data.breedingReminder
+          if (typeof data.enabled !== 'undefined') updated.notificationsEnabled = !!data.enabled
+          if (data.healthAlertPreferences && typeof data.healthAlertPreferences === 'object') updated.healthAlertPreferences = data.healthAlertPreferences
 
           if (Object.keys(updated).length > 0) {
             this.setData(updated)
@@ -231,8 +265,14 @@ Page({
               ...currentSettings,
               feedingReminderTime: updated.feedingReminderTime || this.data.feedingReminderTime,
               cleaningReminderTime: updated.cleaningReminderTime || this.data.cleaningReminderTime,
+              medicationReminderTime: updated.medicationReminderTime || (currentSettings.medicationReminderTime || '09:00'),
+              enabled: typeof updated.notificationsEnabled !== 'undefined' ? updated.notificationsEnabled : this.data.notificationsEnabled,
               feedingReminder: typeof updated.feedingReminder !== 'undefined' ? updated.feedingReminder : this.data.feedingReminder,
-              cleaningReminder: typeof updated.cleaningReminder !== 'undefined' ? updated.cleaningReminder : this.data.cleaningReminder
+              healthReminder: typeof updated.healthReminder !== 'undefined' ? updated.healthReminder : this.data.healthReminder,
+              cleaningReminder: typeof updated.cleaningReminder !== 'undefined' ? updated.cleaningReminder : this.data.cleaningReminder,
+              medicationReminder: typeof updated.medicationReminder !== 'undefined' ? updated.medicationReminder : this.data.medicationReminder,
+              breedingReminder: typeof updated.breedingReminder !== 'undefined' ? updated.breedingReminder : this.data.breedingReminder,
+              healthAlertPreferences: updated.healthAlertPreferences || this.data.healthAlertPreferences
             })
           }
         }

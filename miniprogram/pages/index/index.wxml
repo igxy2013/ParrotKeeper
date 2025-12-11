@@ -267,22 +267,24 @@
   <view class="health-alerts" wx:if="{{healthAlerts.length > 0}}">
     <view class="card">
       <view class="card-header">
-        <text class="card-title">健康提醒</text>
+        <text class="card-title">健康提醒（{{healthAlertsTotal || healthAlerts.length}}）</text>
         <text class="more-link" bindtap="navigateToHealthAlerts">查看全部</text>
       </view>
       <view class="card-content">
-        <view class="alert-list">
-          <view class="alert-item {{item.severity}}" wx:for="{{healthAlerts}}" wx:key="id">
-      <view class="alert-icon"><image class="alert-icon-img" src="{{item.severity === 'high' ? iconPaths.alertInfoHigh : (item.severity === 'medium' ? iconPaths.alertInfoMedium : iconPaths.alertInfoLow)}}" mode="widthFix" binderror="handleIconError" data-key="{{item.severity === 'high' ? 'alertInfoHigh' : (item.severity === 'medium' ? 'alertInfoMedium' : 'alertInfoLow')}}"/></view>
-            <view class="alert-content">
-              <view class="alert-title">{{item.title}}</view>
-              <view class="alert-subtitle">{{item.description}}</view>
+          <view class="alert-list">
+            <view class="alert-item {{item.severity}}" wx:for="{{healthAlerts}}" wx:key="id"
+                  bindtap="handleHealthAlertTap" bindlongpress="onHealthAlertLongPress"
+                  data-id="{{item.id}}" data-type="{{item.type}}" data-egg-id="{{item.egg_id || ''}}">
+              <view class="alert-icon"><image class="alert-icon-img" src="{{item.severity === 'high' ? iconPaths.alertInfoHigh : (item.severity === 'medium' ? iconPaths.alertInfoMedium : iconPaths.alertInfoLow)}}" mode="widthFix" binderror="handleIconError" data-key="{{item.severity === 'high' ? 'alertInfoHigh' : (item.severity === 'medium' ? 'alertInfoMedium' : 'alertInfoLow')}}"/></view>
+              <view class="alert-content">
+                <view class="alert-title">{{item.title}}</view>
+                <view class="alert-subtitle">{{item.description}}</view>
+              </view>
             </view>
           </view>
       </view>
     </view>
   </view>
-</view>
 
   <!-- 编辑模式完成按钮 -->
   <view wx:if="{{isEditMode}}" class="edit-done-btn-container">
