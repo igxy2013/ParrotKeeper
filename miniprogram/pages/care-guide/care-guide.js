@@ -44,21 +44,15 @@ Page({
       .then(res => {
         if (res && res.success && res.data) {
           const data = res.data || {}
-          const species = Array.isArray(data.species) ? data.species : []
-          const guides = data.guides || {}
           const generalSections = Array.isArray(data.general && data.general.sections) ? data.general.sections : []
 
-          // 构建 tabs：通用 + 物种
-          const tabs = [{ key: 'general', name: '通用建议' }].concat(
-            species.map(s => ({ key: s.key, name: s.name }))
-          )
-
+          // 仅保留通用建议 + 雏鸟0-45天指南
           const chickCare = require('../../utils/chick-care.js')
-          const chickKey = 'chick_0_30'
-          const chickName = '手养雏鸟 0-30天'
+          const chickKey = 'chick_0_45'
+          const chickName = '手养雏鸟 0-45天'
           const chickSections = chickCare.getChickCareGuideSections()
-          const nextTabs = tabs.concat([{ key: chickKey, name: chickName }])
-          const nextGuides = { ...guides, [chickKey]: { display_name: chickName, sections: chickSections } }
+          const nextTabs = [{ key: 'general', name: '通用建议' }, { key: chickKey, name: chickName }]
+          const nextGuides = { [chickKey]: { display_name: chickName, sections: chickSections } }
           const desired = this.data.preselectTabKey || ''
           const candidates = nextTabs.map(t => t.key)
           const firstKey = (desired && candidates.includes(desired)) ? desired : (nextTabs[0]?.key || 'general')
@@ -91,8 +85,8 @@ Page({
           const sections = Array.isArray(res.data.sections) ? res.data.sections : []
           // 直接使用后端结构；若未来提供 iconUrl 可直接渲染
           const chickCare = require('../../utils/chick-care.js')
-          const chickKey = 'chick_0_30'
-          const chickName = '手养雏鸟 0-30天'
+          const chickKey = 'chick_0_45'
+          const chickName = '手养雏鸟 0-45天'
           const chickSections = chickCare.getChickCareGuideSections()
           const tabs = [{ key: 'general', name: '通用建议' }, { key: chickKey, name: chickName }]
           const guides = { [chickKey]: { display_name: chickName, sections: chickSections } }

@@ -93,7 +93,7 @@ Page({
         const diff = now.getTime() - birth.getTime()
         const days = Math.floor(diff / 86400000)
         const d = days < 1 ? 1 : days
-        if (d >= 1 && d <= 30) {
+        if (d >= 1 && d <= 45) {
           const alert = chickCare.buildChickCareAlert(p, d)
           if (alert) careAlerts.push(alert)
         }
@@ -188,13 +188,16 @@ Page({
         return typeof v === 'undefined' ? true : !!v
       }
       const list = all.filter(a => allowType(a.type))
+      const todayKey = this.getTodayKey()
+      const pinned = this.getPinnedSet(todayKey)
       list.sort((a, b) => {
-        const wa = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
-        const wb = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
+        const waBase = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
+        const wbBase = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
+        const wa = waBase + (pinned.has(a.id) ? 100 : 0)
+        const wb = wbBase + (pinned.has(b.id) ? 100 : 0)
         return wb - wa
       })
 
-      const todayKey = this.getTodayKey()
       const dismissed = this.getDismissedSet(todayKey)
       const filtered = list.filter(a => !dismissed.has(a.id))
 
@@ -270,7 +273,7 @@ Page({
         return
       }
       if (type === 'chick_care') {
-        wx.navigateTo({ url: '/pages/care-guide/care-guide?tab=chick_0_30' })
+        wx.navigateTo({ url: '/pages/care-guide/care-guide?tab=chick_0_45' })
         return
       }
       if (type === 'incubation_advice') {
@@ -322,5 +325,81 @@ Page({
     const dismissed = this.getDismissedSet(todayKey)
     const remaining = (this.data.alerts || []).filter(a => a.id !== id)
     this.setData({ alerts: remaining, alertsCount: remaining.length })
+  }
+  ,
+  getPinnedSet(todayKey) {
+    try {
+      const list = wx.getStorageSync(`pinnedHealthAlerts_${todayKey}`) || []
+      return new Set(Array.isArray(list) ? list : [])
+    } catch (_) { return new Set() }
+  },
+  addPinnedId(id) {
+    if (!id) return
+    const key = this.getTodayKey()
+    try {
+      const list = wx.getStorageSync(`pinnedHealthAlerts_${key}`) || []
+      const next = Array.isArray(list) ? list.slice() : []
+      if (!next.includes(id)) next.push(id)
+      wx.setStorageSync(`pinnedHealthAlerts_${key}`, next)
+    } catch (_) {}
+  },
+  removePinnedId(id) {
+    if (!id) return
+    const key = this.getTodayKey()
+    try {
+      const list = wx.getStorageSync(`pinnedHealthAlerts_${key}`) || []
+      const next = (Array.isArray(list) ? list : []).filter(x => x !== id)
+      wx.setStorageSync(`pinnedHealthAlerts_${key}`, next)
+    } catch (_) {}
+  },
+  onAlertLongPress(e) {
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+    const id = ds.id || ''
+    const type = ds.type || ''
+    if (!id) return
+    const todayKey = this.getTodayKey()
+    const pinned = this.getPinnedSet(todayKey)
+    const isPinned = pinned.has(id)
+    const itemList = [isPinned ? '取消置顶' : '置顶', '不再提醒', '删除']
+    wx.showActionSheet({
+      itemList,
+      success: (res) => {
+        const idx = res.tapIndex
+        if (idx === 0) {
+          if (isPinned) this.removePinnedId(id); else this.addPinnedId(id)
+          this.loadAllHealthAlerts()
+        } else if (idx === 1) {
+          try {
+            const nm = app.globalData.notificationManager
+            const settings = nm.getNotificationSettings()
+            const prefs = { ...(settings.healthAlertPreferences || {}) }
+            if (type) prefs[type] = false
+            const nextSettings = { ...settings, healthAlertPreferences: prefs }
+            nm.saveNotificationSettings(nextSettings)
+            try {
+              app.request({
+                url: '/api/reminders/settings',
+                method: 'PUT',
+                data: {
+                  enabled: !!nextSettings.enabled,
+                  feedingReminder: !!nextSettings.feedingReminder,
+                  healthReminder: !!nextSettings.healthReminder,
+                  cleaningReminder: !!nextSettings.cleaningReminder,
+                  medicationReminder: !!nextSettings.medicationReminder,
+                  breedingReminder: !!nextSettings.breedingReminder,
+                  feedingReminderTime: nextSettings.feedingReminderTime || null,
+                  cleaningReminderTime: nextSettings.cleaningReminderTime || null,
+                  medicationReminderTime: nextSettings.medicationReminderTime || null,
+                  healthAlertPreferences: prefs
+                }
+              }).then(()=>{}).catch(()=>{})
+            } catch (_) {}
+          } catch (_) {}
+          this.loadAllHealthAlerts()
+        } else if (idx === 2) {
+          this.deleteAlert({ currentTarget: { dataset: { id } } })
+        }
+      }
+    })
   }
 })

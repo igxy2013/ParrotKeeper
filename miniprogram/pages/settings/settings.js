@@ -91,6 +91,25 @@ Page({
       
       notificationManager.saveNotificationSettings(notificationSettings)
 
+      try {
+        app.request({
+          url: '/api/reminders/settings',
+          method: 'PUT',
+          data: {
+            enabled: !!notificationSettings.enabled,
+            feedingReminder: !!notificationSettings.feedingReminder,
+            healthReminder: !!notificationSettings.healthReminder,
+            cleaningReminder: !!notificationSettings.cleaningReminder,
+            medicationReminder: !!notificationSettings.medicationReminder,
+            breedingReminder: !!notificationSettings.breedingReminder,
+            feedingReminderTime: notificationSettings.feedingReminderTime || null,
+            cleaningReminderTime: notificationSettings.cleaningReminderTime || null,
+            medicationReminderTime: notificationSettings.medicationReminderTime || null,
+            healthAlertPreferences: notificationSettings.healthAlertPreferences || {}
+          }
+        })
+      } catch (_) {}
+
       // 若时间或开关发生变化，重置当天对应类型的生成状态，允许在当天重新生成一次
       try {
         const STATE_KEY = 'daily_reminders_state'

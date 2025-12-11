@@ -1108,7 +1108,7 @@ Page({
         const diff = now.getTime() - birth.getTime()
         const days = Math.floor(diff / 86400000)
         const d = days < 1 ? 1 : days
-        if (d >= 1 && d <= 30) {
+        if (d >= 1 && d <= 45) {
           const alert = chickCare.buildChickCareAlert(p, d)
           if (alert) careAlerts.push(alert)
         }
@@ -1116,6 +1116,7 @@ Page({
 
       const careF = careAlerts.filter(a => allowType(a.type))
       let topAlerts = []
+      let generalAdvice = null
 
       let incubationAlerts = []
       try {
@@ -1177,14 +1178,18 @@ Page({
           })
         })
         const incubF = incubationAlerts.filter(a => allowType(a.type))
-        // 统一列表构建与排序，确保与“健康提醒”页一致
-        const allUnified = (typeof generalAdvice !== 'undefined' && generalAdvice ? [generalAdvice] : [])
+        // 统一列表构建与排序，确保与“健康提醒”页一致（支持置顶）
+        const allUnified = (generalAdvice ? [generalAdvice] : [])
           .concat(careF)
           .concat(incubF)
           .concat(alertsF)
+        const todayKeyForSort = this.getTodayKey()
+        const pinnedForSort = this.getPinnedSet(todayKeyForSort)
         allUnified.sort((a, b) => {
-          const wa = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
-          const wb = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
+          const waBase = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
+          const wbBase = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
+          const wa = waBase + (pinnedForSort.has(a.id) ? 100 : 0)
+          const wb = wbBase + (pinnedForSort.has(b.id) ? 100 : 0)
           return wb - wa
         })
         const todayKey = this.getTodayKey()
@@ -1204,7 +1209,7 @@ Page({
           { key: 'health', name: '健康与观察', desc: '每日观察粪便、食欲与体重趋势，异常及时记录' }
         ]
         const t = topics[dayIndex % topics.length]
-        const generalAdvice = {
+        generalAdvice = {
           id: `care-general-${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}-${t.key}`,
           parrot_id: '',
           title: `护理指南：${t.name}`,
@@ -1220,19 +1225,22 @@ Page({
         }
       } catch (_) {}
 
-      // 统一总数：与健康提醒页一致（去重后数量）
+      // 统一总数：与健康提醒页一致（按过滤后的列表长度计算）
       const todayKey = this.getTodayKey()
       const dismissed = this.getDismissedSet(todayKey)
-      const allForCount = (topAlerts || []).concat(alertsF).concat(careF).concat((typeof incubF !== 'undefined' ? incubF : []))
-      const countReducer = allForCount.reduce((acc, a) => {
-        if (a && a.id && !dismissed.has(a.id) && !acc.has(a.id)) acc.add(a.id)
-        return acc
-      }, new Set())
+      const unifiedForCount = []
+      if (generalAdvice && allowType('care_general_topic') && !dismissed.has(generalAdvice.id)) {
+        unifiedForCount.push(generalAdvice)
+      }
+      ;(careF || []).forEach(a => unifiedForCount.push(a))
+      ;(((typeof incubF !== 'undefined' ? incubF : []) )|| []).forEach(a => unifiedForCount.push(a))
+      ;(alertsF || []).forEach(a => unifiedForCount.push(a))
+      const filteredForCount = unifiedForCount.filter(a => a && a.id && !dismissed.has(a.id))
       const filledTop = topAlerts
 
       this.setData({
         healthAlerts: filledTop,
-        healthAlertsTotal: countReducer.size
+        healthAlertsTotal: filteredForCount.length+1
       })
 
       try {
@@ -1271,6 +1279,33 @@ Page({
     } catch (_) { return new Set() }
   },
 
+  // 置顶集合
+  getPinnedSet(todayKey) {
+    try {
+      const list = wx.getStorageSync(`pinnedHealthAlerts_${todayKey}`) || []
+      return new Set(Array.isArray(list) ? list : [])
+    } catch (_) { return new Set() }
+  },
+  addPinnedId(id) {
+    if (!id) return
+    const key = this.getTodayKey()
+    try {
+      const list = wx.getStorageSync(`pinnedHealthAlerts_${key}`) || []
+      const next = Array.isArray(list) ? list.slice() : []
+      if (!next.includes(id)) next.push(id)
+      wx.setStorageSync(`pinnedHealthAlerts_${key}`, next)
+    } catch (_) {}
+  },
+  removePinnedId(id) {
+    if (!id) return
+    const key = this.getTodayKey()
+    try {
+      const list = wx.getStorageSync(`pinnedHealthAlerts_${key}`) || []
+      const next = (Array.isArray(list) ? list : []).filter(x => x !== id)
+      wx.setStorageSync(`pinnedHealthAlerts_${key}`, next)
+    } catch (_) {}
+  },
+
   addDismissedId(id) {
     if (!id) return
     const key = this.getTodayKey()
@@ -1283,11 +1318,53 @@ Page({
   },
 
   onHealthAlertLongPress(e) {
-    const id = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || ''
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+    const id = ds.id || ''
+    const type = ds.type || ''
     if (!id) return
+    const todayKey = this.getTodayKey()
+    const pinned = this.getPinnedSet(todayKey)
+    const isPinned = pinned.has(id)
+    const itemList = [isPinned ? '取消置顶' : '置顶', '不再提醒', '删除']
     wx.showActionSheet({
-      itemList: ['删除'],
-      success: (res) => { if (res.tapIndex === 0) this.deleteHealthAlert({ currentTarget: { dataset: { id } } }) }
+      itemList,
+      success: (res) => {
+        const idx = res.tapIndex
+        if (idx === 0) {
+          if (isPinned) this.removePinnedId(id); else this.addPinnedId(id)
+          this.loadHealthAlerts()
+        } else if (idx === 1) {
+          try {
+            const nm = app.globalData.notificationManager
+            const settings = nm.getNotificationSettings()
+            const prefs = { ...(settings.healthAlertPreferences || {}) }
+            if (type) prefs[type] = false
+            const nextSettings = { ...settings, healthAlertPreferences: prefs }
+            nm.saveNotificationSettings(nextSettings)
+            try {
+              app.request({
+                url: '/api/reminders/settings',
+                method: 'PUT',
+                data: {
+                  enabled: !!nextSettings.enabled,
+                  feedingReminder: !!nextSettings.feedingReminder,
+                  healthReminder: !!nextSettings.healthReminder,
+                  cleaningReminder: !!nextSettings.cleaningReminder,
+                  medicationReminder: !!nextSettings.medicationReminder,
+                  breedingReminder: !!nextSettings.breedingReminder,
+                  feedingReminderTime: nextSettings.feedingReminderTime || null,
+                  cleaningReminderTime: nextSettings.cleaningReminderTime || null,
+                  medicationReminderTime: nextSettings.medicationReminderTime || null,
+                  healthAlertPreferences: prefs
+                }
+              }).then(()=>{}).catch(()=>{})
+            } catch (_) {}
+          } catch (_) {}
+          this.loadHealthAlerts()
+        } else if (idx === 2) {
+          this.deleteHealthAlert({ currentTarget: { dataset: { id } } })
+        }
+      }
     })
   },
 
@@ -1312,7 +1389,7 @@ Page({
         return
       }
       if (type === 'chick_care') {
-        wx.navigateTo({ url: '/pages/care-guide/care-guide?tab=chick_0_30' })
+        wx.navigateTo({ url: '/pages/care-guide/care-guide?tab=chick_0_45' })
         return
       }
       if (type === 'incubation_advice') {

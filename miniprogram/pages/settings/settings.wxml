@@ -74,7 +74,7 @@
         <view class="notification-details">
           <view class="setting-action-item">
             <view class="setting-icon-wrapper"><view class="setting-icon">🐣</view></view>
-            <view class="setting-content"><view class="setting-name">雏鸟护理</view><view class="setting-desc">雏鸟0-30天护理提醒</view></view>
+            <view class="setting-content"><view class="setting-name">雏鸟护理</view><view class="setting-desc">雏鸟0-45天护理提醒</view></view>
             <switch checked="{{healthAlertPreferences.chick_care}}" bindchange="toggleHealthAlertType" data-key="chick_care" />
           </view>
           <view class="setting-action-item">
