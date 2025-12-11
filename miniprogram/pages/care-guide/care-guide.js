@@ -50,15 +50,19 @@ Page({
             species.map(s => ({ key: s.key, name: s.name }))
           )
 
-          const firstKey = tabs[0]?.key || 'general'
-          // 设置数据并展示通用或第一个物种
+          const chickCare = require('../../utils/chick-care.js')
+          const chickKey = 'chick_0_30'
+          const chickName = '手养雏鸟 0-30天'
+          const chickSections = chickCare.getChickCareGuideSections()
+          const nextTabs = tabs.concat([{ key: chickKey, name: chickName }])
+          const nextGuides = { ...guides, [chickKey]: { display_name: chickName, sections: chickSections } }
+          const firstKey = nextTabs[0]?.key || 'general'
           this.setData({
-            speciesTabs: tabs,
-            guidesMap: guides,
+            speciesTabs: nextTabs,
+            guidesMap: nextGuides,
             generalSections,
             activeTabKey: firstKey,
-            // 兼容旧版：sections 同步为当前激活的内容
-            sections: firstKey === 'general' ? generalSections : ((guides[firstKey] && guides[firstKey].sections) || [])
+            sections: firstKey === 'general' ? generalSections : ((nextGuides[firstKey] && nextGuides[firstKey].sections) || [])
           })
         } else {
           // 非成功返回：回退至通用
@@ -81,11 +85,17 @@ Page({
         if (res && res.success && res.data) {
           const sections = Array.isArray(res.data.sections) ? res.data.sections : []
           // 直接使用后端结构；若未来提供 iconUrl 可直接渲染
+          const chickCare = require('../../utils/chick-care.js')
+          const chickKey = 'chick_0_30'
+          const chickName = '手养雏鸟 0-30天'
+          const chickSections = chickCare.getChickCareGuideSections()
+          const tabs = [{ key: 'general', name: '通用建议' }, { key: chickKey, name: chickName }]
+          const guides = { [chickKey]: { display_name: chickName, sections: chickSections } }
           this.setData({
             sections,
             generalSections: sections,
-            speciesTabs: [{ key: 'general', name: '通用建议' }],
-            guidesMap: {},
+            speciesTabs: tabs,
+            guidesMap: guides,
             activeTabKey: 'general',
             loading: false
           })

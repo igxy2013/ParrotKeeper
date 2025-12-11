@@ -10,7 +10,7 @@
           <view class="alert-list">
             <view class="alert-item {{item.severity}}" wx:for="{{alerts}}" wx:key="id">
               <view class="alert-icon">
-                <image class="alert-icon-img" src="/images/remix/ri-information-fill-amber.png" mode="widthFix" />
+                <image class="alert-icon-img" src="{{item.severity === 'high' ? iconPaths.alertInfoHigh : (item.severity === 'medium' ? iconPaths.alertInfoMedium : iconPaths.alertInfoLow)}}" mode="widthFix" binderror="handleIconError" data-key="{{item.severity === 'high' ? 'alertInfoHigh' : (item.severity === 'medium' ? 'alertInfoMedium' : 'alertInfoLow')}}"/>
               </view>
               <view class="alert-content">
                 <view class="alert-title">{{item.title}}</view>

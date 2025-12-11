@@ -117,6 +117,12 @@
       </view>
     </view>
 
+    <!-- 操作栏：仅单条记录、且有权限时显示 -->
+    <view class="action-bar" wx:if="{{hasOperationPermission && !isAggregate && recordId}}">
+      <button class="btn edit" bindtap="editRecord">编辑</button>
+      <button class="btn delete" bindtap="deleteRecord">删除</button>
+    </view>
+
     <!-- 多记录聚合提示 -->
     <view class="aggregate" wx:if="{{isAggregate}}">
       <text>该时间点包含多个记录（{{aggregateCount}}）</text>

@@ -15,6 +15,7 @@ Page({
     isAggregate: false,
     aggregateCount: 0,
     aggregateRecords: [],
+    hasOperationPermission: false,
   },
 
   onLoad(options) {
@@ -31,6 +32,11 @@ Page({
       aggregateCount: isAggregate ? recordIds.length : (recordIds.length || (recordId ? 1 : 0)),
       recordTypeLabel: this.getTypeLabel(recordType)
     });
+
+    try {
+      const hop = app.hasOperationPermission && app.hasOperationPermission();
+      this.setData({ hasOperationPermission: !!hop });
+    } catch (_) {}
 
     if (isAggregate) {
       // 聚合详情：加载所有记录用于完整展示
@@ -156,6 +162,59 @@ Page({
       current,
       urls
     });
+  },
+
+  editRecord() {
+    try {
+      if (!this.data.hasOperationPermission) {
+        app.showError('您没有操作权限');
+        return;
+      }
+      const type = this.data.recordType;
+      const id = this.data.recordId;
+      if (!type || !id || this.data.isAggregate) return;
+      const url = `/pages/records/add-record/add-record?mode=edit&type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`;
+      wx.navigateTo({ url });
+    } catch (_) {}
+  },
+
+  async deleteRecord() {
+    try {
+      if (!this.data.hasOperationPermission) {
+        app.showError('您没有操作权限');
+        return;
+      }
+      const type = this.data.recordType;
+      const id = this.data.recordId;
+      if (!type || !id || this.data.isAggregate) return;
+
+      const confirmRes = await new Promise((resolve) => {
+        wx.showModal({
+          title: '确认删除',
+          content: '确定要删除该记录吗？删除后无法恢复。',
+          confirmText: '删除',
+          confirmColor: '#ef4444',
+          success: resolve,
+          fail: () => resolve({ confirm: false })
+        });
+      });
+      if (!confirmRes.confirm) return;
+
+      wx.showLoading({ title: '删除中...' });
+      const res = await app.request({ url: `/api/records/${type}/${id}`, method: 'DELETE' });
+      wx.hideLoading();
+      if (res && res.success) {
+        wx.showToast({ title: '删除成功', icon: 'success' });
+        setTimeout(() => {
+          wx.navigateBack({ delta: 1 });
+        }, 300);
+      } else {
+        wx.showToast({ title: (res && res.message) || '删除失败', icon: 'none' });
+      }
+    } catch (e) {
+      wx.hideLoading();
+      wx.showToast({ title: '删除失败', icon: 'none' });
+    }
   },
 
   async fetchAggregateRecords(type, ids) {

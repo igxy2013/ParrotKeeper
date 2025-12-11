@@ -1,6 +1,7 @@
 // pages/index/index.js
 const app = getApp()
 const { parseServerTime } = require('../../utils/time')
+const chickCare = require('../../utils/chick-care.js')
 
 Page({
   data: {
@@ -30,11 +31,12 @@ Page({
     showNotifications: false,
     notifications: [],
     unreadCount: 0,
+    incubatingEggCount: 0,
     // 公告弹窗
     showAnnouncementModal: false,
     latestAnnouncement: null,
     // 新增：首页卡片自定义
-    homeWidgets: ['parrots','feeding_today','monthly_income','monthly_expense'],
+    homeWidgets: ['parrots','feeding_today','monthly_income','monthly_expense','weight_trend'],
     // 隐藏的卡片列表与映射
     hiddenWidgets: [],
     hiddenWidgetsMap: {},
@@ -51,7 +53,6 @@ Page({
       { id: 'feeding_today', name: '今日喂食', icon: '/images/remix/ri-restaurant-fill-orange.png' },
       { id: 'monthly_income', name: '月收入', icon: '/images/remix/ri-money-dollar-circle-fill-purple.png' },
       { id: 'monthly_expense', name: '月支出', icon: '/images/remix/ri-shopping-bag-fill-blue.png' },
-      // 新增：可添加的体重趋势大卡
       { id: 'weight_trend', name: '体重趋势', icon: '/images/chart.png' }
     ],
 
@@ -126,6 +127,9 @@ Page({
       genderUnknown: '/images/remix/question-mark.png',
       // 通知与表单图标
       alertInfo: '/images/remix/ri-information-fill-amber.png',
+      alertInfoLow: '/images/remix/ri-information-fill-green.png',
+      alertInfoMedium: '/images/remix/ri-information-fill-amber.png',
+      alertInfoHigh: '/images/remix/ri-information-fill-red.png',
       closeWhite: '/images/icons/close-white.png',
       labelHeart: '/images/icons/heart.png',
       labelLeaf: '/images/icons/leaf.png',
@@ -371,7 +375,7 @@ Page({
   loadHomeWidgetsOrder() {
     try {
       const stored = wx.getStorageSync('homeWidgetsOrder')
-      const defaults = ['parrots','feeding_today','monthly_income','monthly_expense']
+      const defaults = ['parrots','feeding_today','monthly_income','monthly_expense','weight_trend']
       const validIds = (this.data.availableWidgets || []).map(w => w.id)
       if (Array.isArray(stored)) {
         // 过滤为所有可用组件ID中的有效项
@@ -581,20 +585,27 @@ Page({
   getHealthStatusText(overview = {}) {
     try {
       const hs = overview.health_status || null
+      const eggCount = (this.data && this.data.incubatingEggCount) || 0
       if (hs) {
         const parts = []
         if (hs.healthy > 0) parts.push(`${hs.healthy}只鹦鹉状态良好`)
         if (hs.sick > 0) parts.push(`${hs.sick}只鹦鹉生病`)
         if (hs.recovering > 0) parts.push(`${hs.recovering}只鹦鹉恢复中`)
         if (hs.observation > 0) parts.push(`${hs.observation}只鹦鹉观察中`)
+        if (eggCount > 0) parts.push(`${eggCount}颗蛋正在孵化中`)
         if (parts.length > 0) return parts.join('，')
       }
       // 回退：仅显示总数良好
       const total = (overview && overview.total_parrots) || 0
-      return `${total}只鹦鹉状态良好`
+      const base = `${total}只鹦鹉状态良好`
+      if (eggCount > 0) return `${base}，${eggCount}颗蛋正在孵化中`
+      return base
     } catch (e) {
       const total = (overview && overview.total_parrots) || 0
-      return `${total}只鹦鹉状态良好`
+      const base = `${total}只鹦鹉状态良好`
+      const eggCount = (this.data && this.data.incubatingEggCount) || 0
+      if (eggCount > 0) return `${base}，${eggCount}颗蛋正在孵化中`
+      return base
     }
   },
 
@@ -758,7 +769,8 @@ Page({
               type: 'health',
               parrot_name: parrotName,
               timeValue: dt ? dt.toISOString() : rawTime,
-              timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(rawTime)
+              timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(rawTime),
+              record_id: record.id
             })
           })
         }
@@ -775,16 +787,17 @@ Page({
             // 真实时间字段优先：配对日期；兜底为记录创建时间
             const rawTime = record.mating_date || record.created_at
             const dt = parseServerTime(rawTime)
-            allRecords.push({
-              id: `breeding_${record.id}`,
-              title: '进行了配对',
-              type: 'breeding',
-              parrot_name: `${maleName} × ${femaleName}`,
-              timeValue: dt ? dt.toISOString() : rawTime,
-              timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(rawTime)
-            })
+          allRecords.push({
+            id: `breeding_${record.id}`,
+            title: '进行了配对',
+            type: 'breeding',
+            parrot_name: `${maleName} × ${femaleName}`,
+            timeValue: dt ? dt.toISOString() : rawTime,
+            timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(rawTime),
+            record_id: record.id
           })
-        }
+        })
+      }
         
         // 按时间排序，最新的在前（使用解析后的时间）
         allRecords.sort((a, b) => {
@@ -866,8 +879,13 @@ Page({
           // 与其他类型保持一致，使用相对时间展示
           timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(time),
           parrot_names: [],
-          feed_type_names: []
+          feed_type_names: [],
+          record_ids: []
         }
+      }
+      const rid = (record && (record.id || record.record_id || record.feeding_id))
+      if (rid && grouped[key].record_ids.indexOf(rid) === -1) {
+        grouped[key].record_ids.push(rid)
       }
       const parrotName = (record && (record.parrot_name || (record.parrot && record.parrot.name))) || ''
       const feedTypeName = (record && (record.feed_type_name || (record.feed_type && record.feed_type.name))) || ''
@@ -886,7 +904,8 @@ Page({
         type: 'feeding',
         parrot_name: item.parrot_names.join('、'),
         timeValue: item.timeValue,
-        timeText: item.timeText
+        timeText: item.timeText,
+        record_ids: item.record_ids
       }
     })
     // 按时间倒序（跨端一致：使用 parseServerTime 再取时间戳）
@@ -917,8 +936,13 @@ Page({
           timeText: dt ? app.formatRelativeTime(dt) : app.formatRelativeTime(time),
           parrot_names: [],
           cleaning_type_names: [],
-          cleaning_type_ids: []
+          cleaning_type_ids: [],
+          record_ids: []
         }
+      }
+      const rid = (record && (record.id || record.record_id || record.cleaning_id))
+      if (rid && !grouped[key].record_ids.includes(rid)) {
+        grouped[key].record_ids.push(rid)
       }
       const parrotName = record.parrot_name || (record.parrot && record.parrot.name) || ''
       if (parrotName && !grouped[key].parrot_names.includes(parrotName)) {
@@ -944,7 +968,8 @@ Page({
         type: 'cleaning',
         parrot_name: item.parrot_names.join('、'),
         timeValue: item.timeValue,
-        timeText: item.timeText
+        timeText: item.timeText,
+        record_ids: item.record_ids
       }
     })
     // 按时间倒序
@@ -956,6 +981,36 @@ Page({
       return ma - mb
     })
     return result
+  },
+
+  openRecentRecord(e) {
+    try {
+      const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+      const type = ds.type || ''
+      let id = ds.id || ''
+      let recordIds = (ds.recordIds || '').trim()
+      if (!recordIds && (type === 'feeding' || type === 'cleaning')) {
+        const s = String(id || ds.id || '')
+        const prefix = type === 'feeding' ? 'feeding_group_' : 'cleaning_group_'
+        if (s.startsWith(prefix)) {
+          const rest = s.substring(prefix.length)
+          if (/^\d+$/.test(rest)) {
+            id = rest
+          } else {
+            id = ''
+          }
+        }
+      }
+      const params = []
+      if (type) params.push(`type=${encodeURIComponent(type)}`)
+      if (recordIds) {
+        params.push(`record_ids=${encodeURIComponent(recordIds)}`)
+      } else if (id) {
+        params.push(`id=${encodeURIComponent(id)}`)
+      }
+      const url = `/pages/records/detail/detail${params.length ? ('?' + params.join('&')) : ''}`
+      wx.navigateTo({ url })
+    } catch (_) {}
   },
 
   // 加载健康提醒
@@ -1013,13 +1068,128 @@ Page({
         })
       })
 
-      // 按严重级别排序，最多显示前 3 条（首页卡片展示）
       alerts.sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
-      const topAlerts = alerts.slice(0, 3)
+
+      let parrots = Array.isArray(this.data.myParrots) ? this.data.myParrots : []
+      if (!parrots || parrots.length === 0) {
+        try {
+          const pr = await app.request({ url: '/api/parrots', method: 'GET', data: { page: 1, per_page: 100 } })
+          if (pr && pr.success) {
+            parrots = (pr.data.parrots || []).map(p => ({ id: p.id, name: p.name, birth_date: p.birth_date }))
+          }
+        } catch (_) {}
+      }
+      const careAlerts = []
+      parrots.forEach(p => {
+        const bd = p.birth_date
+        if (!bd) return
+        let birth = new Date(bd)
+        if (isNaN(birth.getTime())) {
+          const s = String(bd)
+          birth = new Date(s.replace(/-/g, '/').replace('T', ' '))
+        }
+        if (isNaN(birth.getTime())) return
+        const now = new Date()
+        const diff = now.getTime() - birth.getTime()
+        const days = Math.floor(diff / 86400000)
+        const d = days < 1 ? 1 : days
+        if (d >= 1 && d <= 30) {
+          const alert = chickCare.buildChickCareAlert(p, d)
+          if (alert) careAlerts.push(alert)
+        }
+      })
+
+      let topAlerts = alerts.slice(0, 3)
+      if (careAlerts.length > 0) {
+        topAlerts = careAlerts.slice(0, 3)
+      }
+
+      try {
+        const eggsResp = await app.request({ url: '/api/incubation/eggs', method: 'GET', data: { page: 1, per_page: 50 } })
+        const eggs = (eggsResp && eggsResp.data && eggsResp.data.items) || (eggsResp && eggsResp.data && eggsResp.data.eggs) || []
+        const incubating = eggs.filter(e => {
+          const s = (e && (e.status || e.state)) || ''
+          return String(s) === 'incubating'
+        })
+        this.setData({ incubatingEggCount: incubating.length })
+        this.setData({ overview_status_text: this.getHealthStatusText(this.data.overview) })
+        const today = new Date()
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+        const adviceCalls = incubating.slice(0, 10).map(e => {
+          const id = e.id || e.egg_id || e.eggId
+          return app.request({ url: `/api/incubation/eggs/${id}/advice`, method: 'GET', data: { date: todayStr } })
+            .then(r => ({ ok: true, egg: e, resp: r }))
+            .catch(err => ({ ok: false, egg: e, err }))
+        })
+        const adviceResults = await Promise.all(adviceCalls)
+        const incubationAlerts = []
+        adviceResults.forEach(ar => {
+          if (!ar || !ar.ok || !ar.resp || !ar.resp.success) return
+          const e = ar.egg || {}
+          const ranges = (ar.resp.data && ar.resp.data.ranges) || {}
+          const tr = ranges.temperature_c || {}
+          const hr = ranges.humidity_pct || {}
+          const turningRequired = (ar.resp.data && ar.resp.data.turning_required) ? true : false
+          const candlingRequired = (ar.resp.data && ar.resp.data.candling_required) ? true : false
+          const tipsArr = (ar.resp.data && Array.isArray(ar.resp.data.tips)) ? ar.resp.data.tips.filter(x => !!x) : []
+          const speciesName = (e.species && e.species.name) ? e.species.name : (e.species_name || '')
+          const parrotName = e.parrot_name || e.male_parrot_name || e.female_parrot_name || speciesName || '孵化蛋'
+          const startStr = e.incubator_start_date || e.incubator_start_date_text || ''
+          let dayIndexDisplay = ''
+          try {
+            if (startStr) {
+              const start = new Date(String(startStr).replace(/-/g,'/').replace('T',' '))
+              if (!isNaN(start.getTime())) {
+                const todayMid = new Date(`${todayStr}T00:00:00`)
+                const di = Math.floor((todayMid.getTime() - start.getTime())/86400000) + 1
+                if (di > 0 && isFinite(di)) dayIndexDisplay = String(di)
+              }
+            }
+          } catch (_) {}
+          const tempText = (tr.low!=null && tr.high!=null) ? `${tr.low}-${tr.high}℃` : '—'
+          const humText = (hr.low!=null && hr.high!=null) ? `${hr.low}-${hr.high}%` : '—'
+          const turningText = turningRequired ? '需翻蛋' : '不翻蛋'
+          const candlingText = candlingRequired ? '需照蛋' : '不照蛋'
+          const tipsText = tipsArr.length ? tipsArr.join('；') : ''
+          incubationAlerts.push({
+            id: `incubation-${e.id || e.egg_id}-${todayStr}`,
+            parrot_id: e.parrot_id || '',
+            title: dayIndexDisplay ? `${parrotName}：第${dayIndexDisplay}天孵化建议` : `${parrotName}：孵化建议`,
+            description: `温度${tempText}；湿度${humText}；${turningText}；${candlingText}${tipsText ? '；' + tipsText : ''}`,
+            severity: 'medium',
+            type: 'incubation_advice'
+          })
+        })
+        if (incubationAlerts.length) {
+          // 若首页已有雏鸟提醒，则在其后继续展示孵化建议（最多3条裁剪）
+          const merged = careAlerts.length ? careAlerts.concat(incubationAlerts) : incubationAlerts.concat(alerts)
+          topAlerts = merged.slice(0, 3)
+        }
+      } catch (_) {
+      }
 
       this.setData({
         healthAlerts: topAlerts
       })
+
+      try {
+        const nm = app.globalData.notificationManager
+        const settings = nm.getNotificationSettings()
+        if (settings && settings.enabled) {
+          const today = new Date()
+          const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+          const existing = nm.getLocalNotifications() || []
+          const exists = (title) => existing.some(n => n && n.type === 'health_alert' && n.title === title && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey))
+          const mergedAll = (careAlerts.length ? careAlerts : []).concat(topAlerts.filter(a => a.type !== 'chick_care')).concat(alerts)
+          mergedAll.slice(0, 10).forEach(a => {
+            const t = a.title || '健康提醒'
+            const d = a.description || ''
+            if (!exists(t)) {
+              nm.addLocalNotification('health_alert', t, d, '', '', { route: '/pages/health-alerts/health-alerts' })
+            }
+          })
+        }
+      } catch (_) {}
     } catch (error) {
       console.error('加载健康提醒失败:', error)
       this.setData({ healthAlerts: [] })

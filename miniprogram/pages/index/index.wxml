@@ -250,7 +250,7 @@
       </view>
       <view class="activity-list">
         <view class="activity-item {{item.type === 'feeding' ? 'orange-theme' : (item.type === 'health' ? 'green-theme' : (item.type === 'cleaning' ? 'blue-theme' : 'purple-theme'))}}" 
-              wx:for="{{recentRecords}}" wx:key="id" wx:if="{{index < 3}}">
+              wx:for="{{recentRecords}}" wx:key="id" wx:if="{{index < 3}}" bindtap="openRecentRecord" data-type="{{item.type}}" data-id="{{item.record_id || item.id}}" data-record-ids="{{item.record_ids ? item.record_ids.join(',') : ''}}">
           <view class="activity-icon-container">
         <image class="activity-icon-img" src="{{item.iconPath}}" mode="widthFix" binderror="handleActivityIconError" data-index="{{index}}" />
           </view>
@@ -273,7 +273,7 @@
       <view class="card-content">
         <view class="alert-list">
           <view class="alert-item {{item.severity}}" wx:for="{{healthAlerts}}" wx:key="id">
-      <view class="alert-icon"><image class="alert-icon-img" src="{{iconPaths.alertInfo}}" mode="widthFix" binderror="handleIconError" data-key="alertInfo"/></view>
+      <view class="alert-icon"><image class="alert-icon-img" src="{{item.severity === 'high' ? iconPaths.alertInfoHigh : (item.severity === 'medium' ? iconPaths.alertInfoMedium : iconPaths.alertInfoLow)}}" mode="widthFix" binderror="handleIconError" data-key="{{item.severity === 'high' ? 'alertInfoHigh' : (item.severity === 'medium' ? 'alertInfoMedium' : 'alertInfoLow')}}"/></view>
             <view class="alert-content">
               <view class="alert-title">{{item.title}}</view>
               <view class="alert-subtitle">{{item.description}}</view>
