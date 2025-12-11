@@ -318,7 +318,7 @@ Page({
         ctx.stroke()
         ctx.restore()
 
-        const label = (typeof active.weight === 'number' && !isNaN(active.weight)) ? (Math.round(active.weight) + 'g') : '--'
+        const label = (typeof active.weight === 'number' && !isNaN(active.weight)) ? (Number(active.weight).toFixed(1) + 'g') : '--'
         ctx.font = '14px sans-serif'
         const textW = ctx.measureText(label).width
         const paddingX = 8
@@ -416,7 +416,7 @@ Page({
     })
   },
   onShareAppMessage() {
-    const title = '体重趋势曲线 - 鹦鹉管家AI'
+    const title = '体重趋势 - 鹦鹉管家AI'
     return {
       title,
       path: '/pages/statistics/weight-fullscreen/weight-fullscreen'
@@ -424,7 +424,7 @@ Page({
   },
   onShareTimeline() {
     return {
-      title: '体重趋势曲线 - 鹦鹉管家AI'
+      title: '体重趋势 - 鹦鹉管家AI'
     }
   }
 })

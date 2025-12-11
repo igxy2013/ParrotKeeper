@@ -2,7 +2,7 @@
   <view class="top-bar">
     <view class="back-btn" bindtap="goBack">返回</view>
     <image class="title-icon" src="/images/remix/ri-line-chart-fill-purple.png" mode="widthFix"/>
-    <view class="title">体重趋势曲线</view>
+    <view class="title">体重趋势</view>
     <view class="spacer"></view>
   </view>
   <scroll-view class="legend-scroll" wx:if="{{weightLegend.length > 0}}" scroll-x="true" enable-flex="true" show-scrollbar="false">

@@ -1668,12 +1668,6 @@
   color: #666;
 }
 
-/* 鹦鹉选择器样式 */
-.parrot-selector {
-  position: relative;
-  min-width: 200rpx;
-}
-
 .selector-wrapper {
   display: flex;
   align-items: center;

@@ -74,13 +74,13 @@
     </view>
   </view>
 
-  <!-- 体重趋势曲线 -->
+  <!-- 体重趋势 -->
   <view class="health-section">
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
           <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.lineChartPurple}}" mode="widthFix" binderror="onStatIconError" data-key="lineChartPurple"/></view>
-          <text class="card-title">体重趋势曲线</text>
+          <text class="card-title">体重趋势</text>
         </view>
           <view class="parrot-selector">
           <view class="selector-wrapper" bindtap="toggleParrotDropdown">
@@ -177,13 +177,13 @@
 
   <!-- 护理频率统计：已按需求移除 -->
 
-  <!-- 食物偏好分析 -->
+  <!-- 食物偏好 -->
   <view class="food-pref-section">
     <view class="info-card">
       <view class="card-header">
         <view class="header-left">
           <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.restaurantOrange}}" mode="widthFix" binderror="onStatIconError" data-key="restaurantOrange"/></view>
-          <text class="card-title">食物偏好分析</text>
+          <text class="card-title">食物偏好</text>
         </view>
       </view>
       <view class="card-content">

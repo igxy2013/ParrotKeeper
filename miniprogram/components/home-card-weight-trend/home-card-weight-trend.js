@@ -59,7 +59,7 @@ Component({
       if (weights.length > 0) {
         let sum = 0
         for (let k = 0; k < weights.length; k++) sum += weights[k]
-        avgStr = Math.round(sum / weights.length) + 'g'
+        avgStr = Number(sum / weights.length).toFixed(1) + 'g'
       }
       this.setData({ displaySeries: display, weightAvgChart: avgStr })
     },
