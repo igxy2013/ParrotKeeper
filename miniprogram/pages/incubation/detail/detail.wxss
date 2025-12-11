@@ -240,6 +240,21 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* 今日优先：当今天与其他状态叠加时仍以绿色为主 */
+.cal-cell.today.has-log,
+.cal-cell.today.incubating,
+.cal-cell.today.hatch,
+.cal-cell.today.incubating.has-log {
+  background: #10b981;
+  color: #fff;
+}
+.cal-cell.today.has-log .day-index,
+.cal-cell.today.incubating .day-index,
+.cal-cell.today.hatch .day-index,
+.cal-cell.today.incubating.has-log .day-index {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .cal-cell.selected {
   box-shadow: 0 0 0 4rpx #10b981 inset;
 }
@@ -290,8 +305,8 @@
 }
 
 /* 选中状态下的点颜色反转 */
-.cal-cell.today .turning-dot, .cal-cell.hatch .turning-dot { background: #fff; opacity: 0.8; }
-.cal-cell.today .candling-dot, .cal-cell.hatch .candling-dot { background: #fff; opacity: 0.8; }
+.cal-cell.hatch .turning-dot { background: #fff; opacity: 0.8; }
+.cal-cell.hatch .candling-dot { background: #fff; opacity: 0.8; }
 
 
 .cal-legend {

@@ -152,9 +152,21 @@ Page({
     }catch(_){ }
 
     for(let i=0;i<padStart;i++){ days.push({ day:'', date:'', hasLog:false }) }
+    // 规范化后端返回的calendar键，确保使用YYYY-MM-DD作为键（移除时间部分）
+    const normalizedCalendar = {}
+    try{
+      const keys = Object.keys(calendar || {})
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i]
+        if (k === 'candling_dates' || k === 'turning_dates') continue
+        const dk = this.formatDate(k)
+        if (dk) normalizedCalendar[dk] = calendar[k]
+      }
+    }catch(_){ }
+
     for(let d=1; d<=last.getDate(); d++){
       const dt = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-      const item = calendar && calendar[dt]
+      const item = normalizedCalendar[dt]
       const cellDate = new Date(`${dt}T00:00:00`)
       const isIncubating = !!(startDate && cellDate >= startDate && cellDate <= endDate)
       let dayIndex = null
