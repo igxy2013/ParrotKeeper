@@ -126,10 +126,26 @@
               <text class="range-start">{{weightStartDate}}</text>
               <text class="range-end">{{weightEndDate}}</text>
             </view>
-            <view class="range-sliders">
-              <slider min="0" max="{{weightRangeDates.length - 1}}" step="1" value="{{weightStartIndex}}" show-value="{{false}}" bindchange="onWeightRangeStartChange" bindchanging="onWeightRangeStartChange" class="range-slider"/>
-              <slider min="0" max="{{weightRangeDates.length - 1}}" step="1" value="{{weightEndIndex}}" show-value="{{false}}" bindchange="onWeightRangeEndChange" bindchanging="onWeightRangeEndChange" class="range-slider"/>
-            </view>
+            <view class="range-slider-container">
+          <view class="slider-area" id="slider-area">
+            <view class="slider-track-bg"></view>
+            <view class="slider-track-active" style="left: {{weightLeft}}%; width: {{weightWidth}}%;"></view>
+            <!-- Start Handle -->
+            <view class="slider-handle" 
+                  style="left: {{weightLeft}}%;" 
+                  data-type="start"
+                  catchtouchstart="onSliderTouchStart"
+                  catchtouchmove="onSliderTouchMove"
+            ></view>
+            <!-- End Handle -->
+            <view class="slider-handle" 
+                  style="left: {{weightRight}}%;" 
+                  data-type="end"
+                  catchtouchstart="onSliderTouchStart"
+                  catchtouchmove="onSliderTouchMove"
+            ></view>
+          </view>
+        </view>
           </view>
         </block>
         <view class="empty-placeholder horizontal" wx:else>

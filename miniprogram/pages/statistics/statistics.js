@@ -37,7 +37,10 @@ const app = getApp()
     weightStartIndex: 0,
     weightEndIndex: 0,
     weightStartDate: '',
-      weightEndDate: '',
+    weightEndDate: '',
+    weightLeft: 0,
+    weightRight: 100,
+    weightWidth: 100,
       // 点击点高亮与标签
       activeWeightPoint: null,
       // 体重趋势卡片的当前范围平均体重
@@ -1072,6 +1075,7 @@ const app = getApp()
           weightStartDate: rangeDates[startIdx] || '',
           weightEndDate: rangeDates[endIdx] || ''
         })
+        this.updateSliderView()
         // 计算平均体重用于概览卡（避免链式调用导致的编译异常）
         const allPoints = []
         for (let i = 0; i < seriesArr.length; i++) {
@@ -1197,36 +1201,78 @@ const app = getApp()
     this.setData({ weightLegend: legend })
   },
 
-  // 起始时间滑块变化
-  onWeightRangeStartChange(e) {
-    const idx = (e && e.detail && typeof e.detail.value !== 'undefined') ? Number(e.detail.value) : 0
+  // 更新滑块视图位置
+  updateSliderView() {
     const dates = this.data.weightRangeDates || []
-    let startIdx = Math.max(0, Math.min(idx, Math.max(0, dates.length - 1)))
-    let endIdx = this.data.weightEndIndex
-    if (startIdx > endIdx) endIdx = startIdx
+    const total = dates.length > 1 ? dates.length - 1 : 1
+    const start = this.data.weightStartIndex
+    const end = this.data.weightEndIndex
+    
+    const left = (start / total) * 100
+    const right = (end / total) * 100
+    const width = right - left
+    
     this.setData({
-      weightStartIndex: startIdx,
-      weightEndIndex: endIdx,
-      weightStartDate: dates[startIdx] || '',
-      weightEndDate: dates[endIdx] || ''
+      weightLeft: left,
+      weightRight: right,
+      weightWidth: width
     })
-    this.drawWeightChart()
   },
 
-  // 结束时间滑块变化
-  onWeightRangeEndChange(e) {
-    const idx = (e && e.detail && typeof e.detail.value !== 'undefined') ? Number(e.detail.value) : 0
+  // 滑块触摸开始
+  onSliderTouchStart(e) {
+    const type = e.currentTarget.dataset.type
+    this._sliderActiveType = type
+    
+    const query = wx.createSelectorQuery().in(this)
+    query.select('.slider-area').boundingClientRect((rect) => {
+      this._sliderRect = rect
+    }).exec()
+  },
+
+  // 滑块触摸移动
+  onSliderTouchMove(e) {
+    if (!this._sliderActiveType || !this._sliderRect) return
+    
+    const clientX = e.touches[0].clientX
+    const width = this._sliderRect.width
+    const left = this._sliderRect.left
+    
+    let percent = (clientX - left) / width
+    percent = Math.max(0, Math.min(1, percent))
+    
     const dates = this.data.weightRangeDates || []
-    let endIdx = Math.max(0, Math.min(idx, Math.max(0, dates.length - 1)))
-    let startIdx = this.data.weightStartIndex
-    if (endIdx < startIdx) startIdx = endIdx
-    this.setData({
-      weightStartIndex: startIdx,
-      weightEndIndex: endIdx,
-      weightStartDate: dates[startIdx] || '',
-      weightEndDate: dates[endIdx] || ''
-    })
-    this.drawWeightChart()
+    const total = dates.length > 1 ? dates.length - 1 : 1
+    
+    const idx = Math.round(percent * total)
+    
+    if (this._sliderActiveType === 'start') {
+      let newStart = idx
+      const currentEnd = this.data.weightEndIndex
+      if (newStart > currentEnd) newStart = currentEnd
+      
+      if (newStart !== this.data.weightStartIndex) {
+         this.setData({
+           weightStartIndex: newStart,
+           weightStartDate: dates[newStart] || ''
+         })
+         this.updateSliderView()
+         this.drawWeightChart()
+      }
+    } else {
+      let newEnd = idx
+      const currentStart = this.data.weightStartIndex
+      if (newEnd < currentStart) newEnd = currentStart
+      
+      if (newEnd !== this.data.weightEndIndex) {
+         this.setData({
+           weightEndIndex: newEnd,
+           weightEndDate: dates[newEnd] || ''
+         })
+         this.updateSliderView()
+         this.drawWeightChart()
+      }
+    }
   },
 
   // 绘制体重折线图（canvas 2D）

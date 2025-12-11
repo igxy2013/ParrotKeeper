@@ -562,14 +562,65 @@
   color: #6b7280;
   margin-bottom: 8rpx;
 }
-.weight-range-control .range-sliders {
+/* Custom Range Slider */
+.range-slider-container {
+  position: relative;
+  height: 60rpx;
   display: flex;
-  flex-direction: column;
-  gap: 12rpx;
+  align-items: center;
+  margin: 10rpx 10rpx;
 }
-.weight-range-control .range-slider {
+
+.slider-area {
   width: 100%;
-  margin: 0;
+  height: 100%;
+  position: relative;
+}
+
+.slider-track-bg {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 8rpx;
+  margin-top: -4rpx;
+  background-color: #e9ecef;
+  border-radius: 4rpx;
+}
+
+.slider-track-active {
+  position: absolute;
+  top: 50%;
+  height: 8rpx;
+  margin-top: -4rpx;
+  background-color: #7c3aed; /* Purple matching the theme */
+  border-radius: 4rpx;
+}
+
+.slider-handle {
+  position: absolute;
+  width: 40rpx;
+  height: 40rpx;
+  margin-left: -20rpx;
+  background-color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+  border: 2rpx solid #7c3aed;
+  top: 50%;
+  margin-top: -20rpx; /* Center vertically */
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Add a small dot inside handle for styling */
+.slider-handle::after {
+  content: '';
+  width: 12rpx;
+  height: 12rpx;
+  background-color: #7c3aed;
+  border-radius: 50%;
 }
 
 /* 支出和品种分析 */
