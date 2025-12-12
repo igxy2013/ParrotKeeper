@@ -256,6 +256,11 @@ class NotificationManager {
     try {
       wx.setStorageSync(this.LOCAL_NOTIFICATIONS_KEY, [])
       wx.setStorageSync(this.UNREAD_COUNT_KEY, 0)
+      const now = new Date()
+      const todayKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
+      const sup = wx.getStorageSync('suppressed_notifications_today') || {}
+      const nextSup = { date: todayKey, health_alert: true }
+      wx.setStorageSync('suppressed_notifications_today', { ...sup, ...nextSup })
       this.triggerUpdateCallback()
     } catch (error) {
       console.error('清空通知失败:', error)

@@ -311,6 +311,10 @@ Page({
       camera: 'back',
       success: (res) => {
         const tempFilePath = res.tempFiles[0].tempFilePath
+        this.setData({
+          'formData.photo_url': tempFilePath,
+          'formData.processed_photo_url': ''
+        })
         this.uploadPhoto(tempFilePath)
       }
     })
@@ -348,22 +352,14 @@ Page({
       const result = JSON.parse(uploadRes.data)
       
       if (result.original_url) {
-        // 设置原图和抠图后的图片URL
-        this.setData({
-          'formData.photo_url': result.original_url
-        })
-        
-        if (result.processed_url) {
-          this.setData({
-            'formData.processed_photo_url': result.processed_url
-          })
+        const originalFull = app.resolveUploadUrl(result.original_url)
+        const processedFull = result.processed_url ? app.resolveUploadUrl(result.processed_url) : ''
+        this.setData({ 'formData.photo_url': originalFull })
+        if (processedFull) {
+          this.setData({ 'formData.processed_photo_url': processedFull })
           app.showSuccess('上传成功，已自动抠图')
         } else {
-          wx.showModal({
-            title: '温馨提示',
-            content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！',
-            showCancel: false
-          })
+          wx.showModal({ title: '温馨提示', content: '今日AI免费抠图名额已耗尽，请明天再来试试吧！', showCancel: false })
         }
       } else if (result.error) {
         wx.showModal({
@@ -402,18 +398,26 @@ Page({
     try {
       app.showLoading('抠图处理中...')
       
+      let raw = String(this.data.formData.photo_url || '').trim()
+      let imagePath = raw
+      if (/^https?:\/\//.test(raw)) {
+        const m = raw.match(/\/uploads\/(.+)$/)
+        if (m && m[1]) imagePath = m[1]
+      } else {
+        imagePath = raw.replace(/^\/?uploads\//, '').replace(/^\/?images\//, '')
+      }
+
       const res = await app.request({
         url: '/api/image/process-existing',
         method: 'POST',
         data: {
-          image_path: this.data.formData.photo_url
+          image_path: imagePath
         }
       })
       
       if (res.processed_url) {
-        this.setData({
-          'formData.processed_photo_url': res.processed_url
-        })
+        const processedFull = app.resolveUploadUrl(res.processed_url)
+        this.setData({ 'formData.processed_photo_url': processedFull })
         app.showSuccess('抠图处理成功')
       } else {
         throw new Error(res.error || '抠图处理失败')
@@ -441,7 +445,8 @@ Page({
       success: (res) => {
         if (res.confirm) {
           this.setData({
-            'formData.photo_url': ''
+            'formData.photo_url': '',
+            'formData.processed_photo_url': ''
           })
         }
       }

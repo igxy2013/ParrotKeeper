@@ -29,7 +29,8 @@ Component({
     },
     typeIndex: 0,
     createMode: 'form',
-    claimCode: ''
+    claimCode: '',
+    photoTouched: false
   },
   observers: {
     'parrot, parrotTypes': function(parrot, types) {
@@ -65,7 +66,7 @@ Component({
         const resolved = src ? app.resolveUploadUrl(src) : ''
         form.photo_preview = resolved || ''
       } catch (_) {}
-      this.setData({ form, typeIndex })
+      this.setData({ form, typeIndex, photoTouched: false })
     }
   },
   methods: {
@@ -136,8 +137,8 @@ Component({
         if (result.success) {
           const fullUrl = app.globalData.baseUrl + '/uploads/' + result.data.url
           const fullThumb = result.data.thumb_url ? (app.globalData.baseUrl + '/uploads/' + result.data.thumb_url) : app.getThumbnailUrl(fullUrl, 128)
-          // 先只更新提交值，保持本地临时预览不被远程缩略图覆盖
-          this.setData({ 'form.photo_url': fullUrl })
+          // 更新提交值，并立即切换预览到原图，随后再尝试缩略图
+          this.setData({ 'form.photo_url': fullUrl, 'form.photo_preview': fullUrl, photoTouched: true })
           // 预加载远程缩略图，成功后再切换预览
           try {
             wx.getImageInfo({
@@ -189,7 +190,7 @@ Component({
         content: '确定要删除这张照片吗？',
         success: (res) => {
           if (res.confirm) {
-            this.setData({ 'form.photo_url': '', 'form.photo_preview': '' })
+            this.setData({ 'form.photo_url': '', 'form.photo_preview': '', photoTouched: true })
           }
         }
       })
@@ -246,7 +247,7 @@ Component({
         const fullUrl = app.resolveUploadUrl(storagePath)
         const fullThumb = app.getThumbnailUrl(fullUrl, 128)
         // 先立即切换到原图，保证立刻看到效果
-        this.setData({ 'form.photo_url': fullUrl, 'form.photo_preview': fullUrl })
+        this.setData({ 'form.photo_url': fullUrl, 'form.photo_preview': fullUrl, photoTouched: true })
         // 预加载缩略图，成功后再平滑替换为缩略图
         try {
           wx.getImageInfo({
@@ -348,8 +349,11 @@ Component({
         notes: f.notes || '',
         parrot_number: f.parrot_number || '',
         ring_number: f.ring_number || '',
-        acquisition_date: f.acquisition_date || '',
-        photo_url: normalizedPhoto || ''
+        acquisition_date: f.acquisition_date || ''
+      }
+
+      if (this.data.photoTouched) {
+        submitData.photo_url = normalizedPhoto || ''
       }
 
       // 空值清理：保留可为空字符串的字段（包括 photo_url 用于清空照片）

@@ -1188,8 +1188,8 @@ Page({
         allUnified.sort((a, b) => {
           const waBase = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
           const wbBase = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
-          const wa = waBase + (pinnedForSort.has(a.id) ? 100 : 0)
-          const wb = wbBase + (pinnedForSort.has(b.id) ? 100 : 0)
+          const wa = waBase + (pinnedForSort.has(a.type) ? 100 : 0)
+          const wb = wbBase + (pinnedForSort.has(b.type) ? 100 : 0)
           return wb - wa
         })
         const todayKey = this.getTodayKey()
@@ -1249,13 +1249,15 @@ Page({
         if (settings && settings.enabled) {
           const today = new Date()
           const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+          const sup = wx.getStorageSync('suppressed_notifications_today') || {}
+          const suppressed = sup && sup.date === todayKey && !!sup.health_alert
           const existing = nm.getLocalNotifications() || []
           const exists = (title) => existing.some(n => n && n.type === 'health_alert' && n.title === title && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey))
           const mergedAll = (careF.length ? careF : []).concat(filledTop.filter(a => a.type !== 'chick_care')).concat(alertsF)
           mergedAll.slice(0, 10).forEach(a => {
             const t = a.title || '健康提醒'
             const d = a.description || ''
-            if (!exists(t)) {
+            if (!suppressed && !exists(t)) {
               nm.addLocalNotification('health_alert', t, d, '', '', { route: '/pages/health-alerts/health-alerts' })
             }
           })
@@ -1282,27 +1284,27 @@ Page({
   // 置顶集合
   getPinnedSet(todayKey) {
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlerts_${todayKey}`) || []
+      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${todayKey}`) || []
       return new Set(Array.isArray(list) ? list : [])
     } catch (_) { return new Set() }
   },
-  addPinnedId(id) {
-    if (!id) return
+  addPinnedId(type) {
+    if (!type) return
     const key = this.getTodayKey()
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlerts_${key}`) || []
+      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${key}`) || []
       const next = Array.isArray(list) ? list.slice() : []
-      if (!next.includes(id)) next.push(id)
-      wx.setStorageSync(`pinnedHealthAlerts_${key}`, next)
+      if (!next.includes(type)) next.push(type)
+      wx.setStorageSync(`pinnedHealthAlertTypes_${key}`, next)
     } catch (_) {}
   },
-  removePinnedId(id) {
-    if (!id) return
+  removePinnedId(type) {
+    if (!type) return
     const key = this.getTodayKey()
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlerts_${key}`) || []
-      const next = (Array.isArray(list) ? list : []).filter(x => x !== id)
-      wx.setStorageSync(`pinnedHealthAlerts_${key}`, next)
+      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${key}`) || []
+      const next = (Array.isArray(list) ? list : []).filter(x => x !== type)
+      wx.setStorageSync(`pinnedHealthAlertTypes_${key}`, next)
     } catch (_) {}
   },
 
@@ -1324,14 +1326,14 @@ Page({
     if (!id) return
     const todayKey = this.getTodayKey()
     const pinned = this.getPinnedSet(todayKey)
-    const isPinned = pinned.has(id)
+    const isPinned = pinned.has(type)
     const itemList = [isPinned ? '取消置顶' : '置顶', '不再提醒', '删除']
     wx.showActionSheet({
       itemList,
       success: (res) => {
         const idx = res.tapIndex
         if (idx === 0) {
-          if (isPinned) this.removePinnedId(id); else this.addPinnedId(id)
+          if (isPinned) this.removePinnedId(type); else this.addPinnedId(type)
           this.loadHealthAlerts()
         } else if (idx === 1) {
           try {

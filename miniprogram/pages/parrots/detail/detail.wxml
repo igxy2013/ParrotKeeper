@@ -125,7 +125,7 @@
                 <image class="grid-icon" src="/images/remix/ri-calendar-fill-blue.png" />
                 <text class="grid-label">年龄</text>
               </view>
-              <view class="grid-value">{{age || '未知'}}</view>
+              <view class="grid-value">{{agePrecise || '未知'}}</view>
             </view>
             <view class="info-grid-item gender-info">
               <view class="grid-label-wrap">

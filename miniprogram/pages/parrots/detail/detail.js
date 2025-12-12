@@ -331,8 +331,8 @@ Page({
           parrot.weight_display = ''
         }
         
-        // 计算年龄和入住天数
-        const age = this.calculateAge(parrot.birth_date)
+        const ageShort = this.calculateAgeShort(parrot.birth_date)
+        const agePrecise = this.calculateAgePrecise(parrot.birth_date)
         const daysWithUs = this.calculateDaysWithUs(parrot.acquisition_date)
         
         // 获取健康状态文本
@@ -352,7 +352,8 @@ Page({
         
         this.setData({
           parrot,
-          age,
+          age: ageShort,
+          agePrecise,
           daysWithUs,
           healthStatusText: healthStatusMap[parrot.health_status] || '健康',
           careLevelText: parrot.species ? careLevelMap[parrot.species.care_level] || '未知' : '未知'
@@ -629,15 +630,12 @@ Page({
     wx.navigateTo({ url: `/pages/records/detail/detail?type=${type}&id=${id}` })
   },
 
-  // 计算年龄
-  calculateAge(birthDate) {
+  calculateAgeShort(birthDate) {
     if (!birthDate) return ''
-    
     const birth = new Date(birthDate)
     const now = new Date()
     const diffTime = now - birth
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    
     if (diffDays < 30) {
       return `${diffDays}天`
     } else if (diffDays < 365) {
@@ -648,6 +646,31 @@ Page({
       const remainingMonths = Math.floor((diffDays % 365) / 30)
       return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
     }
+  },
+
+  calculateAgePrecise(birthDate) {
+    if (!birthDate) return ''
+    const birth = new Date(birthDate)
+    const now = new Date()
+    const noonBirth = new Date(birth.getFullYear(), birth.getMonth(), birth.getDate())
+    const noonNow = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const diffDays = Math.floor((noonNow - noonBirth) / 86400000)
+    if (diffDays < 30) {
+      return `${diffDays}天`
+    }
+    if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30)
+      const days = diffDays % 30
+      return days > 0 ? `${months}个月${days}天` : `${months}个月`
+    }
+    const years = Math.floor(diffDays / 365)
+    const remainingDays = diffDays % 365
+    const months = Math.floor(remainingDays / 30)
+    const days = remainingDays % 30
+    if (months > 0 && days > 0) return `${years}年${months}个月${days}天`
+    if (months > 0) return `${years}年${months}个月`
+    if (days > 0) return `${years}年${days}天`
+    return `${years}年`
   },
 
   // 计算入住天数

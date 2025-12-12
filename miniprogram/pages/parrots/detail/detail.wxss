@@ -452,6 +452,16 @@
   margin-bottom: 20rpx;
 }
 
+/* 仅备注卡片的头部，避免被全局 .card-header 的 space-between 推到右侧 */
+.characteristics-card .card-header {
+  justify-content: flex-start;
+}
+
+.notes-content {
+  display: block;
+  margin-top: 8rpx;
+}
+
 .card-icon-img { width: 32rpx; height: 32rpx; }
 
 .card-title {
