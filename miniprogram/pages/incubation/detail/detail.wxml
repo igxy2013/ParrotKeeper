@@ -206,11 +206,11 @@
               <view class="modal-close-btn" bindtap="closeUnifiedPanel"><text class="modal-close-icon">✕</text></view>
             </view>
           </view>
-          <view class="modal-content">
+          <scroll-view scroll-y="true" class="modal-scroll">
             <view class="section">
               <view class="form-row">
                 <text class="field-label">记录日期</text>
-                <picker mode="date" value="{{logDate}}" bindchange="onLogDateChange">
+                <picker class="picker-flex" mode="date" value="{{logDate}}" bindchange="onLogDateChange">
                   <view class="picker-display">{{logDate || '选择日期'}}</view>
                 </picker>
               </view>
@@ -233,7 +233,7 @@
                 <switch checked="{{hatchToday}}" bindchange="toggleHatchToday"/>
               </view>
             </view>
-          </view>
+          </scroll-view>
           <view class="modal-footer">
             <button class="btn-secondary lg" bindtap="closeUnifiedPanel">取消</button>
             <button class="btn-primary lg" bindtap="submitUnifiedForm">保存</button>

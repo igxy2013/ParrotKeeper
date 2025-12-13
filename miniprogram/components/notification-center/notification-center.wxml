@@ -1,4 +1,4 @@
-<view wx:if="{{isOpen}}" class="nc-overlay {{closing ? 'closing' : ''}}" catchtouchmove="true" bindtap="onOverlayTap">
+<view wx:if="{{isOpen}}" class="nc-overlay {{closing ? 'closing' : ''}}" catchtouchmove="noop" bindtap="onOverlayTap">
   <view class="nc-panel {{closing ? 'closing' : ''}}" catchtap="noop">
     <view class="nc-header">
       <text class="nc-title">通知中心</text>
@@ -8,7 +8,7 @@
         <text class="nc-close" bindtap="close">×</text>
       </view>
     </view>
-    <view class="nc-list">
+    <scroll-view class="nc-list" scroll-y="true">
       <view class="nc-item" wx:for="{{notifications}}" wx:key="id" bindtap="onItemTap" data-id="{{item.id}}" data-index="{{index}}">
         <view class="nc-icon {{item.type}}">
           <text class="nc-icon-text">{{item.type === 'health' ? '♥' : (item.type === 'feeding' ? '🍎' : (item.type === 'system' ? '🔔' : '📣'))}}</text>
@@ -23,6 +23,6 @@
         <text class="nc-empty-icon">🔔</text>
         <text class="nc-empty-text">暂无通知</text>
       </view>
-    </view>
+    </scroll-view>
   </view>
 </view>

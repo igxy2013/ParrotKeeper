@@ -147,7 +147,7 @@ Page({
     }
   },
 
-  onLoad() {
+  onLoad(options) {
     this.setGreeting()
     this.checkLoginStatus()
     this.computeMenuRightPadding()
@@ -158,6 +158,12 @@ Page({
     this.loadHomeWidgets()
     // 加载用户自定义排序
     this.loadHomeWidgetsOrder()
+
+    // 处理从底部导航“加号”跳转过来的自动弹窗参数
+    const shouldOpenAddParrot = options && (options.openAddParrot === '1' || options.openAddParrot === 'true')
+    if (shouldOpenAddParrot) {
+      this._openAddParrotOnShow = true
+    }
   },
 
   // 计算右上角胶囊菜单到屏幕右侧的总内边距，便于自定义导航栏布局
@@ -236,6 +242,16 @@ Page({
         app.globalData.needRefresh = false; // 重置标志
       }
       this.loadData()
+    }
+
+    // 如有需要，在页面显示时自动弹出“添加鹦鹉”弹窗
+    if (this._openAddParrotOnShow) {
+      this._openAddParrotOnShow = false
+      if (this.data.isLogin) {
+        this.addParrot()
+      } else {
+        app.showError('请先登录后添加鹦鹉')
+      }
     }
   },
 
@@ -1240,7 +1256,7 @@ Page({
 
       this.setData({
         healthAlerts: filledTop,
-        healthAlertsTotal: filteredForCount.length+1
+        healthAlertsTotal: filteredForCount.length
       })
 
       try {

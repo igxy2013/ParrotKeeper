@@ -5,6 +5,28 @@
       <view class="no-access">该页面仅限超级管理员访问</view>
     </block>
     <block wx:else>
+      <view class="stats-grid" wx:if="{{!loading}}">
+        <view class="stat-card total">
+          <view class="stat-icon"><text>👥</text></view>
+          <view class="stat-value">{{totalCount || 0}}</view>
+          <view class="stat-label">总用户</view>
+        </view>
+        <view class="stat-card admin">
+          <view class="stat-icon"><text>🛡️</text></view>
+          <view class="stat-value">{{adminCount || 0}}</view>
+          <view class="stat-label">管理员</view>
+        </view>
+        <view class="stat-card user">
+          <view class="stat-icon"><text>👤</text></view>
+          <view class="stat-value">{{userCount || 0}}</view>
+          <view class="stat-label">普通用户</view>
+        </view>
+        <view class="stat-card team">
+          <view class="stat-icon"><text>👨‍👩‍👧‍👦</text></view>
+          <view class="stat-value">{{teamUserCount || 0}}</view>
+          <view class="stat-label">团队用户</view>
+        </view>
+      </view>
       <view class="search-bar">
         <input class="search-input" placeholder="按昵称/用户名/手机号 搜索" placeholder-class="search-placeholder" value="{{q}}" bindinput="onSearchInput" />
         <view class="search-actions">
@@ -28,11 +50,7 @@
 
       <view wx:if="{{loading}}" class="tips">加载中...</view>
 
-      <view class="count-grid" wx:if="{{!loading}}">
-        <text>总用户 {{totalCount}} 人</text>
-        <text>管理员 {{adminCount}} 人</text>
-        <text>普通用户 {{userCount}} 人</text>
-      </view>
+
 
       <block wx:if="{{!loading && users.length === 0}}">
         <view class="empty">暂无用户</view>

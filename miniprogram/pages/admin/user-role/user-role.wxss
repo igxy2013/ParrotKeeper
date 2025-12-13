@@ -5,7 +5,28 @@
 .empty { color: #9ca3af; padding: 40rpx 0; text-align: center; }
 .
 .count { color: #64748b; font-size: 24rpx; margin: 0 0 16rpx; }
-.count-grid { display: flex; gap: 18rpx; color: #64748b; font-size: 22rpx; margin: 0 0 16rpx; }
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+.stat-card { background: #ffffff; border-radius: 24rpx; box-shadow: 0 12rpx 30rpx rgba(0,0,0,0.08); padding: 20rpx; border: 1rpx solid #eef2f7; }
+.stat-icon { width: 56rpx; height: 56rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; margin-bottom: 8rpx; }
+
+.stat-card.total .stat-icon { background: #e0f2fe; }
+.stat-card.admin .stat-icon { background: #ede9fe; }
+.stat-card.user .stat-icon { background: #dcfce7; }
+.stat-card.team .stat-icon { background: #fff7ed; }
+.stat-value { font-size: 44rpx; font-weight: 700; color: #0f172a; line-height: 1.2; margin-bottom: 6rpx; }
+.stat-card.total .stat-value { color: #0ea5e9; }
+.stat-card.admin .stat-value { color: #8b5cf6; }
+.stat-card.user .stat-value { color: #22c55e; }
+.stat-card.team .stat-value { color: #f59e0b; }
+.stat-label { font-size: 22rpx; color: #6b7280; font-weight: 600; }
+
+/* 深色模式适配 */
+.theme-dark .stat-card { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); box-shadow: none; }
+.theme-dark .stat-value { color: #e5e7eb; }
+.theme-dark .stat-label { color: #9ca3af; }
+.theme-dark .stat-card.total .stat-icon { background: rgba(14,165,233,0.18); }
+.theme-dark .stat-card.admin .stat-icon { background: rgba(139,92,246,0.18); }
+.theme-dark .stat-card.user .stat-icon { background: rgba(34,197,94,0.18); }
 
 /* 搜索栏与列表样式 */
 .search-bar { display: flex; align-items: center; gap: 12rpx; margin: 16rpx 0 24rpx; }

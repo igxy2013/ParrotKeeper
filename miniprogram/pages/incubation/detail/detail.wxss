@@ -746,9 +746,16 @@
   height: 36rpx;
 }
 
+.unified-modal {
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .unified-modal .modal-header-gradient {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
   padding: 32rpx;
+  position: relative;
 }
 
 .unified-modal .modal-title {
@@ -756,6 +763,29 @@
   border: none;
   padding: 0;
 }
+
+.modal-scroll {
+  max-height: calc(82vh - 240rpx);
+}
+.unified-modal .modal-close-btn {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  z-index: 2;
+}
+.unified-modal .modal-close-icon {
+  color: #ffffff;
+}
+.unified-modal .modal-scroll {
+  padding: 24rpx 44rpx;
+  box-sizing: border-box;
+  width: 100%;
+}
+.unified-modal .field-label { width: 120rpx; }
+.unified-modal .field-label { width: 120rpx; }
+.unified-modal .picker-display { max-width: 100%; box-sizing: border-box; }
+.unified-modal .form-row .picker-display { width: 100%; }
+.unified-modal .form-row .picker-flex { flex: 1; min-width: 0; }
 
 .modal-close-btn {
   background: rgba(255, 255, 255, 0.2);

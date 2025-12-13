@@ -13,6 +13,7 @@ Page({
     totalCount: 0,
     adminCount: 0,
     userCount: 0,
+    teamUserCount: 0,
     // 分页相关
     page: 1,
     perPage: 50,
@@ -177,6 +178,7 @@ Page({
       const perPage = 100
       let adminCount = 0
       let userCount = 0
+      let teamUserCount = 0
       let total = 0
 
       // 先获取第一页以拿到总数
@@ -194,6 +196,10 @@ Page({
       firstUsers.forEach(u => {
         if (u.role === 'admin') adminCount++
         else if (u.role === 'user') userCount++
+        const rawMode = (u.user_mode || '').toString()
+        const mode = rawMode.toLowerCase()
+        const isTeamMode = mode === 'team' || mode === '团队模式'
+        if (isTeamMode) teamUserCount++
       })
 
       // 拉取剩余页并累加
@@ -208,11 +214,15 @@ Page({
           users.forEach(u => {
             if (u.role === 'admin') adminCount++
             else if (u.role === 'user') userCount++
+            const rawMode = (u.user_mode || '').toString()
+            const mode = rawMode.toLowerCase()
+            const isTeamMode = mode === 'team' || mode === '团队模式'
+            if (isTeamMode) teamUserCount++
           })
         }
       }
 
-      this.setData({ totalCount: total, adminCount, userCount })
+      this.setData({ totalCount: total, adminCount, userCount, teamUserCount })
     } catch (err) {
       // 统计失败不影响列表展示
       console.warn('统计用户角色数量失败', err)

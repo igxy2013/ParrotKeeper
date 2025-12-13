@@ -1,3 +1,5 @@
+const app = getApp()
+
 Component({
   properties: {
     active: { type: String, value: '' },
@@ -54,7 +56,44 @@ Component({
     }
     ,
     onTapAdd() {
-      wx.navigateTo({ url: '/pages/records/add-record/add-record' })
+      // 未登录时先提示登录
+      if (!app.globalData.isLogin) {
+        if (app && typeof app.showError === 'function') {
+          app.showError('请先登录后使用此功能')
+        } else {
+          wx.showToast({ title: '请先登录后使用此功能', icon: 'none' })
+        }
+        wx.reLaunch({ url: '/pages/index/index' })
+        return
+      }
+
+      // 检查当前是否已有鹦鹉
+      app.request({
+        url: '/api/parrots',
+        method: 'GET',
+        data: { page: 1, limit: 1 }
+      }).then(res => {
+        const list = res && res.data && Array.isArray(res.data.parrots) ? res.data.parrots : []
+        const hasParrot = !!list.length
+
+        if (!hasParrot) {
+          wx.showModal({
+            title: '温馨提示',
+            content: '当前还没有鹦鹉，请先添加一只后再记录喂食、清洁等信息。',
+            confirmText: '去添加',
+            cancelText: '稍后再说',
+            success: (r) => {
+              if (r.confirm) {
+                wx.reLaunch({ url: '/pages/index/index?openAddParrot=1' })
+              }
+            }
+          })
+        } else {
+          wx.navigateTo({ url: '/pages/records/add-record/add-record' })
+        }
+      }).catch(() => {
+        wx.navigateTo({ url: '/pages/records/add-record/add-record' })
+      })
     }
   }
 })

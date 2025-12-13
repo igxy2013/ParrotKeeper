@@ -460,8 +460,7 @@
 .modal-content .form-label,
 .modal-content .text-input,
 .modal-content .picker-display,
-.modal-content .textarea-input,
-.modal-content .picker-display text {
+.modal-content .textarea-input {
   font-family: 'Microsoft YaHei','PingFang SC','Hiragino Sans GB','Heiti SC','SimHei',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans',sans-serif;
 }
 
@@ -1048,7 +1047,7 @@
 .parrot-card-row {
   display: flex;
   flex-direction: row;
-  gap: 24rpx;
+  gap: 20rpx;
   padding: 4rpx 4rpx 8rpx 4rpx;
 }
 
@@ -1059,8 +1058,8 @@
 
 .parrot-mini-card {
   flex: 0 0 auto;
-  min-width: 280rpx;
-  width: 280rpx;
+  min-width: 200rpx;
+  width: 200rpx;
   box-sizing: border-box;
   background: #ffffff;
   border-radius: 32rpx;
@@ -1070,6 +1069,12 @@
   align-items: center;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
   border: none; /* 与APP一致：卡片无边框，仅阴影 */
+}
+
+.parrot-card-row.parrot-count-1 .parrot-mini-card,
+.parrot-card-row.parrot-count-2 .parrot-mini-card {
+  min-width: 260rpx;
+  width: 260rpx;
 }
 
 .parrot-mini-avatar {
@@ -1132,6 +1137,18 @@
   font-size: 26rpx;
   color: #888888;
   margin-top: 8rpx;
+}
+
+.parrot-mini-meta-row {
+  margin-top: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.parrot-mini-age {
+  font-size: 24rpx;
+  color: #666666;
 }
 
 .parrot-mini-badge {
