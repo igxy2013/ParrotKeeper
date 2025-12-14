@@ -1232,24 +1232,6 @@ Page({
             type: 'incubation_advice'
           })
         })
-        const incubF = incubationAlerts.filter(a => allowType(a.type))
-        // 统一列表构建与排序，确保与“健康提醒”页一致（支持置顶）
-        const allUnified = (generalAdvice ? [generalAdvice] : [])
-          .concat(careF)
-          .concat(incubF)
-          .concat(alertsF)
-        const pinnedForSort = this.getPinnedSet()
-        allUnified.sort((a, b) => {
-          const waBase = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
-          const wbBase = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
-          const wa = waBase + (pinnedForSort.has(a.type) ? 100 : 0)
-          const wb = wbBase + (pinnedForSort.has(b.type) ? 100 : 0)
-          return wb - wa
-        })
-        const todayKey = this.getTodayKey()
-        const dismissed = this.getDismissedSet(todayKey)
-        const filteredUnified = allUnified.filter(a => a && a.id && !dismissed.has(a.id))
-        topAlerts = filteredUnified.slice(0, 3)
       } catch (_) {
       }
 
@@ -1279,22 +1261,29 @@ Page({
         }
       } catch (_) {}
 
-      // 统一总数：在首页本地按相同规则计算，避免依赖页面访问
       const todayKey = this.getTodayKey()
-      const dismissed2 = this.getDismissedSet(todayKey)
-      const unifiedForCount = []
-      if (generalAdvice && allowType('care_general_topic') && !dismissed2.has(generalAdvice.id)) {
-        unifiedForCount.push(generalAdvice)
-      }
-      ;(careF || []).forEach(a => unifiedForCount.push(a))
-      ;(((typeof incubF !== 'undefined' ? incubF : []) )|| []).forEach(a => unifiedForCount.push(a))
-      ;(alertsF || []).forEach(a => unifiedForCount.push(a))
-      const filteredForCount = unifiedForCount.filter(a => a && a.id && !dismissed2.has(a.id))
-      const filledTop = topAlerts
-      this.setData({
-        healthAlerts: filledTop,
-        healthAlertsTotal: filteredForCount.length
+      const all = (generalAdvice ? [generalAdvice] : [])
+        .concat(careAlerts)
+        .concat(incubationAlerts)
+        .concat(alerts)
+      const list = all.filter(a => allowType(a.type))
+      const pinned = this.getPinnedSet(todayKey)
+      list.sort((a, b) => {
+        const waBase = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
+        const wbBase = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
+        const wa = waBase + (pinned.has(a.type) ? 100 : 0)
+        const wb = wbBase + (pinned.has(b.type) ? 100 : 0)
+        return wb - wa
       })
+      const dismissed2 = this.getDismissedSet(todayKey)
+      const filtered = list.filter(a => a && a.id && !dismissed2.has(a.id))
+      topAlerts = filtered.slice(0, 3)
+      this.setData({
+        healthAlerts: topAlerts,
+        healthAlertsTotal: filtered.length
+      })
+
+      const filledTop = topAlerts
 
       try {
         const nm = app.globalData.notificationManager
