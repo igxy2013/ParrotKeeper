@@ -270,7 +270,7 @@
   <view class="health-alerts" wx:if="{{healthAlerts.length > 0}}">
     <view class="card">
       <view class="card-header">
-        <text class="card-title">健康提醒（{{healthAlertsTotal || healthAlerts.length}}）</text>
+        <text class="card-title">健康提醒（{{healthAlertsTotal}}）</text>
         <text class="more-link" bindtap="navigateToHealthAlerts">查看全部</text>
       </view>
       <view class="card-content">

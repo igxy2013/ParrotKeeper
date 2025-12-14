@@ -1,62 +1,65 @@
-<view class="container">
-  <view class="register-box">
-    <view class="title">用户注册</view>
-    <view class="subtitle">创建您的账号</view>
-    
-    <view class="form">
-      <view class="input-group">
-        <input 
-          class="input-field" 
-          placeholder="请输入用户名" 
-          value="{{username}}" 
-          bindinput="onUsernameInput"
-          maxlength="20"
-        />
+<view class="page-container">
+  <app-header title="用户注册" subtitle="创建您的账号" showBack="true"></app-header>
+  <view class="page-content">
+    <view class="register-card">
+      <image class="logo" src="/images/logo.png" mode="widthFix"/>
+      <view class="form-title">创建账户</view>
+
+      <view class="form">
+        <view class="input-group">
+          <image class="input-icon-img" src="/images/remix/user-fill.png" mode="widthFix" />
+          <input 
+            class="input-field input-with-icon" 
+            placeholder="请输入用户名" 
+            value="{{username}}" 
+            bindinput="onUsernameInput"
+            maxlength="20"
+          />
+        </view>
+
+        <view class="input-group">
+          <image class="input-icon-img" src="/images/remix/lock-fill.png" mode="widthFix" />
+          <input 
+            class="input-field input-with-icon input-with-right-icon" 
+            type="text"
+            password="{{!showPassword}}" 
+            placeholder="请输入密码" 
+            value="{{password}}" 
+            bindinput="onPasswordInput"
+            maxlength="50"
+          />
+          <image class="password-toggle" src="{{showPassword ? '/images/remix/eye-fill.png' : '/images/remix/eye-off-fill.png'}}" mode="widthFix" catchtap="togglePasswordVisibility"/>
+        </view>
+
+        <view class="input-group">
+          <image class="input-icon-img" src="/images/remix/lock-fill.png" mode="widthFix" />
+          <input 
+            class="input-field input-with-icon input-with-right-icon" 
+            type="text"
+            password="{{!showConfirmPassword}}" 
+            placeholder="请再次输入密码" 
+            value="{{confirmPassword}}" 
+            bindinput="onConfirmPasswordInput"
+            maxlength="50"
+          />
+          <image class="password-toggle" src="{{showConfirmPassword ? '/images/remix/eye-fill.png' : '/images/remix/eye-off-fill.png'}}" mode="widthFix" catchtap="toggleConfirmPasswordVisibility"/>
+        </view>
+
+        <view class="input-group">
+          <image class="input-icon-img" src="/images/remix/user-line.png" mode="widthFix" />
+          <input 
+            class="input-field input-with-icon" 
+            placeholder="请输入昵称（可选）" 
+            value="{{nickname}}" 
+            bindinput="onNicknameInput"
+            maxlength="20"
+          />
+        </view>
+
+        <button class="btn btn-primary btn-large" bindtap="onRegister" disabled="{{!canRegister}}">注册</button>
+
+        <view class="login-link" bindtap="onBackToLogin">已有账号？返回登录</view>
       </view>
-      
-      <view class="input-group">
-        <input 
-          class="input-field" 
-          placeholder="请输入密码" 
-          password="{{true}}" 
-          value="{{password}}" 
-          bindinput="onPasswordInput"
-          maxlength="50"
-        />
-      </view>
-      
-      <view class="input-group">
-        <input 
-          class="input-field" 
-          placeholder="请再次输入密码" 
-          password="{{true}}" 
-          value="{{confirmPassword}}" 
-          bindinput="onConfirmPasswordInput"
-          maxlength="50"
-        />
-      </view>
-      
-      <view class="input-group">
-        <input 
-          class="input-field" 
-          placeholder="请输入昵称（可选）" 
-          value="{{nickname}}" 
-          bindinput="onNicknameInput"
-          maxlength="20"
-        />
-      </view>
-      
-      <button 
-        class="register-btn" 
-        bindtap="onRegister"
-        disabled="{{!canRegister}}"
-      >
-        注册
-      </button>
-    </view>
-    
-    <view class="login-link">
-      <text bindtap="onBackToLogin">已有账号？立即登录</text>
     </view>
   </view>
 </view>

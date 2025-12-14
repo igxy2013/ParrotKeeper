@@ -105,7 +105,8 @@ Page({
             feedingReminderTime: notificationSettings.feedingReminderTime || null,
             cleaningReminderTime: notificationSettings.cleaningReminderTime || null,
             medicationReminderTime: notificationSettings.medicationReminderTime || null,
-            healthAlertPreferences: notificationSettings.healthAlertPreferences || {}
+            healthAlertPreferences: notificationSettings.healthAlertPreferences || {},
+            pinnedHealthAlertTypes: (wx.getStorageSync('pinnedHealthAlertTypes_global') || [])
           }
         })
       } catch (_) {}
@@ -143,7 +144,8 @@ Page({
             feedingReminderTime: notificationSettings.feedingReminderTime,
             cleaningReminderTime: notificationSettings.cleaningReminderTime,
             medicationReminderTime: notificationSettings.medicationReminderTime,
-            healthAlertPreferences: notificationSettings.healthAlertPreferences
+            healthAlertPreferences: notificationSettings.healthAlertPreferences,
+            pinnedHealthAlertTypes: (wx.getStorageSync('pinnedHealthAlertTypes_global') || [])
           }
         }).catch(err => {
           console.warn('更新后端提醒设置失败:', err)
@@ -263,6 +265,9 @@ Page({
       .then(res => {
         if (res && res.success && res.data) {
           const data = res.data
+          if (Array.isArray(data.pinnedHealthAlertTypes)) {
+            try { wx.setStorageSync('pinnedHealthAlertTypes_global', data.pinnedHealthAlertTypes) } catch (_) {}
+          }
           const updated = {}
           if (data.feedingReminderTime) updated.feedingReminderTime = data.feedingReminderTime
           if (data.cleaningReminderTime) updated.cleaningReminderTime = data.cleaningReminderTime

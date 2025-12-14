@@ -632,20 +632,27 @@ Page({
 
   calculateAgeShort(birthDate) {
     if (!birthDate) return ''
-    const birth = new Date(birthDate)
+    let birth = birthDate instanceof Date ? birthDate : new Date(birthDate)
+    if (isNaN(birth.getTime())) {
+      const s = String(birthDate)
+      const d = new Date(s.replace(/-/g, '/').replace('T', ' '))
+      if (isNaN(d.getTime())) return ''
+      birth = d
+    }
     const now = new Date()
-    const diffTime = now - birth
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    const birthMid = new Date(birth.getFullYear(), birth.getMonth(), birth.getDate())
+    const nowMid = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const diffDays = Math.floor((nowMid.getTime() - birthMid.getTime()) / 86400000)
     if (diffDays < 30) {
       return `${diffDays}天`
-    } else if (diffDays < 365) {
+    }
+    if (diffDays < 365) {
       const months = Math.floor(diffDays / 30)
       return `${months}个月`
-    } else {
-      const years = Math.floor(diffDays / 365)
-      const remainingMonths = Math.floor((diffDays % 365) / 30)
-      return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
     }
+    const years = Math.floor(diffDays / 365)
+    const remainingMonths = Math.floor((diffDays % 365) / 30)
+    return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
   },
 
   calculateAgePrecise(birthDate) {

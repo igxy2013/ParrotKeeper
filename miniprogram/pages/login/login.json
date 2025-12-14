@@ -1,3 +1,9 @@
 {
-  "usingComponents": {}
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "登录",
+  "navigationBarBackgroundColor": "#10b981",
+  "navigationBarTextStyle": "white"
 }

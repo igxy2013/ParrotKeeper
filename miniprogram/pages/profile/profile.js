@@ -215,7 +215,7 @@ Page({
         }
       }
     } catch (_) {}
-    // 拉取公告并注入通知（避免重复）
+    // 拉取公告并注入通知（仅注入“今天发布”的公告，避免清缓存后历史公告回流）
     this.fetchPublishedAnnouncementsAndInject()
   },
 
@@ -545,12 +545,9 @@ Page({
   async loadUnreadFeedbackCount() {
     if (!this.data.isSuperAdmin) return;
     try {
-      const res = await app.request({ url: '/api/feedback', method: 'GET' });
-      if (res && res.success) {
-        const list = res.data || [];
-        let prev = 0;
-        try { prev = wx.getStorageSync('feedback_last_count') || 0 } catch(_) {}
-        const cnt = Math.max(0, (list.length || 0) - (prev || 0));
+      const res = await app.request({ url: '/api/feedback/unread_count', method: 'GET' });
+      if (res && res.success && res.data) {
+        const cnt = Number((res.data.unread_count)) || 0;
         this.setData({ unreadFeedbackCount: cnt });
         try {
           const appInst = getApp();
@@ -576,11 +573,18 @@ Page({
       if (!res || !res.success) return
       const list = (res.data && res.data.announcements) || []
       if (!Array.isArray(list) || list.length === 0) return
+      const today = new Date()
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+      const onlyToday = list.filter(a => {
+        const created = a.created_at || ''
+        const d = String(created).includes('T') ? String(created).slice(0,10) : String(created).split(' ')[0]
+        return d === todayStr
+      })
       let seen = []
       try { seen = wx.getStorageSync('seen_announcements') || [] } catch (_) {}
       const nm = app.globalData.notificationManager
       const newIds = []
-      list.forEach(a => {
+      onlyToday.forEach(a => {
         if (!seen.includes(a.id)) {
           nm.addLocalNotification(
             'system',

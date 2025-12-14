@@ -3,7 +3,7 @@
     <view class="bn-item {{active === item.key ? 'active' : ''}}" data-page="{{item.pagePath}}" bindtap="onTap" hover-class="none">
       <view class="bn-icon-wrap">
         <image class="bn-icon" src="{{active === item.key ? item.selectedIconPath : item.iconPath}}" mode="aspectFit"></image>
-        <view class="bn-dot" wx:if="{{item.key==='profile' && hasUnreadFeedback}}"></view>
+        <view class="bn-dot" wx:if="{{item.key==='profile' && hasUnreadFeedback && isSuperAdmin}}"></view>
       </view>
       <text class="bn-text" style="color: {{active === item.key ? selectedColor : defaultColor}}">{{item.text}}</text>
     </view>

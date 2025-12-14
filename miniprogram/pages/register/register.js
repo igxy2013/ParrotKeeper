@@ -6,7 +6,9 @@ Page({
     password: '',
     confirmPassword: '',
     nickname: '',
-    canRegister: true
+    canRegister: true,
+    showPassword: false,
+    showConfirmPassword: false
   },
 
   onLoad() {
@@ -141,5 +143,11 @@ Page({
   // 返回登录页面
   onBackToLogin() {
     wx.navigateBack()
+  },
+  togglePasswordVisibility() {
+    this.setData({ showPassword: !this.data.showPassword })
+  },
+  toggleConfirmPasswordVisibility() {
+    this.setData({ showConfirmPassword: !this.data.showConfirmPassword })
   }
 })

@@ -202,6 +202,7 @@ Page({
       const filtered = list.filter(a => !dismissed.has(a.id))
 
       this.setData({ alerts: filtered, alertsCount: filtered.length })
+      this.saveGlobalAlertsCount(todayKey, filtered.length)
 
       try {
         const nm = app.globalData.notificationManager
@@ -212,13 +213,26 @@ Page({
           const sup = wx.getStorageSync('suppressed_notifications_today') || {}
           const suppressed = sup && sup.date === todayKey && !!sup.health_alert
           const existing = nm.getLocalNotifications() || []
-          const exists = (title) => existing.some(n => n && n.type === 'health_alert' && n.title === title && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey))
+          const existingTodayTitles = new Set()
+          const existingTodayIds = new Set()
+          existing.forEach(n => {
+            if (!n || n.type !== 'health_alert') return
+            const created = typeof n.createdAt === 'string' ? n.createdAt : ''
+            if (!created || !created.startsWith(todayKey)) return
+            if (n.title) existingTodayTitles.add(n.title)
+            if (n.alertId != null) existingTodayIds.add(String(n.alertId))
+          })
+          const seenTitles = new Set(existingTodayTitles)
+          const seenIds = new Set(existingTodayIds)
           filtered.slice(0, 20).forEach(a => {
+            const alertId = a.id != null ? String(a.id) : ''
             const t = a.title || '健康提醒'
             const d = a.description || ''
-            if (!suppressed && !exists(t)) {
-              nm.addLocalNotification('health_alert', t, d, '', '', { route: '/pages/health-alerts/health-alerts' })
-            }
+            if (suppressed) return
+            if (alertId && seenIds.has(alertId)) return
+            if (!alertId && seenTitles.has(t)) return
+            nm.addLocalNotification('health_alert', t, d, '', '', { route: '/pages/health-alerts/health-alerts', alertId })
+            if (alertId) seenIds.add(alertId); else seenTitles.add(t)
           })
         }
       } catch (_) {}
@@ -320,31 +334,58 @@ Page({
     const dismissed = this.getDismissedSet(todayKey)
     const remaining = (this.data.alerts || []).filter(a => a.id !== id)
     this.setData({ alerts: remaining, alertsCount: remaining.length })
+    this.saveGlobalAlertsCount(todayKey, remaining.length)
   }
   ,
   getPinnedSet(todayKey) {
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${todayKey}`) || []
+      const list = wx.getStorageSync('pinnedHealthAlertTypes_global') || []
       return new Set(Array.isArray(list) ? list : [])
     } catch (_) { return new Set() }
+  },
+  saveGlobalAlertsCount(todayKey, count) {
+    try {
+      const c = (typeof count === 'number' && isFinite(count)) ? count : 0
+      wx.setStorageSync('global_health_alerts_count', { date: todayKey, count: c })
+    } catch (_) {}
   },
   addPinnedId(type) {
     if (!type) return
     const key = this.getTodayKey()
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${key}`) || []
+      const list = wx.getStorageSync('pinnedHealthAlertTypes_global') || []
       const next = Array.isArray(list) ? list.slice() : []
       if (!next.includes(type)) next.push(type)
-      wx.setStorageSync(`pinnedHealthAlertTypes_${key}`, next)
+      wx.setStorageSync('pinnedHealthAlertTypes_global', next)
+      try {
+        const app = getApp()
+        if (app && app.globalData && app.globalData.openid) {
+          app.request({
+            url: '/api/reminders/settings',
+            method: 'PUT',
+            data: { pinnedHealthAlertTypes: next }
+          }).then(()=>{}).catch(()=>{})
+        }
+      } catch (_) {}
     } catch (_) {}
   },
   removePinnedId(type) {
     if (!type) return
     const key = this.getTodayKey()
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${key}`) || []
+      const list = wx.getStorageSync('pinnedHealthAlertTypes_global') || []
       const next = (Array.isArray(list) ? list : []).filter(x => x !== type)
-      wx.setStorageSync(`pinnedHealthAlertTypes_${key}`, next)
+      wx.setStorageSync('pinnedHealthAlertTypes_global', next)
+      try {
+        const app = getApp()
+        if (app && app.globalData && app.globalData.openid) {
+          app.request({
+            url: '/api/reminders/settings',
+            method: 'PUT',
+            data: { pinnedHealthAlertTypes: next }
+          }).then(()=>{}).catch(()=>{})
+        }
+      } catch (_) {}
     } catch (_) {}
   },
   onAlertLongPress(e) {

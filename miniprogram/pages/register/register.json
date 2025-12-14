@@ -1,5 +1,9 @@
 {
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
   "navigationBarTitleText": "用户注册",
-  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarBackgroundColor": "#10b981",
   "navigationBarTextStyle": "white"
 }

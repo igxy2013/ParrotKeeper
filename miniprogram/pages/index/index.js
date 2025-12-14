@@ -209,7 +209,10 @@ Page({
 
   onShow() {
     this.checkLoginStatus()
-    try { this.loadHealthAlerts() } catch (_) {}
+    const isLogin = this.data.isLogin
+    if (!isLogin) {
+      try { this.loadHealthAlerts() } catch (_) {}
+    }
     // 到点后补偿生成当天的本地定时提醒（避免仅在onLoad时触发）
     try {
       const app = getApp();
@@ -235,7 +238,8 @@ Page({
     // 拉取公告并注入通知与弹窗
     this.fetchPublishedAnnouncementsAndInject()
     // 无论是否登录都可以浏览首页，但只有登录用户才加载个人数据
-    if (this.data.isLogin) {
+    if (isLogin) {
+      this.syncServerReminderSettings().then(()=>{}).catch(()=>{})
       // 检查是否需要刷新数据（模式切换后）
       if (app.globalData.needRefresh) {
         console.log('检测到needRefresh标志，刷新首页数据');
@@ -252,6 +256,40 @@ Page({
       } else {
         app.showError('请先登录后添加鹦鹉')
       }
+    }
+  },
+
+  // 同步后端提醒设置到本地（确保“健康提醒不再提醒”等偏好在清缓存后仍生效）
+  async syncServerReminderSettings() {
+    const app = getApp()
+    if (!app.globalData || !app.globalData.openid) return
+    try {
+      const res = await app.request({ url: '/api/reminders/settings', method: 'GET' })
+      if (res && res.success && res.data) {
+        const data = res.data
+        const nm = app.globalData.notificationManager
+        const current = nm.getNotificationSettings()
+        const next = { ...current }
+        if (typeof data.enabled !== 'undefined') next.enabled = !!data.enabled
+        if (typeof data.feedingReminder !== 'undefined') next.feedingReminder = !!data.feedingReminder
+        if (typeof data.healthReminder !== 'undefined') next.healthReminder = !!data.healthReminder
+        if (typeof data.cleaningReminder !== 'undefined') next.cleaningReminder = !!data.cleaningReminder
+        if (typeof data.medicationReminder !== 'undefined') next.medicationReminder = !!data.medicationReminder
+        if (typeof data.breedingReminder !== 'undefined') next.breedingReminder = !!data.breedingReminder
+        if (data.feedingReminderTime) next.feedingReminderTime = data.feedingReminderTime
+        if (data.cleaningReminderTime) next.cleaningReminderTime = data.cleaningReminderTime
+        if (data.medicationReminderTime) next.medicationReminderTime = data.medicationReminderTime
+        if (data.healthAlertPreferences && typeof data.healthAlertPreferences === 'object') {
+          next.healthAlertPreferences = data.healthAlertPreferences
+        }
+        if (Array.isArray(data.pinnedHealthAlertTypes)) {
+          try { wx.setStorageSync('pinnedHealthAlertTypes_global', data.pinnedHealthAlertTypes) } catch (_) {}
+        }
+        nm.saveNotificationSettings(next)
+        try { this.loadHealthAlerts() } catch (_) {}
+      }
+    } catch (err) {
+      console.warn('同步后端提醒设置失败:', err)
     }
   },
 
@@ -707,26 +745,27 @@ Page({
   computeAgeDisplay(birthDate) {
     try {
       if (!birthDate) return ''
-      const birth = new Date(birthDate)
+      let birth = birthDate instanceof Date ? birthDate : new Date(birthDate)
       if (isNaN(birth.getTime())) {
         const s = String(birthDate)
         const d = new Date(s.replace(/-/g, '/').replace('T', ' '))
         if (isNaN(d.getTime())) return ''
-        return this.computeAgeDisplay(d)
+        birth = d
       }
       const now = new Date()
-      const diffMs = now.getTime() - birth.getTime()
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+      const birthMid = new Date(birth.getFullYear(), birth.getMonth(), birth.getDate())
+      const nowMid = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const diffDays = Math.floor((nowMid.getTime() - birthMid.getTime()) / 86400000)
       if (diffDays < 30) {
         return `${diffDays}天`
-      } else if (diffDays < 365) {
+      }
+      if (diffDays < 365) {
         const months = Math.floor(diffDays / 30)
         return `${months}个月`
-      } else {
-        const years = Math.floor(diffDays / 365)
-        const remainingMonths = Math.floor((diffDays % 365) / 30)
-        return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
       }
+      const years = Math.floor(diffDays / 365)
+      const remainingMonths = Math.floor((diffDays % 365) / 30)
+      return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
     } catch (_) {
       return ''
     }
@@ -1199,8 +1238,7 @@ Page({
           .concat(careF)
           .concat(incubF)
           .concat(alertsF)
-        const todayKeyForSort = this.getTodayKey()
-        const pinnedForSort = this.getPinnedSet(todayKeyForSort)
+        const pinnedForSort = this.getPinnedSet()
         allUnified.sort((a, b) => {
           const waBase = a.type === 'chick_care' ? 3 : (severityOrder[a.severity] || 0)
           const wbBase = b.type === 'chick_care' ? 3 : (severityOrder[b.severity] || 0)
@@ -1241,19 +1279,18 @@ Page({
         }
       } catch (_) {}
 
-      // 统一总数：与健康提醒页一致（按过滤后的列表长度计算）
+      // 统一总数：在首页本地按相同规则计算，避免依赖页面访问
       const todayKey = this.getTodayKey()
-      const dismissed = this.getDismissedSet(todayKey)
+      const dismissed2 = this.getDismissedSet(todayKey)
       const unifiedForCount = []
-      if (generalAdvice && allowType('care_general_topic') && !dismissed.has(generalAdvice.id)) {
+      if (generalAdvice && allowType('care_general_topic') && !dismissed2.has(generalAdvice.id)) {
         unifiedForCount.push(generalAdvice)
       }
       ;(careF || []).forEach(a => unifiedForCount.push(a))
       ;(((typeof incubF !== 'undefined' ? incubF : []) )|| []).forEach(a => unifiedForCount.push(a))
       ;(alertsF || []).forEach(a => unifiedForCount.push(a))
-      const filteredForCount = unifiedForCount.filter(a => a && a.id && !dismissed.has(a.id))
+      const filteredForCount = unifiedForCount.filter(a => a && a.id && !dismissed2.has(a.id))
       const filledTop = topAlerts
-
       this.setData({
         healthAlerts: filledTop,
         healthAlertsTotal: filteredForCount.length
@@ -1268,14 +1305,27 @@ Page({
           const sup = wx.getStorageSync('suppressed_notifications_today') || {}
           const suppressed = sup && sup.date === todayKey && !!sup.health_alert
           const existing = nm.getLocalNotifications() || []
-          const exists = (title) => existing.some(n => n && n.type === 'health_alert' && n.title === title && typeof n.createdAt === 'string' && n.createdAt.startsWith(todayKey))
+          const existingTodayTitles = new Set()
+          const existingTodayIds = new Set()
+          existing.forEach(n => {
+            if (!n || n.type !== 'health_alert') return
+            const created = typeof n.createdAt === 'string' ? n.createdAt : ''
+            if (!created || !created.startsWith(todayKey)) return
+            if (n.title) existingTodayTitles.add(n.title)
+            if (n.alertId != null) existingTodayIds.add(String(n.alertId))
+          })
+          const seenTitles = new Set(existingTodayTitles)
+          const seenIds = new Set(existingTodayIds)
           const mergedAll = (careF.length ? careF : []).concat(filledTop.filter(a => a.type !== 'chick_care')).concat(alertsF)
           mergedAll.slice(0, 10).forEach(a => {
+            if (!a || suppressed) return
+            const alertId = a.id != null ? String(a.id) : ''
             const t = a.title || '健康提醒'
             const d = a.description || ''
-            if (!suppressed && !exists(t)) {
-              nm.addLocalNotification('health_alert', t, d, '', '', { route: '/pages/health-alerts/health-alerts' })
-            }
+            if (alertId && seenIds.has(alertId)) return
+            if (!alertId && seenTitles.has(t)) return
+            nm.addLocalNotification('health_alert', t, d, '', '', { route: '/pages/health-alerts/health-alerts', alertId })
+            if (alertId) seenIds.add(alertId); else seenTitles.add(t)
           })
         }
       } catch (_) {}
@@ -1298,29 +1348,47 @@ Page({
   },
 
   // 置顶集合
-  getPinnedSet(todayKey) {
+  getPinnedSet() {
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${todayKey}`) || []
+      const list = wx.getStorageSync('pinnedHealthAlertTypes_global') || []
       return new Set(Array.isArray(list) ? list : [])
     } catch (_) { return new Set() }
   },
   addPinnedId(type) {
     if (!type) return
-    const key = this.getTodayKey()
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${key}`) || []
+      const list = wx.getStorageSync('pinnedHealthAlertTypes_global') || []
       const next = Array.isArray(list) ? list.slice() : []
       if (!next.includes(type)) next.push(type)
-      wx.setStorageSync(`pinnedHealthAlertTypes_${key}`, next)
+      wx.setStorageSync('pinnedHealthAlertTypes_global', next)
+      try {
+        const app = getApp()
+        if (app && app.globalData && app.globalData.openid) {
+          app.request({
+            url: '/api/reminders/settings',
+            method: 'PUT',
+            data: { pinnedHealthAlertTypes: next }
+          }).then(()=>{}).catch(()=>{})
+        }
+      } catch (_) {}
     } catch (_) {}
   },
   removePinnedId(type) {
     if (!type) return
-    const key = this.getTodayKey()
     try {
-      const list = wx.getStorageSync(`pinnedHealthAlertTypes_${key}`) || []
+      const list = wx.getStorageSync('pinnedHealthAlertTypes_global') || []
       const next = (Array.isArray(list) ? list : []).filter(x => x !== type)
-      wx.setStorageSync(`pinnedHealthAlertTypes_${key}`, next)
+      wx.setStorageSync('pinnedHealthAlertTypes_global', next)
+      try {
+        const app = getApp()
+        if (app && app.globalData && app.globalData.openid) {
+          app.request({
+            url: '/api/reminders/settings',
+            method: 'PUT',
+            data: { pinnedHealthAlertTypes: next }
+          }).then(()=>{}).catch(()=>{})
+        }
+      } catch (_) {}
     } catch (_) {}
   },
 
@@ -2057,12 +2125,19 @@ Page({
       const shouldShowModal = !dismissed.includes(latest.id)
       this.setData({ latestAnnouncement: latest, showAnnouncementModal: shouldShowModal })
 
-      // 通知注入，避免重复：记录已注入的公告ID
+      // 通知注入（仅注入“今天发布”的公告），避免清缓存后历史公告回流
+      const today = new Date()
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+      const onlyToday = list.filter(a => {
+        const created = a.created_at || ''
+        const d = String(created).includes('T') ? String(created).slice(0,10) : String(created).split(' ')[0]
+        return d === todayStr
+      })
       let seen = []
       try { seen = wx.getStorageSync('seen_announcements') || [] } catch (_) {}
       const nm = app.globalData.notificationManager
       const newIds = []
-      list.forEach(a => {
+      onlyToday.forEach(a => {
         if (!seen.includes(a.id)) {
           nm.addLocalNotification(
             'system',

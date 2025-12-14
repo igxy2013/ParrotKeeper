@@ -484,6 +484,7 @@ App({
     this.globalData.userInfo = null
     this.globalData.isLogin = false
     this.globalData.userMode = 'personal' // 重置用户模式为默认值
+    try { this.setFeedbackUnread(false) } catch(_) {}
     
     wx.removeStorageSync('openid')
     wx.removeStorageSync('userInfo')

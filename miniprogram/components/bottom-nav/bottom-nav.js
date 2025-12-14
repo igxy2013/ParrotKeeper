@@ -8,6 +8,7 @@ Component({
   },
   data: {
     hasUnreadFeedback: false,
+    isSuperAdmin: false,
     items: [
       {
         key: 'index',
@@ -42,9 +43,29 @@ Component({
   lifetimes: {
     attached(){
       const app = getApp()
-      const update = () => { try { this.setData({ hasUnreadFeedback: !!(app && app.globalData && app.globalData.hasUnreadFeedback) }) } catch(_){} }
+      const update = () => {
+        try {
+          const role = ((app && app.globalData && app.globalData.userInfo && app.globalData.userInfo.role) || '')
+          this.setData({
+            hasUnreadFeedback: !!(app && app.globalData && app.globalData.hasUnreadFeedback),
+            isSuperAdmin: role === 'super_admin'
+          })
+        } catch(_){}
+      }
       update()
       try { app.globalData.feedbackBadgeUpdateCallback = update } catch(_){ }
+    }
+  },
+  pageLifetimes: {
+    show() {
+      const app = getApp()
+      try {
+        const role = ((app && app.globalData && app.globalData.userInfo && app.globalData.userInfo.role) || '')
+        this.setData({
+          hasUnreadFeedback: !!(app && app.globalData && app.globalData.hasUnreadFeedback),
+          isSuperAdmin: role === 'super_admin'
+        })
+      } catch(_){}
     }
   },
   methods: {
