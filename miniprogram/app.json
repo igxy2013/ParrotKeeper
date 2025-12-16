@@ -104,6 +104,12 @@
         "index",
         "detail/detail"
       ]
+    },
+    {
+      "root": "pages/tools",
+      "pages": [
+        "pairing-calculator/pairing-calculator"
+      ]
     }
   ],
     "entryPagePath": "pages/index/index",

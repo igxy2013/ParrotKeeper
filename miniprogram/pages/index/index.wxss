@@ -609,6 +609,7 @@
   white-space: normal;
   overflow: hidden; 
   word-break: break-word;
+  padding:0rpx 12rpx;
 }
 
 /* 统一按钮风格与APP设计 */

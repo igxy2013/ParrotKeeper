@@ -1,0 +1,115 @@
+<view class="page-container">
+  <app-header title="鹦鹉配对计算器" subtitle="专业版基因预测" showBack="true" />
+  <view class="page-content">
+    <view class="card">
+      <view class="section-title">
+        <text>配对设置</text>
+      </view>
+      <view class="form-row">
+        <view class="form-label">物种</view>
+        <picker mode="selector" range="{{speciesOptions}}" value="{{speciesIndex}}" bindchange="onSpeciesChange">
+          <view class="picker-value">{{speciesOptions[speciesIndex]}}</view>
+        </picker>
+      </view>
+      
+      <!-- 母鸟设置 -->
+      <view class="parent-section">
+        <view class="parent-title female">
+          <image class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" />
+          <text>母鸟 (Hen)</text>
+        </view>
+        <view class="form-row">
+          <view class="form-label">羽色</view>
+          <picker mode="selector" range="{{colorOptions}}" value="{{motherColorIndex}}" bindchange="onMotherColorChange">
+            <view class="picker-value">{{colorOptions[motherColorIndex]}}</view>
+          </picker>
+        </view>
+        <view class="form-col" wx:if="{{availableSplits.length > 0}}">
+          <view class="form-label-sm">携带基因 (Split)</view>
+          <checkbox-group class="split-group" bindchange="onMotherSplitsChange">
+            <label class="checkbox-label" wx:for="{{availableSplits}}" wx:key="id">
+              <checkbox class="checkbox" value="{{item.id}}" checked="{{false}}" color="#ec4899"/>
+              <text>{{item.name}}</text>
+            </label>
+          </checkbox-group>
+        </view>
+      </view>
+
+      <!-- 公鸟设置 -->
+      <view class="parent-section">
+        <view class="parent-title male">
+          <image class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" />
+          <text>公鸟 (Cock)</text>
+        </view>
+        <view class="form-row">
+          <view class="form-label">羽色</view>
+          <picker mode="selector" range="{{colorOptions}}" value="{{fatherColorIndex}}" bindchange="onFatherColorChange">
+            <view class="picker-value">{{colorOptions[fatherColorIndex]}}</view>
+          </picker>
+        </view>
+        <view class="form-col" wx:if="{{availableSplits.length > 0}}">
+          <view class="form-label-sm">携带基因 (Split)</view>
+          <checkbox-group class="split-group" bindchange="onFatherSplitsChange">
+            <label class="checkbox-label" wx:for="{{availableSplits}}" wx:key="id">
+              <checkbox class="checkbox" value="{{item.id}}" checked="{{false}}" color="#3b82f6"/>
+              <text>{{item.name}}</text>
+            </label>
+          </checkbox-group>
+        </view>
+      </view>
+
+      <view class="hint">提示：勾选“携带基因”可模拟隐性基因携带情况。部分复杂突变可能未完全覆盖。</view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">
+        <text>预测结果</text>
+      </view>
+      <view wx:if="{{results && results.length > 0}}" class="results">
+        <block wx:for="{{results}}" wx:key="index">
+          <view class="result-item">
+            <view class="result-info">
+              <view class="result-label">{{item.label}}</view>
+            </view>
+            <view class="result-prob">{{item.prob}}%</view>
+          </view>
+        </block>
+      </view>
+      <view wx:else class="empty">请选择上方选项以计算</view>
+    </view>
+
+    <view wx:if="{{sexBreakdown && (sexBreakdown.male.length || sexBreakdown.female.length)}}" class="card">
+      <view class="section-title">
+        <text>按性别分布详情</text>
+      </view>
+      
+      <view class="sex-section">
+        <view class="sex-title male">
+          <image class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" />
+          <text>公雏 (Males)</text>
+        </view>
+        <block wx:for="{{sexBreakdown.male}}" wx:key="index">
+          <view class="result-item sm">
+            <view class="result-label">{{item.label}}</view>
+            <view class="result-prob">{{item.prob}}%</view>
+          </view>
+        </block>
+        <view wx:if="{{sexBreakdown.male.length === 0}}" class="empty-sm">无公雏</view>
+      </view>
+
+      <view class="sex-section">
+        <view class="sex-title female">
+          <image class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" />
+          <text>母雏 (Females)</text>
+        </view>
+        <block wx:for="{{sexBreakdown.female}}" wx:key="index">
+          <view class="result-item sm">
+            <view class="result-label">{{item.label}}</view>
+            <view class="result-prob">{{item.prob}}%</view>
+          </view>
+        </block>
+        <view wx:if="{{sexBreakdown.female.length === 0}}" class="empty-sm">无母雏</view>
+      </view>
+    </view>
+  </view>
+</view>
