@@ -66,9 +66,9 @@
             <view class="form-grid">
               <view class="form-item">
                 <text class="form-label">物种 *</text>
-                <picker mode="selector" range="{{speciesNames}}" value="{{formSpeciesIndex}}" bindchange="onFormSpeciesChange">
+                <picker mode="selector" range="{{formSpeciesNames}}" value="{{formSpeciesIndex}}" bindchange="onFormSpeciesChange">
                   <view class="picker-display">
-                    <text>{{speciesNames[formSpeciesIndex] || addForm.species || '请选择'}}</text>
+                    <text>{{formSpeciesNames[formSpeciesIndex] || addForm.species || '请选择'}}</text>
                     <text class="picker-arrow">▼</text>
                   </view>
                 </picker>

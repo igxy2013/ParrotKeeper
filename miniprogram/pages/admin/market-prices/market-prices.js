@@ -66,16 +66,24 @@ Page({
   },
 
   openAddModal() {
-    const names = this.data.speciesNames || []
+    // 弹窗中不应包含“全部”选项，重新构建物种列表
+    const fullNames = this.data.speciesNames || []
+    // 过滤掉 '全部'，假设它总是第一个或就在列表中
+    const formSpeciesNames = fullNames.filter(n => n !== '全部')
+    
     const defaultName = '和尚鹦鹉'
-    const fi = Math.max(0, names.indexOf(defaultName))
-    const species = fi > 0 ? names[fi] : ''
+    let fi = formSpeciesNames.indexOf(defaultName)
+    if (fi < 0 && formSpeciesNames.length > 0) fi = 0
+    
+    const species = formSpeciesNames[fi] || ''
     const colors = getColorsBySpeciesName(species)
     const defaultColor = colors && colors.length ? colors[0] : ''
+    
     this.setData({
       showAddModal: true,
       editingIndex: null,
       addForm: { species, color_name: defaultColor, reference_price: '', source: '', currency: 'CNY', gender: '' },
+      formSpeciesNames: formSpeciesNames, // 新增：用于弹窗的物种列表
       formSpeciesIndex: fi,
       colorNames: colors,
       formColorIndex: 0,
@@ -87,8 +95,9 @@ Page({
 
   onFormSpeciesChange(e) {
     const formSpeciesIndex = Number(e.detail.value || 0)
-    const names = this.data.speciesNames
-    const species = formSpeciesIndex > 0 ? names[formSpeciesIndex] : ''
+    const names = this.data.formSpeciesNames // 使用弹窗专用的物种列表
+    const species = names[formSpeciesIndex] || ''
+    
     const addForm = { ...this.data.addForm, species }
     const colors = getColorsBySpeciesName(species)
     const defaultColor = colors && colors.length ? colors[0] : ''
