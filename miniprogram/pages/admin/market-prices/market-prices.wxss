@@ -12,11 +12,13 @@
 .price-info { display: flex; gap: 12rpx; align-items: center; }
 .price-species { font-size: 26rpx; color: #374151; font-weight: 600; }
 .price-color { font-size: 26rpx; color: #4b5563; }
+.price-gender { font-size: 22rpx; color: #6b7280; }
 .price-value { font-size: 28rpx; color: #065f46; font-weight: 700; }
 .item-actions { display: flex; gap: 12rpx; }
 .action-btn { padding: 10rpx 16rpx; border-radius: 10rpx; font-size: 26rpx; }
 .action-btn.edit { background: #3b82f6; color: #fff; }
 .action-btn.delete { background: #ef4444; color: #fff; }
+.action-icon-img { width: 36rpx; height: 36rpx; }
 .modal-overlay { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; }
 .modal-container { width: 86%; background: #fff; border-radius: 16rpx; overflow: hidden; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20rpx; border-bottom: 2rpx solid #e5e7eb; }

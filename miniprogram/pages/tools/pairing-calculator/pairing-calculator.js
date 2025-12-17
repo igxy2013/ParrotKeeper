@@ -13,12 +13,14 @@ Page({
     
     // 携带基因选项 (Splits)
     availableSplits: [], 
-    motherSplits: [], // 选中的 split id 数组
+    motherSplits: [], 
     fatherSplits: [],
-
+    
     results: [],
     sexBreakdown: { male: [], female: [] },
     priceMap: {},
+    priceMapMale: {},
+    priceMapFemale: {},
     bestFatherSuggestion: null,
     bestMotherSuggestion: null,
     
@@ -127,19 +129,34 @@ Page({
     app.request({ url: '/api/market/prices', method: 'GET', data: { species } })
       .then(res => {
         const list = res && res.data && Array.isArray(res.data.prices) ? res.data.prices : []
-        const map = {}
-        list.forEach(it => { map[it.color_name] = Number(it.reference_price || 0) })
-        const norm = this.normalizePriceMap(species, map)
-        if (!Object.keys(map).length) {
-          const defaults = this.getDefaultPriceMap(species)
-          this.setData({ priceMap: defaults }, () => this.computeSuggestions())
+        const male = {}
+        const female = {}
+        const neutral = {}
+        list.forEach(it => {
+          const v = Number(it.reference_price || 0)
+          if (it.gender === 'male') male[it.color_name] = v
+          else if (it.gender === 'female') female[it.color_name] = v
+          else neutral[it.color_name] = v
+        })
+        const mNorm = this.normalizePriceMap(species, male)
+        const fNorm = this.normalizePriceMap(species, female)
+        const nNorm = this.normalizePriceMap(species, neutral)
+        Object.keys(nNorm).forEach(k => {
+          if (mNorm[k] == null) mNorm[k] = nNorm[k]
+          if (fNorm[k] == null) fNorm[k] = nNorm[k]
+        })
+        const hasAny = Object.keys(mNorm).length || Object.keys(fNorm).length || Object.keys(nNorm).length
+        if (!hasAny) {
+          const d = this.getDefaultPriceMap(species)
+          this.setData({ priceMap: d, priceMapMale: d, priceMapFemale: d }, () => this.computeSuggestions())
         } else {
-          this.setData({ priceMap: norm }, () => this.computeSuggestions())
+          const base = Object.keys(nNorm).length ? nNorm : (Object.keys(mNorm).length ? mNorm : fNorm)
+          this.setData({ priceMap: base, priceMapMale: mNorm, priceMapFemale: fNorm }, () => this.computeSuggestions())
         }
       })
       .catch(() => {
         const defaults = this.getDefaultPriceMap(species)
-        this.setData({ priceMap: defaults }, () => this.computeSuggestions())
+        this.setData({ priceMap: defaults, priceMapMale: defaults, priceMapFemale: defaults }, () => this.computeSuggestions())
       })
   },
 
@@ -253,11 +270,29 @@ Page({
   },
 
   evaluateExpectedValue(species, mIdx, fIdx, ms, fs) {
-    const dist = this.simulatePairing(species, mIdx, fIdx, ms, fs)
+    const config = SPECIES_CONFIG[species]
+    const mColorConfig = config.colors[mIdx]
+    const fColorConfig = config.colors[fIdx]
+    const motherGenotype = this.buildGenotype(config, mColorConfig.genes, ms, 'female')
+    const fatherGenotype = this.buildGenotype(config, fColorConfig.genes, fs, 'male')
+    const mGametes = this.generateGametes(config, motherGenotype)
+    const fGametes = this.generateGametes(config, fatherGenotype)
     const pm = this.data.priceMap || {}
+    const pmM = this.data.priceMapMale || {}
+    const pmF = this.data.priceMapFemale || {}
     let sum = 0
-    dist.forEach(d => { const p = Number(pm[d.name] || 0); sum += d.prob * p })
-    return sum
+    let total = 0
+    for (const mg of mGametes) {
+      for (const fg of fGametes) {
+        const z = this.combineGametes(config, mg, fg)
+        const o = this.analyzeOffspring(config, z)
+        const price = o.sex === 'male' ? Number((pmM[o.name] != null ? pmM[o.name] : pm[o.name]) || 0) : Number((pmF[o.name] != null ? pmF[o.name] : pm[o.name]) || 0)
+        sum += price
+        total += 1
+      }
+    }
+    if (!total) return 0
+    return sum / total
   },
 
   computeSuggestions() {

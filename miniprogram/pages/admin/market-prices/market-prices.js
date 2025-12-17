@@ -47,7 +47,11 @@ Page({
     app.request({ url: '/api/market/prices', method: 'GET', data: { species } })
       .then(res => {
         const prices = (res && res.data && res.data.prices) || []
-        this.setData({ prices, loading: false })
+        const mapped = prices.map(p => ({
+          ...p,
+          gender_text: p.gender === 'male' ? '雄性' : (p.gender === 'female' ? '雌性' : '不区分')
+        }))
+        this.setData({ prices: mapped, loading: false })
       })
       .catch(() => {
         this.setData({ prices: [], loading: false })
