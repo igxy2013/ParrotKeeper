@@ -22,7 +22,18 @@ const SPECIES_CONFIG = {
       { name: '银丝和尚', genes: { pallid: 1 } },
       { name: '蓝银丝和尚', genes: { blue: 2, pallid: 1 } },
       { name: '派特绿和尚', genes: { pied: 2 } },
-      { name: '派特蓝和尚', genes: { blue: 2, pied: 2 } }
+      { name: '派特蓝和尚', genes: { blue: 2, pied: 2 } },
+      { name: '蓝雪和尚', genes: { blue: 2, pallid: 1 } },
+      { name: '奶油黄和尚', genes: { ino: 1 } },
+      { name: '哈密瓜和尚', genes: { cinnamon: 1 } },
+      { name: '五彩和尚', genes: { pied: 2 } },
+      { name: '黄金丝和尚', genes: { pallid: 1 } },
+      { name: '绿闪光和尚', genes: { dark: 1 } },
+      { name: '紫派洛和尚', genes: { blue: 2, dark: 2 } },
+      { name: '雪白银和尚', genes: { blue: 2, ino: 1 } },
+      { name: '紫雪和尚', genes: { blue: 2, dark: 1 } },
+      { name: '肉桂黄和尚', genes: { ino: 1, cinnamon: 1 } },
+      { name: '白银丝和尚', genes: { blue: 2, pallid: 1, ino: 1 } }
     ]
   },
   '小太阳鹦鹉': {

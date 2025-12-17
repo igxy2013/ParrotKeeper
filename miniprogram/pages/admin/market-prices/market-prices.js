@@ -6,6 +6,7 @@ Page({
     isSuperAdmin: false,
     loading: true,
     prices: [],
+    filteredPrices: [],
     speciesList: [],
     speciesNames: ['全部'],
     colorNames: [],
@@ -16,7 +17,8 @@ Page({
     formColorIndex: 0,
     genderOptions: ['不区分', '雄性', '雌性'],
     formGenderIndex: 0,
-    editingIndex: null
+    editingIndex: null,
+    searchColorKeyword: ''
   },
 
   onShow() {
@@ -51,7 +53,9 @@ Page({
           ...p,
           gender_text: p.gender === 'male' ? '雄性' : (p.gender === 'female' ? '雌性' : '不区分')
         }))
-        this.setData({ prices: mapped, loading: false })
+        const keyword = String(this.data.searchColorKeyword || '').trim()
+        const filtered = this.filterPriceList(mapped, keyword)
+        this.setData({ prices: mapped, filteredPrices: filtered, loading: false })
       })
       .catch(() => {
         this.setData({ prices: [], loading: false })
@@ -128,6 +132,19 @@ Page({
     this.setData({ formGenderIndex, addForm })
   },
 
+  filterPriceList(list, keyword) {
+    const kw = String(keyword || '').trim().toLowerCase()
+    if (!kw) return list || []
+    const src = list || []
+    return src.filter(p => String(p.color_name || '').toLowerCase().indexOf(kw) !== -1)
+  },
+
+  onSearchColorInput(e) {
+    const value = e.detail && e.detail.value ? e.detail.value : ''
+    const filtered = this.filterPriceList(this.data.prices, value)
+    this.setData({ searchColorKeyword: value, filteredPrices: filtered })
+  },
+
   submitForm() {
     const idx = this.data.editingIndex
     const form = this.data.addForm
@@ -143,6 +160,19 @@ Page({
     if (!payload.species || !payload.color_name || !payload.reference_price) {
       wx.showToast({ title: '请完整填写', icon: 'none' })
       return
+    }
+    if (idx === null) {
+      const list = this.data.prices || []
+      const genderKey = String(payload.gender || '')
+      const exists = list.some(item =>
+        String(item.species || '') === String(payload.species || '') &&
+        String(item.color_name || '') === String(payload.color_name || '') &&
+        String(item.gender || '') === genderKey
+      )
+      if (exists) {
+        wx.showToast({ title: '已存在相同参考价', icon: 'none' })
+        return
+      }
     }
     if (idx === null) {
       app.request({ url: '/api/market/prices', method: 'POST', data: payload })
@@ -165,8 +195,14 @@ Page({
   },
 
   openEditModal(e) {
-    const idx = Number(e.currentTarget.dataset.index || 0)
-    const item = this.data.prices[idx]
+    const id = e.currentTarget.dataset.id
+    const list = this.data.prices || []
+    const idx = list.findIndex(p => String(p.id) === String(id))
+    if (idx < 0) {
+      wx.showToast({ title: '未找到记录', icon: 'none' })
+      return
+    }
+    const item = list[idx]
     const names = this.data.speciesNames
     const fi = Math.max(0, names.indexOf(item.species))
     const colors = getColorsBySpeciesName(item.species)
@@ -185,8 +221,14 @@ Page({
   },
 
   deleteItem(e) {
-    const idx = Number(e.currentTarget.dataset.index || 0)
-    const item = this.data.prices[idx]
+    const id = e.currentTarget.dataset.id
+    const list = this.data.prices || []
+    const idx = list.findIndex(p => String(p.id) === String(id))
+    if (idx < 0) {
+      wx.showToast({ title: '未找到记录', icon: 'none' })
+      return
+    }
+    const item = list[idx]
     wx.showModal({
       title: '确认删除',
       content: `删除 ${item.species} - ${item.color_name} 的参考价？`,
