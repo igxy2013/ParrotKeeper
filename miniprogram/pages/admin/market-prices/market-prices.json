@@ -3,7 +3,5 @@
     "app-header": "/components/app-header/app-header"
   },
   "navigationStyle": "custom",
-  "navigationBarTitleText": "鹦鹉配对计算器",
-  "backgroundColor": "#f8f9fa",
-  "backgroundTextStyle": "dark"
+  "navigationBarTitleText": "参考价格管理"
 }

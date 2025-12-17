@@ -15,7 +15,8 @@
       "announcements/announcements",
       "incubation-suggestions/incubation-suggestions",
       "parrot-species/parrot-species",
-      "api-configs/api-configs"
+      "api-configs/api-configs",
+      "market-prices/market-prices"
       ]
     },
     {

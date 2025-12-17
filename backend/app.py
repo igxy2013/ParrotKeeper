@@ -23,6 +23,7 @@ from routes.admin import admin_bp
 from routes.announcements import announcements_bp
 from routes.ai import ai_bp
 from routes.incubation import incubation_bp
+from routes.market import market_bp
 import os
 from utils import login_required, success_response, error_response
 from team_mode_utils import (
@@ -66,6 +67,7 @@ def create_app(config_name=None):
     app.register_blueprint(announcements_bp)
     app.register_blueprint(ai_bp)
     app.register_blueprint(incubation_bp)
+    app.register_blueprint(market_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
@@ -233,6 +235,21 @@ def init_db(app):
             except Exception:
                 pass
             print(f"更新 cleaning_type 枚举失败: {e}")
+
+        try:
+            # 为 market_prices 表添加 gender 字段（若不存在）
+            with db.engine.connect() as connection:
+                check = connection.execute(text("SHOW COLUMNS FROM market_prices LIKE 'gender'"))
+                exists = check.fetchone()
+                if not exists:
+                    connection.execute(text("ALTER TABLE market_prices ADD COLUMN gender ENUM('male','female') NULL AFTER color_name"))
+                    print("已为 market_prices 添加 gender 字段")
+        except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            print(f"添加 market_prices.gender 字段失败: {e}")
 
         try:
             # 自动为反馈表添加 is_read 字段（若不存在）

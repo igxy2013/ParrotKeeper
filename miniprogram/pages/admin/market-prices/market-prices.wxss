@@ -1,0 +1,31 @@
+.page-container { background: #f8f9fa; min-height: 100vh; }
+.page-content { padding: 16rpx; }
+.card { background: #fff; border: 2rpx solid #eef2f7; border-radius: 24rpx; padding: 24rpx; margin: 20rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); }
+.section-title { font-weight: 700; font-size: 30rpx; color: #111827; margin-bottom: 16rpx; border-left: 8rpx solid #10b981; padding-left: 12rpx; }
+.filter-row { display: flex; align-items: center; justify-content: space-between; }
+.picker-value { color: #111827; font-size: 28rpx; font-weight: 600; }
+.add-btn { background: #10b981; color: #fff; padding: 12rpx 20rpx; border-radius: 12rpx; font-size: 26rpx; }
+.loading { color: #6b7280; font-size: 26rpx; }
+.empty { color: #9ca3af; font-size: 26rpx; text-align: center; padding: 12rpx 0; }
+.price-list { display: flex; flex-direction: column; gap: 12rpx; }
+.price-item { display: flex; align-items: center; justify-content: space-between; padding: 16rpx; border: 2rpx solid #e5e7eb; border-radius: 16rpx; }
+.price-info { display: flex; gap: 12rpx; align-items: center; }
+.price-species { font-size: 26rpx; color: #374151; font-weight: 600; }
+.price-color { font-size: 26rpx; color: #4b5563; }
+.price-value { font-size: 28rpx; color: #065f46; font-weight: 700; }
+.item-actions { display: flex; gap: 12rpx; }
+.action-btn { padding: 10rpx 16rpx; border-radius: 10rpx; font-size: 26rpx; }
+.action-btn.edit { background: #3b82f6; color: #fff; }
+.action-btn.delete { background: #ef4444; color: #fff; }
+.modal-overlay { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; }
+.modal-container { width: 86%; background: #fff; border-radius: 16rpx; overflow: hidden; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20rpx; border-bottom: 2rpx solid #e5e7eb; }
+.modal-title { font-size: 28rpx; font-weight: 700; }
+.modal-close { font-size: 36rpx; color: #6b7280; }
+.modal-body { padding: 20rpx; }
+.form-row { display: flex; align-items: center; justify-content: space-between; padding: 12rpx 0; }
+.form-label { color: #374151; font-size: 28rpx; font-weight: 500; }
+.input { background: #f8fafc; border: 2rpx solid #e5e7eb; border-radius: 12rpx; padding: 10rpx 12rpx; font-size: 26rpx; width: 60%; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 12rpx; padding: 16rpx 20rpx; border-top: 2rpx solid #e5e7eb; }
+.btn-primary { background: #10b981; color: #fff; padding: 12rpx 20rpx; border-radius: 12rpx; }
+.btn-secondary { background: #e5e7eb; color: #111827; padding: 12rpx 20rpx; border-radius: 12rpx; }

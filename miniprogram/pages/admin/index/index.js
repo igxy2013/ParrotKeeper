@@ -40,4 +40,13 @@ Page({
     }
     wx.navigateTo({ url: '/pages/admin/incubation-suggestions/incubation-suggestions' })
   }
+  ,
+  goAdminMarketPrices() {
+    const userInfo = (app.globalData && app.globalData.userInfo) || {}
+    if (String(userInfo.role || '') !== 'super_admin') {
+      app.showError && app.showError('仅超级管理员可进入')
+      return
+    }
+    wx.navigateTo({ url: '/pages/admin/market-prices/market-prices' })
+  }
 })

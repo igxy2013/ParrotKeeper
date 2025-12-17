@@ -1,0 +1,89 @@
+<view class="page-container">
+  <app-header title="参考价格管理" subtitle="维护羽色市场参考价" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">仅超级管理员可访问该页面</view>
+    </block>
+    <block wx:else>
+      <view class="card">
+        <view class="section-title">
+          <text>物种筛选</text>
+        </view>
+        <view class="filter-row">
+          <picker mode="selector" range="{{speciesNames}}" value="{{speciesIndex}}" bindchange="onSpeciesPickerChange">
+            <view class="picker-value">{{speciesNames[speciesIndex] || '全部'}}</view>
+          </picker>
+          <view class="add-btn" bindtap="openAddModal">新增参考价</view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="section-title">
+          <text>参考价格列表</text>
+        </view>
+        <view wx:if="{{loading}}" class="loading">加载中...</view>
+        <block wx:else>
+          <view wx:if="{{!prices.length}}" class="empty">暂无数据</view>
+          <block wx:else>
+            <view class="price-list">
+              <block wx:for="{{prices}}" wx:key="id">
+                <view class="price-item">
+                  <view class="price-info">
+                    <text class="price-species">{{item.species}}</text>
+                    <text class="price-color">{{item.color_name}}</text>
+                  </view>
+                  <view class="price-value">¥{{item.reference_price}}</view>
+                  <view class="item-actions">
+                    <view class="action-btn edit" bindtap="openEditModal" data-index="{{index}}">编辑</view>
+                    <view class="action-btn delete" bindtap="deleteItem" data-index="{{index}}">删除</view>
+                  </view>
+                </view>
+              </block>
+            </view>
+          </block>
+        </block>
+      </view>
+
+      <view class="modal-overlay" wx:if="{{showAddModal}}" bindtap="closeAddModal">
+        <view class="modal-container" catchtap="noop">
+          <view class="modal-header">
+            <text class="modal-title">{{editingIndex === null ? '新增' : '编辑'}}参考价</text>
+            <view class="modal-close" bindtap="closeAddModal">×</view>
+          </view>
+          <view class="modal-body">
+            <view class="form-row">
+              <view class="form-label">物种</view>
+              <picker mode="selector" range="{{speciesNames}}" value="{{formSpeciesIndex}}" bindchange="onFormSpeciesChange">
+                <view class="picker-value">{{speciesNames[formSpeciesIndex] || addForm.species || '请选择'}}</view>
+              </picker>
+            </view>
+            <view class="form-row">
+              <view class="form-label">羽色</view>
+              <picker mode="selector" range="{{colorNames}}" value="{{formColorIndex}}" bindchange="onFormColorChange">
+                <view class="picker-value">{{colorNames[formColorIndex] || addForm.color_name || '请选择'}}</view>
+              </picker>
+            </view>
+            <view class="form-row">
+              <view class="form-label">性别</view>
+              <picker mode="selector" range="{{genderOptions}}" value="{{formGenderIndex}}" bindchange="onFormGenderChange">
+                <view class="picker-value">{{genderOptions[formGenderIndex]}}</view>
+              </picker>
+            </view>
+            <view class="form-row">
+              <view class="form-label">价格</view>
+              <input class="input" type="number" placeholder="如：1500" value="{{addForm.reference_price}}" bindinput="onFormInput" data-key="reference_price" />
+            </view>
+            <view class="form-row">
+              <view class="form-label">来源</view>
+              <input class="input" placeholder="可选，如平台或市场" value="{{addForm.source}}" bindinput="onFormInput" data-key="source" />
+            </view>
+          </view>
+          <view class="modal-actions">
+            <view class="btn-secondary" bindtap="closeAddModal">取消</view>
+            <view class="btn-primary" bindtap="submitForm">提交</view>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

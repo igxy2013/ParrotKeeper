@@ -42,8 +42,19 @@ class ParrotSpecies(db.Model):
     reference_weight_g = db.Column(db.Numeric(6, 2))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # 关系
     parrots = db.relationship('Parrot', backref='species', lazy=True)
+
+class MarketPrice(db.Model):
+    __tablename__ = 'market_prices'
+
+    id = db.Column(db.Integer, primary_key=True)
+    species = db.Column(db.String(100), nullable=False)
+    color_name = db.Column(db.String(120), nullable=False)
+    gender = db.Column(db.Enum('male', 'female'), nullable=True)
+    currency = db.Column(db.String(10), default='CNY')
+    reference_price = db.Column(db.Numeric(10, 2), nullable=False)
+    source = db.Column(db.String(255))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class Parrot(db.Model):
     __tablename__ = 'parrots'

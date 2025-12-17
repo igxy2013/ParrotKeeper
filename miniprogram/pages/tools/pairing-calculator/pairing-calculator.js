@@ -1,92 +1,9 @@
 const app = getApp()
-
-// 基因定义
-const SPECIES_CONFIG = {
-  '和尚鹦鹉': {
-    loci: {
-      blue: { type: 'autosomal', label: '蓝化', symbol: 'b' },
-      dark: { type: 'autosomal', label: '深色(Dark)', symbol: 'D', incomplete: true }, // Dd=1, DD=2
-      ino: { type: 'sex-linked', label: '黄/白化(Ino)', symbol: 'i' },
-      pallid: { type: 'sex-linked', label: '银丝(Pallid)', symbol: 'pa' },
-      cinnamon: { type: 'sex-linked', label: '肉桂', symbol: 'c' },
-      pied: { type: 'autosomal', label: '派特', symbol: 'p' }
-    },
-    // 预设颜色对应的显性/隐性基因表达
-    colors: [
-      { name: '绿和尚', genes: {} },
-      { name: '蓝和尚', genes: { blue: 2 } }, // 2表示纯合隐性(aa)
-      { name: '深绿和尚(1Dark)', genes: { dark: 1 } },
-      { name: '橄榄绿和尚(2Dark)', genes: { dark: 2 } },
-      { name: '钴蓝和尚(蓝+1Dark)', genes: { blue: 2, dark: 1 } },
-      { name: '紫罗兰和尚(蓝+2Dark)', genes: { blue: 2, dark: 2 } },
-      { name: '黄和尚(绿+Ino)', genes: { ino: 1 } },
-      { name: '白和尚(蓝+Ino)', genes: { blue: 2, ino: 1 } },
-      { name: '肉桂和尚', genes: { cinnamon: 1 } },
-      { name: '肉桂蓝和尚', genes: { blue: 2, cinnamon: 1 } },
-      { name: '银丝和尚', genes: { pallid: 1 } },
-      { name: '银丝蓝和尚', genes: { blue: 2, pallid: 1 } },
-      { name: '派特和尚', genes: { pied: 2 } },
-      { name: '蓝派特和尚', genes: { blue: 2, pied: 2 } }
-    ]
-  },
-  '小太阳鹦鹉': {
-    loci: {
-      turquoise: { type: 'autosomal', label: '蓝化', symbol: 't' },
-      dilute: { type: 'autosomal', label: '稀释(Dilute)', symbol: 'd' },
-      cinnamon: { type: 'sex-linked', label: '肉桂', symbol: 'c' },
-      opaline: { type: 'sex-linked', label: '黄边', symbol: 'o' },
-      pied: { type: 'autosomal', label: '派特', symbol: 'p' }
-    },
-    colors: [
-      { name: '绿颊小太阳（原始）', genes: {} },
-      { name: '黄边小太阳', genes: { opaline: 1 } },
-      { name: '肉桂小太阳', genes: { cinnamon: 1 } },
-      { name: '凤梨小太阳', genes: { opaline: 1, cinnamon: 1 } },
-      { name: '蓝化小太阳', genes: { turquoise: 2 } },
-      { name: '蓝化黄边', genes: { turquoise: 2, opaline: 1 } },
-      { name: '蓝化肉桂', genes: { turquoise: 2, cinnamon: 1 } },
-      { name: '蓝化凤梨', genes: { turquoise: 2, opaline: 1, cinnamon: 1 } },
-      { name: '香吉士(Dilute)', genes: { dilute: 2 } },
-      { name: '月亮(Mint)', genes: { turquoise: 2, dilute: 2 } },
-      { name: 'Suncheek(阳曦)', genes: { dilute: 2, opaline: 1, cinnamon: 1 } },
-      { name: 'Mooncheek(月光)', genes: { turquoise: 2, dilute: 2, opaline: 1, cinnamon: 1 } },
-      { name: '派特小太阳', genes: { pied: 2 } }
-    ]
-  },
-  '牡丹鹦鹉': {
-    loci: {
-      blue: { type: 'autosomal', label: '蓝化(g)', symbol: 'g' }, // gg=Blue, Gg=GreenSplitBlue
-      ino: { type: 'sex-linked', label: '黄化(y)', symbol: 'y' }, // yy(sex-linked for now to be safe, user said yy)
-      edged: { type: 'autosomal', label: '黄边(Ye)', symbol: 'Ye', incomplete: true }, // Dominant? User said "Ye" gene. Assuming Dominant.
-      white: { type: 'autosomal', label: '白化(w)', symbol: 'w' }, // ww=White
-      white_face: { type: 'autosomal', label: '白面(Wf)', symbol: 'Wf', incomplete: true }, // Dominant
-      cinnamon: { type: 'sex-linked', label: '肉桂(c)', symbol: 'c' },
-      cinnamon_aus: { type: 'sex-linked', label: '澳桂(c_aus)', symbol: 'c_aus' }, // Aussie Cinnamon
-      silver: { type: 'autosomal', label: '银丝(s)', symbol: 's' }, // ss=Silver
-      pied_dom: { type: 'autosomal', label: '派特(P)', symbol: 'P', incomplete: true } // Dominant Pied Pp/PP
-    },
-    colors: [
-      { name: '野生型（绿桃）', genes: {} },
-      { name: '蓝银顶', genes: { blue: 2 } }, // gg
-      { name: '绿金顶', genes: { blue: 1 } }, // Gg (Split Blue)
-      { name: '黄桃（黄化）', genes: { ino: 1 } },
-      { name: '黄边桃', genes: { edged: 1 } }, // Ye_
-      { name: '白桃（白化）', genes: { white: 2 } }, // ww
-      { name: '白面桃', genes: { white_face: 1 } }, // Wf_
-      { name: '肉桂桃', genes: { cinnamon: 1 } },
-      { name: '银丝桃', genes: { silver: 2 } }, // ss
-      { name: '派特桃', genes: { pied_dom: 1 } }, // Pp
-      { name: '苹果绿澳桂', genes: { cinnamon_aus: 1 } }, // Aussie Cinnamon (Green Series)
-      { name: '蓝化黄边', genes: { blue: 2, edged: 1 } },
-      { name: '白化派特', genes: { white: 2, pied_dom: 1 } },
-      { name: '肉桂蓝化', genes: { cinnamon: 1, blue: 2 } }
-    ]
-  }
-}
+const { SPECIES_CONFIG, SPECIES_LIST } = require('../../../utils/species-config')
 
 Page({
   data: {
-    speciesOptions: ['和尚鹦鹉', '小太阳鹦鹉', '牡丹鹦鹉'],
+    speciesOptions: SPECIES_LIST,
     speciesIndex: 0,
     
     // 颜色列表
@@ -101,6 +18,9 @@ Page({
 
     results: [],
     sexBreakdown: { male: [], female: [] },
+    priceMap: {},
+    bestFatherSuggestion: null,
+    bestMotherSuggestion: null,
     
     // 调试或提示
     unsupportedHint: ''
@@ -114,7 +34,11 @@ Page({
     const ms = typeof options === 'object' && options && (options.ms || options.motherSplits) ? String(options.ms || options.motherSplits).split(',').filter(Boolean) : []
     const fs = typeof options === 'object' && options && (options.fs || options.fatherSplits) ? String(options.fs || options.fatherSplits).split(',').filter(Boolean) : []
     this.updateSpeciesData(si)
-    this.setData({ motherColorIndex: mi, fatherColorIndex: fi, motherSplits: ms, fatherSplits: fs }, () => this.compute())
+    this.setData({ motherColorIndex: mi, fatherColorIndex: fi, motherSplits: ms, fatherSplits: fs }, () => {
+      this.compute()
+      const species = this.data.speciesOptions[this.data.speciesIndex]
+      this.fetchPrices(species)
+    })
   },
 
   onSpeciesChange(e) {
@@ -144,23 +68,27 @@ Page({
       fatherColorIndex: 0,
       availableSplits: splits,
       motherSplits: [],
-      fatherSplits: []
+      fatherSplits: [],
+      priceMap: {},
+      bestFatherSuggestion: null,
+      bestMotherSuggestion: null
     }, () => {
       this.compute()
+      this.fetchPrices(species)
     })
   },
 
   onMotherColorChange(e) {
-    this.setData({ motherColorIndex: Number(e.detail.value) }, () => this.compute())
+    this.setData({ motherColorIndex: Number(e.detail.value) }, () => { this.compute(); this.computeSuggestions() })
   },
   onFatherColorChange(e) {
-    this.setData({ fatherColorIndex: Number(e.detail.value) }, () => this.compute())
+    this.setData({ fatherColorIndex: Number(e.detail.value) }, () => { this.compute(); this.computeSuggestions() })
   },
   onMotherSplitsChange(e) {
-    this.setData({ motherSplits: e.detail.value }, () => this.compute())
+    this.setData({ motherSplits: e.detail.value }, () => { this.compute(); this.computeSuggestions() })
   },
   onFatherSplitsChange(e) {
-    this.setData({ fatherSplits: e.detail.value }, () => this.compute())
+    this.setData({ fatherSplits: e.detail.value }, () => { this.compute(); this.computeSuggestions() })
   },
 
   compute() {
@@ -191,6 +119,168 @@ Page({
     
     // 5. 统计结果
     this.aggregateResults(analyzed)
+    this.computeSuggestions()
+  },
+
+  fetchPrices(species) {
+    const app = getApp()
+    app.request({ url: '/api/market/prices', method: 'GET', data: { species } })
+      .then(res => {
+        const list = res && res.data && Array.isArray(res.data.prices) ? res.data.prices : []
+        const map = {}
+        list.forEach(it => { map[it.color_name] = Number(it.reference_price || 0) })
+        const norm = this.normalizePriceMap(species, map)
+        if (!Object.keys(map).length) {
+          const defaults = this.getDefaultPriceMap(species)
+          this.setData({ priceMap: defaults }, () => this.computeSuggestions())
+        } else {
+          this.setData({ priceMap: norm }, () => this.computeSuggestions())
+        }
+      })
+      .catch(() => {
+        const defaults = this.getDefaultPriceMap(species)
+        this.setData({ priceMap: defaults }, () => this.computeSuggestions())
+      })
+  },
+
+  normalizePriceMap(species, map) {
+    const m = { ...(map || {}) }
+    if (species === '和尚鹦鹉') {
+      const alias = {
+        '深绿和尚': ['深绿和尚(1Dark)'],
+        '橄榄绿和尚(双暗绿)': ['橄榄绿和尚(2Dark)'],
+        '钴蓝和尚': ['钴蓝和尚(蓝+1Dark)'],
+        '紫罗兰和尚(双暗蓝)': ['紫罗兰和尚(蓝+2Dark)'],
+        '派特绿和尚': ['派特和尚'],
+        '派特蓝和尚': ['蓝派特和尚']
+      }
+      Object.keys(alias).forEach(canon => {
+        const syns = alias[canon]
+        syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+      })
+    } else if (species === '牡丹鹦鹉') {
+      const alias = {
+        '白面桃': ['白面绿桃']
+      }
+      Object.keys(alias).forEach(canon => {
+        const syns = alias[canon]
+        syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+      })
+    }
+    return m
+  },
+
+  getDefaultPriceMap(species) {
+    if (species === '和尚鹦鹉') {
+      return {
+        '绿和尚': 600,
+        '蓝和尚': 1000,
+        '深绿和尚': 800,
+        '橄榄绿和尚(双暗绿)': 900,
+        '钴蓝和尚': 1400,
+        '紫罗兰和尚(双暗蓝)': 2000,
+        '黄和尚(Lutino)': 1800,
+        '白和尚(Albino)': 2500,
+        '肉桂绿和尚': 1200,
+        '肉桂蓝和尚': 1600,
+        '银丝和尚': 1500,
+        '蓝银丝和尚': 2000,
+        '派特绿和尚': 1800,
+        '派特蓝和尚': 2200
+      }
+    }
+    if (species === '小太阳鹦鹉') {
+      return {
+        '绿颊小太阳（原始）': 600,
+        '黄边小太阳': 1200,
+        '肉桂小太阳': 1200,
+        '凤梨小太阳': 1800,
+        '蓝化小太阳': 1500,
+        '蓝化黄边': 2200,
+        '蓝化肉桂': 2200,
+        '蓝化凤梨': 2800,
+        '香吉士(美国黄/稀释)': 2000,
+        '月亮(Mint/蓝化稀释)': 2600,
+        'Suncheek(阳曦/凤梨稀释)': 2800,
+        'Mooncheek(月光/蓝化凤梨稀释)': 3200,
+        '派特小太阳': 1800
+      }
+    }
+    if (species === '牡丹鹦鹉') {
+      return {
+        '野生型（绿桃）': 300,
+        '绿金顶': 500,
+        '蓝银顶': 800,
+        '黄桃（黄化）': 1000,
+        '白桃（白化）': 1200,
+        '白面桃': 900,
+        '肉桂桃': 700,
+        '肉桂蓝化': 1000,
+        '黄边桃': 800,
+        '蓝化黄边': 1200,
+        '银丝桃': 900,
+        '派特桃': 900,
+        '白化派特': 1500,
+        '白面澳桂': 1200,
+        '苹果绿澳桂(红面澳桂)': 1200,
+        '红面澳闪': 2000,
+        '蓝化澳闪': 2200
+      }
+    }
+    return {}
+  },
+
+  simulatePairing(species, mIdx, fIdx, ms, fs) {
+    const config = SPECIES_CONFIG[species]
+    const mColorConfig = config.colors[mIdx]
+    const fColorConfig = config.colors[fIdx]
+    const motherGenotype = this.buildGenotype(config, mColorConfig.genes, ms, 'female')
+    const fatherGenotype = this.buildGenotype(config, fColorConfig.genes, fs, 'male')
+    const mGametes = this.generateGametes(config, motherGenotype)
+    const fGametes = this.generateGametes(config, fatherGenotype)
+    const offsprings = []
+    for (const mg of mGametes) {
+      for (const fg of fGametes) {
+        offsprings.push(this.combineGametes(config, mg, fg))
+      }
+    }
+    const analyzed = offsprings.map(o => this.analyzeOffspring(config, o))
+    const total = analyzed.length
+    const map = {}
+    analyzed.forEach(o => { map[o.name] = (map[o.name] || 0) + 1 })
+    const results = Object.keys(map).map(k => ({ name: k, prob: map[k] / total }))
+    return results
+  },
+
+  evaluateExpectedValue(species, mIdx, fIdx, ms, fs) {
+    const dist = this.simulatePairing(species, mIdx, fIdx, ms, fs)
+    const pm = this.data.priceMap || {}
+    let sum = 0
+    dist.forEach(d => { const p = Number(pm[d.name] || 0); sum += d.prob * p })
+    return sum
+  },
+
+  computeSuggestions() {
+    const species = this.data.speciesOptions[this.data.speciesIndex]
+    const ms = this.data.motherSplits
+    const fs = this.data.fatherSplits
+    const mIdx = this.data.motherColorIndex
+    const fIdx = this.data.fatherColorIndex
+    const colors = this.data.colorOptions
+    let bestF = { idx: fIdx, name: colors[fIdx], value: this.evaluateExpectedValue(species, mIdx, fIdx, ms, fs) }
+    for (let i = 0; i < colors.length; i++) {
+      const v = this.evaluateExpectedValue(species, mIdx, i, ms, fs)
+      if (v > bestF.value) bestF = { idx: i, name: colors[i], value: v }
+    }
+    let bestM = { idx: mIdx, name: colors[mIdx], value: this.evaluateExpectedValue(species, mIdx, fIdx, ms, fs) }
+    for (let i = 0; i < colors.length; i++) {
+      const v = this.evaluateExpectedValue(species, i, fIdx, ms, fs)
+      if (v > bestM.value) bestM = { idx: i, name: colors[i], value: v }
+    }
+    this.setData({
+      bestFatherSuggestion: { colorName: bestF.name, expectedValue: Math.round(bestF.value) },
+      bestMotherSuggestion: { colorName: bestM.name, expectedValue: Math.round(bestM.value) }
+    })
   },
 
   buildShareQuery() {
@@ -260,10 +350,19 @@ Page({
     for (const key of keys) {
       const alleles = genotype[key]
       const newGametes = []
-      for (const g of gametes) {
-        const g1 = { ...g, [key]: alleles[0] }
-        const g2 = { ...g, [key]: alleles[1] }
-        newGametes.push(g1, g2)
+      
+      // 优化：如果两个等位基因相同，不进行分裂
+      if (alleles[0] === alleles[1]) {
+        for (const g of gametes) {
+          const g1 = { ...g, [key]: alleles[0] }
+          newGametes.push(g1)
+        }
+      } else {
+        for (const g of gametes) {
+          const g1 = { ...g, [key]: alleles[0] }
+          const g2 = { ...g, [key]: alleles[1] }
+          newGametes.push(g1, g2)
+        }
       }
       gametes = newGametes
     }
@@ -431,6 +530,14 @@ Page({
       const isEdged = genes['edged']
       const isSilver = genes['silver']
       const isPied = genes['pied_dom']
+      const isFallow = genes['fallow']
+
+      // 0. Fallow (澳闪)
+      if (isFallow) {
+         if (isWhiteFace) return '白面澳闪'
+         if (isBlue) return '蓝化澳闪'
+         return '红面澳闪'
+      }
 
       // 1. White series
       if (isWhite) {
@@ -460,9 +567,10 @@ Page({
       }
       
       // 4. Aussie Cinnamon (澳桂) - High priority overlay
-      // 苹果绿澳桂 = Green Series + Aussie Cinnamon
+      // 红面澳桂 = Green Series + Aussie Cinnamon
       if (isCinAus) {
-         if (color === '野生型（绿桃）' || color === '绿金顶') return '苹果绿澳桂'
+         if (isWhiteFace) return '白面澳桂'
+         if (color === '野生型（绿桃）' || color === '绿金顶') return '苹果绿澳桂(红面澳桂)'
          if (color === '蓝银顶') return '蓝化澳桂'
          // Fallback
          return '澳桂(' + color + ')'

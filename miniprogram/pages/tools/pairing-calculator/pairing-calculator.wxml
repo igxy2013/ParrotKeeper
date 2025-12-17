@@ -33,6 +33,10 @@
             </label>
           </checkbox-group>
         </view>
+        <view class="suggestion-card" wx:if="{{bestFatherSuggestion}}">
+          <view class="suggestion-title">最佳公鸟配对建议</view>
+          <view class="suggestion-detail">{{bestFatherSuggestion.colorName}} · 预计均价 ¥{{bestFatherSuggestion.expectedValue}}</view>
+        </view>
       </view>
 
       <!-- 公鸟设置 -->
@@ -55,6 +59,10 @@
               <text>{{item.name}}</text>
             </label>
           </checkbox-group>
+        </view>
+        <view class="suggestion-card" wx:if="{{bestMotherSuggestion}}">
+          <view class="suggestion-title">最佳母鸟配对建议</view>
+          <view class="suggestion-detail">{{bestMotherSuggestion.colorName}} · 预计均价 ¥{{bestMotherSuggestion.expectedValue}}</view>
         </view>
       </view>
 
