@@ -52,3 +52,70 @@
 .avg-box { display: flex; flex-direction: column; align-items: flex-start; gap: 8rpx; padding: 12rpx 4rpx; }
 .avg-value { font-size: 36rpx; font-weight: 800; color: #0f766e; }
 .avg-hint { font-size: 22rpx; color: #64748b; }
+
+.save-pair-btn { background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%); color: #ffffff; border: none; border-radius: 48rpx; padding:24rpx 200rpx; font-size: 32rpx; font-weight: bold; box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.3); transition: all 0.3s ease; margin: 16rpx 20rpx 0 20rpx; display: flex; align-items: center; justify-content: center; }
+.save-pair-btn:active { transform: translateY(2rpx) scale(0.98); box-shadow: 0 4rpx 16rpx rgba(76, 175, 80, 0.4); }
+.save-pair-btn-text { color: #ffffff; font-size: 32rpx; font-weight: bold; text-align: center; }
+
+.save-pair-section { margin-bottom: 12rpx; }
+
+.header-switch { display: flex; gap: 12rpx; background: rgba(255,255,255,0.2); padding: 6rpx; border-radius: 9999rpx; backdrop-filter: blur(10rpx); }
+.switch-item { padding: 10rpx 22rpx; border-radius: 9999rpx; color: #ffffff; font-size: 26rpx; }
+.switch-item.active { background: rgba(255,255,255,0.25); }
+.switch-text { color: #ffffff; }
+
+/* 页面内的选项切换器（置于“配对设置”卡片上方） */
+.switch-bar {
+  position: relative;
+  display: flex;
+  background: #f1f5f9;
+  padding: 8rpx;
+  border-radius: 9999rpx;
+  border: 1rpx solid #e2e8f0;
+  margin: 0 20rpx 24rpx;
+  box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.04);
+}
+
+.switch-bar .switch-item {
+  flex: 1;
+  text-align: center;
+  padding: 18rpx 0;
+  border-radius: 9999rpx;
+  color: #64748b;
+  font-size: 28rpx;
+  font-weight: 500;
+  position: relative;
+  z-index: 2;
+  transition: color 0.3s ease;
+}
+
+.switch-bar .switch-item.active {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.switch-bar .switch-text {
+  position: relative;
+  z-index: 2;
+  color: inherit;
+}
+
+.switch-bar .switch-thumb {
+  position: absolute;
+  top: 8rpx;
+  bottom: 8rpx;
+  width: calc(50% - 8rpx);
+  border-radius: 9999rpx;
+  background: #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08), 0 2rpx 4rpx rgba(0,0,0,0.04);
+  z-index: 1;
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.switch-bar .switch-thumb.left {
+  left: 8rpx;
+}
+
+.switch-bar .switch-thumb.right {
+  left: 50%;
+}

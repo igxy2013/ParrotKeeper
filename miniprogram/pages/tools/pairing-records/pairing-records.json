@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "配对记录"
+}

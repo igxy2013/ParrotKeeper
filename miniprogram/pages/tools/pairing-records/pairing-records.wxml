@@ -1,0 +1,46 @@
+<view class="page-container">
+  <app-header title="配对记录" subtitle="保存的配对方案" showBack="true" />
+  <view class="page-content">
+    <view class="switch-bar">
+      <view class="switch-thumb {{activeTab === 'calculator' ? 'left' : 'right'}}"></view>
+      <view class="switch-item {{activeTab === 'calculator' ? 'active' : ''}}" bindtap="switchTab" data-tab="calculator"><text class="switch-text">计算器</text></view>
+      <view class="switch-item {{activeTab === 'records' ? 'active' : ''}}" bindtap="switchTab" data-tab="records"><text class="switch-text">配对记录</text></view>
+    </view>
+
+    <view wx:if="{{!records || records.length === 0}}" class="empty">暂无配对记录</view>
+    <view wx:else class="list">
+      <view class="item" wx:for="{{records}}" wx:key="createdAt">
+        <view class="item-header">
+          <text class="species">{{item.species}}</text>
+          <text class="date">{{formatTime(item.createdAt)}}</text>
+        </view>
+        <view class="item-body">
+          <view class="pair-row">
+            <text class="label">母鸟</text>
+            <text class="value">{{item.motherColor}}{{item.motherSplits && item.motherSplits.length ? (' · ' + item.motherSplits.join('、')) : ''}}</text>
+          </view>
+          <view class="pair-row">
+            <text class="label">公鸟</text>
+            <text class="value">{{item.fatherColor}}{{item.fatherSplits && item.fatherSplits.length ? (' · ' + item.fatherSplits.join('、')) : ''}}</text>
+          </view>
+          <view class="avg-box">
+            <text class="avg-value">¥{{item.expectedAveragePrice}}</text>
+            <text class="avg-hint">预计均价</text>
+          </view>
+          <view wx:if="{{item.results && item.results.length}}" class="results">
+            <block wx:for="{{item.results}}" wx:key="index">
+              <view class="result-item">
+                <view class="result-label">{{item.label || item.name}}</view>
+                <view class="result-prob">{{item.prob}}%</view>
+              </view>
+            </block>
+          </view>
+        </view>
+        <view class="item-actions">
+          <view class="action-btn delete" catchtap="deleteRecord" data-index="{{index}}"><text>删除</text></view>
+        </view>
+      </view>
+      <view class="clear-btn" bindtap="clearAll"><text class="clear-text">清空所有</text></view>
+    </view>
+  </view>
+</view>
