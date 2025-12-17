@@ -102,6 +102,7 @@ Page({
     this.setData({ fatherSplits: e.detail.value }, () => { this.compute(); this.computeSuggestions() })
   },
 
+  
   compute() {
     const species = this.data.speciesOptions[this.data.speciesIndex]
     const config = SPECIES_CONFIG[species]
@@ -207,8 +208,7 @@ Page({
         '紫罗兰和尚(双暗蓝)': 2000,
         '黄和尚(Lutino)': 1800,
         '白和尚(Albino)': 2500,
-        '肉桂绿和尚': 1200,
-        '肉桂蓝和尚': 1600,
+        '绿肉桂和尚': 1200,
         '银丝和尚': 1500,
         '蓝银丝和尚': 2000,
         '派特绿和尚': 1800,

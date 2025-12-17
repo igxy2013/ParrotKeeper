@@ -17,8 +17,7 @@ const SPECIES_CONFIG = {
       { name: '紫罗兰和尚(蓝+2Dark)', genes: { blue: 2, dark: 2 } },
       { name: '黄和尚(Lutino)', genes: { ino: 1 } },
       { name: '白和尚(Albino)', genes: { blue: 2, ino: 1 } },
-      { name: '肉桂绿和尚', genes: { cinnamon: 1 } },
-      { name: '肉桂蓝和尚', genes: { blue: 2, cinnamon: 1 } },
+      { name: '绿肉桂和尚', genes: { cinnamon: 1 } },
       { name: '银丝和尚', genes: { pallid: 1 } },
       { name: '蓝银丝和尚', genes: { blue: 2, pallid: 1 } },
       { name: '派特绿和尚', genes: { pied: 2 } },
@@ -32,7 +31,7 @@ const SPECIES_CONFIG = {
       { name: '紫派洛和尚', genes: { blue: 2, dark: 2 } },
       { name: '雪白银和尚', genes: { blue: 2, ino: 1 } },
       { name: '紫雪和尚', genes: { blue: 2, dark: 1 } },
-      { name: '肉桂黄和尚', genes: { ino: 1, cinnamon: 1 } },
+      { name: '黄肉桂和尚', genes: { ino: 1, cinnamon: 1 } },
       { name: '白银丝和尚', genes: { blue: 2, pallid: 1, ino: 1 } }
     ]
   },
