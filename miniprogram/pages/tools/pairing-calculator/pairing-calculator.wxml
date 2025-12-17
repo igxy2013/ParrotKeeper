@@ -119,5 +119,15 @@
         <view wx:if="{{sexBreakdown.female.length === 0}}" class="empty-sm">无母雏</view>
       </view>
     </view>
+
+    <view class="card">
+      <view class="section-title">
+        <text>预计均价</text>
+      </view>
+      <view class="avg-box">
+        <text class="avg-value">¥{{expectedAveragePrice}}</text>
+        <text class="avg-hint">基于当前配对结果与参考价估算</text>
+      </view>
+    </view>
   </view>
 </view>

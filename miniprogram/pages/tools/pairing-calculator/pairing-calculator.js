@@ -21,6 +21,7 @@ Page({
     priceMap: {},
     priceMapMale: {},
     priceMapFemale: {},
+    expectedAveragePrice: 0,
     bestFatherSuggestion: null,
     bestMotherSuggestion: null,
     
@@ -312,9 +313,11 @@ Page({
       const v = this.evaluateExpectedValue(species, i, fIdx, ms, fs)
       if (v > bestM.value) bestM = { idx: i, name: colors[i], value: v }
     }
+    const avg = this.evaluateExpectedValue(species, mIdx, fIdx, ms, fs)
     this.setData({
       bestFatherSuggestion: { colorName: bestF.name, expectedValue: Math.round(bestF.value) },
-      bestMotherSuggestion: { colorName: bestM.name, expectedValue: Math.round(bestM.value) }
+      bestMotherSuggestion: { colorName: bestM.name, expectedValue: Math.round(bestM.value) },
+      expectedAveragePrice: Math.round(avg)
     })
   },
 
