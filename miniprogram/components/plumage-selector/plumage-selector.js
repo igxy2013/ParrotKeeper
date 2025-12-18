@@ -34,18 +34,19 @@ Component({
   data: {
     visible: false,
     tempColorIndex: 0,
-    selectedSplitsDisplay: []
+    selectedSplitsDisplay: [],
+    localSplits: []
   },
 
   observers: {
     'colorIndex, splitIds, splits, colors': function(cIdx, sIds, splits, colors) {
       this.updateDisplay();
       
-      // Sync props to temp state for editing
-      // We do this when the modal opens, but also init here
-      this.setData({
-        tempColorIndex: cIdx
-      });
+      if (!this.data.visible) {
+        this.setData({
+          tempColorIndex: cIdx
+        });
+      }
       
       // Update splits checked state for internal rendering
       if (splits && splits.length) {
@@ -53,11 +54,6 @@ Component({
           ...s,
           checked: sIds.includes(s.id)
         }));
-        // Note: we can't directly update 'splits' prop effectively if it's an object reference loop, 
-        // but here we are creating a new array.
-        // However, modifying the property 'splits' itself might be an anti-pattern if we want to keep it pure.
-        // Let's rely on the parent to pass clean data, OR we use a local data copy.
-        // For simple interaction, I will toggle the local 'checked' state in 'tempSplits' in data.
         this.setData({
           localSplits: updatedSplits
         });
@@ -92,7 +88,7 @@ Component({
       this.setData({
         visible: true,
         tempColorIndex: colorIndex,
-        splits: tempSplits // Update the view with checked status
+        localSplits: tempSplits
       });
     },
 
@@ -107,19 +103,19 @@ Component({
 
     toggleSplit(e) {
       const id = e.currentTarget.dataset.id;
-      const { splits } = this.data;
-      const newSplits = splits.map(s => {
+      const { localSplits } = this.data;
+      const newSplits = localSplits.map(s => {
         if (s.id == id) {
           return { ...s, checked: !s.checked };
         }
         return s;
       });
-      this.setData({ splits: newSplits });
+      this.setData({ localSplits: newSplits });
     },
 
     confirmSelection() {
-      const { tempColorIndex, splits } = this.data;
-      const selectedSplitIds = splits.filter(s => s.checked).map(s => s.id);
+      const { tempColorIndex, localSplits } = this.data;
+      const selectedSplitIds = (localSplits || []).filter(s => s.checked).map(s => s.id);
       
       this.triggerEvent('change', {
         colorIndex: tempColorIndex,

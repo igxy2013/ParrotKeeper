@@ -47,11 +47,11 @@
       </view>
 
       <!-- Section 2: Splits -->
-      <view class="section" wx:if="{{splits.length > 0}}">
+      <view class="section" wx:if="{{localSplits && localSplits.length > 0}}">
         <view class="section-title">携带 (Splits)</view>
         <view class="options-grid">
           <view 
-            wx:for="{{splits}}" 
+            wx:for="{{localSplits}}" 
             wx:key="id" 
             class="option-chip {{item.checked ? 'active-split' : ''}}"
             data-id="{{item.id}}"
