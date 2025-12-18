@@ -19,58 +19,36 @@
       </view>
       
       <!-- 母鸟设置 -->
-      <view class="parent-section">
-        <view class="parent-title female">
-          <image class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" />
-          <text>母鸟 (Hen)</text>
-        </view>
-        <view class="form-row">
-          <view class="form-label">羽色</view>
-          <picker mode="selector" range="{{colorOptions}}" value="{{motherColorIndex}}" bindchange="onMotherColorChange">
-            <view class="picker-value">{{colorOptions[motherColorIndex]}}</view>
-          </picker>
-        </view>
-        <view class="form-col" wx:if="{{availableSplits.length > 0}}">
-          <view class="form-label-sm">携带基因 (Split)</view>
-          <checkbox-group class="split-group" bindchange="onMotherSplitsChange">
-            <label class="checkbox-label" wx:for="{{availableSplits}}" wx:key="id">
-              <checkbox class="checkbox" value="{{item.id}}" checked="{{false}}" color="#ec4899"/>
-              <text>{{item.name}}</text>
-            </label>
-          </checkbox-group>
-        </view>
-        <view class="suggestion-card" wx:if="{{bestFatherSuggestion}}">
+      <plumage-selector 
+        label="母鸟 (Hen)" 
+        gender="female"
+        colors="{{colorOptions}}"
+        splits="{{availableSplits}}"
+        colorIndex="{{motherColorIndex}}"
+        splitIds="{{motherSplits}}"
+        bind:change="onMotherPlumageChange"
+      >
+        <view slot="suggestion" class="suggestion-card" wx:if="{{bestFatherSuggestion}}">
           <view class="suggestion-title">最佳公鸟配对建议</view>
           <view class="suggestion-detail">{{bestFatherSuggestion.colorName}} · 预计均价 ¥{{bestFatherSuggestion.expectedValue}}</view>
         </view>
-      </view>
+      </plumage-selector>
 
       <!-- 公鸟设置 -->
-      <view class="parent-section">
-        <view class="parent-title male">
-          <image class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" />
-          <text>公鸟 (Cock)</text>
-        </view>
-        <view class="form-row">
-          <view class="form-label">羽色</view>
-          <picker mode="selector" range="{{colorOptions}}" value="{{fatherColorIndex}}" bindchange="onFatherColorChange">
-            <view class="picker-value">{{colorOptions[fatherColorIndex]}}</view>
-          </picker>
-        </view>
-        <view class="form-col" wx:if="{{availableSplits.length > 0}}">
-          <view class="form-label-sm">携带基因 (Split)</view>
-          <checkbox-group class="split-group" bindchange="onFatherSplitsChange">
-            <label class="checkbox-label" wx:for="{{availableSplits}}" wx:key="id">
-              <checkbox class="checkbox" value="{{item.id}}" checked="{{false}}" color="#3b82f6"/>
-              <text>{{item.name}}</text>
-            </label>
-          </checkbox-group>
-        </view>
-        <view class="suggestion-card" wx:if="{{bestMotherSuggestion}}">
+      <plumage-selector 
+        label="公鸟 (Cock)" 
+        gender="male"
+        colors="{{colorOptions}}"
+        splits="{{availableSplits}}"
+        colorIndex="{{fatherColorIndex}}"
+        splitIds="{{fatherSplits}}"
+        bind:change="onFatherPlumageChange"
+      >
+        <view slot="suggestion" class="suggestion-card" wx:if="{{bestMotherSuggestion}}">
           <view class="suggestion-title">最佳母鸟配对建议</view>
           <view class="suggestion-detail">{{bestMotherSuggestion.colorName}} · 预计均价 ¥{{bestMotherSuggestion.expectedValue}}</view>
         </view>
-      </view>
+      </plumage-selector>
 
       <view class="hint">提示：勾选“携带基因”可模拟隐性基因携带情况。部分复杂突变可能未完全覆盖。</view>
     </view>

@@ -182,8 +182,8 @@
             <text class="parrot-mini-species">{{item.species_name || (item.species && item.species.name) || ''}}</text>
             <view class="parrot-mini-meta-row">
               <view class="health-badge health-{{item.current_health_status || 'healthy'}}">{{item.current_health_status_text || '健康'}}</view>
-              <text wx:if="{{item.age_display}}" class="parrot-mini-age">{{item.age_display}}</text>
             </view>
+            <text wx:if="{{item.age_display}}" class="parrot-mini-age">{{item.age_display}}</text>
           </view>
         </view>
       </scroll-view>

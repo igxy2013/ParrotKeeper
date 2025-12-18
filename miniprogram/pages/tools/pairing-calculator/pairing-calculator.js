@@ -89,6 +89,28 @@ Page({
     })
   },
 
+  onMotherPlumageChange(e) {
+    const { colorIndex, splitIds } = e.detail
+    this.setData({ 
+      motherColorIndex: colorIndex,
+      motherSplits: splitIds 
+    }, () => { 
+      this.compute(); 
+      this.computeSuggestions() 
+    })
+  },
+
+  onFatherPlumageChange(e) {
+    const { colorIndex, splitIds } = e.detail
+    this.setData({ 
+      fatherColorIndex: colorIndex,
+      fatherSplits: splitIds 
+    }, () => { 
+      this.compute(); 
+      this.computeSuggestions() 
+    })
+  },
+
   onMotherColorChange(e) {
     this.setData({ motherColorIndex: Number(e.detail.value) }, () => { this.compute(); this.computeSuggestions() })
   },

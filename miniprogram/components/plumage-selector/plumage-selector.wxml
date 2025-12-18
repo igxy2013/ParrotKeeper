@@ -1,0 +1,70 @@
+<view class="plumage-selector">
+  <!-- Trigger / Display Card -->
+  <view class="selector-card {{gender}}" bindtap="openSelector">
+    <view class="card-header">
+      <view class="header-left">
+        <image class="gender-icon" src="{{gender === 'male' ? '/images/remix/men-line.png' : '/images/remix/women-line.png'}}" mode="widthFix" />
+        <text class="label">{{label}}</text>
+      </view>
+      <view class="edit-hint">点击选择</view>
+    </view>
+    
+    <view class="card-content">
+      <view class="main-color">{{colors[colorIndex] || '未选择'}}</view>
+      <view class="splits-tags" wx:if="{{selectedSplitsDisplay.length > 0}}">
+        <view class="split-tag" wx:for="{{selectedSplitsDisplay}}" wx:key="*this">{{item}}</view>
+      </view>
+      <view class="splits-placeholder" wx:else>无携带基因</view>
+    </view>
+    
+    <!-- Suggestion Slot (for 'Best Match' info) -->
+    <slot name="suggestion"></slot>
+  </view>
+
+  <!-- Popup / Bottom Sheet -->
+  <view class="mask {{visible ? 'visible' : ''}}" bindtap="closeSelector" catchtouchmove="preventTouchMove"></view>
+  <view class="popup {{visible ? 'visible' : ''}}" catchtouchmove="preventTouchMove">
+    <view class="popup-header">
+      <text class="popup-title">选择{{label}}基因</text>
+      <view class="close-btn" bindtap="closeSelector">✕</view>
+    </view>
+    
+    <scroll-view scroll-y class="popup-content">
+      <!-- Section 1: Main Color -->
+      <view class="section">
+        <view class="section-title">羽色 (Visual)</view>
+        <view class="options-grid">
+          <view 
+            wx:for="{{colors}}" 
+            wx:key="*this" 
+            class="option-chip {{tempColorIndex === index ? 'active' : ''}}"
+            data-index="{{index}}"
+            bindtap="selectColor"
+          >
+            {{item}}
+          </view>
+        </view>
+      </view>
+
+      <!-- Section 2: Splits -->
+      <view class="section" wx:if="{{splits.length > 0}}">
+        <view class="section-title">携带 (Splits)</view>
+        <view class="options-grid">
+          <view 
+            wx:for="{{splits}}" 
+            wx:key="id" 
+            class="option-chip {{item.checked ? 'active-split' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="toggleSplit"
+          >
+            {{item.name}}
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view class="popup-footer">
+      <button class="confirm-btn" bindtap="confirmSelection">确认选择</button>
+    </view>
+  </view>
+</view>
