@@ -32,6 +32,14 @@ Page({
   },
 
   onLoad(options) {
+    const isLogin = app.globalData.isLogin || app.checkLoginStatus()
+    if (!isLogin) {
+      wx.showToast({ title: '请先登录后使用此功能', icon: 'none' })
+      setTimeout(() => {
+        wx.reLaunch({ url: '/pages/login/login' })
+      }, 300)
+      return
+    }
     try { wx.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'] }) } catch (_) {}
     const si = typeof options === 'object' && options ? Number(options.si || options.speciesIndex || 0) : 0
     const mi = typeof options === 'object' && options ? Number(options.mi || options.motherColorIndex || 0) : 0
@@ -47,6 +55,14 @@ Page({
   },
 
   onShow() {
+    const isLogin = app.globalData.isLogin || app.checkLoginStatus()
+    if (!isLogin) {
+      wx.showToast({ title: '请先登录后使用此功能', icon: 'none' })
+      setTimeout(() => {
+        wx.reLaunch({ url: '/pages/login/login' })
+      }, 300)
+      return
+    }
     if (this.data.activeTab === 'records') {
       this.loadRecords()
     }

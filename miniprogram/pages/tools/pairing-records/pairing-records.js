@@ -6,7 +6,26 @@ Page({
     activeTab: 'records'
   },
 
+  onLoad() {
+    const isLogin = app.globalData.isLogin || app.checkLoginStatus()
+    if (!isLogin) {
+      wx.showToast({ title: '请先登录后使用此功能', icon: 'none' })
+      setTimeout(() => {
+        wx.reLaunch({ url: '/pages/login/login' })
+      }, 300)
+      return
+    }
+  },
+
   onShow() {
+    const isLogin = app.globalData.isLogin || app.checkLoginStatus()
+    if (!isLogin) {
+      wx.showToast({ title: '请先登录后使用此功能', icon: 'none' })
+      setTimeout(() => {
+        wx.reLaunch({ url: '/pages/login/login' })
+      }, 300)
+      return
+    }
     this.loadRecords()
   },
 
