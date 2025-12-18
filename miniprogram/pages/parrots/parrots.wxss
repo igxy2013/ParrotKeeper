@@ -280,6 +280,15 @@
   border: 1rpx solid rgba(255, 255, 255, 0.5);
 }
 
+.parrot-card.sort-mode { opacity: 1; }
+.parrot-card.drop-target { border-color: #26A69A; box-shadow: 0 16rpx 48rpx rgba(38, 166, 154, 0.18); }
+
+.sort-hint {
+  margin: 0 32rpx 12rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
 .parrot-card:active {
   transform: scale(0.98);
   box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.16); /* 中性阴影加强 */

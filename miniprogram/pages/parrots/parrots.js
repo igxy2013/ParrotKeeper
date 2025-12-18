@@ -57,6 +57,11 @@ Page({
       addParrotEmerald: '/images/remix/add-circle-fill.png',
       claimByCodeKey: '/images/remix/key-2-line.png'
     },
+    isSortMode: false,
+    draggingParrotId: null,
+    dragTargetIndex: -1,
+    dragRects: [],
+    dragGhost: null,
 
     // 通过过户码添加弹窗
     showClaimByCodeModal: false,
@@ -322,7 +327,25 @@ Page({
         
         console.log('处理后的鹦鹉数据:', newParrots);
         
-        const updatedParrots = refresh ? newParrots : [...this.data.parrots, ...newParrots];
+        let updatedParrots = refresh ? newParrots : [...this.data.parrots, ...newParrots]
+        try {
+          const or = await app.request({ url: '/api/settings/parrot-order', method: 'GET' })
+          let orderIds = []
+          if (or && or.success && Array.isArray(or.data && or.data.order)) {
+            orderIds = or.data.order
+          } else {
+            const cached = wx.getStorageSync('parrotOrder')
+            if (Array.isArray(cached)) orderIds = cached
+          }
+          if (Array.isArray(orderIds) && orderIds.length > 0) {
+            const map = {}
+            updatedParrots.forEach(p => { map[p.id] = p })
+            const ordered = []
+            orderIds.forEach(id => { if (map[id]) ordered.push(map[id]) })
+            updatedParrots.forEach(p => { if (!orderIds.includes(p.id)) ordered.push(p) })
+            updatedParrots = ordered
+          }
+        } catch (_) {}
         
         // 计算性别统计
         const maleCount = updatedParrots.filter(parrot => parrot.gender === 'male').length;
@@ -728,6 +751,158 @@ Page({
       return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
     } catch (_) {
       return ''
+    }
+  },
+
+  toggleSortMode() {
+    this.setData({ isSortMode: !this.data.isSortMode })
+    if (this.data.isSortMode) {
+      this.computeParrotRects()
+    } else {
+      this.setData({ draggingParrotId: null, dragTargetIndex: -1, dragRects: [], dragGhost: null })
+    }
+  },
+
+  onParrotLongPress(e) {
+    const idx = e.currentTarget.dataset.index
+    const vis = Array.isArray(this.data.displayParrots) ? this.data.displayParrots : []
+    const item = vis[idx]
+    if (!item) return
+    const id = item.id
+    wx.showActionSheet({
+      itemList: ['置顶', '上移', '下移'],
+      success: async (res) => {
+        const tapIndex = res.tapIndex
+        const visibleIds = vis.map(p => p.id)
+        const fromIndex = visibleIds.indexOf(id)
+        let newVisibleIds = visibleIds.slice()
+        if (tapIndex === 0) {
+          newVisibleIds = visibleIds.filter(v => v !== id)
+          newVisibleIds.unshift(id)
+        } else if (tapIndex === 1) {
+          if (fromIndex > 0) {
+            const t = newVisibleIds[fromIndex - 1]
+            newVisibleIds[fromIndex - 1] = id
+            newVisibleIds[fromIndex] = t
+          }
+        } else if (tapIndex === 2) {
+          if (fromIndex >= 0 && fromIndex < newVisibleIds.length - 1) {
+            const t = newVisibleIds[fromIndex + 1]
+            newVisibleIds[fromIndex + 1] = id
+            newVisibleIds[fromIndex] = t
+          }
+        }
+        const allIds = (this.data.parrots || []).map(p => p.id)
+        const hiddenIds = allIds.filter(pid => !newVisibleIds.includes(pid))
+        const newOrderIds = [...newVisibleIds, ...hiddenIds]
+        const map = {}
+        ;(this.data.parrots || []).forEach(p => { map[p.id] = p })
+        const newParrots = []
+        newOrderIds.forEach(pid => { if (map[pid]) newParrots.push(map[pid]) })
+        this.setData({ parrots: newParrots })
+        this.applyGenderFilter()
+        try {
+          await this.saveParrotOrder(newOrderIds)
+          wx.vibrateShort && wx.vibrateShort()
+          wx.showToast({ title: '已保存', icon: 'success', duration: 800 })
+        } catch (_) {
+          wx.showToast({ title: '保存失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  computeParrotRects(cb) {
+    try {
+      const q = wx.createSelectorQuery().in(this)
+      q.selectAll('.parrot-card').boundingClientRect(rects => {
+        if (Array.isArray(rects)) {
+          this.setData({ dragRects: rects })
+          if (typeof cb === 'function') cb(rects)
+        }
+      }).exec()
+    } catch (e) {}
+  },
+
+  onParrotDragStart(e) {
+    if (!this.data.isSortMode) return
+    const idx = e.currentTarget.dataset.index
+    const item = (this.data.displayParrots || [])[idx]
+    if (!item) return
+    const touch = (e.touches && e.touches[0]) || {}
+    this.setData({ draggingParrotId: item.id })
+    this.computeParrotRects((rects) => {
+      if (idx >= 0 && rects[idx]) {
+        const r = rects[idx]
+        const dx = (touch.clientX || 0) - r.left
+        const dy = (touch.clientY || 0) - r.top
+        this.setData({ dragGhost: { id: item.id, x: r.left, y: r.top, w: r.width, h: r.height, dx, dy } })
+      }
+    })
+  },
+
+  onParrotDragMove(e) {
+    if (!this.data.isSortMode || !this.data.draggingParrotId) return
+    const touches = e.touches || []
+    if (!touches.length) return
+    const y = touches[0].clientY
+    const x = touches[0].clientX
+    const rects = this.data.dragRects || []
+    if (!rects.length) return
+    let nearestIdx = 0
+    let nearestDist = Infinity
+    rects.forEach((r, i) => {
+      const cy = r.top + r.height / 2
+      const d = Math.abs(y - cy)
+      if (d < nearestDist) { nearestDist = d; nearestIdx = i }
+    })
+    this.setData({ dragTargetIndex: nearestIdx })
+    const g = this.data.dragGhost
+    if (g) {
+      const nx = x - (g.dx || 0)
+      const ny = y - (g.dy || 0)
+      this.setData({ dragGhost: { ...g, x: nx, y: ny } })
+    }
+  },
+
+  async onParrotDragEnd() {
+    if (!this.data.isSortMode || !this.data.draggingParrotId) return
+    const id = this.data.draggingParrotId
+    const vis = (this.data.displayParrots || []).map(p => p.id)
+    const fromIdx = vis.indexOf(id)
+    const toIdx = this.data.dragTargetIndex
+    this.setData({ draggingParrotId: null, dragTargetIndex: -1, dragRects: [], dragGhost: null })
+    if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return
+    const newVisibleIds = vis.filter(v => v !== id)
+    newVisibleIds.splice(toIdx, 0, id)
+    const allIds = (this.data.parrots || []).map(p => p.id)
+    const hiddenIds = allIds.filter(pid => !newVisibleIds.includes(pid))
+    const newOrderIds = [...newVisibleIds, ...hiddenIds]
+    const map = {}
+    ;(this.data.parrots || []).forEach(p => { map[p.id] = p })
+    const newParrots = []
+    newOrderIds.forEach(pid => { if (map[pid]) newParrots.push(map[pid]) })
+    this.setData({ parrots: newParrots })
+    this.applyGenderFilter()
+    try {
+      await this.saveParrotOrder(newOrderIds)
+      wx.vibrateShort && wx.vibrateShort()
+      wx.showToast({ title: '已保存', icon: 'success', duration: 800 })
+    } catch (_) {
+      wx.showToast({ title: '保存失败', icon: 'none' })
+    }
+  },
+
+  async saveParrotOrder(orderIds) {
+    try {
+      if (!Array.isArray(orderIds)) return
+      wx.setStorageSync('parrotOrder', orderIds)
+    } catch (_) {}
+    try {
+      const res = await app.request({ url: '/api/settings/parrot-order', method: 'PUT', data: { order: orderIds } })
+      return res
+    } catch (e) {
+      return null
     }
   },
 

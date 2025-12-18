@@ -3,6 +3,7 @@ from models import db, UserSetting
 from utils import login_required, success_response, error_response
 import json
 from datetime import datetime
+from team_mode_utils import get_accessible_parrot_ids_by_mode
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -145,3 +146,60 @@ def update_home_widgets():
         setting.value = json.dumps(clean_widgets, ensure_ascii=False)
     db.session.commit()
     return success_response({ 'widgets': clean_widgets }, '已更新首页组件显示设置')
+
+@settings_bp.route('/api/settings/parrot-order', methods=['GET'])
+@login_required
+def get_parrot_order():
+    try:
+        user = request.current_user
+        team_id = None if getattr(user, 'user_mode', 'personal') == 'personal' else (getattr(user, 'current_team_id', None) or None)
+        setting = UserSetting.query.filter_by(user_id=user.id, team_id=team_id, key='parrot_order').first()
+        order = []
+        if setting and setting.value:
+            try:
+                data = json.loads(setting.value)
+                if isinstance(data, list):
+                    order = [int(x) for x in data if isinstance(x, (int, str)) and str(x).isdigit()]
+            except Exception:
+                order = []
+        accessible = get_accessible_parrot_ids_by_mode(user)
+        if order:
+            order = [pid for pid in order if pid in accessible]
+        return success_response({ 'order': order })
+    except Exception as e:
+        return error_response(f'获取鹦鹉排序失败: {str(e)}')
+
+@settings_bp.route('/api/settings/parrot-order', methods=['PUT'])
+@login_required
+def update_parrot_order():
+    try:
+        user = request.current_user
+        team_id = None if getattr(user, 'user_mode', 'personal') == 'personal' else (getattr(user, 'current_team_id', None) or None)
+        body = request.get_json(silent=True) or {}
+        order = body.get('order')
+        if not isinstance(order, list):
+            return error_response('参数错误：order 需为数组', 400)
+        try:
+            clean = [int(x) for x in order if isinstance(x, (int, str)) and str(x).isdigit()]
+        except Exception:
+            clean = []
+        seen = set()
+        uniq = []
+        for pid in clean:
+            if pid not in seen:
+                seen.add(pid)
+                uniq.append(pid)
+        accessible = set(get_accessible_parrot_ids_by_mode(user))
+        filtered = [pid for pid in uniq if pid in accessible]
+        setting = UserSetting.query.filter_by(user_id=user.id, team_id=team_id, key='parrot_order').first()
+        if not setting:
+            setting = UserSetting(user_id=user.id, team_id=team_id, key='parrot_order', value=json.dumps(filtered, ensure_ascii=False))
+            db.session.add(setting)
+        else:
+            setting.value = json.dumps(filtered, ensure_ascii=False)
+            setting.updated_at = datetime.utcnow()
+        db.session.commit()
+        return success_response({ 'order': filtered }, '鹦鹉排序已更新')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新鹦鹉排序失败: {str(e)}')

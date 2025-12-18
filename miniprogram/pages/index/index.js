@@ -675,7 +675,7 @@ Page({
         data: { page: 1, per_page: 100, sort_by: 'created_at', sort_order: 'desc' }
       })
       if (res.success) {
-        const parrots = (res.data.parrots || []).map(p => {
+        const parrotsRaw = (res.data.parrots || []).map(p => {
           const speciesName = p.species && p.species.name ? p.species.name : (p.species_name || '')
           const photoUrl = app.resolveUploadUrl(p.photo_url)
           const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
@@ -697,16 +697,33 @@ Page({
             avatar_thumb: avatarThumb
           }
         })
-        // 展示全部供横向滑动
-        this.setData({ myParrots: parrots })
+        let orderIds = []
+        try {
+          const or = await app.request({ url: '/api/settings/parrot-order', method: 'GET' })
+          if (or && or.success && Array.isArray(or.data && or.data.order)) {
+            orderIds = or.data.order
+          } else {
+            const cached = wx.getStorageSync('parrotOrder')
+            if (Array.isArray(cached)) orderIds = cached
+          }
+        } catch (_) {
+          const cached = wx.getStorageSync('parrotOrder')
+          if (Array.isArray(cached)) orderIds = cached
+        }
+        const map = {}
+        parrotsRaw.forEach(p => { map[p.id] = p })
+        const ordered = []
+        orderIds.forEach(id => { if (map[id]) ordered.push(map[id]) })
+        parrotsRaw.forEach(p => { if (!orderIds.includes(p.id)) ordered.push(p) })
+        this.setData({ myParrots: ordered })
 
         // 仅当用户只有1只鹦鹉时，设置欢迎语为“今天是你和XX相处的第YY天！”
         let newWelcome = '今天也要好好照顾小家伙们哦'
         let isSingleParrot = false
         let singleParrotName = ''
         let singleParrotDays = 1
-        if (parrots.length === 1) {
-          const p = parrots[0]
+        if (ordered.length === 1) {
+          const p = ordered[0]
           const name = (p && p.name) ? p.name : '你的鹦鹉'
           // 优先使用 acquisition_date，其次使用 created_at 作为兜底
           const startDateStr = p.acquisition_date || p.created_at || ''

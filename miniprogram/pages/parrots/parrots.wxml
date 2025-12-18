@@ -2,8 +2,10 @@
 <view class="page-container">
   <!-- 顶部导航统一为组件 -->
   <app-header title="我的鹦鹉" subtitle="管理您的鹦鹉宝贝们">
-    <view slot="actions" class="header-btn" bindtap="addParrot">
-      <image class="header-btn-icon-img" src="{{iconPaths.headerAddEmerald}}" mode="widthFix" binderror="onListIconError" data-key="headerAddEmerald" lazy-load="true"/>
+    <view slot="actions" class="header-actions">
+      <view class="header-btn" bindtap="addParrot">
+        <image class="header-btn-icon-img" src="{{iconPaths.headerAddEmerald}}" mode="widthFix" binderror="onListIconError" data-key="headerAddEmerald" lazy-load="true"/>
+      </view>
     </view>
   </app-header>
 
@@ -89,9 +91,15 @@
     </view>
   </view>
 
+  <!-- 排序提示 -->
+  
+
   <!-- 鹦鹉列表 -->
   <view class="parrot-list" wx:if="{{displayParrots.length > 0}}">
-    <view class="parrot-card" wx:for="{{displayParrots}}" wx:key="id" bindtap="viewParrotDetail" data-id="{{item.id}}">
+    <view class="parrot-card {{isSortMode ? 'sort-mode' : ''}} {{dragTargetIndex === idx ? 'drop-target' : ''}}" 
+          wx:for="{{displayParrots}}" wx:key="id" wx:for-index="idx"
+          bindtap="viewParrotDetail" data-id="{{item.id}}"
+          bindlongpress="onParrotLongPress" data-index="{{idx}}">
       <view class="parrot-main">
         <!-- 鹦鹉头像 -->
         <view class="parrot-avatar">
@@ -111,9 +119,9 @@
           <view class="parrot-title">
             <text class="parrot-name">{{item.name}}</text>
             <view class="gender-badge gender-{{item.gender}}">
-                <image wx:if="{{item.gender === 'male'}}" class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" lazy-load="true" />
-                <image wx:elif="{{item.gender === 'female'}}" class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" lazy-load="true" />
-                <image wx:else class="gender-icon-img" src="/images/remix/question-mark.png" mode="widthFix" lazy-load="true" />
+              <image wx:if="{{item.gender === 'male'}}" class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" lazy-load="true" />
+              <image wx:elif="{{item.gender === 'female'}}" class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" lazy-load="true" />
+              <image wx:else class="gender-icon-img" src="/images/remix/question-mark.png" mode="widthFix" lazy-load="true" />
             </view>
           </view>
             <view class="health-badge health-{{item.current_health_status || item.health_status}}">
