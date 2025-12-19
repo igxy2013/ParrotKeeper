@@ -356,7 +356,8 @@ Page({
           agePrecise,
           daysWithUs,
           healthStatusText: healthStatusMap[parrot.health_status] || '健康',
-          careLevelText: parrot.species ? careLevelMap[parrot.species.care_level] || '未知' : '未知'
+          careLevelText: parrot.species ? careLevelMap[parrot.species.care_level] || '未知' : '未知',
+          plumageSplitsText: this.computePlumageSplitsText(parrot)
         })
         
         wx.setNavigationBarTitle({ title: parrot.name })
@@ -655,6 +656,27 @@ Page({
     return remainingMonths > 0 ? `${years}岁${remainingMonths}个月` : `${years}岁`
   },
 
+  computePlumageSplitsText(parrot) {
+    try {
+      const ids = Array.isArray(parrot && parrot.plumage_split_ids) ? parrot.plumage_split_ids : []
+      if (!ids.length) return ''
+      let labels = []
+      const jstr = parrot && parrot.species && parrot.species.plumage_json
+      if (jstr) {
+        try {
+          const j = JSON.parse(jstr)
+          const loci = j && j.loci ? j.loci : {}
+          ids.forEach(id => {
+            const g = loci && loci[id]
+            if (g && g.label) labels.push(g.label)
+          })
+        } catch (_) {}
+      }
+      if (!labels.length) labels = ids.map(String)
+      return labels.join('、')
+    } catch (_) { return '' }
+  },
+
   calculateAgePrecise(birthDate) {
     if (!birthDate) return ''
     const birth = new Date(birthDate)
@@ -941,7 +963,8 @@ Page({
       parrot_number: p.parrot_number || '',
       ring_number: p.ring_number || '',
       acquisition_date: p.acquisition_date || '',
-      photo_url: p.photo_url || p.avatar_url || ''
+      photo_url: p.photo_url || p.avatar_url || '',
+      plumage_split_ids: Array.isArray(p.plumage_split_ids) ? p.plumage_split_ids : []
     }
     this.setData({ 
       currentParrotForm: form, 

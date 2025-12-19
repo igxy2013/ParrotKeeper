@@ -32,7 +32,13 @@ Component({
     claimCode: '',
     photoTouched: false,
     plumageColors: [],
-    plumageColorIndex: 0
+    plumageColorIndex: 0,
+    plumageSplits: [],
+    plumageSplitIds: [],
+    showPlumagePopup: false,
+    plumagePopupVisible: false,
+    plumageTempColorIndex: 0,
+    plumageLocalSplits: []
   },
   observers: {
     'parrot, parrotTypes, speciesList': function(parrot, types, speciesList) {
@@ -68,7 +74,8 @@ Component({
         const resolved = src ? app.resolveUploadUrl(src) : ''
         form.photo_preview = resolved || ''
       } catch (_) {}
-      this.setData({ form, typeIndex, photoTouched: false })
+      const splitIds = (parrot && Array.isArray(parrot.plumage_split_ids)) ? parrot.plumage_split_ids : []
+      this.setData({ form, typeIndex, photoTouched: false, plumageSplitIds: splitIds })
       this.refreshPlumageOptions()
     }
   },
@@ -104,11 +111,20 @@ Component({
         const list = this.data.speciesList || []
         const match = list.find(s => s.name === type)
         const colors = []
+        const splits = []
         if (match && match.plumage_json) {
           try {
             const j = JSON.parse(match.plumage_json)
             if (j && Array.isArray(j.colors)) {
               j.colors.forEach(c => { if (c && c.name) colors.push(c.name) })
+            }
+            if (j && j.loci) {
+              Object.keys(j.loci).forEach(key => {
+                const gene = j.loci[key]
+                if (gene && ((gene.type === 'autosomal' && !gene.incomplete) || gene.type === 'sex-linked')) {
+                  if (!gene.incomplete) splits.push({ id: key, name: gene.label })
+                }
+              })
             }
           } catch (_) {}
         }
@@ -118,18 +134,58 @@ Component({
           const idx = colors.indexOf(currentColor)
           colorIndex = idx >= 0 ? idx : 0
         }
-        this.setData({ plumageColors: colors, plumageColorIndex: colorIndex })
+        const existingSplitIds = (this.data.plumageSplitIds || []).map(x => String(x))
+        const validSplitIds = existingSplitIds.filter(id => (splits || []).some(s => String(s.id) === id))
+        this.setData({ plumageColors: colors, plumageColorIndex: colorIndex, plumageSplits: splits, plumageSplitIds: validSplitIds })
       } catch (_) {
-        this.setData({ plumageColors: [], plumageColorIndex: 0 })
+        const keepIds = this.data.plumageSplitIds || []
+        this.setData({ plumageColors: [], plumageColorIndex: 0, plumageSplits: [], plumageSplitIds: keepIds })
       }
     },
     onPlumageChange(e) {
       try {
-        const { colorIndex } = e.detail || {}
+        const { colorIndex, splitIds } = e.detail || {}
         const colors = this.data.plumageColors || []
         const name = colors[colorIndex] || ''
-        this.setData({ plumageColorIndex: colorIndex, 'form.color': name })
+        this.setData({ plumageColorIndex: colorIndex, 'form.color': name, plumageSplitIds: splitIds || [] })
       } catch (_) {}
+    },
+    onPlumageOpen(e) {
+      const colorIndex = (e && e.detail && typeof e.detail.colorIndex === 'number') ? e.detail.colorIndex : this.data.plumageColorIndex
+      const tempSplits = (this.data.plumageSplits || []).map(s => ({
+        ...s,
+        checked: (this.data.plumageSplitIds || []).includes(s.id)
+      }))
+      this.setData({ showPlumagePopup: true, plumageTempColorIndex: colorIndex, plumageLocalSplits: tempSplits })
+      setTimeout(() => {
+        this.setData({ plumagePopupVisible: true })
+      }, 0)
+    },
+    closePlumagePopup() {
+      this.setData({ plumagePopupVisible: false })
+      setTimeout(() => {
+        this.setData({ showPlumagePopup: false })
+      }, 300)
+    },
+    selectHostPlumage(e) {
+      const idx = Number(e.currentTarget.dataset.index)
+      this.setData({ plumageTempColorIndex: idx })
+    },
+    selectHostSplit(e) {
+      const id = e.currentTarget.dataset.id
+      const list = (this.data.plumageLocalSplits || []).map(s => {
+        if (String(s.id) === String(id)) { return { ...s, checked: !s.checked } }
+        return s
+      })
+      this.setData({ plumageLocalSplits: list })
+    },
+    confirmHostPlumageSelection() {
+      const idx = this.data.plumageTempColorIndex || 0
+      const colors = this.data.plumageColors || []
+      const name = colors[idx] || ''
+      const splitIds = (this.data.plumageLocalSplits || []).filter(s => s.checked).map(s => s.id)
+      this.setData({ plumageColorIndex: idx, 'form.color': name, plumageSplitIds: splitIds })
+      this.closePlumagePopup()
     },
     onDateChange(e) {
       const field = e.currentTarget.dataset.field
@@ -386,7 +442,8 @@ Component({
         notes: f.notes || '',
         parrot_number: f.parrot_number || '',
         ring_number: f.ring_number || '',
-        acquisition_date: f.acquisition_date || ''
+        acquisition_date: f.acquisition_date || '',
+        plumage_split_ids: this.data.plumageSplitIds || []
       }
 
       if (this.data.photoTouched) {

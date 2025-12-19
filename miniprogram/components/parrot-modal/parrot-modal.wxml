@@ -68,8 +68,12 @@
             label="羽色"
             gender="{{form.gender || 'unknown'}}"
             colors="{{plumageColors}}"
+            splits="{{plumageSplits}}"
             colorIndex="{{plumageColorIndex}}"
+            splitIds="{{plumageSplitIds}}"
             compact="{{true}}"
+            useHostPopup="{{true}}"
+            bind:open="onPlumageOpen"
             bind:change="onPlumageChange"
           />
         </view>
@@ -145,3 +149,45 @@
     </view>
     </view>
   </view>
+
+<!-- Host-level Plumage Popup (escapes scroll-view clipping) -->
+<view wx:if="{{showPlumagePopup && visible}}" class="plumage-mask {{plumagePopupVisible ? 'visible' : ''}}" catchtouchmove="true" bindtap="closePlumagePopup"></view>
+<view wx:if="{{showPlumagePopup && visible}}" class="plumage-popup {{plumagePopupVisible ? 'visible' : ''}}" catchtap="stopPropagation" catchtouchmove="true">
+  <view class="popup-header">
+    <text class="popup-title">选择羽色</text>
+    <view class="close-btn" bindtap="closePlumagePopup">✕</view>
+  </view>
+  <scroll-view scroll-y class="popup-content">
+    <view class="section">
+      <view class="options-grid">
+        <view 
+          wx:for="{{plumageColors}}" 
+          wx:key="*this" 
+          class="option-chip {{plumageTempColorIndex === index ? 'active' : ''}}"
+          data-index="{{index}}"
+          bindtap="selectHostPlumage"
+        >
+          {{item}}
+        </view>
+      </view>
+    </view>
+
+    <view class="section" wx:if="{{plumageLocalSplits && plumageLocalSplits.length > 0}}">
+      <view class="section-title">携带基因 (Splits)</view>
+      <view class="options-grid">
+        <view 
+          wx:for="{{plumageLocalSplits}}" 
+          wx:key="id" 
+          class="option-chip {{item.checked ? 'active-split' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="selectHostSplit"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+  <view class="popup-footer">
+    <button class="confirm-btn" bindtap="confirmHostPlumageSelection">确认选择</button>
+  </view>
+</view>

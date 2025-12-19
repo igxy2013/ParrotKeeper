@@ -146,7 +146,7 @@
                 <image class="grid-icon" src="/images/remix/ri-camera-fill-pink.png" />
                 <text class="grid-label">羽色</text>
               </view>
-              <view class="grid-value">{{parrot.color || '未设置'}}</view>
+              <view class="grid-value">{{parrot.color || '未设置'}}<text wx:if="{{plumageSplitsText}}">（携带：{{plumageSplitsText}}）</text></view>
             </view>
             <view class="info-grid-item weight-info">
               <view class="grid-label-wrap">

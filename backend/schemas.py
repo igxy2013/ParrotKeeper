@@ -29,6 +29,7 @@ class ParrotSchema(SQLAlchemyAutoSchema):
     current_health_status_text = fields.Method('get_current_health_status_text', dump_only=True)
     photo_thumb = fields.Method('get_photo_thumb', dump_only=True)
     avatar_thumb = fields.Method('get_avatar_thumb', dump_only=True)
+    plumage_split_ids = fields.Method('get_plumage_split_ids', dump_only=True)
     
     def get_species_name(self, obj):
         return obj.species.name if obj.species else None
@@ -71,6 +72,17 @@ class ParrotSchema(SQLAlchemyAutoSchema):
             return get_or_create_square_thumbnail(obj.avatar_url or '', 128)
         except Exception:
             return obj.avatar_url or ''
+
+    def get_plumage_split_ids(self, obj):
+        try:
+            import json
+            raw = getattr(obj, 'plumage_splits_json', None)
+            if not raw:
+                return []
+            data = json.loads(raw)
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
 
 class FeedTypeSchema(SQLAlchemyAutoSchema):
     class Meta:

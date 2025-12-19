@@ -72,6 +72,7 @@ class Parrot(db.Model):
     birth_date = db.Column(db.Date)
     acquisition_date = db.Column(db.Date)
     color = db.Column(db.String(100))
+    plumage_splits_json = db.Column(db.Text)
     weight = db.Column(db.Numeric(5, 2))
     health_status = db.Column(db.Enum('healthy', 'sick', 'recovering'), default='healthy')
     photo_url = db.Column(db.String(255))

@@ -33,6 +33,11 @@ Component({
       type: Array,
       value: []
     }
+    ,
+    useHostPopup: {
+      type: Boolean,
+      value: false
+    }
   },
 
   data: {
@@ -81,13 +86,21 @@ Component({
     },
 
     openSelector() {
-      // Init temp state from props
-      const { colorIndex, splitIds, splits } = this.data;
-      
-      const tempSplits = splits.map(s => ({
+      const { colorIndex, splitIds, splits, colors, useHostPopup } = this.data;
+      const tempSplits = (splits || []).map(s => ({
         ...s,
-        checked: splitIds.includes(s.id)
+        checked: (splitIds || []).includes(s.id)
       }));
+
+      if (useHostPopup) {
+        this.triggerEvent('open', {
+          colorIndex,
+          colors,
+          splits: tempSplits,
+          splitIds
+        });
+        return;
+      }
 
       this.setData({
         visible: true,

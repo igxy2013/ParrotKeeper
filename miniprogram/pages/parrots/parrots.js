@@ -619,7 +619,8 @@ Page({
       parrot_number: parrot.parrot_number || '',
       ring_number: parrot.ring_number || '',
       acquisition_date: parrot.acquisition_date || '',
-      photo_url: parrot.photo_url || parrot.avatar_url || ''
+      photo_url: parrot.photo_url || parrot.avatar_url || '',
+      plumage_split_ids: Array.isArray(parrot.plumage_split_ids) ? parrot.plumage_split_ids : []
     }
     this.setData({
       showParrotModal: true,

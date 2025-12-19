@@ -5,6 +5,7 @@ from utils import login_required, success_response, error_response, paginate_que
 from team_utils import parrot_access_required
 from team_mode_utils import get_accessible_parrot_ids_by_mode
 from datetime import datetime, date
+import json
 import random
 import string
 
@@ -287,6 +288,7 @@ def create_parrot():
             birth_date=birth_date,
             acquisition_date=acquisition_date,
             color=data.get('color'),
+            plumage_splits_json=(json.dumps(data.get('plumage_split_ids')) if isinstance(data.get('plumage_split_ids'), list) else None),
             weight=weight,
             health_status=data.get('health_status', 'healthy'),
             photo_url=data.get('photo_url'),
@@ -367,6 +369,12 @@ def update_parrot(parrot_id):
                 parrot.acquisition_date = None
         if 'color' in data:
             parrot.color = data['color']
+        if 'plumage_split_ids' in data:
+            try:
+                ids = data.get('plumage_split_ids')
+                parrot.plumage_splits_json = json.dumps(ids if isinstance(ids, list) else [])
+            except Exception:
+                parrot.plumage_splits_json = None
         if 'weight' in data:
             weight = data['weight']
             if weight == '' or weight is None:
