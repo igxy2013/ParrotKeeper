@@ -1,6 +1,5 @@
 <view class="plumage-selector">
-  <!-- Trigger / Display Card -->
-  <view class="selector-card {{gender}}" bindtap="openSelector">
+  <view class="selector-card {{gender}} {{compact ? 'compact' : ''}}" bindtap="openSelector">
     <view class="card-header">
       <view class="header-left">
         <image class="gender-icon" src="{{gender === 'male' ? '/images/remix/men-line.png' : '/images/remix/women-line.png'}}" mode="widthFix" />
@@ -16,8 +15,7 @@
       </view>
       <view class="splits-placeholder" wx:else>无携带基因</view>
     </view>
-    
-    <!-- Suggestion Slot (for 'Best Match' info) -->
+
     <slot name="suggestion"></slot>
   </view>
 

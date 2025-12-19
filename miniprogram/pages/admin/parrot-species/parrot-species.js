@@ -8,7 +8,7 @@ Page({
     showModal: false,
     modalTitle: '新增品种',
     editingId: null,
-    form: { name: '', description: '', avg_lifespan: '', avg_size: '', care_level: 'medium', reference_weight_g: '' },
+    form: { name: '', description: '', avg_lifespan_min: '', avg_lifespan_max: '', avg_size_min_cm: '', avg_size_max_cm: '', care_level: 'medium', reference_weight_g: '', reference_weight_min_g: '', reference_weight_max_g: '' },
     careLevels: ['容易', '一般', '困难'],
     careLevelIndex: 1
   },
@@ -26,7 +26,32 @@ Page({
     try {
       const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
       if (res && res.success) {
-        this.setData({ speciesList: res.data || [] })
+        const list = (res.data || []).map(it => {
+          let summary = '未配置'
+          try {
+            const j = it.plumage_json ? JSON.parse(it.plumage_json) : null
+            if (j && Array.isArray(j.colors)) {
+              const names = j.colors.map(c => c.name).filter(Boolean)
+              summary = names.length ? names.join('、') : '已配置'
+            }
+          } catch (_) {}
+          const lsMin = it.avg_lifespan_min != null ? String(it.avg_lifespan_min) : '?'
+          const lsMax = it.avg_lifespan_max != null ? String(it.avg_lifespan_max) : '?'
+          const szMin = it.avg_size_min_cm != null ? String(it.avg_size_min_cm) : '?'
+          const szMax = it.avg_size_max_cm != null ? String(it.avg_size_max_cm) : '?'
+          const wMin = it.reference_weight_min_g != null ? String(it.reference_weight_min_g) : null
+          const wMax = it.reference_weight_max_g != null ? String(it.reference_weight_max_g) : null
+          const wAvg = it.reference_weight_g != null ? String(it.reference_weight_g) : null
+          const weightRange = (wMin && wMax) ? `${wMin}-${wMax} g` : (wAvg ? `${wAvg} g` : '未配置')
+          return {
+            ...it,
+            plumage_summary: summary,
+            lifespan_range: `${lsMin}-${lsMax} 年`,
+            size_range: `${szMin}-${szMax} cm`,
+            weight_range: weightRange
+          }
+        })
+        this.setData({ speciesList: list })
       } else {
         wx.showToast({ title: (res && res.message) || '获取失败', icon: 'none' })
       }
@@ -42,7 +67,7 @@ Page({
       showModal: true,
       modalTitle: '新增品种',
       editingId: null,
-      form: { name: '', description: '', avg_lifespan: '', avg_size: '', care_level: 'medium', reference_weight_g: '' },
+      form: { name: '', description: '', avg_lifespan_min: '', avg_lifespan_max: '', avg_size_min_cm: '', avg_size_max_cm: '', care_level: 'medium', reference_weight_g: '', reference_weight_min_g: '', reference_weight_max_g: '' },
       careLevelIndex: 1
     })
   },
@@ -59,10 +84,14 @@ Page({
       form: {
         name: item.name || '',
         description: item.description || '',
-        avg_lifespan: item.avg_lifespan || '',
-        avg_size: item.avg_size || '',
+        avg_lifespan_min: item.avg_lifespan_min != null ? String(item.avg_lifespan_min) : '',
+        avg_lifespan_max: item.avg_lifespan_max != null ? String(item.avg_lifespan_max) : '',
+        avg_size_min_cm: item.avg_size_min_cm != null ? String(item.avg_size_min_cm) : '',
+        avg_size_max_cm: item.avg_size_max_cm != null ? String(item.avg_size_max_cm) : '',
         care_level: item.care_level || 'medium',
-        reference_weight_g: (item.reference_weight_g != null ? String(item.reference_weight_g) : '')
+        reference_weight_g: (item.reference_weight_g != null ? String(item.reference_weight_g) : ''),
+        reference_weight_min_g: item.reference_weight_min_g != null ? String(item.reference_weight_min_g) : '',
+        reference_weight_max_g: item.reference_weight_max_g != null ? String(item.reference_weight_max_g) : ''
       },
       careLevelIndex: careMap[item.care_level || 'medium']
     })
@@ -91,10 +120,14 @@ Page({
     const payload = {
       name: f.name.trim(),
       description: (f.description || '').trim(),
-      avg_lifespan: f.avg_lifespan ? Number(f.avg_lifespan) : null,
-      avg_size: (f.avg_size || '').trim(),
+      avg_lifespan_min: f.avg_lifespan_min ? Number(f.avg_lifespan_min) : null,
+      avg_lifespan_max: f.avg_lifespan_max ? Number(f.avg_lifespan_max) : null,
+      avg_size_min_cm: f.avg_size_min_cm ? Number(f.avg_size_min_cm) : null,
+      avg_size_max_cm: f.avg_size_max_cm ? Number(f.avg_size_max_cm) : null,
       care_level: f.care_level || 'medium',
-      reference_weight_g: f.reference_weight_g ? Number(f.reference_weight_g) : null
+      reference_weight_g: f.reference_weight_g ? Number(f.reference_weight_g) : null,
+      reference_weight_min_g: f.reference_weight_min_g ? Number(f.reference_weight_min_g) : null,
+      reference_weight_max_g: f.reference_weight_max_g ? Number(f.reference_weight_max_g) : null
     }
     try {
       let res

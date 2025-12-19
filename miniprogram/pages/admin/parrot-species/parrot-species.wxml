@@ -28,17 +28,21 @@
               <text class="kv-label">说明</text>
               <text class="kv-value">{{item.description}}</text>
             </view>
-            <view class="kv-row" wx:if="{{item.avg_lifespan}}">
-              <text class="kv-label">平均寿命</text>
-              <text class="kv-value">{{item.avg_lifespan}} 年</text>
+            <view class="kv-row">
+              <text class="kv-label">羽色</text>
+              <text class="kv-value">{{item.plumage_summary || '未配置'}}</text>
             </view>
-            <view class="kv-row" wx:if="{{item.avg_size}}">
-              <text class="kv-label">体型</text>
-              <text class="kv-value">{{item.avg_size}}</text>
+            <view class="kv-row" wx:if="{{item.lifespan_range}}">
+              <text class="kv-label">寿命区间</text>
+              <text class="kv-value">{{item.lifespan_range}}</text>
             </view>
-            <view class="kv-row" wx:if="{{item.reference_weight_g}}">
-              <text class="kv-label">参考体重</text>
-              <text class="kv-value">{{item.reference_weight_g}} g</text>
+            <view class="kv-row" wx:if="{{item.size_range}}">
+              <text class="kv-label">体型区间</text>
+              <text class="kv-value">{{item.size_range}}</text>
+            </view>
+            <view class="kv-row" wx:if="{{item.weight_range}}">
+              <text class="kv-label">体重区间</text>
+              <text class="kv-value">{{item.weight_range}}</text>
             </view>
             <view class="badge-group">
               <text class="badge difficulty {{item.care_level}}">养护难度：{{item.care_level === 'easy' ? '容易' : item.care_level === 'hard' ? '困难' : '一般'}}</text>
@@ -67,19 +71,33 @@
             <text class="form-label">说明</text>
             <input class="text-input" placeholder="可选" value="{{form.description}}" bindinput="onFormInput" data-field="description" />
           </view>
-          <view class="form-grid">
-            <view class="form-item">
-              <text class="form-label">平均寿命(年)</text>
-              <input class="text-input" type="number" placeholder="如：15" value="{{form.avg_lifespan}}" bindinput="onFormInput" data-field="avg_lifespan" />
+          <view class="form-item">
+            <text class="form-label">寿命区间(年)</text>
+            <view class="range-row">
+              <input class="range-input" type="number" placeholder="最小" value="{{form.avg_lifespan_min}}" bindinput="onFormInput" data-field="avg_lifespan_min" />
+              <text class="range-sep">—</text>
+              <input class="range-input" type="number" placeholder="最大" value="{{form.avg_lifespan_max}}" bindinput="onFormInput" data-field="avg_lifespan_max" />
             </view>
-            <view class="form-item">
-              <text class="form-label">体型</text>
-              <input class="text-input" placeholder="如：15cm" value="{{form.avg_size}}" bindinput="onFormInput" data-field="avg_size" />
+          </view>
+          <view class="form-item">
+            <text class="form-label">体型区间(cm)</text>
+            <view class="range-row">
+              <input class="range-input" type="number" placeholder="最小" value="{{form.avg_size_min_cm}}" bindinput="onFormInput" data-field="avg_size_min_cm" />
+              <text class="range-sep">—</text>
+              <input class="range-input" type="number" placeholder="最大" value="{{form.avg_size_max_cm}}" bindinput="onFormInput" data-field="avg_size_max_cm" />
             </view>
           </view>
           <view class="form-item">
             <text class="form-label">参考体重(g)</text>
-            <input class="text-input" type="number" placeholder="如：35" value="{{form.reference_weight_g}}" bindinput="onFormInput" data-field="reference_weight_g" />
+            <input class="text-input" type="number" placeholder="平均值" value="{{form.reference_weight_g}}" bindinput="onFormInput" data-field="reference_weight_g" />
+          </view>
+          <view class="form-item">
+            <text class="form-label">体重区间(g)</text>
+            <view class="range-row">
+              <input class="range-input" type="number" placeholder="最小" value="{{form.reference_weight_min_g}}" bindinput="onFormInput" data-field="reference_weight_min_g" />
+              <text class="range-sep">—</text>
+              <input class="range-input" type="number" placeholder="最大" value="{{form.reference_weight_max_g}}" bindinput="onFormInput" data-field="reference_weight_max_g" />
+            </view>
           </view>
           <view class="form-item">
             <text class="form-label">养护难度</text>

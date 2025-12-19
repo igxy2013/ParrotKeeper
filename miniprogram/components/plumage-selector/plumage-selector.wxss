@@ -71,6 +71,16 @@
   margin-bottom: 12rpx;
 }
 
+.selector-card.compact {
+  border-left: 0;
+  border-color: #e5e7eb;
+  border-radius: 32rpx;
+}
+.selector-card.compact .card-header { display: none; }
+.selector-card.compact .main-color { font-size: 26rpx; font-weight: 400; }
+.selector-card.compact .splits-placeholder { font-size: 22rpx; }
+.selector-card.compact .option-chip { font-size: 22rpx; }
+
 .splits-tags {
   display: flex;
   flex-wrap: wrap;

@@ -8,6 +8,7 @@ Page({
       name: '',
       species_id: '',
       gender: '',
+      color: '',
       birth_date: '',
       acquisition_date: '',
       weight: '',
@@ -24,6 +25,8 @@ Page({
     speciesList: [],
     selectedSpeciesName: '',
     healthStatusText: '健康',
+    plumageColors: [],
+    plumageColorIndex: 0,
     
     // 头像选项
     avatarOptions: [
@@ -76,6 +79,7 @@ Page({
       wx.setNavigationBarTitle({
         title: '添加鹦鹉'
       })
+      this.refreshPlumageOptions()
     }
   },
 
@@ -90,6 +94,7 @@ Page({
         this.setData({
           speciesList: res.data
         })
+        this.refreshPlumageOptions()
       }
     } catch (error) {
       console.error('加载品种列表失败:', error)
@@ -154,6 +159,7 @@ Page({
             name: parrot.name || '',
             species_id: speciesId || '',
             gender: parrot.gender || '',
+            color: parrot.color || '',
             birth_date: parrot.birth_date || '',
             acquisition_date: parrot.acquisition_date || '',
             weight: parrot.weight ? String(parrot.weight) : '',
@@ -167,6 +173,8 @@ Page({
           selectedSpeciesName,
           healthStatusText: healthStatusMap[parrot.health_status] || '健康'
         })
+
+        this.refreshPlumageOptions()
         
         console.log('设置后的数据:', {
           formData: this.data.formData,
@@ -201,6 +209,7 @@ Page({
     this.setData({
       'formData.gender': gender
     })
+    this.refreshPlumageOptions()
     this.validateForm()
   },
 
@@ -242,6 +251,7 @@ Page({
       selectedSpeciesName: name,
       showSpeciesModal: false
     })
+    this.refreshPlumageOptions()
     this.validateForm()
   },
 
@@ -461,6 +471,43 @@ Page({
     this.setData({
       canSubmit
     })
+  },
+
+  // 羽色选项刷新（根据所选品种）
+  refreshPlumageOptions() {
+    try {
+      const speciesId = String((this.data.formData || {}).species_id || '')
+      const list = this.data.speciesList || []
+      const match = list.find(s => String(s.id) === speciesId)
+      const colors = []
+      if (match && match.plumage_json) {
+        try {
+          const j = JSON.parse(match.plumage_json)
+          if (j && Array.isArray(j.colors)) {
+            j.colors.forEach(c => { if (c && c.name) colors.push(c.name) })
+          }
+        } catch (_) {}
+      }
+      let colorIndex = 0
+      const currentColor = (this.data.formData || {}).color || ''
+      if (currentColor) {
+        const idx = colors.indexOf(currentColor)
+        colorIndex = idx >= 0 ? idx : 0
+      }
+      this.setData({ plumageColors: colors, plumageColorIndex: colorIndex })
+    } catch (_) {
+      this.setData({ plumageColors: [], plumageColorIndex: 0 })
+    }
+  },
+
+  // 羽色选择变更
+  onPlumageChange(e) {
+    try {
+      const { colorIndex } = e.detail || {}
+      const colors = this.data.plumageColors || []
+      const name = colors[colorIndex] || ''
+      this.setData({ plumageColorIndex: colorIndex, 'formData.color': name })
+    } catch (_) {}
   },
 
   // 提交表单

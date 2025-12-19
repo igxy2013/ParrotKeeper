@@ -16,13 +16,14 @@
 .kv-row { display: flex; gap: 12rpx; margin: 8rpx 0; }
 .kv-label { color: #6b7280; min-width: 140rpx; font-size: 24rpx; }
 .kv-value { color: #374151; font-size: 26rpx; }
+.kv-value { white-space: normal; word-break: break-word; display: block; }
 .badge-group { margin-top: 6rpx; display: flex; gap: 12rpx; flex-wrap: wrap; }
 .badge { display: inline-block; padding: 8rpx 16rpx; border-radius: 9999rpx; font-size: 20rpx; border: 2rpx solid #e5e7eb; color: #374151; background: #ffffff; }
 .badge.difficulty.easy { color: #047857; border-color: #a7f3d0; background: #ecfdf5; }
 .badge.difficulty.medium { color: #7c3aed; border-color: #ddd6fe; background: #f5f3ff; }
 .badge.difficulty.hard { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
-.modal-overlay { position: fixed; left: 0; right: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8rpx); z-index: 2000; }
-.modal-content { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2001; width: 100%; max-width: 700rpx; height: 82vh; background: #ffffff; border-radius: 48rpx; overflow: hidden; box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.18); display: flex; flex-direction: column; }
+.modal-overlay { position: fixed; left: 0; right: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 2000; }
+.modal-content { position: fixed; left: 0; right: 0; top: 9vh; margin: 0 auto; z-index: 2001; width: 92%; max-width: 700rpx; height: 82vh; background: #ffffff; border-radius: 48rpx; overflow: hidden; box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.18); display: flex; flex-direction: column; }
 .modal-header-gradient { background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%); padding: 24rpx 32rpx; position: relative; flex-shrink: 0; color: #fff; }
 .modal-header-row { display: flex; align-items: center; justify-content: space-between; }
 .modal-title { font-size: 36rpx; font-weight: 700; }
@@ -35,6 +36,9 @@
 .text-input { width:100%; box-sizing:border-box; padding: 0 24rpx; border:2rpx solid #e5e7eb; border-radius:32rpx; font-size:26rpx; height:88rpx; }
 .text-input:focus { border-color:#26A69A; background:#ffffff; }
 .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:24rpx; }
+.range-row { display:flex; align-items:center; gap:16rpx; }
+.range-input { flex:1; box-sizing:border-box; padding: 0 24rpx; border:2rpx solid #e5e7eb; border-radius:32rpx; font-size:26rpx; height:88rpx; }
+.range-sep { width:40rpx; text-align:center; color:#6b7280; font-size:28rpx; }
 .picker-display { display:flex; align-items:center; justify-content:space-between; padding:24rpx; border:2rpx solid #e5e7eb; border-radius:32rpx; font-size:26rpx; background:#ffffff; }
 .modal-footer { display:flex; gap:12rpx; padding:20rpx 28rpx; border-top:2rpx solid #f3f4f6; background:#f9fafb; flex-shrink: 0; }
 .btn-secondary, .btn-primary { flex:1; padding:18rpx 24rpx; border-radius:28rpx; font-size:26rpx; }
@@ -42,5 +46,6 @@
 .btn-primary { background: linear-gradient(135deg,#4CAF50,#26A69A,#00BCD4); color:#ffffff; }
 
 /* 顶部导航右侧加号按钮（与记录页面对齐） */
-.header-btn { width: 72rpx; height: 72rpx; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10rpx); }
+.header-btn { width: 72rpx; height: 72rpx; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.text-area { width:100%; box-sizing:border-box; padding: 16rpx 24rpx; border:2rpx solid #e5e7eb; border-radius:24rpx; font-size:26rpx; min-height: 220rpx; line-height: 1.6; }
 .header-btn-icon-img { width: 36rpx; height: 36rpx; }

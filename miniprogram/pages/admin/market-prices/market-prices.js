@@ -1,5 +1,5 @@
 const app = getApp()
-const { SPECIES_LIST, getColorsBySpeciesName } = require('../../../utils/species-config')
+const { SPECIES_CONFIG } = require('../../../utils/species-config')
 
 Page({
   data: {
@@ -8,6 +8,7 @@ Page({
     prices: [],
     filteredPrices: [],
     speciesList: [],
+    speciesRows: [],
     speciesNames: ['全部'],
     colorNames: [],
     speciesIndex: 0,
@@ -33,13 +34,25 @@ Page({
     this.loadSpecies()
   },
 
-  loadSpecies() {
-    const names = ['全部'].concat(SPECIES_LIST)
-    this.setData({ speciesList: [], speciesNames: names, speciesIndex: 0, formSpeciesIndex: 0 }, () => {
-      const initialColors = getColorsBySpeciesName(this.data.speciesNames[this.data.formSpeciesIndex] || '')
+  async loadSpecies() {
+    try {
+      const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
+      const list = Array.isArray(res && res.data) ? res.data : []
+      const withPlumage = list.filter(s => !!s.plumage_json)
+      const names = ['全部'].concat(withPlumage.map(s => s.name))
+      this.setData({ speciesRows: withPlumage, speciesNames: names, speciesIndex: 0, formSpeciesIndex: 0 })
+      const initialColors = this.getColorsBySpeciesName(this.data.speciesNames[this.data.formSpeciesIndex] || '', withPlumage)
       this.setData({ colorNames: initialColors })
       this.loadPrices()
-    })
+    } catch (_) {
+      const fallbackNames = Object.keys(SPECIES_CONFIG)
+      const rows = fallbackNames.map(n => ({ id: 0, name: n, plumage_json: JSON.stringify(SPECIES_CONFIG[n]) }))
+      const names = ['全部'].concat(fallbackNames)
+      this.setData({ speciesRows: rows, speciesNames: names, speciesIndex: 0, formSpeciesIndex: 0 })
+      const initialColors = this.getColorsBySpeciesName(this.data.speciesNames[this.data.formSpeciesIndex] || '', rows)
+      this.setData({ colorNames: initialColors })
+      this.loadPrices()
+    }
   },
 
   loadPrices() {
@@ -65,7 +78,7 @@ Page({
   onSpeciesPickerChange(e) {
     const speciesIndex = Number(e.detail.value || 0)
     const species = speciesIndex > 0 ? this.data.speciesNames[speciesIndex] : ''
-    const colors = getColorsBySpeciesName(species)
+    const colors = this.getColorsBySpeciesName(species, this.data.speciesRows)
     this.setData({ speciesIndex, colorNames: colors }, () => this.loadPrices())
   },
 
@@ -80,7 +93,7 @@ Page({
     if (fi < 0 && formSpeciesNames.length > 0) fi = 0
     
     const species = formSpeciesNames[fi] || ''
-    const colors = getColorsBySpeciesName(species)
+    const colors = this.getColorsBySpeciesName(species, this.data.speciesRows)
     const defaultColor = colors && colors.length ? colors[0] : ''
     
     this.setData({
@@ -103,7 +116,7 @@ Page({
     const species = names[formSpeciesIndex] || ''
     
     const addForm = { ...this.data.addForm, species }
-    const colors = getColorsBySpeciesName(species)
+    const colors = this.getColorsBySpeciesName(species, this.data.speciesRows)
     const defaultColor = colors && colors.length ? colors[0] : ''
     this.setData({ formSpeciesIndex, addForm: { ...addForm, color_name: defaultColor }, colorNames: colors, formColorIndex: 0 })
   },
@@ -205,7 +218,7 @@ Page({
     const item = list[idx]
     const names = this.data.speciesNames
     const fi = Math.max(0, names.indexOf(item.species))
-    const colors = getColorsBySpeciesName(item.species)
+    const colors = this.getColorsBySpeciesName(item.species, this.data.speciesRows)
     const ci = Math.max(0, colors.indexOf(item.color_name))
     const genderOptions = this.data.genderOptions
     const gi = item.gender === 'male' ? 1 : (item.gender === 'female' ? 2 : 0)
@@ -240,5 +253,17 @@ Page({
         }
       }
     })
+  },
+
+  getColorsBySpeciesName(name, rows) {
+    try {
+      const r = (rows || []).find(x => x.name === name)
+      if (r && r.plumage_json) {
+        const cfg = JSON.parse(r.plumage_json)
+        return (cfg.colors || []).map(c => c.name)
+      }
+    } catch (_){ }
+    const fallback = SPECIES_CONFIG[name]
+    return fallback ? fallback.colors.map(c => c.name) : []
   }
 })

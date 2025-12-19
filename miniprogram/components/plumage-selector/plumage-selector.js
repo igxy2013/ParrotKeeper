@@ -13,6 +13,10 @@ Component({
       type: String,
       value: 'male' // 'male' or 'female'
     },
+    compact: {
+      type: Boolean,
+      value: false
+    },
     colors: {
       type: Array,
       value: []

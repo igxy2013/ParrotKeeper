@@ -30,10 +30,12 @@ Component({
     typeIndex: 0,
     createMode: 'form',
     claimCode: '',
-    photoTouched: false
+    photoTouched: false,
+    plumageColors: [],
+    plumageColorIndex: 0
   },
   observers: {
-    'parrot, parrotTypes': function(parrot, types) {
+    'parrot, parrotTypes, speciesList': function(parrot, types, speciesList) {
       if (!parrot) return
       // 初始化表单
       const genderDisplay = this.apiGenderToDisplay(parrot.gender)
@@ -67,6 +69,7 @@ Component({
         form.photo_preview = resolved || ''
       } catch (_) {}
       this.setData({ form, typeIndex, photoTouched: false })
+      this.refreshPlumageOptions()
     }
   },
   methods: {
@@ -88,11 +91,45 @@ Component({
       const idx = Number(e.detail.value)
       const type = (this.data.parrotTypes || [])[idx]
       this.setData({ typeIndex: idx, 'form.type': type })
+      this.refreshPlumageOptions()
     },
     setGenderDisplay(e) {
       const d = e.currentTarget.dataset.gender
       const apiGender = this.displayGenderToApi(d)
       this.setData({ 'form.gender_display': d, 'form.gender': apiGender })
+    },
+    refreshPlumageOptions() {
+      try {
+        const type = (this.data.form || {}).type || ''
+        const list = this.data.speciesList || []
+        const match = list.find(s => s.name === type)
+        const colors = []
+        if (match && match.plumage_json) {
+          try {
+            const j = JSON.parse(match.plumage_json)
+            if (j && Array.isArray(j.colors)) {
+              j.colors.forEach(c => { if (c && c.name) colors.push(c.name) })
+            }
+          } catch (_) {}
+        }
+        let colorIndex = 0
+        const currentColor = (this.data.form || {}).color || ''
+        if (currentColor) {
+          const idx = colors.indexOf(currentColor)
+          colorIndex = idx >= 0 ? idx : 0
+        }
+        this.setData({ plumageColors: colors, plumageColorIndex: colorIndex })
+      } catch (_) {
+        this.setData({ plumageColors: [], plumageColorIndex: 0 })
+      }
+    },
+    onPlumageChange(e) {
+      try {
+        const { colorIndex } = e.detail || {}
+        const colors = this.data.plumageColors || []
+        const name = colors[colorIndex] || ''
+        this.setData({ plumageColorIndex: colorIndex, 'form.color': name })
+      } catch (_) {}
     },
     onDateChange(e) {
       const field = e.currentTarget.dataset.field

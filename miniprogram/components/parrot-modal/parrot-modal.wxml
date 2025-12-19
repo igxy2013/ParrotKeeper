@@ -54,19 +54,24 @@
           <input class="text-input" placeholder="如: 35" value="{{form.weight}}" bindinput="onInputChange" data-field="weight" />
         </view>
 
-        <!-- 性别 与 颜色 -->
-        <view class="form-grid">
-          <view class="form-item">
-            <text class="form-label">性别</text>
-            <view class="gender-row">
-              <view class="gender-btn {{form.gender_display === '雄性' ? 'gender-male active' : 'gender-male'}}" bindtap="setGenderDisplay" data-gender="雄性">雄性</view>
-              <view class="gender-btn {{form.gender_display === '雌性' ? 'gender-female active' : 'gender-female'}}" bindtap="setGenderDisplay" data-gender="雌性">雌性</view>
-            </view>
+        <view class="form-item">
+          <text class="form-label">性别</text>
+          <view class="gender-row">
+            <view class="gender-btn {{form.gender_display === '雄性' ? 'gender-male active' : 'gender-male'}}" bindtap="setGenderDisplay" data-gender="雄性">雄性</view>
+            <view class="gender-btn {{form.gender_display === '雌性' ? 'gender-female active' : 'gender-female'}}" bindtap="setGenderDisplay" data-gender="雌性">雌性</view>
           </view>
-          <view class="form-item">
-            <text class="form-label">主要颜色</text>
-            <input class="text-input" placeholder="如: 绿色" value="{{form.color}}" bindinput="onInputChange" data-field="color" />
-          </view>
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">羽色</text>
+          <plumage-selector 
+            label="羽色"
+            gender="{{form.gender || 'unknown'}}"
+            colors="{{plumageColors}}"
+            colorIndex="{{plumageColorIndex}}"
+            compact="{{true}}"
+            bind:change="onPlumageChange"
+          />
         </view>
 
         <!-- 出生日期 -->

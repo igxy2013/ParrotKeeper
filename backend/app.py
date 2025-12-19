@@ -266,6 +266,71 @@ def init_db(app):
                 pass
             print(f"添加 is_read 字段失败: {e}")
 
+        try:
+            # 为 parrot_species 表添加 plumage_json 字段（若不存在）
+            with db.engine.connect() as connection:
+                check = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'plumage_json'"))
+                exists = check.fetchone()
+                if not exists:
+                    connection.execute(text("ALTER TABLE parrot_species ADD COLUMN plumage_json TEXT NULL AFTER reference_weight_g"))
+                    print("已为 parrot_species 添加 plumage_json 字段")
+        except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            print(f"添加 plumage_json 字段失败: {e}")
+
+        try:
+            # 为 parrot_species 添加区间字段（若不存在）
+            with db.engine.connect() as connection:
+                def add_column_if_missing(col_sql):
+                    try:
+                        connection.execute(text(col_sql))
+                    except Exception:
+                        pass
+                # 寿命区间
+                r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_lifespan_min'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN avg_lifespan_min INT NULL")
+                r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_lifespan_max'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN avg_lifespan_max INT NULL")
+                # 体型区间（厘米）
+                r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_size_min_cm'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN avg_size_min_cm DECIMAL(6,2) NULL")
+                r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_size_max_cm'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN avg_size_max_cm DECIMAL(6,2) NULL")
+                # 体重区间（克）
+                r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'reference_weight_min_g'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN reference_weight_min_g DECIMAL(6,2) NULL")
+                r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'reference_weight_max_g'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN reference_weight_max_g DECIMAL(6,2) NULL")
+                # 移除单值字段：avg_lifespan 与 avg_size（若存在）
+                r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_lifespan'")).fetchone()
+                if r:
+                    try:
+                        connection.execute(text("ALTER TABLE parrot_species DROP COLUMN avg_lifespan"))
+                    except Exception:
+                        pass
+                r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_size'")).fetchone()
+                if r:
+                    try:
+                        connection.execute(text("ALTER TABLE parrot_species DROP COLUMN avg_size"))
+                    except Exception:
+                        pass
+                print("已检查并添加品种区间字段")
+        except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            print(f"添加区间字段失败: {e}")
+
 def init_scheduler(app):
     """初始化APScheduler并注册定时推送任务"""
     try:

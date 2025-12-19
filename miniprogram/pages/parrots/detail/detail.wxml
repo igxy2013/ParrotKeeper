@@ -134,10 +134,17 @@
               </view>
               <view class="grid-value">{{parrot.gender === 'male' ? '雄性' : parrot.gender === 'female' ? '雌性' : '未知'}}</view>
             </view>
+            <view class="info-grid-item birthdate-info">
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-calendar-fill-blue.png" />
+                <text class="grid-label">出生日期</text>
+              </view>
+              <view class="grid-value">{{parrot.birth_date || '未设置'}}</view>
+            </view>
             <view class="info-grid-item color-info">
               <view class="grid-label-wrap">
                 <image class="grid-icon" src="/images/remix/ri-camera-fill-pink.png" />
-                <text class="grid-label">主要颜色</text>
+                <text class="grid-label">羽色</text>
               </view>
               <view class="grid-value">{{parrot.color || '未设置'}}</view>
             </view>

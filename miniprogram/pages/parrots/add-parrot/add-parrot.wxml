@@ -68,6 +68,17 @@
           </label>
         </radio-group>
       </view>
+
+      <view class="form-item">
+        <text class="form-label">羽色</text>
+        <plumage-selector 
+          label="羽色"
+          gender="{{formData.gender || 'unknown'}}"
+          colors="{{plumageColors}}"
+          colorIndex="{{plumageColorIndex}}"
+          bind:change="onPlumageChange"
+        />
+      </view>
       
       <view class="form-item">
         <text class="form-label">出生日期</text>

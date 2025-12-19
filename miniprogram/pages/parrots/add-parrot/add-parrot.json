@@ -1,5 +1,7 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "plumage-selector": "/components/plumage-selector/plumage-selector"
+  },
   "navigationBarTitleText": "添加鹦鹉",
   "enablePullDownRefresh": false,
   "backgroundColor": "#f5f5f5"

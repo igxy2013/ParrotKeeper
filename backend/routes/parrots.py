@@ -33,15 +33,24 @@ def create_species():
         care_level = data.get('care_level') or 'medium'
         if care_level not in ['easy', 'medium', 'hard']:
             return error_response('养护难度取值无效')
-        avg_lifespan = data.get('avg_lifespan')
-        avg_size = data.get('avg_size')
+        avg_lifespan_min = data.get('avg_lifespan_min')
+        avg_lifespan_max = data.get('avg_lifespan_max')
+        avg_size_min_cm = data.get('avg_size_min_cm')
+        avg_size_max_cm = data.get('avg_size_max_cm')
+        reference_weight_min_g = data.get('reference_weight_min_g')
+        reference_weight_max_g = data.get('reference_weight_max_g')
         species = ParrotSpecies(
             name=name,
             description=data.get('description'),
-            avg_lifespan=avg_lifespan,
-            avg_size=avg_size,
+            avg_lifespan_min=avg_lifespan_min,
+            avg_lifespan_max=avg_lifespan_max,
+            avg_size_min_cm=avg_size_min_cm,
+            avg_size_max_cm=avg_size_max_cm,
             care_level=care_level,
-            reference_weight_g=data.get('reference_weight_g')
+            reference_weight_g=data.get('reference_weight_g'),
+            reference_weight_min_g=reference_weight_min_g,
+            reference_weight_max_g=reference_weight_max_g,
+            plumage_json=data.get('plumage_json') or data.get('plumage')
         )
         db.session.add(species)
         db.session.commit()
@@ -69,10 +78,14 @@ def update_species(species_id):
             species.name = name
         if 'description' in data:
             species.description = data.get('description')
-        if 'avg_lifespan' in data:
-            species.avg_lifespan = data.get('avg_lifespan')
-        if 'avg_size' in data:
-            species.avg_size = data.get('avg_size')
+        if 'avg_lifespan_min' in data:
+            species.avg_lifespan_min = data.get('avg_lifespan_min')
+        if 'avg_lifespan_max' in data:
+            species.avg_lifespan_max = data.get('avg_lifespan_max')
+        if 'avg_size_min_cm' in data:
+            species.avg_size_min_cm = data.get('avg_size_min_cm')
+        if 'avg_size_max_cm' in data:
+            species.avg_size_max_cm = data.get('avg_size_max_cm')
         if 'care_level' in data:
             care_level = data.get('care_level') or 'medium'
             if care_level not in ['easy', 'medium', 'hard']:
@@ -80,6 +93,12 @@ def update_species(species_id):
             species.care_level = care_level
         if 'reference_weight_g' in data:
             species.reference_weight_g = data.get('reference_weight_g')
+        if 'reference_weight_min_g' in data:
+            species.reference_weight_min_g = data.get('reference_weight_min_g')
+        if 'reference_weight_max_g' in data:
+            species.reference_weight_max_g = data.get('reference_weight_max_g')
+        if 'plumage_json' in data or 'plumage' in data:
+            species.plumage_json = data.get('plumage_json') or data.get('plumage')
         db.session.commit()
         from schemas import ParrotSpeciesSchema
         return success_response(ParrotSpeciesSchema().dump(species), '更新成功')
