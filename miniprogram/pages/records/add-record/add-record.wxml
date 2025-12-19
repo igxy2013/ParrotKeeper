@@ -104,7 +104,7 @@
       </view>
         
         <view class="form-item">
-          <text class="form-label">食物类型</text>
+          <text class="form-label required">食物类型</text>
           <view class="form-picker" bindtap="showFeedTypePicker">
             <text class="picker-text {{selectedFeedTypeNames ? '' : 'placeholder'}}">
               {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
@@ -115,7 +115,7 @@
       
       <!-- 当选择 0 或 1 个食物类型时，使用单个食物量输入 -->
       <view class="form-item" wx:if="{{formData.food_types.length <= 1}}">
-        <text class="form-label">食物量 (g)</text>
+        <text class="form-label required">食物量 (g)</text>
         <input 
           class="form-input" 
           placeholder="请输入食物重量" 
@@ -128,7 +128,7 @@
 
       <!-- 当选择多个食物类型时，分别展示每个类型的食物量输入 -->
       <view class="form-item" wx:if="{{formData.food_types.length > 1}}">
-        <text class="form-label">各食物类型的食物量 (g)</text>
+        <text class="form-label required">各食物类型的食物量 (g)</text>
         <block wx:for="{{selectedFeedTypes}}" wx:key="id">
           <view class="form-item">
             <text class="form-label">{{item.name}}</text>

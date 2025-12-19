@@ -149,7 +149,7 @@ page {
   transition: left 0.6s ease;
 }
 
-.btn:hover::before {
+.btn:active::before {
   left: 100%;
 }
 
@@ -164,7 +164,7 @@ page {
   box-shadow: 0 6rpx 20rpx rgba(76, 175, 80, 0.3);
 }
 
-.btn-primary:hover {
+.btn-primary:active {
   background: linear-gradient(135deg, #45a049 0%, #5cb85c 50%, #6fbf73 100%);
   box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.4);
   transform: translateY(-2rpx);
@@ -177,7 +177,7 @@ page {
   border: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
-.btn-secondary:hover {
+.btn-secondary:active {
   background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
   box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.12);
   transform: translateY(-2rpx);
@@ -189,7 +189,7 @@ page {
   box-shadow: 0 6rpx 20rpx rgba(244, 67, 54, 0.3);
 }
 
-.btn-danger:hover {
+.btn-danger:active {
   background: linear-gradient(135deg, #e53935 0%, #d32f2f 50%, #c62828 100%);
   box-shadow: 0 8rpx 24rpx rgba(244, 67, 54, 0.4);
   transform: translateY(-2rpx);
