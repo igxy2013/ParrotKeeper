@@ -79,6 +79,8 @@ Page({
     showTransferCodeModal: false,
     transferCode: '',
     transferCodeGenerating: false
+    ,
+    suppressPullDownUntil: 0
   },
 
   onLoad(options) {
@@ -106,6 +108,13 @@ Page({
     if (this.data.parrotId) {
       this.loadParrotDetail()
     }
+  },
+
+  scheduleSilentRefresh(delayMs = 0) {
+    const ms = typeof delayMs === 'number' ? delayMs : 0
+    const until = Date.now() + ms
+    this.setData({ suppressPullDownUntil: until })
+    setTimeout(() => { this.loadParrotDetail() }, ms)
   },
 
   // 返回上一页
@@ -195,9 +204,18 @@ Page({
         throw new Error((saveRes && saveRes.message) || '保存照片失败');
       }
 
-      // 刷新本地展示
-      const resolved = app.resolveUploadUrl(storagePath);
-      this.setData({ parrot: { ...this.data.parrot, photo_url: resolved } });
+      const appendV = (u) => {
+        if (!u) return ''
+        const s = String(u)
+        if (/^(wxfile|ttfile|file):\/\//.test(s)) return s
+        if (/^\/?images\//.test(s)) return s
+        const v = Date.now()
+        return s.includes('?') ? `${s}&v=${v}` : `${s}?v=${v}`
+      }
+      const resolvedBase = app.resolveUploadUrl(storagePath)
+      const resolved = appendV(resolvedBase)
+      const thumb = resolved ? app.getThumbnailUrl(resolved, 160) : ''
+      this.setData({ parrot: { ...this.data.parrot, photo_url_raw: storagePath, photo_url: resolved, photo_thumb: thumb } })
       app.showSuccess('抠图成功，已替换照片');
     } catch (e) {
       console.error('抠图失败:', e);
@@ -1004,6 +1022,7 @@ Page({
   // 组件事件：取消
   onParrotModalCancel() {
     this.setData({ showParrotModal: false, currentParrotForm: null })
+    this.setData({ suppressPullDownUntil: Date.now() + 800 })
   },
 
   // 组件事件：提交编辑
@@ -1020,8 +1039,25 @@ Page({
         app.hideLoading()
         app.showSuccess('编辑成功')
         this.setData({ showParrotModal: false, currentParrotForm: null })
-        // 刷新详情
-        this.loadParrotDetail()
+
+        if (data && Object.prototype.hasOwnProperty.call(data, 'photo_url')) {
+          const appendV = (u) => {
+            if (!u) return ''
+            const s = String(u)
+            if (/^(wxfile|ttfile|file):\/\//.test(s)) return s
+            if (/^\/?images\//.test(s)) return s
+            const v = Date.now()
+            return s.includes('?') ? `${s}&v=${v}` : `${s}?v=${v}`
+          }
+          const raw = data.photo_url
+          const resolvedBase = raw ? app.resolveUploadUrl(raw) : ''
+          const resolved = appendV(resolvedBase)
+          const thumb = resolved ? app.getThumbnailUrl(resolved, 160) : ''
+          const p = this.data.parrot || {}
+          this.setData({ parrot: { ...p, photo_url_raw: raw, photo_url: resolved, photo_thumb: thumb } })
+        }
+
+        this.scheduleSilentRefresh(1000)
       } else {
         app.hideLoading()
         app.showError(res.message || '编辑失败')
@@ -1109,9 +1145,13 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh() {
-    this.loadParrotDetail().finally(() => {
+    const now = Date.now()
+    const until = this.data.suppressPullDownUntil || 0
+    if (now < until) {
       wx.stopPullDownRefresh()
-    })
+      return
+    }
+    this.loadParrotDetail().finally(() => { wx.stopPullDownRefresh() })
   }
   ,
 
