@@ -361,11 +361,10 @@
 
 /* 统计卡片数字+单位的单行布局与字号优化 */
 .stat-amount {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 6rpx;
-  line-height: 1.2;
 }
 .stat-amount.nowrap { white-space: nowrap; }
 .stat-num {
