@@ -245,9 +245,9 @@
             </view>
           </view>
         </view>
-        <view class="empty-placeholder" wx:else>
+        <view class="empty-placeholder horizontal" wx:else>
           <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.pieChartBlue}}" mode="widthFix" binderror="onStatIconError" data-key="pieChartBlue"/></view>
-          <text class="placeholder-text">暂无数据</text>
+          <text class="placeholder-text">暂无品种数据</text>
         </view>
       </view>
     </view>
