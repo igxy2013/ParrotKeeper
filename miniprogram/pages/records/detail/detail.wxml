@@ -36,7 +36,7 @@
         </view>
         <view class="row" wx:if="{{record.amount}}">
           <text class="label">数量</text>
-          <text class="value">{{record.amount}}</text>
+          <text class="value">{{record.amount}}{{record.amountUnit || 'g'}}</text>
         </view>
       </block>
 
@@ -139,7 +139,7 @@
           <text class="label">{{item.parrotName}}</text>
           <view class="value">
             <text>{{item.feedTypeName}}</text>
-            <text wx:if="{{item.amount || item.amount === 0}}">（{{item.amount}} g）</text>
+            <text wx:if="{{item.amount || item.amount === 0}}">（{{item.amount}} {{item.amountUnit || 'g'}}）</text>
           </view>
         </view>
       </block>

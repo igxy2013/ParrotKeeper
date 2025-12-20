@@ -141,9 +141,10 @@ Page({
         } else if (type === 'vegetable') {
           name = rec.feed_type.brand || '新鲜蔬菜';
         }
-        food_types = [{ id: rec.feed_type.id, name, amount: rec.amount }];
+        const unit = (type === 'milk_powder' || type === 'supplement') ? 'ml' : 'g';
+        food_types = [{ id: rec.feed_type.id, name, amount: rec.amount, unit, type }];
       } else if (rec.feed_type_name) {
-        food_types = [{ id: rec.feed_type_id, name: rec.feed_type_name, amount: rec.amount }];
+        food_types = [{ id: rec.feed_type_id, name: rec.feed_type_name, amount: rec.amount, unit: 'g' }];
       }
       return {
         ...rec,
@@ -210,9 +211,10 @@ Page({
           const id = ft.id || r.feed_type_id;
           const name = ft.name || r.feed_type_name || '食物';
           const amount = typeof ft.amount === 'number' ? ft.amount : parseFloat(ft.amount || 0);
+          const unit = ft.unit || ((ft.type === 'milk_powder' || ft.type === 'supplement') ? 'ml' : 'g');
           const keyId = id || name;
           if (!g.food_types_map[keyId]) {
-            g.food_types_map[keyId] = { id: id, name: name, amount: (amount || 0) };
+            g.food_types_map[keyId] = { id: id, name: name, amount: (amount || 0), unit };
           }
           // 若后续记录量不同，仍以首个记录为准，避免倍增显示
         });
@@ -222,7 +224,7 @@ Page({
         const name = r.feed_type_name || '总用量';
         const amount = typeof r.amount === 'number' ? r.amount : parseFloat(r.amount || 0);
         if (!g.food_types_map[keyId]) {
-          g.food_types_map[keyId] = { id: r.feed_type_id, name, amount: (amount || 0) };
+          g.food_types_map[keyId] = { id: r.feed_type_id, name, amount: (amount || 0), unit: 'g' };
         }
       }
     });
@@ -288,7 +290,8 @@ Page({
         food_types: Object.values(g.food_types_map).map(it => ({
           id: it.id,
           name: it.name,
-          amount: Number((it.amount || 0).toFixed(1))
+          amount: Number((it.amount || 0).toFixed(1)),
+          unit: it.unit
         })),
         // 供编辑页预填使用的食物类型ID集合
         feed_type_ids: Object.values(g.food_types_map)
@@ -413,16 +416,22 @@ Page({
         const totalCount = aggregated.length;
 
         // 总食量 = 聚合后每条的各食物类型 amount 之和，再跨条目累加
-        const totalAmount = aggregated.reduce((sum, g) => {
-          const perEvent = (Array.isArray(g.food_types) ? g.food_types : []).reduce((s, f) => s + (parseFloat(f.amount) || 0), 0);
-          return sum + perEvent;
-        }, 0);
+        let totalAmountG = 0;
+        let totalAmountML = 0;
+        aggregated.forEach(g => {
+          (Array.isArray(g.food_types) ? g.food_types : []).forEach(f => {
+            const val = parseFloat(f.amount) || 0;
+            if (f.unit === 'ml') totalAmountML += val;
+            else totalAmountG += val;
+          });
+        });
 
         this.setData({
           todayStats: {
             totalCount,
             parrotCount: parrotSet.size,
-            totalAmount: Number(totalAmount.toFixed(1))
+            totalAmountG: Number(totalAmountG.toFixed(1)),
+            totalAmountML: Number(totalAmountML.toFixed(1))
           }
         });
       }
@@ -454,17 +463,23 @@ Page({
       (record.parrot_ids || []).forEach(pid => parrotSet.add(pid));
     });
 
-    // 总食量基于聚合后的食物类型总和，保证与卡片一致
-    const totalAmount = todayRecords.reduce((sum, g) => {
-      const perEvent = (Array.isArray(g.food_types) ? g.food_types : []).reduce((s, f) => s + (parseFloat(f.amount) || 0), 0);
-      return sum + perEvent;
-    }, 0);
+    // 总食量按单位分开统计，保证与卡片一致
+    let totalAmountG = 0;
+    let totalAmountML = 0;
+    todayRecords.forEach(g => {
+      (Array.isArray(g.food_types) ? g.food_types : []).forEach(f => {
+        const val = parseFloat(f.amount) || 0;
+        if (f.unit === 'ml') totalAmountML += val;
+        else totalAmountG += val;
+      });
+    });
 
     this.setData({
       todayStats: {
         totalCount: todayRecords.length,
         parrotCount: parrotSet.size,
-        totalAmount: Number(totalAmount.toFixed(1))
+        totalAmountG: Number(totalAmountG.toFixed(1)),
+        totalAmountML: Number(totalAmountML.toFixed(1))
       }
     });
   },

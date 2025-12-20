@@ -10,7 +10,7 @@
   <!-- Main Content -->
   <scroll-view class="pt-6 px-4 space-y-6" scroll-y="true" bindscrolltolower="onListScrollLower" lower-threshold="50">
     <!-- Filter Chips (aligned with health page design) -->
-    <view class="filter-section">
+    <view class="filter-section space-item">
       <scroll-view class="chip-scroll" scroll-x="true">
         <view
           bindtap="selectParrot"
@@ -32,7 +32,7 @@
     </view>
 
     <!-- Today's Summary -->
-    <view class="bg-gradient-header rounded-3xl p-6 text-white shadow-xl">
+    <view class="bg-gradient-header rounded-3xl p-6 text-white shadow-xl space-item">
       <text class="text-lg font-bold mb-4 block">今日喂食统计</text>
       <view class="grid grid-cols-3 gap-4">
         <view class="text-center">
@@ -44,14 +44,20 @@
           <view class="text-white-80 text-sm">鹦鹉数</view>
         </view>
         <view class="text-center">
-          <view class="text-2xl font-bold">{{todayStats.totalAmount}}g</view>
+          <view class="text-2xl font-bold stat-amount nowrap">
+            <text class="stat-num">{{todayStats.totalAmountG}}</text>
+            <text class="stat-unit">g</text>
+            <text class="stat-sep">/</text>
+            <text class="stat-num">{{todayStats.totalAmountML}}</text>
+            <text class="stat-unit">ml</text>
+          </view>
           <view class="text-white-80 text-sm">总食量</view>
         </view>
       </view>
     </view>
 
     <!-- 搜索与日期筛选 -->
-    <view class="search-filter">
+    <view class="search-filter space-item">
       <input class="search-input" placeholder="搜索（鹦鹉/食物/备注）" value="{{searchQuery}}" bindinput="onSearchInput" confirm-type="search" />
       <view class="date-filter-row">
         <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
@@ -66,7 +72,7 @@
     </view>
 
     <!-- Feeding Records -->
-    <view class="space-y-4">
+    <view class="space-y-4 space-item">
       <view 
         wx:for="{{virtualDisplayRecords}}" 
         wx:key="key" 
@@ -74,7 +80,7 @@
         bindtap="viewRecordDetail" data-id="{{item.id}}" data-record-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}"
       >
         <view class="flex items-start space-x-4">
-          <view class="flex items-center flex-shrink-0">
+          <view class="flex items-center flex-shrink-0 x-space-item">
             <block wx:if="{{item.parrot_avatars && item.parrot_avatars.length > 1}}">
               <!-- 合并头像为单个圆形，最多显示3个 -->
               <view class="avatar-cluster">
@@ -105,23 +111,23 @@
               </view>
             </block>
           </view>
-          <view class="flex-1">
+          <view class="flex-1 x-space-item">
             <view class="flex items-center justify-between mb-2">
               <view>
                 <text class="font-semibold text-gray-800 block">{{item.parrot_names_display}}</text>
                 <text class="text-xs text-gray-500">共{{item.parrot_count}}只鹦鹉</text>
               </view>
               <view class="flex items-center space-x-2">
-                <view class="text-right mr-3">
+                <view class="text-right mr-3 x-space-item">
                   <view class="text-sm font-medium text-gray-800">{{item.formatted_time}}</view>
                   <view class="text-xs text-gray-500">{{item.formatted_date}}</view>
                 </view>
                 <!-- 编辑和删除按钮 -->
-                <view class="flex items-center space-x-1">
-                  <view class="action-btn edit-btn" catchtap="editRecord" data-id="{{item.id}}" data-record-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-feed-type-ids="{{item.feed_type_ids}}">
+                <view class="flex items-center space-x-1 x-space-item">
+                  <view class="action-btn edit-btn x-space-item" catchtap="editRecord" data-id="{{item.id}}" data-record-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}" data-feed-type-ids="{{item.feed_type_ids}}">
                     <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
                   </view>
-                  <view class="action-btn delete-btn" catchtap="deleteRecord" data-id="{{item.id}}">
+                  <view class="action-btn delete-btn x-space-item" catchtap="deleteRecord" data-id="{{item.id}}">
                     <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
                   </view>
                 </view>
@@ -134,14 +140,14 @@
               </view>
               <view class="flex items-center justify-between" wx:if="{{item.food_types.length === 1}}">
                 <text class="text-sm font-medium text-gray-700">食用量</text>
-                <text class="text-sm text-orange-600 font-semibold">{{item.food_types[0].amount}}g</text>
+                <text class="text-sm text-orange-600 font-semibold">{{item.food_types[0].amount}}{{item.food_types[0].unit}}</text>
               </view>
               <!-- Multiple food types -->
               <view wx:if="{{item.food_types.length > 1}}">
                 <text class="text-sm font-medium text-gray-700 block mb-2">食物类型</text>
                 <view wx:for="{{item.food_types}}" wx:key="id" wx:for-item="food" class="flex items-center justify-between mb-1">
                   <text class="text-sm text-orange-600">{{food.name}}</text>
-                  <text class="text-sm text-orange-600 font-semibold">{{food.amount}}g</text>
+                  <text class="text-sm text-orange-600 font-semibold">{{food.amount}}{{food.unit}}</text>
                 </view>
               </view>
             </view>
@@ -152,7 +158,7 @@
         </view>
       </view>
       <!-- 空状态（参考健康检查记录页面） -->
-      <view class="empty-state" wx:if="{{virtualDisplayRecords.length === 0}}">
+      <view class="empty-state space-item" wx:if="{{virtualDisplayRecords.length === 0}}">
         <view class="empty-icon">🍽️</view>
         <view class="empty-text">暂无喂食记录</view>
         <view class="empty-subtitle">开始记录您的喂食情况</view>

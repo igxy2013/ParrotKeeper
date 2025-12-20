@@ -115,10 +115,10 @@
       
       <!-- 当选择 0 或 1 个食物类型时，使用单个食物量输入 -->
       <view class="form-item" wx:if="{{formData.food_types.length <= 1}}">
-        <text class="form-label required">食物量 (g)</text>
+        <text class="form-label required">食物量 ({{amountUnit}})</text>
         <input 
           class="form-input" 
-          placeholder="请输入食物重量" 
+          placeholder="请输入食物{{amountUnit === 'ml' ? '容量' : '重量'}}" 
           value="{{formData.amount}}"
           bindinput="onInputChange"
           data-field="amount"
@@ -128,13 +128,13 @@
 
       <!-- 当选择多个食物类型时，分别展示每个类型的食物量输入 -->
       <view class="form-item" wx:if="{{formData.food_types.length > 1}}">
-        <text class="form-label required">各食物类型的食物量 (g)</text>
+        <text class="form-label required">各食物类型的食物量</text>
         <block wx:for="{{selectedFeedTypes}}" wx:key="id">
           <view class="form-item">
-            <text class="form-label">{{item.name}}</text>
+            <text class="form-label">{{item.name}} ({{(item.type === 'milk_powder' || item.type === 'supplement') ? 'ml' : 'g'}})</text>
             <input 
               class="form-input" 
-              placeholder="请输入{{item.name}}的重量" 
+              placeholder="请输入{{item.name}}的{{(item.type === 'milk_powder' || item.type === 'supplement') ? '容量' : '重量'}}" 
               value="{{formData.food_amounts && formData.food_amounts[item.id] || ''}}"
               data-id="{{item.id}}"
               bindinput="onFoodAmountInput"

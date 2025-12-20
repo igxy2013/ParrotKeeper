@@ -109,6 +109,17 @@ Page({
             record.health_status_text = healthStatusMap[raw] || raw;
           }
         }
+        // 喂食单位映射
+        if (type === 'feeding') {
+          try {
+            const ft = record.feed_type || null;
+            const t = ft && ft.type;
+            const unit = (t === 'milk_powder' || t === 'supplement') ? 'ml' : 'g';
+            record.amountUnit = unit;
+          } catch (_) {
+            record.amountUnit = 'g';
+          }
+        }
       } catch (e) {
         // 映射失败时忽略，保持原值
       }
@@ -238,7 +249,8 @@ Page({
         if (type === 'feeding') {
           const feedTypeName = item.feed_type_name || (item.feed_type && item.feed_type.name) || ''
           const amount = (item.amount !== undefined && item.amount !== null) ? item.amount : ''
-          return { ...base, feedTypeName, amount }
+          const unit = (item.feed_type && (item.feed_type.type === 'milk_powder' || item.feed_type.type === 'supplement')) ? 'ml' : 'g'
+          return { ...base, feedTypeName, amount, amountUnit: unit }
         } else if (type === 'cleaning') {
           const cleaningTypeText = item.cleaning_type_text || item.cleaning_type_name || item.cleaning_type || ''
           const description = item.description || ''

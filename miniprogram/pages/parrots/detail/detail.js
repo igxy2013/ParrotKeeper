@@ -519,9 +519,11 @@ Page({
           const ft = []
           if (rec.feed_type) {
             const name = rec.feed_type.name || rec.feed_type_name || '食物'
-            ft.push({ id: rec.feed_type.id, name, amount: rec.amount })
+            const type = rec.feed_type.type
+            const unit = (type === 'milk_powder' || type === 'supplement') ? 'ml' : 'g'
+            ft.push({ id: rec.feed_type.id, name, amount: rec.amount, unit, type })
           } else if (rec.feed_type_name) {
-            ft.push({ id: rec.feed_type_id, name: rec.feed_type_name, amount: rec.amount })
+            ft.push({ id: rec.feed_type_id, name: rec.feed_type_name, amount: rec.amount, unit: 'g' })
           }
           const feeding_time = rec.feeding_time || rec.record_time || rec.time || ''
           return { ...rec, feeding_time, food_types: ft }
@@ -549,9 +551,10 @@ Page({
               const id = ft.id || r.feed_type_id
               const name = ft.name || r.feed_type_name || '食物'
               const amount = typeof ft.amount === 'number' ? ft.amount : parseFloat(ft.amount || 0)
+              const unit = ft.unit || ((ft.type === 'milk_powder' || ft.type === 'supplement') ? 'ml' : 'g')
               const kid = id || name
               if (!g.food_types_map[kid]) {
-                g.food_types_map[kid] = { id, name, amount: amount || 0 }
+                g.food_types_map[kid] = { id, name, amount: amount || 0, unit }
               }
             })
           } else {
@@ -559,7 +562,7 @@ Page({
             const name = r.feed_type_name || '总用量'
             const amount = typeof r.amount === 'number' ? r.amount : parseFloat(r.amount || 0)
             if (!g.food_types_map[kid]) {
-              g.food_types_map[kid] = { id: r.feed_type_id, name, amount: amount || 0 }
+              g.food_types_map[kid] = { id: r.feed_type_id, name, amount: amount || 0, unit: 'g' }
             }
           }
         })
@@ -572,14 +575,16 @@ Page({
         const feedingMapped = aggregated.map(g => {
           const dt = this.parseServerTime(g.feeding_time || '')
           const list = Object.values(g.food_types_map)
-          const nameJoin = list.map(x => x.name).join('、')
-          const amtSum = list.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0)
           return {
             id: (g.record_ids && g.record_ids.length ? g.record_ids[0] : g.key),
             created_at: dt ? getApp().formatDateTime(dt, 'YYYY-MM-DD HH:mm') : (g.feeding_time || ''),
             data: {
-              feed_type_name: nameJoin,
-              amount: Number(amtSum.toFixed(1)),
+              food_types: list.map(x => ({
+                id: x.id,
+                name: x.name,
+                amount: Number((parseFloat(x.amount) || 0).toFixed(1)),
+                unit: x.unit
+              })),
               notes: g.notes || ''
             }
           }

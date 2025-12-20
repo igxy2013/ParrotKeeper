@@ -223,9 +223,17 @@
           <view wx:if="{{hasFeedingRecords}}" class="records-list">
             <view class="record-item feeding-record" wx:for="{{feedingRecords}}" wx:key="id" bindtap="viewRecordDetail" data-type="feeding" data-id="{{item.id}}">
               <view class="record-header">
-                <text class="record-food">{{item.data && (item.data.feed_type_name || (item.data.feed_type && item.data.feed_type.name)) || '未知食物'}}</text>
-                <text class="record-amount" wx:if="{{item.data && item.data.amount !== undefined && item.data.amount !== null}}">{{item.data.amount}} g</text>
-                <text class="record-amount" wx:else>未记录</text>
+                <block wx:if="{{item.data && item.data.food_types && item.data.food_types.length === 1}}">
+                  <text class="record-food">{{item.data.food_types[0].name || '未知食物'}}</text>
+                  <text class="record-amount">{{item.data.food_types[0].amount}}{{item.data.food_types[0].unit}}</text>
+                </block>
+                <block wx:elif="{{item.data && item.data.food_types && item.data.food_types.length > 1}}">
+                  <text class="record-food">多种食物</text>
+                </block>
+                <block wx:else>
+                  <text class="record-food">未知食物</text>
+                  <text class="record-amount">未记录</text>
+                </block>
               </view>
               <view class="record-footer">
                 <!-- 固定显示实际发生时间（统一为 created_at，经 JS 格式化） -->
@@ -252,6 +260,12 @@
                 </view>
               </view>
               <view class="record-details">
+                <block wx:if="{{item.data && item.data.food_types && item.data.food_types.length > 1}}">
+                  <view class="detail-item" wx:for="{{item.data.food_types}}" wx:key="id">
+                    <text class="detail-label">{{item.name}}: </text>
+                    <text class="detail-value">{{item.amount}}{{item.unit}}</text>
+                  </view>
+                </block>
                 <view wx:if="{{item.data && item.data.weight}}" class="detail-item">
                   <text class="detail-label">体重: </text>
                   <text class="detail-value">{{item.data.weight}} g</text>

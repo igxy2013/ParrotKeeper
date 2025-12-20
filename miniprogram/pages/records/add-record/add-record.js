@@ -83,7 +83,8 @@ const app = getApp()
 
     // 其他
       today: '',
-      recordId: null // 编辑模式下的记录ID
+      recordId: null,
+      amountUnit: 'g'
     },
   
   // 将记录类型映射为中文文案
@@ -316,7 +317,7 @@ const app = getApp()
         const feedTypeIdsApplied = prefillFeedTypeIds && prefillFeedTypeIds.length ? prefillFeedTypeIds.slice() : this.data.formData.food_types
         const feedTypeListWithSelection = feedTypeList.map(f => {
           const selected = feedTypeIdsApplied.includes(f.id)
-          if (selected) selectedFeedTypes.push({ id: f.id, name: f.displayName })
+          if (selected) selectedFeedTypes.push({ id: f.id, name: f.displayName, type: f.type })
           return { ...f, selected }
         })
         const selectedFeedTypeNames = selectedFeedTypes.map(f => f.name).join('、')
@@ -332,12 +333,14 @@ const app = getApp()
           if (!appliedSet.has(idStr)) delete foodAmounts[idStr]
         })
         
+        const amountUnit = selectedFeedTypes.length === 1 && (selectedFeedTypes[0].type === 'milk_powder' || selectedFeedTypes[0].type === 'supplement') ? 'ml' : 'g'
         this.setData({
           feedTypeList: feedTypeListWithSelection,
           selectedFeedTypes,
           selectedFeedTypeNames,
           'formData.food_types': feedTypeIdsApplied,
-          'formData.food_amounts': foodAmounts
+          'formData.food_amounts': foodAmounts,
+          amountUnit
         })
       }
     } catch (error) {
@@ -540,7 +543,7 @@ const app = getApp()
           selectedParrots = [{ id: parseInt(parrotId), name: selectedParrotName }]
           selectedParrotNames = selectedParrotName
         }
-        const selectedFeedTypes = this.data.feedTypeList.filter(f => formData.food_types.includes(f.id)).map(f => ({ id: f.id, name: f.displayName || f.name }))
+        const selectedFeedTypes = this.data.feedTypeList.filter(f => formData.food_types.includes(f.id)).map(f => ({ id: f.id, name: f.displayName || f.name, type: f.type }))
         const selectedFeedTypeNames = selectedFeedTypes.map(f => f.name).join('、')
         
         // 同步列表项的选中状态，确保弹窗内显示勾选
@@ -621,6 +624,7 @@ const app = getApp()
           }))
         }
         
+        const amountUnit = selectedFeedTypes.length === 1 && (selectedFeedTypes[0].type === 'milk_powder' || selectedFeedTypes[0].type === 'supplement') ? 'ml' : 'g'
         this.setData({
           formData,
           selectedParrots,
@@ -636,7 +640,8 @@ const app = getApp()
           feedTypeList: feedTypeListSynced,
           cleaningTypeList: cleaningTypeListSynced,
           maleParrotList: maleParrotListSynced,
-          femaleParrotList: femaleParrotListSynced
+          femaleParrotList: femaleParrotListSynced,
+          amountUnit
         })
         // 编辑模式：根据基础选择限制雄/雌选择器范围
         this.updateBreedingParrotListsBasedOnSelection()
@@ -881,7 +886,8 @@ const app = getApp()
     if (index >= 0) {
       selectedFeedTypes.splice(index, 1)
     } else {
-      selectedFeedTypes.push({ id, name })
+      const found = feedTypeList.find(f => f.id === id)
+      selectedFeedTypes.push({ id, name, type: found ? found.type : '' })
     }
     
     // 更新列表选中状态
@@ -903,12 +909,14 @@ const app = getApp()
       if (!selectedIdSet.has(idStr)) delete foodAmounts[idStr]
     })
     
+    const amountUnit = selectedFeedTypes.length === 1 && (selectedFeedTypes[0].type === 'milk_powder' || selectedFeedTypes[0].type === 'supplement') ? 'ml' : 'g'
     this.setData({
       selectedFeedTypes,
       feedTypeList,
       selectedFeedTypeNames,
       'formData.food_types': selectedFeedTypes.map(f => f.id),
-      'formData.food_amounts': foodAmounts
+      'formData.food_amounts': foodAmounts,
+      amountUnit
     })
     this.validateForm()
   },

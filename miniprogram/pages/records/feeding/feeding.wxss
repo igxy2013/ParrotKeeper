@@ -86,11 +86,11 @@
 }
 
 /* 间距样式 */
-.space-x-1 > view:not(:first-child) {
+.space-x-1 > .x-space-item:not(:first-child) {
   margin-left: 8rpx;
 }
 
-.space-x-2 > view:not(:first-child) {
+.space-x-2 > .x-space-item:not(:first-child) {
   margin-left: 16rpx;
 }
 
@@ -155,26 +155,23 @@
   justify-content: space-between;
 }
 
-.space-x-3 > button + button,
-.space-x-3 > view + view {
+.space-x-3 > .x-space-item + .x-space-item {
   margin-left: 24rpx;
 }
 
-.space-y-6 > view + view {
+.space-y-6 > .space-item + .space-item {
   margin-top: 48rpx;
 }
 
-.space-y-4 > view + view {
+.space-y-4 > .space-item + .space-item {
   margin-top: 32rpx;
 }
 
-.space-x-2 > button + button,
-.space-x-2 > view + view {
+.space-x-2 > .x-space-item + .x-space-item {
   margin-left: 16rpx;
 }
 
-.space-x-3 > button + button,
-.space-x-3 > view + view {
+.space-x-3 > .x-space-item + .x-space-item {
   margin-left: 24rpx;
 }
 
@@ -362,6 +359,31 @@
 
 /* 使用全局 .text-2xl */
 
+/* 统计卡片数字+单位的单行布局与字号优化 */
+.stat-amount {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6rpx;
+  line-height: 1.2;
+}
+.stat-amount.nowrap { white-space: nowrap; }
+.stat-num {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+.stat-unit {
+  font-size: 24rpx;
+  line-height: inherit;
+  opacity: 0.9;
+  margin-left: 4rpx;
+}
+.stat-sep {
+  font-size: inherit;
+  opacity: 0.9;
+}
+
 /* 渐变样式 */
 .bg-gradient-soft {
   background: linear-gradient(90deg, #fff7ed 0%, #fefce8 100%);
@@ -372,8 +394,7 @@
   align-items: flex-start;
 }
 
-.space-x-4 > button + button,
-.space-x-4 > view + view {
+.space-x-4 > .x-space-item + .x-space-item {
   margin-left: 32rpx;
 }
 
@@ -722,7 +743,7 @@
 .space-y-6 > .search-filter { margin-top: 24rpx; }
 .space-y-6 > .space-y-4 { margin-top: 24rpx; }
 /* 更精确的覆盖，防止被通用规则影响 */
-.space-y-6 > view + .search-filter { margin-top: 24rpx !important; }
+.space-y-6 > .space-item + .search-filter { margin-top: 24rpx !important; }
 .space-y-6 > .search-filter + .space-y-4 { margin-top: 24rpx !important; }
 
 /* 强化记录卡片左右边缘可见性 */
