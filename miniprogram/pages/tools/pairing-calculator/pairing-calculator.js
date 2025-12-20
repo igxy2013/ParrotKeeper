@@ -1,5 +1,4 @@
 const app = getApp()
-const { SPECIES_CONFIG } = require('../../../utils/species-config')
 
 Page({
   data: {
@@ -851,30 +850,10 @@ Page({
       const withPlumage = list.filter(s => !!s.plumage_json)
       const names = withPlumage.map(s => s.name)
       this.setData({ speciesOptions: names, speciesDataList: withPlumage })
-      await this.syncPlumageToBackendIfNeeded(list)
     } catch (_) {
-      const fallbackNames = Object.keys(SPECIES_CONFIG)
-      const fallbackRows = fallbackNames.map(n => ({ id: 0, name: n, plumage_json: JSON.stringify(SPECIES_CONFIG[n]) }))
-      this.setData({ speciesOptions: fallbackNames, speciesDataList: fallbackRows })
+      this.setData({ speciesOptions: [], speciesDataList: [] })
     }
   },
 
-  async syncPlumageToBackendIfNeeded(serverList) {
-    try {
-      const isSuper = app.isSuperAdmin && app.isSuperAdmin()
-      if (!isSuper) return
-      const byName = {}
-      ;(Array.isArray(serverList) ? serverList : []).forEach(s => { byName[s.name] = s })
-      const names = Object.keys(SPECIES_CONFIG)
-      for (const name of names) {
-        const row = byName[name]
-        if (!row) continue
-        if (!row.plumage_json) {
-          try {
-            await app.request({ url: `/api/parrots/species/${row.id}`, method: 'PUT', data: { plumage_json: JSON.stringify(SPECIES_CONFIG[name]) } })
-          } catch (_) {}
-        }
-      }
-    } catch (_) {}
-  }
+  noop() {}
 })

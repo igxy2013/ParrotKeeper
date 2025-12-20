@@ -1,5 +1,4 @@
 const app = getApp()
-const { SPECIES_CONFIG } = require('../../../utils/species-config')
 
 Page({
   data: {
@@ -45,12 +44,7 @@ Page({
       this.setData({ colorNames: initialColors })
       this.loadPrices()
     } catch (_) {
-      const fallbackNames = Object.keys(SPECIES_CONFIG)
-      const rows = fallbackNames.map(n => ({ id: 0, name: n, plumage_json: JSON.stringify(SPECIES_CONFIG[n]) }))
-      const names = ['全部'].concat(fallbackNames)
-      this.setData({ speciesRows: rows, speciesNames: names, speciesIndex: 0, formSpeciesIndex: 0 })
-      const initialColors = this.getColorsBySpeciesName(this.data.speciesNames[this.data.formSpeciesIndex] || '', rows)
-      this.setData({ colorNames: initialColors })
+      this.setData({ speciesRows: [], speciesNames: ['全部'], speciesIndex: 0, formSpeciesIndex: 0, colorNames: [] })
       this.loadPrices()
     }
   },
@@ -263,7 +257,6 @@ Page({
         return (cfg.colors || []).map(c => c.name)
       }
     } catch (_){ }
-    const fallback = SPECIES_CONFIG[name]
-    return fallback ? fallback.colors.map(c => c.name) : []
+    return []
   }
 })

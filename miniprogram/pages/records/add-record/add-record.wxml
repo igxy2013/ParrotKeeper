@@ -116,14 +116,15 @@
       <!-- 当选择 0 或 1 个食物类型时，使用单个食物量输入 -->
       <view class="form-item" wx:if="{{formData.food_types.length <= 1}}">
         <text class="form-label required">食物量 ({{amountUnit}})</text>
-        <input 
-          class="form-input" 
-          placeholder="请输入食物{{amountUnit === 'ml' ? '容量' : '重量'}}" 
-          value="{{formData.amount}}"
-          bindinput="onInputChange"
-          data-field="amount"
-          type="digit"
-        />
+        <view 
+          class="form-input input-view {{formData.amount ? '' : 'placeholder'}}" 
+          bindtap="showKeyboard" 
+          data-field="amount" 
+          data-title="食物{{amountUnit === 'ml' ? '容量' : '重量'}}"
+          data-type="digit"
+        >
+          {{formData.amount || '请输入食物' + (amountUnit === 'ml' ? '容量' : '重量')}}
+        </view>
       </view>
 
       <!-- 当选择多个食物类型时，分别展示每个类型的食物量输入 -->
@@ -132,14 +133,16 @@
         <block wx:for="{{selectedFeedTypes}}" wx:key="id">
           <view class="form-item">
             <text class="form-label">{{item.name}} ({{((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? 'ml' : 'g'}})</text>
-            <input 
-              class="form-input" 
-              placeholder="请输入{{item.name}}的{{((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? '容量' : '重量'}}" 
-              value="{{formData.food_amounts && formData.food_amounts[item.id] || ''}}"
+            <view 
+              class="form-input input-view {{(formData.food_amounts && formData.food_amounts[item.id]) ? '' : 'placeholder'}}" 
+              bindtap="showKeyboard" 
+              data-field="food_amounts" 
               data-id="{{item.id}}"
-              bindinput="onFoodAmountInput"
-              type="digit"
-            />
+              data-title="{{item.name}}{{((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? '容量' : '重量'}}"
+              data-type="digit"
+            >
+              {{(formData.food_amounts && formData.food_amounts[item.id]) || '请输入' + item.name + (((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? '容量' : '重量')}}
+            </view>
           </view>
         </block>
       </view>
@@ -164,7 +167,7 @@
       
       <view class="form-item">
         <text class="form-label">清洁描述</text>
-        <block wx:if="{{!showCleaningTypeModal && !showFeedTypeModal && !showParrotModal && !showMaleParrotModal && !showFemaleParrotModal && !showHealthStatusModal}}">
+        <block wx:if="{{!showCleaningTypeModal && !showFeedTypeModal && !showParrotModal && !showMaleParrotModal && !showFemaleParrotModal && !showHealthStatusModal && !keyboardVisible}}">
           <textarea 
             class="form-textarea" 
             placeholder="请输入清洁的详细描述" 
@@ -189,14 +192,15 @@
       
       <view class="form-item">
         <text class="form-label">体重 (g)</text>
-        <input 
-          class="form-input" 
-          placeholder="请输入当前体重" 
-          value="{{formData.weight}}"
-          bindinput="onInputChange"
-          data-field="weight"
-          type="digit"
-        />
+        <view 
+          class="form-input input-view {{formData.weight ? '' : 'placeholder'}}" 
+          bindtap="showKeyboard" 
+          data-field="weight" 
+          data-title="当前体重"
+          data-type="digit"
+        >
+          {{formData.weight || '请输入当前体重'}}
+        </view>
       </view>
       
 
@@ -273,14 +277,15 @@
       
       <view class="form-item">
         <text class="form-label">蛋数量</text>
-        <input 
-          class="form-input" 
-          placeholder="请输入蛋的数量" 
-          value="{{formData.egg_count}}"
-          bindinput="onInputChange"
-          data-field="egg_count"
-          type="number"
-        />
+        <view 
+          class="form-input input-view {{formData.egg_count ? '' : 'placeholder'}}" 
+          bindtap="showKeyboard" 
+          data-field="egg_count" 
+          data-title="蛋的数量"
+          data-type="integer"
+        >
+          {{formData.egg_count || '请输入蛋的数量'}}
+        </view>
       </view>
       
       <view class="form-item">
@@ -301,26 +306,28 @@
       
       <view class="form-item">
         <text class="form-label">幼鸟数量</text>
-        <input 
-          class="form-input" 
-          placeholder="请输入成功孵化的幼鸟数量" 
-          value="{{formData.chick_count}}"
-          bindinput="onInputChange"
-          data-field="chick_count"
-          type="number"
-        />
+        <view 
+          class="form-input input-view {{formData.chick_count ? '' : 'placeholder'}}" 
+          bindtap="showKeyboard" 
+          data-field="chick_count" 
+          data-title="幼鸟数量"
+          data-type="integer"
+        >
+          {{formData.chick_count || '请输入成功孵化的幼鸟数量'}}
+        </view>
       </view>
       
       <view class="form-item">
         <text class="form-label">成功率 (%)</text>
-        <input 
-          class="form-input" 
-          placeholder="请输入繁殖成功率" 
-          value="{{formData.success_rate}}"
-          bindinput="onInputChange"
-          data-field="success_rate"
-          type="digit"
-        />
+        <view 
+          class="form-input input-view {{formData.success_rate ? '' : 'placeholder'}}" 
+          bindtap="showKeyboard" 
+          data-field="success_rate" 
+          data-title="繁殖成功率"
+          data-type="digit"
+        >
+          {{formData.success_rate || '请输入繁殖成功率'}}
+        </view>
       </view>
     </view>
 
@@ -377,7 +384,7 @@
       
       <view class="form-item">
         <text class="form-label">备注</text>
-        <block wx:if="{{!showCleaningTypeModal && !showFeedTypeModal && !showParrotModal && !showMaleParrotModal && !showFemaleParrotModal && !showHealthStatusModal}}">
+        <block wx:if="{{!showCleaningTypeModal && !showFeedTypeModal && !showParrotModal && !showMaleParrotModal && !showFemaleParrotModal && !showHealthStatusModal && !keyboardVisible}}">
           <textarea 
             class="form-textarea" 
             placeholder="请输入备注信息（可选）" 
@@ -622,6 +629,18 @@
     </scroll-view>
   </view>
 </view>
+
+<!-- 数字键盘 -->
+<numeric-keyboard
+  visible="{{keyboardVisible}}"
+  value="{{keyboardValue}}"
+  maxLength="{{keyboardMaxLength}}"
+  maxDecimals="{{keyboardMaxDecimals}}"
+  title="{{keyboardTitle}}"
+  bind:input="onKeyboardInput"
+  bind:confirm="onKeyboardConfirm"
+  bind:close="onKeyboardClose"
+/>
 </view>
 
 <!-- 雌性鹦鹉选择弹窗 -->

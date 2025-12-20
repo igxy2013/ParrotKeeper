@@ -84,7 +84,16 @@ const app = getApp()
     // 其他
       today: '',
       recordId: null,
-      amountUnit: 'g'
+      amountUnit: 'g',
+
+      // 数字键盘状态
+      keyboardVisible: false,
+      keyboardValue: '',
+      keyboardMaxLength: 10,
+      keyboardMaxDecimals: 2,
+      keyboardTitle: '',
+      currentField: '',
+      currentExtraData: null
     },
   
   // 将记录类型映射为中文文案
@@ -1114,6 +1123,86 @@ const app = getApp()
     })
     this.hideFemaleParrotPicker()
     this.validateForm()
+  },
+  
+  // 显示数字键盘
+  showKeyboard: function(e) {
+    const { field, title, type, id } = e.currentTarget.dataset
+    let value = ''
+    
+    // 根据字段获取当前值
+    if (field === 'food_amounts' && id) {
+      value = (this.data.formData.food_amounts && this.data.formData.food_amounts[id]) || ''
+    } else {
+      value = this.data.formData[field] || ''
+    }
+
+    // 设置最大长度和小数位
+    let maxLength = 10
+    let maxDecimals = 2
+    if (type === 'integer') {
+      maxDecimals = 0
+    }
+
+    this.setData({
+      keyboardVisible: true,
+      keyboardValue: String(value),
+      keyboardTitle: title || '请输入数值',
+      currentField: field,
+      currentExtraData: id ? { id } : null,
+      keyboardMaxLength: maxLength,
+      keyboardMaxDecimals: maxDecimals
+    })
+  },
+
+  // 键盘输入
+  onKeyboardInput: function(e) {
+    const value = e.detail.value
+    const field = this.data.currentField
+    const extraData = this.data.currentExtraData
+    
+    // 更新表单数据
+    if (field === 'food_amounts' && extraData && extraData.id) {
+       const idStr = String(extraData.id)
+       const foodAmounts = { ...(this.data.formData.food_amounts || {}) }
+       foodAmounts[idStr] = value
+       this.setData({ 
+         'formData.food_amounts': foodAmounts,
+         keyboardValue: value // 同步更新键盘显示值
+       })
+    } else {
+      this.setData({
+        [`formData.${field}`]: value,
+        keyboardValue: value // 同步更新键盘显示值
+      })
+    }
+    
+    // 触发校验
+    this.validateForm()
+  },
+
+  // 键盘确认
+  onKeyboardConfirm: function() {
+    this.setData({
+      keyboardVisible: false
+    })
+    
+    const field = this.data.currentField
+    
+    if (field === 'weight') {
+        const val = this.data.formData.weight
+        const num = Number(val)
+        if (val && (!isFinite(num) || num <= 0 || num >= 1000)) {
+            wx.showToast({ title: '体重需在 0–999.99 g', icon: 'none' })
+        }
+    }
+  },
+
+  // 键盘关闭
+  onKeyboardClose: function() {
+    this.setData({
+      keyboardVisible: false
+    })
   },
   
   // 输入框变更

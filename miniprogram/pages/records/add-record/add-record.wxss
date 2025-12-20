@@ -165,6 +165,15 @@
   border-color: #26A69A;
 }
 
+.input-view {
+  display: flex;
+  align-items: center;
+}
+
+.input-view.placeholder {
+  color: #808080;
+}
+
 .form-picker {
   display: flex;
   align-items: center;
