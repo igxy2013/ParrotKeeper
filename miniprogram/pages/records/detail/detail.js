@@ -114,7 +114,8 @@ Page({
           try {
             const ft = record.feed_type || null;
             const t = ft && ft.type;
-            const unit = (t === 'milk_powder' || t === 'supplement') ? 'ml' : 'g';
+            const n = (ft && ft.name) || record.feed_type_name || '';
+            const unit = (String(n).indexOf('坚果') !== -1) ? 'g' : ((t === 'milk_powder' || t === 'supplement') ? 'ml' : 'g');
             record.amountUnit = unit;
           } catch (_) {
             record.amountUnit = 'g';

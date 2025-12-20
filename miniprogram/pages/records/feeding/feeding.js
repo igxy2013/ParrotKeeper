@@ -141,7 +141,7 @@ Page({
         } else if (type === 'vegetable') {
           name = rec.feed_type.brand || '新鲜蔬菜';
         }
-        const unit = (type === 'milk_powder' || type === 'supplement') ? 'ml' : 'g';
+        const unit = (String(name).indexOf('坚果') !== -1) ? 'g' : ((type === 'milk_powder' || type === 'supplement') ? 'ml' : 'g');
         food_types = [{ id: rec.feed_type.id, name, amount: rec.amount, unit, type }];
       } else if (rec.feed_type_name) {
         food_types = [{ id: rec.feed_type_id, name: rec.feed_type_name, amount: rec.amount, unit: 'g' }];
@@ -211,7 +211,7 @@ Page({
           const id = ft.id || r.feed_type_id;
           const name = ft.name || r.feed_type_name || '食物';
           const amount = typeof ft.amount === 'number' ? ft.amount : parseFloat(ft.amount || 0);
-          const unit = ft.unit || ((ft.type === 'milk_powder' || ft.type === 'supplement') ? 'ml' : 'g');
+          const unit = ft.unit || ((String(name).indexOf('坚果') !== -1) ? 'g' : ((ft.type === 'milk_powder' || ft.type === 'supplement') ? 'ml' : 'g'));
           const keyId = id || name;
           if (!g.food_types_map[keyId]) {
             g.food_types_map[keyId] = { id: id, name: name, amount: (amount || 0), unit };

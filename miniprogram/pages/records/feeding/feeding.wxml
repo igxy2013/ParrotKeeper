@@ -76,7 +76,7 @@
       <view 
         wx:for="{{virtualDisplayRecords}}" 
         wx:key="key" 
-        class="bg-white-80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-white-50 record-card"
+        class="bg-white-80 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-white-50 record-card space-item"
         bindtap="viewRecordDetail" data-id="{{item.id}}" data-record-ids="{{item.record_ids}}" data-parrot-ids="{{item.parrot_ids}}"
       >
         <view class="flex items-start space-x-4">

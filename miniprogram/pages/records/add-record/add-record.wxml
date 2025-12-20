@@ -131,10 +131,10 @@
         <text class="form-label required">各食物类型的食物量</text>
         <block wx:for="{{selectedFeedTypes}}" wx:key="id">
           <view class="form-item">
-            <text class="form-label">{{item.name}} ({{(item.type === 'milk_powder' || item.type === 'supplement') ? 'ml' : 'g'}})</text>
+            <text class="form-label">{{item.name}} ({{((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? 'ml' : 'g'}})</text>
             <input 
               class="form-input" 
-              placeholder="请输入{{item.name}}的{{(item.type === 'milk_powder' || item.type === 'supplement') ? '容量' : '重量'}}" 
+              placeholder="请输入{{item.name}}的{{((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? '容量' : '重量'}}" 
               value="{{formData.food_amounts && formData.food_amounts[item.id] || ''}}"
               data-id="{{item.id}}"
               bindinput="onFoodAmountInput"
