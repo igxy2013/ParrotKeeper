@@ -59,7 +59,7 @@
             <text class="picker-text {{formData.parrot_ids.length > 0 ? '' : 'placeholder'}}">
               {{selectedParrotNames || (recordType === 'health' ? '请选择鹦鹉（单选）' : '请选择鹦鹉（可多选）')}}
             </text>
-            <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+            <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
           </view>
         </view>
         
@@ -87,7 +87,7 @@
                 <text class="picker-text {{formData.record_time ? '' : 'placeholder'}}">
                   {{formData.record_time || '选择时间'}}
                 </text>
-                <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+                <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
               </view>
             </picker>
           </view>
@@ -109,7 +109,7 @@
             <text class="picker-text {{selectedFeedTypeNames ? '' : 'placeholder'}}">
               {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
             </text>
-            <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+            <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
           </view>
         </view>
       
@@ -161,7 +161,7 @@
           <text class="picker-text {{selectedCleaningTypeNames ? '' : 'placeholder'}}">
             {{selectedCleaningTypeNames || '请选择清洁类型'}}
           </text>
-          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+          <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
         </view>
       </view>
       
@@ -211,7 +211,7 @@
           <text class="picker-text {{formData.health_status ? '' : 'placeholder'}}">
             {{healthStatusText || '请选择健康状态'}}
           </text>
-          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+          <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
         </view>
       </view>
     </view>
@@ -229,7 +229,7 @@
           <text class="picker-text {{formData.male_parrot_id ? '' : 'placeholder'}}">
             {{selectedMaleParrotName || '请选择雄性鹦鹉'}}
           </text>
-          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+          <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
         </view>
       </view>
       
@@ -239,7 +239,7 @@
           <text class="picker-text {{formData.female_parrot_id ? '' : 'placeholder'}}">
             {{selectedFemaleParrotName || '请选择雌性鹦鹉'}}
           </text>
-          <image class="picker-arrow-img" src="/images/remix/ri-arrow-down-s-fill-gray.png" mode="aspectFit"></image>
+          <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
         </view>
       </view>
       

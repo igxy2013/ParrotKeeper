@@ -342,13 +342,7 @@ const app = getApp()
           if (!appliedSet.has(idStr)) delete foodAmounts[idStr]
         })
         
-        const amountUnit = (function(list){
-          if (list.length !== 1) return 'g'
-          const f = list[0]
-          const nm = String(f.name || '')
-          if (nm.indexOf('坚果') !== -1) return 'g'
-          return (f.type === 'milk_powder' || f.type === 'supplement') ? 'ml' : 'g'
-        })(selectedFeedTypes)
+        const amountUnit = this.getAmountUnit(selectedFeedTypes)
         this.setData({
           feedTypeList: feedTypeListWithSelection,
           selectedFeedTypes,
@@ -924,7 +918,7 @@ const app = getApp()
       if (!selectedIdSet.has(idStr)) delete foodAmounts[idStr]
     })
     
-    const amountUnit = selectedFeedTypes.length === 1 && (selectedFeedTypes[0].type === 'milk_powder' || selectedFeedTypes[0].type === 'supplement') ? 'ml' : 'g'
+    const amountUnit = this.getAmountUnit(selectedFeedTypes)
     this.setData({
       selectedFeedTypes,
       feedTypeList,

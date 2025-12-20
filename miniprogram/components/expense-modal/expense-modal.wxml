@@ -28,7 +28,7 @@
             <picker mode="selector" range="{{categoryOptions}}" value="{{formData.categoryIndex}}" bindchange="onCategoryChange">
               <view class="picker-display">
                 <text>{{categoryOptions[formData.categoryIndex] || '请选择类别'}}</text>
-                <text class="picker-arrow">▾</text>
+                <image class="picker-arrow" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit" />
               </view>
             </picker>
           </view>
@@ -52,7 +52,7 @@
           <picker mode="date" value="{{formData.date}}" bindchange="onDateChange">
             <view class="picker-display">
               <text>{{formData.date || '请选择日期'}}</text>
-              <text class="picker-arrow">▾</text>
+              <image class="picker-arrow" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit" />
             </view>
           </picker>
         </view>
