@@ -108,19 +108,19 @@ def build_plumage_for_species(name: str):
             'pied': {'label': '派特', 'type': 'autosomal'}, # Recessive (Recessive Pied)
         }
         colors = [
-            {'name': '绿颊', 'genes': {}},
-            {'name': '原始', 'genes': {}},
-            {'name': '肉桂', 'genes': {'cinnamon': 1}},
-            {'name': '黄边', 'genes': {'opaline': 1}},
-            {'name': '凤梨', 'genes': {'cinnamon': 1, 'opaline': 1}},
-            {'name': '蓝化', 'genes': {'turquoise': 2}},
-            {'name': '蓝化肉桂', 'genes': {'turquoise': 2, 'cinnamon': 1}},
+            {'name': '绿颊小太阳（原始）', 'genes': {}},
+            {'name': '黄边小太阳', 'genes': {'opaline': 1}},
+            {'name': '肉桂小太阳', 'genes': {'cinnamon': 1}},
+            {'name': '凤梨小太阳', 'genes': {'cinnamon': 1, 'opaline': 1}},
+            {'name': '蓝化小太阳', 'genes': {'turquoise': 2}},
             {'name': '蓝化黄边', 'genes': {'turquoise': 2, 'opaline': 1}},
+            {'name': '蓝化肉桂', 'genes': {'turquoise': 2, 'cinnamon': 1}},
             {'name': '蓝化凤梨', 'genes': {'turquoise': 2, 'cinnamon': 1, 'opaline': 1}},
-            {'name': '香吉士', 'genes': {'dilute': 2}}, # American Dilute
-            {'name': '月亮', 'genes': {'turquoise': 2, 'dilute': 2}}, # Mint
-            {'name': '阳曦', 'genes': {'dilute': 2, 'cinnamon': 1, 'opaline': 1}}, # Suncheek
-            {'name': '月光', 'genes': {'turquoise': 2, 'dilute': 2, 'cinnamon': 1, 'opaline': 1}}, # Mooncheek
+            {'name': '香吉士(美国黄/稀释)', 'genes': {'dilute': 2}}, # American Dilute
+            {'name': '月亮(Mint/蓝化稀释)', 'genes': {'turquoise': 2, 'dilute': 2}}, # Mint
+            {'name': 'Suncheek(阳曦/凤梨稀释)', 'genes': {'dilute': 2, 'cinnamon': 1, 'opaline': 1}}, # Suncheek
+            {'name': 'Mooncheek(月光/蓝化凤梨稀释)', 'genes': {'turquoise': 2, 'dilute': 2, 'cinnamon': 1, 'opaline': 1}}, # Mooncheek
+            {'name': '派特小太阳', 'genes': {'pied': 2}},
         ]
         return {'colors': colors, 'loci': loci}
 
@@ -184,6 +184,13 @@ def merge_plumage(existing_json: str, new_data: dict):
         
         # 清理已废弃/更名的颜色
         deprecated_colors = ['绿肉桂和尚']
+        # 小太阳鹦鹉废弃的颜色名称（简写或错误名称）
+        deprecated_sun_conure_colors = [
+            '绿颊', '原始', '肉桂', '黄边', '凤梨', '蓝化', 
+            '香吉士', '月亮', '阳曦', '月光',
+            '金太阳'  # 错误名称
+        ]
+        deprecated_colors.extend(deprecated_sun_conure_colors)
         for d in deprecated_colors:
             if d in color_map:
                 del color_map[d]
