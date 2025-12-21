@@ -11,8 +11,6 @@
     <form bindsubmit="submitForm">
       <!-- 记录类型 -->
       <view class="form-section">
-        <view class="section-title">记录类型</view>
-        
         <view class="type-selector">
           <!-- 动态滑块 -->
           <view class="type-cursor {{recordType}}" style="left: {{recordType === 'feeding' ? '2%' : recordType === 'cleaning' ? '27%' : recordType === 'health' ? '52%' : '77%'}}"></view>
