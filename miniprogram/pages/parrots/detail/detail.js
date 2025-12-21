@@ -551,7 +551,11 @@ Page({
               const id = ft.id || r.feed_type_id
               const name = ft.name || r.feed_type_name || '食物'
               const amount = typeof ft.amount === 'number' ? ft.amount : parseFloat(ft.amount || 0)
-              const unit = ft.unit || ((String(name).indexOf('坚果') !== -1) ? 'g' : ((ft.type === 'milk_powder' || ft.type === 'supplement') ? 'ml' : 'g'))
+              const sname = String(name)
+              const isNut = sname.indexOf('坚果') !== -1
+              const byType = (ft.type === 'milk_powder' || ft.type === 'supplement')
+              const byName = (sname.indexOf('奶粉') !== -1 || sname.indexOf('保健品') !== -1 || sname.indexOf('幼鸟奶粉') !== -1)
+              const unit = ft.unit || (!isNut && (byType || byName) ? 'ml' : 'g')
               const kid = id || name
               if (!g.food_types_map[kid]) {
                 g.food_types_map[kid] = { id, name, amount: amount || 0, unit }
@@ -785,13 +789,13 @@ Page({
         species_name: speciesName,
         name: p.name
       })
-      const resolved = fallback ? getApp().resolveUploadUrl(fallback) : '/images/default-parrot.png'
+      const resolved = fallback ? getApp().resolveUploadUrl(fallback) : '/images/parrot-avatar-green.svg'
       this.setData({
         parrot: { ...p, photo_url: '', photo_thumb: '', avatar_url: resolved, avatar_thumb: '' }
       })
     } catch (_) {
       const p = this.data.parrot || {}
-      this.setData({ parrot: { ...p, photo_url: '', photo_thumb: '', avatar_url: '/images/default-parrot.png', avatar_thumb: '' } })
+      this.setData({ parrot: { ...p, photo_url: '', photo_thumb: '', avatar_url: '/images/parrot-avatar-green.svg', avatar_thumb: '' } })
     }
   },
 

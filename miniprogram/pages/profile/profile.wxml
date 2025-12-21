@@ -9,7 +9,7 @@
         <button class="avatar-container" open-type="chooseAvatar" bindchooseavatar="onChooseWeChatAvatar">
           <image 
             class="avatar-image {{isEditingNickname ? 'editable' : ''}}" 
-            src="{{userInfo.avatar_url || '/images/default-avatar.png'}}" 
+            src="{{userInfo.avatar_url || '/images/parrot-avatar-green.svg'}}" 
             mode="aspectFill"
           />
           <view class="avatar-edit-overlay" wx:if="{{isEditingNickname}}">
@@ -155,7 +155,7 @@
             <block wx:for="{{teamInfo.members}}" wx:key="id">
               <view class="member-card">
                 <view class="member-card-left">
-                  <image class="member-avatar-large" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+                  <image class="member-avatar-large" src="{{item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
                   <view class="member-info-group">
                     <view class="member-name-row">
                       <text class="member-name-large">{{item.nickname}}</text>
@@ -332,7 +332,10 @@
             <image class="menu-item-icon-img" src="{{item.iconSrc}}" mode="aspectFit" binderror="onMenuItemIconError" data-index="{{index}}" />
           </view>
           <view class="menu-item-content">
-            <view class="menu-item-title">{{item.title}}</view>
+            <view class="menu-item-title">
+              {{item.title}}
+              <view class="badge-free" wx:if="{{item.badge}}">{{item.badge}}</view>
+            </view>
             <view class="menu-item-desc">{{item.desc}}</view>
           </view>
           <view class="menu-item-badge" wx:if="{{item.title === '通知' && unreadCount > 0}}">{{unreadCount}}</view>

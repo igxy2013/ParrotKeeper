@@ -6,7 +6,7 @@
       <view class="card-content info-overview">
         <view class="info-left">
           <!-- 添加团队头像显示 -->
-          <image class="team-avatar" src="{{teamInfo.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+          <image class="team-avatar" src="{{teamInfo.avatar_url || '/images/remix/user-line.png'}}" mode="aspectFill" />
           <view class="info-text">
             <text class="info-name">{{teamInfo.name || '未命名团队'}}</text>
             <text class="info-desc">{{teamInfo.description || '暂无描述'}}</text>
@@ -50,7 +50,7 @@
       <view class="card-content">
         <block wx:if="{{members && members.length}}">
           <view class="member-item" wx:for="{{members}}" wx:key="id">
-            <image class="avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+            <image class="avatar" src="{{item.avatar_url || '/images/remix/user-line.png'}}" mode="aspectFill" />
             <view class="member-info">
               <text class="name">{{item.nickname || '未命名'}}</text>
               <text class="role">角色：{{item.role_display}}</text>

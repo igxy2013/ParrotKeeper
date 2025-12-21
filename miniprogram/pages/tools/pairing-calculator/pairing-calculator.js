@@ -218,8 +218,40 @@ Page({
       })
   },
 
+  canonicalizeColorName(species, name) {
+    const s = String(name || '').replace('（', '(').replace('）', ')').replace(/\s+/g, '')
+    if (species === '和尚鹦鹉') {
+      if (s.includes('蓝派特和尚')) return '派特蓝和尚'
+      if (s.includes('绿派特和尚')) return '派特绿和尚'
+      if (s.includes('派特和尚')) return '派特绿和尚'
+      if (s.includes('绿肉桂和尚')) return '肉桂绿和尚'
+      return s
+    } else if (species === '牡丹鹦鹉') {
+      if (s.includes('白面绿桃')) return '白面桃'
+      if (s.includes('蓝派特')) return '蓝派特'
+      return s
+    } else if (species === '小太阳鹦鹉') {
+      if (s.includes('派特')) return '派特小太阳'
+      return s
+    } else if (species === '虎皮鹦鹉' || species === 'Budgerigar') {
+      if (s.includes('白化虎皮')) return '白化虎皮'
+      if (s.includes('黄化虎皮')) return '黄化虎皮'
+      if (s.includes('蓝化虎皮')) return '蓝化虎皮'
+      return s
+    } else if (species === '玄凤鹦鹉' || species === 'Cockatiel') {
+      return s
+    }
+    return s
+  },
+
   normalizePriceMap(species, map) {
     const m = { ...(map || {}) }
+    const remapped = {}
+    Object.keys(m).forEach(k => {
+      const ck = this.canonicalizeColorName(species, k)
+      if (remapped[ck] == null) remapped[ck] = m[k]
+    })
+    Object.assign(m, remapped)
     if (species === '和尚鹦鹉') {
       const alias = {
         '深绿和尚': ['深绿和尚(1Dark)'],
@@ -227,7 +259,8 @@ Page({
         '钴蓝和尚': ['钴蓝和尚(蓝+1Dark)'],
         '紫罗兰和尚(双暗蓝)': ['紫罗兰和尚(蓝+2Dark)'],
         '派特绿和尚': ['派特和尚'],
-        '派特蓝和尚': ['蓝派特和尚']
+        '派特蓝和尚': ['蓝派特和尚'],
+        '肉桂绿和尚': ['绿肉桂和尚', '肉桂绿']
       }
       Object.keys(alias).forEach(canon => {
         const syns = alias[canon]
@@ -236,6 +269,33 @@ Page({
     } else if (species === '牡丹鹦鹉') {
       const alias = {
         '白面桃': ['白面绿桃']
+      }
+      Object.keys(alias).forEach(canon => {
+        const syns = alias[canon]
+        syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+      })
+    } else if (species === '小太阳鹦鹉') {
+      const alias = {
+        '派特小太阳': ['小太阳派特']
+      }
+      Object.keys(alias).forEach(canon => {
+        const syns = alias[canon]
+        syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+      })
+    } else if (species === '虎皮鹦鹉' || species === 'Budgerigar') {
+      const alias = {
+        '白化虎皮': ['Albino虎皮','白化'],
+        '黄化虎皮': ['Lutino虎皮','黄化'],
+        '蓝化虎皮': ['蓝基虎皮']
+      }
+      Object.keys(alias).forEach(canon => {
+        const syns = alias[canon]
+        syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+      })
+    } else if (species === '玄凤鹦鹉' || species === 'Cockatiel') {
+      const alias = {
+        '黄化玄凤': ['乳黄玄凤','黄化'],
+        '白面黄化玄凤': ['白面乳黄玄凤']
       }
       Object.keys(alias).forEach(canon => {
         const syns = alias[canon]
@@ -256,7 +316,7 @@ Page({
         '紫罗兰和尚(双暗蓝)': 2000,
         '黄和尚(Lutino)': 1800,
         '白和尚(Albino)': 2500,
-        '绿肉桂和尚': 1200,
+        '肉桂绿和尚': 1200,
         '银丝和尚': 1500,
         '蓝银丝和尚': 2000,
         '派特绿和尚': 1800,
@@ -345,7 +405,8 @@ Page({
       for (const fg of fGametes) {
         const z = this.combineGametes(config, mg, fg)
         const o = this.analyzeOffspring(config, z)
-        const price = o.sex === 'male' ? Number((pmM[o.name] != null ? pmM[o.name] : pm[o.name]) || 0) : Number((pmF[o.name] != null ? pmF[o.name] : pm[o.name]) || 0)
+        const cname = this.canonicalizeColorName(species, o.name)
+        const price = o.sex === 'male' ? Number((pmM[cname] != null ? pmM[cname] : pm[cname]) || 0) : Number((pmF[cname] != null ? pmF[cname] : pm[cname]) || 0)
         sum += price
         total += 1
       }
@@ -518,8 +579,8 @@ Page({
   buildGenotype(config, visualGenes, splitList, sex) {
     const genotype = {}
     for (const [key, gene] of Object.entries(config.loci)) {
-      const isVisual = visualGenes[key] ? visualGenes[key] : 0 
-      const isSplit = splitList.includes(key)
+      const isVisual = (visualGenes && visualGenes[key] != null) ? visualGenes[key] : 0 
+      const isSplit = Array.isArray(splitList) && splitList.includes(key)
       
       if (gene.type === 'autosomal') {
         if (gene.incomplete) {
@@ -654,7 +715,7 @@ Page({
        const isDilute = genes['dilute']
        const isCin = genes['cinnamon']
        const isOp = genes['opaline']
-       const isPied = genes['pied']
+      const isPied = genes['pied'] || genes['pat']
        
        if (isDilute && isTurq) {
           if (isOp && isCin) return 'Mooncheek(月光/蓝化凤梨稀释)'
@@ -738,7 +799,7 @@ Page({
       const isCinAus = genes['cinnamon_aus']
       const isEdged = genes['edged']
       const isSilver = genes['silver']
-      const isPied = genes['pied_dom']
+      const isPied = genes['pied_dom'] || genes['pied']
       const isFallow = genes['fallow']
 
       // 0. Fallow (澳闪)
@@ -812,8 +873,41 @@ Page({
 
       return color
     }
-    
-    return '未知品种'
+    else if (species === '虎皮鹦鹉' || species === 'Budgerigar') {
+      const isBlue = genes['blue']
+      const isOpaline = genes['opaline']
+      const isLutino = genes['lutino']
+      const isCin = genes['cinnamon']
+      const isPied = genes['pied']
+      let color = ''
+      if (isLutino && isBlue) return '白化虎皮'
+      if (isLutino) return '黄化虎皮'
+      if (isBlue) color = '蓝化虎皮'
+      else color = '绿基虎皮'
+      if (isOpaline) color = '欧泊' + color
+      if (isCin) color = '肉桂' + color
+      if (isPied) color = '派特' + color
+      return color
+    }
+    else if (species === '玄凤鹦鹉' || species === 'Cockatiel') {
+      const isWhiteface = genes['whiteface']
+      const isLutino = genes['lutino']
+      const isPearl = genes['pearl']
+      const isPied = genes['pied']
+      let base = isWhiteface ? '白面玄凤' : '灰玄凤'
+      if (isLutino) base = isWhiteface ? '白面黄化玄凤' : '黄化玄凤'
+      if (isPearl) base = '珍珠' + base
+      if (isPied) base = '派特' + base
+      return base
+    }
+    const labels = visuals.map(v => {
+      const g = config.loci[v.gene]
+      const n = g && g.label ? g.label : v.gene
+      if (g && g.incomplete) return v.count === 2 ? (n + '(双因子)') : (n + '(单因子)')
+      return n
+    })
+    if (!labels.length) return '野生型'
+    return labels.join('·')
   },
 
   aggregateResults(offsprings) {

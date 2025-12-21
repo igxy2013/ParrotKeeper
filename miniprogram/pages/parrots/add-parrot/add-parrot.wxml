@@ -12,7 +12,7 @@
           <view class="current-avatar" bindtap="showAvatarPicker">
             <image 
               class="avatar-preview" 
-              src="{{formData.avatar_url || '/images/default-parrot.png'}}" 
+              src="{{formData.avatar_url || '/images/parrot-avatar-green.svg'}}" 
               mode="aspectFit"
             />
             <text class="avatar-change-text">点击更换</text>

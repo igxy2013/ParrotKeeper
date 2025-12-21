@@ -59,7 +59,7 @@
       <block wx:if="{{!loading && users.length > 0}}">
         <view class="user-list">
           <view class="user-item" wx:for="{{users}}" wx:key="id">
-            <image class="avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+            <image class="avatar" src="{{item.avatar_url || '/images/remix/user-line.png'}}" mode="aspectFill"></image>
             <view class="info">
               <text class="name">{{item.nickname || item.username || ('用户' + item.id)}}</text>
               <text class="meta">积分: {{item.points || 0}}</text>

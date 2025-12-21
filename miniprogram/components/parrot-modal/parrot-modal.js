@@ -271,10 +271,10 @@ Component({
           return
         }
         // 最终兜底：使用通用默认图片，仅影响预览，不篡改 photo_url
-        const fallback = '/images/default-parrot.png'
+        const fallback = '/images/parrot-avatar-green.svg'
         this.setData({ 'form.photo_preview': fallback })
       } catch (_) {
-        this.setData({ 'form.photo_preview': '/images/default-parrot.png' })
+        this.setData({ 'form.photo_preview': '/images/parrot-avatar-green.svg' })
       }
     },
     deletePhoto() {

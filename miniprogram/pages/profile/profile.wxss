@@ -1926,6 +1926,30 @@
   justify-content: center;
   box-shadow: 0 4rpx 8rpx rgba(239, 68, 68, 0.25);
 }
+
+.menu-item-title { 
+  font-weight: 700; 
+  color: #111827; 
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+/* 免费徽章样式 */
+.badge-free {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 18rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 8rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  vertical-align: middle;
+  box-shadow: 0 2rpx 4rpx rgba(245, 158, 11, 0.3);
+}
+
 .arrow-icon { width: 32rpx; height: 32rpx; margin-left: auto; }
 
 /* 修复：button 作为菜单项时的默认样式与卡片不一致 */

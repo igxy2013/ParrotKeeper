@@ -132,16 +132,16 @@
         <text class="form-label required">各食物类型的食物量</text>
         <block wx:for="{{selectedFeedTypes}}" wx:key="id">
           <view class="form-item">
-            <text class="form-label">{{item.name}} ({{((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? 'ml' : 'g'}})</text>
+            <text class="form-label">{{item.name}} ({{item.unit || 'g'}})</text>
             <view 
               class="form-input input-view {{(formData.food_amounts && formData.food_amounts[item.id]) ? '' : 'placeholder'}}" 
               bindtap="showKeyboard" 
               data-field="food_amounts" 
               data-id="{{item.id}}"
-              data-title="{{item.name}}{{((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? '容量' : '重量'}}"
+              data-title="{{item.name}}{{(item.unit === 'ml') ? '容量' : '重量'}}"
               data-type="digit"
             >
-              {{(formData.food_amounts && formData.food_amounts[item.id]) || '请输入' + item.name + (((item.type === 'milk_powder' || item.type === 'supplement') && item.name.indexOf('坚果') === -1) ? '容量' : '重量')}}
+              {{(formData.food_amounts && formData.food_amounts[item.id]) || '请输入' + item.name + ((item.unit === 'ml') ? '容量' : '重量')}}
             </view>
           </view>
         </block>
@@ -429,7 +429,7 @@
         <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
           <view class="parrot-left">
             <view class="parrot-avatar">
-              <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFill" />
+              <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
             </view>
             <view class="parrot-info">
               <view class="name-section">
@@ -457,7 +457,7 @@
         <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
           <view class="parrot-left">
             <view class="parrot-avatar">
-              <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFill" />
+              <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
             </view>
             <view class="parrot-info">
               <view class="name-section">
@@ -609,7 +609,7 @@
           bindtap="selectMaleParrot"
         >
           <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFill" />
+            <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
           </view>
           <view class="parrot-info">
             <view class="name-section">
@@ -661,7 +661,7 @@
           bindtap="selectFemaleParrot"
         >
           <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" mode="aspectFill" />
+            <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
           </view>
           <view class="parrot-info">
             <view class="name-section">

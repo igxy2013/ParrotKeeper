@@ -109,7 +109,7 @@ Page({
       // 标题内图标
       myParrotsTitleHeart: '/images/remix/ri-heart-fill-green.png',
       // 默认占位图
-      defaultParrot: '/images/default-parrot.png',
+      defaultParrot: '/images/parrot-avatar-green.svg',
       logo: '/images/logo.png',
       // 快捷操作
       actions: {
@@ -1535,7 +1535,7 @@ Page({
                   code: loginRes.code,
                   userInfo: {
                     nickName: profileRes.userInfo.nickName,
-                    avatarUrl: '/images/default-avatar.png' // 使用默认头像
+                    avatarUrl: '/images/remix/user-line.png'
                   }
                 },
                 header: {
@@ -1549,7 +1549,7 @@ Page({
                     // 使用后端完整的用户信息，保留角色等字段；仅在缺失时回退默认头像
                     const userInfo = { ...responseUserInfo };
                     if (!userInfo.avatar_url) {
-                      userInfo.avatar_url = '/images/default-avatar.png';
+                      userInfo.avatar_url = '/images/remix/user-line.png';
                     }
                     
                     // 存储用户信息和openid
@@ -2124,21 +2124,29 @@ Page({
         return
       }
 
-      // 弹窗显示最新一条；若用户已关闭过该条公告，则不再弹出
-      const latest = list[0]
-      let dismissed = []
-      try { dismissed = wx.getStorageSync('dismissed_announcements') || [] } catch (_) {}
-      const shouldShowModal = !dismissed.includes(latest.id)
-      this.setData({ latestAnnouncement: latest, showAnnouncementModal: shouldShowModal })
-
-      // 通知注入（仅注入“今天发布”的公告），避免清缓存后历史公告回流
       const today = new Date()
       const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
-      const onlyToday = list.filter(a => {
-        const created = a.created_at || ''
+      const isToday = (a) => {
+        const created = a.created_at || a.published_at || a.scheduled_at || ''
         const d = String(created).includes('T') ? String(created).slice(0,10) : String(created).split(' ')[0]
         return d === todayStr
+      }
+      const forModal = list.filter(a => {
+        const statusOk = !a.status || a.status === 'published'
+        return statusOk && isToday(a)
       })
+
+      if (forModal.length === 0) {
+        this.setData({ latestAnnouncement: null, showAnnouncementModal: false })
+      } else {
+        const latest = forModal[0]
+        let dismissed = []
+        try { dismissed = wx.getStorageSync('dismissed_announcements') || [] } catch (_) {}
+        const shouldShowModal = !dismissed.includes(latest.id)
+        this.setData({ latestAnnouncement: latest, showAnnouncementModal: shouldShowModal })
+      }
+
+      const onlyToday = list.filter(isToday)
       let seen = []
       try { seen = wx.getStorageSync('seen_announcements') || [] } catch (_) {}
       const nm = app.globalData.notificationManager

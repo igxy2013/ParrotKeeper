@@ -105,7 +105,7 @@
         <view class="parrot-avatar">
           <image 
             class="parrot-image" 
-            src="{{item.photo_thumb || item.avatar_thumb || item.photo_url || item.avatar_url || '/images/default-parrot.png'}}" 
+            src="{{item.photo_thumb || item.avatar_thumb || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" 
             mode="aspectFill"
             binderror="handleImageError"
             data-id="{{item.id}}"

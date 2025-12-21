@@ -115,8 +115,11 @@ Page({
             const ft = record.feed_type || null;
             const t = ft && ft.type;
             const n = (ft && ft.name) || record.feed_type_name || '';
-            const unit = (String(n).indexOf('坚果') !== -1) ? 'g' : ((t === 'milk_powder' || t === 'supplement') ? 'ml' : 'g');
-            record.amountUnit = unit;
+            const s = String(n);
+            const isNut = s.indexOf('坚果') !== -1;
+            const byType = (t === 'milk_powder' || t === 'supplement');
+            const byName = (s.indexOf('奶粉') !== -1 || s.indexOf('保健品') !== -1 || s.indexOf('幼鸟奶粉') !== -1);
+            record.amountUnit = (!isNut && (byType || byName)) ? 'ml' : 'g';
           } catch (_) {
             record.amountUnit = 'g';
           }
@@ -250,7 +253,12 @@ Page({
         if (type === 'feeding') {
           const feedTypeName = item.feed_type_name || (item.feed_type && item.feed_type.name) || ''
           const amount = (item.amount !== undefined && item.amount !== null) ? item.amount : ''
-          const unit = (item.feed_type && (item.feed_type.type === 'milk_powder' || item.feed_type.type === 'supplement')) ? 'ml' : 'g'
+          const t = item.feed_type && item.feed_type.type
+          const s = String(feedTypeName)
+          const isNut = s.indexOf('坚果') !== -1
+          const byType = (t === 'milk_powder' || t === 'supplement')
+          const byName = (s.indexOf('奶粉') !== -1 || s.indexOf('保健品') !== -1 || s.indexOf('幼鸟奶粉') !== -1)
+          const unit = (!isNut && (byType || byName)) ? 'ml' : 'g'
           return { ...base, feedTypeName, amount, amountUnit: unit }
         } else if (type === 'cleaning') {
           const cleaningTypeText = item.cleaning_type_text || item.cleaning_type_name || item.cleaning_type || ''

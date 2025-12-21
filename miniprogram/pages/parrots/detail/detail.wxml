@@ -23,7 +23,7 @@
         <view class="parrot-avatar-wrapper">
           <image 
             class="parrot-avatar" 
-            src="{{parrot.photo_thumb || parrot.avatar_thumb || parrot.photo_url || parrot.avatar_url || '/images/default-parrot.png'}}" 
+            src="{{parrot.photo_thumb || parrot.avatar_thumb || parrot.photo_url || parrot.avatar_url || '/images/parrot-avatar-green.svg'}}" 
             mode="aspectFill"
             bindtap="previewPhoto"
             binderror="onPhotoError"

@@ -138,6 +138,27 @@ const app = getApp()
     })
   },
 
+  getAmountUnit: function(selectedFeedTypes) {
+    try {
+      if (Array.isArray(selectedFeedTypes) && selectedFeedTypes.length === 1) {
+        const f = selectedFeedTypes[0]
+        const name = typeof f.name === 'string' ? f.name : ''
+        if ((f.type === 'milk_powder' || f.type === 'supplement') && name.indexOf('坚果') === -1) {
+          return 'ml'
+        }
+      }
+    } catch (_) {}
+    return 'g'
+  },
+
+  resolveUnitByTypeName: function(type, name) {
+    const s = typeof name === 'string' ? name : ''
+    const isNut = s.indexOf('坚果') !== -1
+    const byType = (type === 'milk_powder' || type === 'supplement')
+    const byName = (s.indexOf('奶粉') !== -1 || s.indexOf('保健品') !== -1 || s.indexOf('幼鸟奶粉') !== -1)
+    return (!isNut && (byType || byName)) ? 'ml' : 'g'
+  },
+
   onLoad: async function(options) {
     // 解析列表页传入的预填ID（支持喂食和清洁记录）
     const prefillParrotIds = options.parrot_ids ? decodeURIComponent(String(options.parrot_ids)).split(',').map(x => parseInt(x)).filter(x => !isNaN(x)) : []
@@ -326,7 +347,7 @@ const app = getApp()
         const feedTypeIdsApplied = prefillFeedTypeIds && prefillFeedTypeIds.length ? prefillFeedTypeIds.slice() : this.data.formData.food_types
         const feedTypeListWithSelection = feedTypeList.map(f => {
           const selected = feedTypeIdsApplied.includes(f.id)
-          if (selected) selectedFeedTypes.push({ id: f.id, name: f.displayName, type: f.type })
+          if (selected) selectedFeedTypes.push({ id: f.id, name: f.displayName, type: f.type, unit: this.resolveUnitByTypeName(f.type, f.displayName) })
           return { ...f, selected }
         })
         const selectedFeedTypeNames = selectedFeedTypes.map(f => f.name).join('、')
@@ -552,7 +573,9 @@ const app = getApp()
           selectedParrots = [{ id: parseInt(parrotId), name: selectedParrotName }]
           selectedParrotNames = selectedParrotName
         }
-        const selectedFeedTypes = this.data.feedTypeList.filter(f => formData.food_types.includes(f.id)).map(f => ({ id: f.id, name: f.displayName || f.name, type: f.type }))
+        const selectedFeedTypes = this.data.feedTypeList
+          .filter(f => formData.food_types.includes(f.id))
+          .map(f => ({ id: f.id, name: f.displayName || f.name, type: f.type, unit: this.resolveUnitByTypeName(f.type, f.displayName || f.name) }))
         const selectedFeedTypeNames = selectedFeedTypes.map(f => f.name).join('、')
         
         // 同步列表项的选中状态，确保弹窗内显示勾选
@@ -896,7 +919,9 @@ const app = getApp()
       selectedFeedTypes.splice(index, 1)
     } else {
       const found = feedTypeList.find(f => f.id === id)
-      selectedFeedTypes.push({ id, name, type: found ? found.type : '' })
+      const type = found ? found.type : ''
+      const unit = this.resolveUnitByTypeName(type, name)
+      selectedFeedTypes.push({ id, name, type, unit })
     }
     
     // 更新列表选中状态

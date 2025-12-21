@@ -67,7 +67,7 @@ Page({
       { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.png' },
       { icon: '🥚', title: '人工孵化', desc: '记录孵化过程', bgClass: 'bg-purple', iconSrc: '/images/remix/information-line.png' },
       { icon: '⭐', title: '积分计划', desc: '查看积分规则', bgClass: 'bg-blue', iconSrc: '/images/remix/information-line.png' },
-      { icon: '🧮', title: '鹦鹉配对计算器', desc: '按羽色计算后代概率', bgClass: 'bg-indigo', iconSrc: '/images/remix/ri-pie-chart-2-fill-blue.png' },
+      { icon: '🧮', title: '鹦鹉配对计算器', desc: '按羽色计算后代概率', bgClass: 'bg-indigo', iconSrc: '/images/remix/ri-pie-chart-2-fill-blue.png', badge: '限时免费' },
       { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.png', isContact: true },
       { icon: '❓', title: '帮助反馈', desc: '提交问题与建议', bgClass: 'bg-amber', iconSrc: '/images/remix/feedback-line.png' },
       { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.png' },
