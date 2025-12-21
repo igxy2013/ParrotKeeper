@@ -141,7 +141,7 @@ Page({
         } else if (type === 'vegetable') {
           name = rec.feed_type.brand || '新鲜蔬菜';
         }
-        const unit = (String(name).indexOf('坚果') !== -1) ? 'g' : ((type === 'milk_powder' || type === 'supplement') ? 'ml' : 'g');
+        const unit = rec.feed_type.unit || 'g';
         food_types = [{ id: rec.feed_type.id, name, amount: rec.amount, unit, type }];
       } else if (rec.feed_type_name) {
         food_types = [{ id: rec.feed_type_id, name: rec.feed_type_name, amount: rec.amount, unit: 'g' }];

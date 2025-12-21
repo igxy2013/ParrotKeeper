@@ -153,6 +153,20 @@ def migrate_database():
                 """))
             else:
                 print("breeding_records 表已有 created_by_user_id 字段")
+            print("检查 feed_types 表的 unit 字段...")
+            result = db.session.execute(text("""
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'feed_types' 
+                AND COLUMN_NAME = 'unit'
+            """)).fetchone()
+            if not result:
+                print("为 feed_types 表添加 unit 字段...")
+                db.session.execute(text("""
+                    ALTER TABLE feed_types 
+                    ADD COLUMN unit ENUM('g','ml') DEFAULT 'g'
+                """))
             
             db.session.commit()
             print("MySQL数据库迁移完成！")

@@ -29,6 +29,19 @@ class User(db.Model):
     expenses = db.relationship('Expense', backref='user', lazy=True, cascade='all, delete-orphan')
     incomes = db.relationship('Income', backref='user', lazy=True, cascade='all, delete-orphan')
     reminders = db.relationship('Reminder', back_populates='user', lazy=True, cascade='all, delete-orphan')
+    transaction_categories_rel = db.relationship('TransactionCategory', backref='user', lazy=True)
+    feed_types_rel = db.relationship('FeedType', backref='user', lazy=True)
+
+class TransactionCategory(db.Model):
+    __tablename__ = 'transaction_categories'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Null for system default
+    type = db.Column(db.Enum('expense', 'income'), nullable=False)
+    name = db.Column(db.String(50), nullable=False)
+    icon = db.Column(db.String(50))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ParrotSpecies(db.Model):
     __tablename__ = 'parrot_species'
@@ -102,6 +115,8 @@ class FeedType(db.Model):
     type = db.Column(db.Enum('seed', 'pellet', 'fruit', 'vegetable', 'supplement', 'milk_powder'))
     nutrition_info = db.Column(db.Text)
     price = db.Column(db.Numeric(8, 2))
+    unit = db.Column(db.Enum('g', 'ml'), default='g')
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 关系
@@ -264,7 +279,7 @@ class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
-    category = db.Column(db.Enum('food', 'medical', 'toys', 'cage', 'baby_bird', 'breeding_bird', 'other'))
+    category = db.Column(db.String(50))
     amount = db.Column(db.Numeric(8, 2), nullable=False)
     description = db.Column(db.String(255))
     expense_date = db.Column(db.Date, default=date.today)
@@ -277,7 +292,7 @@ class Income(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     parrot_id = db.Column(db.Integer, db.ForeignKey('parrots.id'))
-    category = db.Column(db.Enum('breeding_sale', 'bird_sale', 'service', 'competition', 'other'))
+    category = db.Column(db.String(50))
     amount = db.Column(db.Numeric(8, 2), nullable=False)
     description = db.Column(db.String(255))
     income_date = db.Column(db.Date, default=date.today)

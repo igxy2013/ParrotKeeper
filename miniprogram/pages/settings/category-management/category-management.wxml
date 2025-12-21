@@ -1,0 +1,45 @@
+<view class="page-container">
+  <app-header title="收支类别管理" showBack="true"></app-header>
+  <view class="page-content">
+    <!-- Tabs -->
+    <view class="tabs">
+      <view class="tab {{activeTab === 'expense' ? 'active' : ''}}" bindtap="switchTab" data-type="expense">支出类别</view>
+      <view class="tab {{activeTab === 'income' ? 'active' : ''}}" bindtap="switchTab" data-type="income">收入类别</view>
+    </view>
+
+    <view class="category-list">
+      <block wx:for="{{categories}}" wx:key="id">
+        <view class="category-item">
+          <view class="category-info">
+            <text class="category-name">{{item.name}}</text>
+            <text class="category-tag" wx:if="{{!item.is_custom}}">系统默认</text>
+            <text class="category-tag custom" wx:else>自定义</text>
+          </view>
+          <view class="category-actions" wx:if="{{item.is_custom}}">
+            <view class="action-btn delete" bindtap="deleteCategory" data-id="{{item.id}}">删除</view>
+          </view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{categories.length === 0}}">暂无数据</view>
+    </view>
+
+    <view class="add-btn-wrapper">
+      <button class="add-btn" bindtap="showAddModal">添加新类别</button>
+    </view>
+  </view>
+
+  <!-- Add Modal -->
+  <view class="modal" wx:if="{{showModal}}">
+    <view class="modal-mask" bindtap="hideAddModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">添加{{activeTab === 'expense' ? '支出' : '收入'}}类别</view>
+      <view class="modal-body">
+        <input class="input" placeholder="请输入类别名称" value="{{newCategoryName}}" bindinput="onInputName" />
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" bindtap="hideAddModal">取消</button>
+        <button class="btn confirm" bindtap="addCategory">确定</button>
+      </view>
+    </view>
+  </view>
+</view>

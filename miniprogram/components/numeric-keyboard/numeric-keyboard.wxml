@@ -1,5 +1,13 @@
 <view class="keyboard-mask {{visible ? 'visible' : ''}}" bindtap="handleMaskTap" catchtouchmove="preventTouchMove"></view>
 <view class="keyboard-container {{visible ? 'visible' : ''}} safe-area-bottom" catchtouchmove="preventTouchMove">
+  <view class="keyboard-preview" wx:if="{{showPreview}}">
+    <view class="preview-title">{{title}}</view>
+    <view class="preview-value">
+      <block wx:if="{{value && value.length}}">{{value}}</block>
+      <block wx:else>0</block>
+    </view>
+    <view class="preview-clear" wx:if="{{showClear && value && value.length}}" hover-class="preview-clear-hover" bindtap="handleClear">清空</view>
+  </view>
   <view class="keyboard-grid">
     <view class="number-keys">
       <view class="key-row">
@@ -26,13 +34,13 @@
       </view>
     </view>
     
-    <view class="action-keys">
-      <view class="key-cell action-key delete-key" hover-class="action-hover" bindtap="handleDelete">
-        <text class="delete-text">←</text>
-      </view>
-      <view class="key-cell action-key done-key" hover-class="done-hover" bindtap="handleDone">
-        <text>完成</text>
-      </view>
+  <view class="action-keys">
+    <view class="key-cell action-key delete-key" hover-class="action-hover" bindtap="handleDelete">
+      <text class="delete-text">←</text>
     </view>
+    <view class="key-cell action-key done-key" hover-class="done-hover" bindtap="handleDone">
+      <text>完成</text>
+    </view>
+  </view>
   </view>
 </view>

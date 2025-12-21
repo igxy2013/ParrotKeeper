@@ -24,6 +24,7 @@ from routes.announcements import announcements_bp
 from routes.ai import ai_bp
 from routes.incubation import incubation_bp
 from routes.market import market_bp
+from routes.categories import categories_bp
 import os
 from utils import login_required, success_response, error_response
 from team_mode_utils import (
@@ -68,6 +69,7 @@ def create_app(config_name=None):
     app.register_blueprint(ai_bp)
     app.register_blueprint(incubation_bp)
     app.register_blueprint(market_bp)
+    app.register_blueprint(categories_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']
@@ -265,6 +267,21 @@ def init_db(app):
             except Exception:
                 pass
             print(f"添加 is_read 字段失败: {e}")
+
+        try:
+            # 为 feed_types 表添加 unit 字段（若不存在）
+            with db.engine.connect() as connection:
+                check = connection.execute(text("SHOW COLUMNS FROM feed_types LIKE 'unit'"))
+                exists = check.fetchone()
+                if not exists:
+                    connection.execute(text("ALTER TABLE feed_types ADD COLUMN unit ENUM('g','ml') DEFAULT 'g'"))
+                    print("已为 feed_types 添加 unit 字段")
+        except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            print(f"添加 feed_types.unit 字段失败: {e}")
 
         try:
             # 为 parrot_species 表添加 plumage_json 字段（若不存在）

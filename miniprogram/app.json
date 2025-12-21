@@ -62,7 +62,10 @@
       "root": "pages/settings",
       "pages": [
         "settings",
-        "feedback/feedback"
+        "feedback/feedback",
+        "category-management/category-management",
+        "feed-type-management/feed-type-management",
+        "notification-settings/notification-settings"
       ]
     },
     {

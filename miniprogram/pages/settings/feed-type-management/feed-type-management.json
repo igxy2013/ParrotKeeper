@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "食物类型管理",
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header",
+    "numeric-keyboard": "/components/numeric-keyboard/numeric-keyboard"
+  }
+}

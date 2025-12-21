@@ -1,0 +1,7 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "收支类别管理",
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  }
+}

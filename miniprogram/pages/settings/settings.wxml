@@ -12,7 +12,7 @@
     <view class="settings-actions">
       
       
-      <view class="setting-action-item">
+      <view class="setting-action-item" bindtap="goToNotificationSettings">
         <view class="setting-icon-wrapper">
           <view class="setting-icon notify-icon">🔔</view>
         </view>
@@ -20,158 +20,7 @@
           <view class="setting-name">通知设置</view>
           <view class="setting-desc">开启推送与提醒</view>
         </view>
-        <switch checked="{{notificationsEnabled}}" bindchange="toggleNotifications" />
-      </view>
-
-      <!-- 通知详细设置 -->
-      <view wx:if="{{notificationsEnabled}}" class="notification-details">
-        <view wx:if="{{!hasTemplateIds}}" class="setting-hint">未配置订阅模板ID，将仅支持本地提醒。</view>
-        <view class="setting-action-item">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">🍽️</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">喂食提醒</view>
-            <view class="setting-desc">定时提醒喂食时间</view>
-          </view>
-          <switch checked="{{feedingReminder}}" bindchange="toggleFeedingReminder" />
-        </view>
-
-        <!-- 喂食提醒时间选择器 -->
-        <view class="setting-action-item">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">⏰</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">喂食提醒时间</view>
-            <view class="setting-desc">选择每日提醒时间</view>
-          </view>
-          <picker mode="time" value="{{feedingReminderTime}}" bindchange="onFeedingTimeChange">
-            <view class="setting-arrow">{{feedingReminderTime || '选择时间'}}</view>
-          </picker>
-        </view>
-
-        <view class="setting-action-item">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">🏥</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">健康提醒</view>
-            <view class="setting-desc">体检和健康检查提醒</view>
-          </view>
-          <switch checked="{{healthReminder}}" bindchange="toggleHealthReminder" />
-        </view>
-
-        <view class="setting-action-item">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">⚙️</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">健康提醒类型</view>
-            <view class="setting-desc">选择默认开启的提醒类型</view>
-          </view>
-        </view>
-        <view class="notification-details">
-          <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">🐣</view></view>
-            <view class="setting-content"><view class="setting-name">雏鸟护理</view><view class="setting-desc">雏鸟0-45天护理提醒</view></view>
-            <switch checked="{{healthAlertPreferences.chick_care}}" bindchange="toggleHealthAlertType" data-key="chick_care" />
-          </view>
-          <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">🥚</view></view>
-            <view class="setting-content"><view class="setting-name">孵化建议</view><view class="setting-desc">温湿度、翻蛋、照蛋建议</view></view>
-            <switch checked="{{healthAlertPreferences.incubation_advice}}" bindchange="toggleHealthAlertType" data-key="incubation_advice" />
-          </view>
-          <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">⏱️</view></view>
-            <view class="setting-content"><view class="setting-name">喂食间隔异常</view><view class="setting-desc">长间隔提醒</view></view>
-            <switch checked="{{healthAlertPreferences.feeding_gap}}" bindchange="toggleHealthAlertType" data-key="feeding_gap" />
-          </view>
-          <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">📉</view></view>
-            <view class="setting-content"><view class="setting-name">喂食频次偏低</view><view class="setting-desc">频次异常提醒</view></view>
-            <switch checked="{{healthAlertPreferences.feeding_frequency_low}}" bindchange="toggleHealthAlertType" data-key="feeding_frequency_low" />
-          </view>
-          <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">⚖️</view></view>
-            <view class="setting-content"><view class="setting-name">体重下降</view><view class="setting-desc">体重趋势异常</view></view>
-            <switch checked="{{healthAlertPreferences.weight_decline}}" bindchange="toggleHealthAlertType" data-key="weight_decline" />
-          </view>
-          <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">📘</view></view>
-            <view class="setting-content"><view class="setting-name">通用护理主题</view><view class="setting-desc">每日轮换主题建议</view></view>
-            <switch checked="{{healthAlertPreferences.care_general_topic}}" bindchange="toggleHealthAlertType" data-key="care_general_topic" />
-          </view>
-        </view>
-
-        <view class="setting-action-item">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">🧹</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">清洁提醒</view>
-            <view class="setting-desc">笼子清洁和卫生提醒</view>
-          </view>
-          <switch checked="{{cleaningReminder}}" bindchange="toggleCleaningReminder" />
-        </view>
-
-        <!-- 清洁提醒时间选择器 -->
-        <view class="setting-action-item">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">⏰</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">清洁提醒时间</view>
-            <view class="setting-desc">选择每日提醒时间</view>
-          </view>
-          <picker mode="time" value="{{cleaningReminderTime}}" bindchange="onCleaningTimeChange">
-            <view class="setting-arrow">{{cleaningReminderTime || '选择时间'}}</view>
-          </picker>
-        </view>
-
-        <view class="setting-action-item">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">💊</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">用药提醒</view>
-            <view class="setting-desc">药物和保健品提醒</view>
-          </view>
-          <switch checked="{{medicationReminder}}" bindchange="toggleMedicationReminder" />
-        </view>
-
-        <view class="setting-action-item">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">🥚</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">繁殖提醒</view>
-            <view class="setting-desc">繁殖期和孵化提醒</view>
-          </view>
-          <switch checked="{{breedingReminder}}" bindchange="toggleBreedingReminder" />
-        </view>
-
-        <!-- 订阅权限与测试 -->
-        <view class="setting-action-item" bindtap="reapplySubscriptionPermissions">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon">🔑</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">订阅权限</view>
-            <view class="setting-desc">重新申请模板消息权限</view>
-          </view>
-          <view class="setting-arrow">></view>
-        </view>
-        <view class="setting-action-item" bindtap="sendTestNotification">
-          <view class="setting-icon-wrapper">
-            <view class="setting-icon test-icon">🧪</view>
-          </view>
-          <view class="setting-content">
-            <view class="setting-name">测试通知</view>
-            <view class="setting-desc">发送一条测试订阅消息</view>
-          </view>
-          <view class="setting-arrow">></view>
-        </view>
+        <view class="setting-arrow">></view>
       </view>
 
 
@@ -190,6 +39,36 @@
       </view>
       -->
 
+    </view>
+
+    <view class="section-title">
+      <text class="title-icon">📊</text>
+      <text>数据管理</text>
+    </view>
+    <view class="settings-actions">
+      <view class="setting-action-item" bindtap="goToCategoryManagement">
+        <view class="setting-icon-wrapper"><view class="setting-icon">💰</view></view>
+        <view class="setting-content">
+          <view class="setting-name">收支类别管理</view>
+          <view class="setting-desc">自定义收入与支出类别</view>
+        </view>
+        <view class="setting-arrow">></view>
+      </view>
+      <view class="setting-action-item" bindtap="goToFeedTypeManagement">
+        <view class="setting-icon-wrapper"><view class="setting-icon">🥣</view></view>
+        <view class="setting-content">
+          <view class="setting-name">食物类型管理</view>
+          <view class="setting-desc">自定义喂食食物类型</view>
+        </view>
+        <view class="setting-arrow">></view>
+      </view>
+    </view>
+
+    <view class="section-title">
+      <text class="title-icon">👤</text>
+      <text>账户</text>
+    </view>
+    <view class="settings-actions">
       <view class="setting-action-item logout-item" bindtap="handleLogout">
         <view class="setting-icon-wrapper">
           <view class="setting-icon logout-icon">🚪</view>
@@ -200,7 +79,7 @@
         </view>
         <view class="setting-arrow">></view>
       </view>
-  </view>
+    </view>
 
   </view>
 </view>

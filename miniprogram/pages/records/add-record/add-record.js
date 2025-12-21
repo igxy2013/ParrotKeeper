@@ -142,22 +142,13 @@ const app = getApp()
     try {
       if (Array.isArray(selectedFeedTypes) && selectedFeedTypes.length === 1) {
         const f = selectedFeedTypes[0]
-        const name = typeof f.name === 'string' ? f.name : ''
-        if ((f.type === 'milk_powder' || f.type === 'supplement') && name.indexOf('坚果') === -1) {
-          return 'ml'
-        }
+        if (f && f.unit) return f.unit
       }
     } catch (_) {}
     return 'g'
   },
 
-  resolveUnitByTypeName: function(type, name) {
-    const s = typeof name === 'string' ? name : ''
-    const isNut = s.indexOf('坚果') !== -1
-    const byType = (type === 'milk_powder' || type === 'supplement')
-    const byName = (s.indexOf('奶粉') !== -1 || s.indexOf('保健品') !== -1 || s.indexOf('幼鸟奶粉') !== -1)
-    return (!isNut && (byType || byName)) ? 'ml' : 'g'
-  },
+  resolveUnitByTypeName: function(type, name) { return 'g' },
 
   onLoad: async function(options) {
     // 解析列表页传入的预填ID（支持喂食和清洁记录）
@@ -337,7 +328,8 @@ const app = getApp()
           return {
             ...item,
             typeText: typeMap[item.type] || item.type,
-            displayName
+            displayName,
+            unit: item.unit || 'g'
           }
         })
         
@@ -347,7 +339,7 @@ const app = getApp()
         const feedTypeIdsApplied = prefillFeedTypeIds && prefillFeedTypeIds.length ? prefillFeedTypeIds.slice() : this.data.formData.food_types
         const feedTypeListWithSelection = feedTypeList.map(f => {
           const selected = feedTypeIdsApplied.includes(f.id)
-          if (selected) selectedFeedTypes.push({ id: f.id, name: f.displayName, type: f.type, unit: this.resolveUnitByTypeName(f.type, f.displayName) })
+          if (selected) selectedFeedTypes.push({ id: f.id, name: f.displayName, type: f.type, unit: f.unit || 'g' })
           return { ...f, selected }
         })
         const selectedFeedTypeNames = selectedFeedTypes.map(f => f.name).join('、')
@@ -656,7 +648,7 @@ const app = getApp()
           }))
         }
         
-        const amountUnit = selectedFeedTypes.length === 1 && (selectedFeedTypes[0].type === 'milk_powder' || selectedFeedTypes[0].type === 'supplement') ? 'ml' : 'g'
+        const amountUnit = this.getAmountUnit(selectedFeedTypes)
         this.setData({
           formData,
           selectedParrots,
@@ -920,7 +912,7 @@ const app = getApp()
     } else {
       const found = feedTypeList.find(f => f.id === id)
       const type = found ? found.type : ''
-      const unit = this.resolveUnitByTypeName(type, name)
+      const unit = found && found.unit ? found.unit : 'g'
       selectedFeedTypes.push({ id, name, type, unit })
     }
     

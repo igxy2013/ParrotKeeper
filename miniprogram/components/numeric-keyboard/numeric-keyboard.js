@@ -19,6 +19,14 @@ Component({
     title: {
       type: String,
       value: ''
+    },
+    showPreview: {
+      type: Boolean,
+      value: true
+    },
+    showClear: {
+      type: Boolean,
+      value: true
     }
   },
 
@@ -56,6 +64,10 @@ Component({
       if (!currentVal) return;
       const newValue = currentVal.slice(0, -1);
       this.triggerEvent('input', { value: newValue });
+    },
+
+    handleClear() {
+      this.triggerEvent('input', { value: '' });
     },
 
     handleDone() {

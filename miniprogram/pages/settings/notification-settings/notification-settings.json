@@ -1,0 +1,7 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "通知设置",
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  }
+}

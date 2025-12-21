@@ -5,7 +5,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.4);
-  z-index: 900;
+  z-index: 6000;
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease;
@@ -22,7 +22,7 @@
   left: 0;
   right: 0;
   background: #f0f2f5;
-  z-index: 901;
+  z-index: 6001;
   transform: translateY(100%);
   transition: transform 0.2s ease;
   padding-bottom: constant(safe-area-inset-bottom);
@@ -34,6 +34,42 @@
 
 .keyboard-container.visible {
   transform: translateY(0);
+}
+
+.keyboard-preview {
+  margin: 12rpx;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 16rpx 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2rpx 0 rgba(0, 0, 0, 0.05);
+}
+
+.preview-title {
+  font-size: 28rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.preview-value {
+  font-size: 48rpx;
+  font-weight: 500;
+  color: #333333;
+}
+
+.preview-clear {
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #f5f6f7;
+  color: #666666;
+  font-size: 24rpx;
+  border: 1rpx solid #e5e7eb;
+}
+
+.preview-clear-hover {
+  background: #e5e7eb;
 }
 
 .keyboard-grid {

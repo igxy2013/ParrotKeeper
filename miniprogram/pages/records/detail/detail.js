@@ -113,13 +113,7 @@ Page({
         if (type === 'feeding') {
           try {
             const ft = record.feed_type || null;
-            const t = ft && ft.type;
-            const n = (ft && ft.name) || record.feed_type_name || '';
-            const s = String(n);
-            const isNut = s.indexOf('坚果') !== -1;
-            const byType = (t === 'milk_powder' || t === 'supplement');
-            const byName = (s.indexOf('奶粉') !== -1 || s.indexOf('保健品') !== -1 || s.indexOf('幼鸟奶粉') !== -1);
-            record.amountUnit = (!isNut && (byType || byName)) ? 'ml' : 'g';
+            record.amountUnit = (ft && ft.unit) ? ft.unit : 'g';
           } catch (_) {
             record.amountUnit = 'g';
           }

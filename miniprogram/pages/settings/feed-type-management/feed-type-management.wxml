@@ -1,0 +1,90 @@
+<view class="page-container">
+  <app-header title="食物类型管理" showBack="true"></app-header>
+  <view class="page-content">
+    <view class="feed-list">
+      <block wx:for="{{feedTypes}}" wx:key="id">
+        <view class="feed-item">
+          <view class="feed-main">
+            <view class="feed-header">
+              <text class="feed-name">{{item.name}}</text>
+              <text class="feed-tag" wx:if="{{!item.is_custom}}">系统默认</text>
+              <text class="feed-tag custom" wx:else>自定义</text>
+            </view>
+          <view class="feed-details">
+            <text wx:if="{{item.brand}}">品牌: {{item.brand}}</text>
+            <text wx:if="{{item.type}}">类型: {{item.type}}</text>
+            <text wx:if="{{item.price}}">价格: ¥{{item.price}}</text>
+            <text wx:if="{{item.unit}}">单位: {{item.unit}}</text>
+          </view>
+        </view>
+        <view class="feed-actions" wx:if="{{item.is_custom}}">
+          <image class="action-icon" src="/images/remix/edit-line.png" mode="widthFix" bindtap="showEditModal" data-id="{{item.id}}"/>
+          <image class="action-icon" src="/images/remix/delete-bin-line-red.png" mode="widthFix" bindtap="deleteFeedType" data-id="{{item.id}}"/>
+        </view>
+      </view>
+      </block>
+      <view class="empty-tip" wx:if="{{feedTypes.length === 0}}">暂无数据</view>
+    </view>
+
+    <view class="add-btn-wrapper">
+      <button class="add-btn" bindtap="showAddModal">添加食物类型</button>
+    </view>
+  </view>
+
+  <!-- Add Modal -->
+  <view class="modal-overlay" wx:if="{{showModal}}" bindtap="hideAddModal"></view>
+  <view class="modal-content aligned" wx:if="{{showModal}}" catchtap="stopPropagation">
+    <view class="modal-header-gradient">
+      <view class="modal-header-row">
+        <text class="modal-title">{{isEditing ? '编辑食物类型' : '添加食物类型'}}</text>
+        <view class="modal-close-btn" bindtap="hideAddModal"><text class="modal-close-icon">✕</text></view>
+      </view>
+    </view>
+    <scroll-view scroll-y="true" class="modal-scroll">
+      <view class="form-section">
+        <view class="form-item">
+          <text class="form-label">名称 *</text>
+          <input class="text-input" placeholder="请输入食物名称" value="{{newFeed.name}}" bindinput="onInput" data-field="name" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">品牌</text>
+          <input class="text-input" placeholder="请输入品牌(选填)" value="{{newFeed.brand}}" bindinput="onInput" data-field="brand" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">类型</text>
+          <input class="text-input" placeholder="例如: 奶粉/滋养丸(选填)" value="{{newFeed.type}}" bindinput="onInput" data-field="type" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">价格</text>
+          <view class="text-input amount-display {{!newFeed.price ? 'placeholder' : ''}}" bindtap="openPriceKeyboard">
+            {{newFeed.price || '请输入价格'}}
+          </view>
+        </view>
+        <view class="form-item">
+          <text class="form-label">单位</text>
+          <view class="unit-switch-row">
+            <view class="unit-btn unit-g {{unitSelected==='g' ? 'active' : ''}}" bindtap="setUnit" data-unit="g">g</view>
+            <view class="unit-btn unit-ml {{unitSelected==='ml' ? 'active' : ''}}" bindtap="setUnit" data-unit="ml">ml</view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="modal-footer">
+      <button class="btn-secondary" bindtap="hideAddModal">取消</button>
+      <button class="btn-primary" bindtap="saveFeedType">确定</button>
+    </view>
+  </view>
+
+  <!-- 数字键盘 -->
+  <numeric-keyboard
+    visible="{{keyboardVisible}}"
+    value="{{keyboardValue}}"
+    maxLength="{{keyboardMaxLength}}"
+    maxDecimals="{{keyboardMaxDecimals}}"
+    title="{{keyboardTitle}}"
+    bind:input="onKeyboardInput"
+    bind:confirm="onKeyboardConfirm"
+    bind:close="closeKeyboard"
+    catchtap="stopPropagation"
+  />
+</view>
