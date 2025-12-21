@@ -5,7 +5,7 @@
     <view class="modal-header-gradient">
       <view class="modal-header-row">
         <text class="modal-title">{{isEdit ? '编辑收支记录' : '添加收支记录'}}</text>
-        <view class="modal-close-btn" bindtap="onClose"><image class="modal-close-icon-img" src="/images/icons/close-white.svg" mode="widthFix"/></view>
+        <view class="modal-close-btn" bindtap="onClose"><image class="modal-close-icon-img" src="/images/remix/close-line-white.png" mode="widthFix"/></view>
       </view>
     </view>
 
@@ -24,20 +24,19 @@
         <!-- 选择类别 -->
         <view class="form-item">
           <text class="form-label">{{formData.type}}类别</text>
-          <view class="picker-wrapper">
-            <picker mode="selector" range="{{categoryOptions}}" value="{{formData.categoryIndex}}" bindchange="onCategoryChange">
-              <view class="picker-display">
-                <text>{{categoryOptions[formData.categoryIndex] || '请选择类别'}}</text>
-                <image class="picker-arrow" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit" />
-              </view>
-            </picker>
-          </view>
+          <icon-text-selector 
+            options="{{categoryOptions}}" 
+            selected="{{formData.categoryValue}}" 
+            bind:change="onCategoryChange" 
+          />
         </view>
 
         <!-- 金额 -->
         <view class="form-item">
           <text class="form-label">{{formData.type}}金额</text>
-          <input class="text-input" type="digit" placeholder="请输入金额" value="{{formData.amount}}" bindinput="onAmountInput" />
+          <view class="text-input amount-display {{!formData.amount ? 'placeholder' : ''}}" bindtap="openKeyboard">
+            {{formData.amount || '请输入金额'}}
+          </view>
         </view>
 
         <!-- 描述 -->
@@ -65,4 +64,13 @@
       <button class="btn-add {{formData.type==='收入' ? 'btn-add-income' : 'btn-add-expense'}} {{!canSubmit ? 'btn-disabled' : ''}}" bindtap="onSubmit" disabled="{{!canSubmit}}">{{isEdit ? '保存' : '添加'}}</button>
     </view>
   </view>
+
+  <numeric-keyboard
+    visible="{{showKeyboard}}"
+    value="{{formData.amount}}"
+    bind:input="onKeyboardInput"
+    bind:confirm="onKeyboardConfirm"
+    bind:close="closeKeyboard"
+    catchtap="stopPropagation"
+  />
 </view>

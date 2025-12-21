@@ -30,16 +30,31 @@ Component({
   data: {
     formData: {
       type: '支出',
-      categoryIndex: 0,
+      categoryValue: 'food',
       amount: '',
       description: '',
       date: ''
     },
     categoryOptions: [],
     canSubmit: false,
-    // 类别标签列表
-    incomeCategoryLabels: ['繁殖销售','鸟类销售','服务收入','比赛奖金','其他收入'],
-    expenseCategoryLabels: ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
+    // 类别定义
+    incomeCategories: [
+      { label: '繁殖销售', value: 'breeding_sale', icon: '/images/remix/ri-shopping-bag-fill-blue.png' },
+      { label: '鸟类销售', value: 'bird_sale', icon: '/images/parrot-avatar-yellow.svg' },
+      { label: '服务收入', value: 'service', icon: '/images/remix/service-line.png' },
+      { label: '比赛奖金', value: 'competition', icon: '/images/remix/trophy-line-orange.png' },
+      { label: '其他收入', value: 'other', icon: '/images/remix/ri-information-fill-green.png' }
+    ],
+    expenseCategories: [
+      { label: '食物', value: 'food', icon: '/images/remix/ri-restaurant-fill-orange.png' },
+      { label: '医疗', value: 'medical', icon: '/images/remix/ri-nurse-line-purple.png' },
+      { label: '玩具', value: 'toys', icon: '/images/remix/ri-heart-fill-red.png' },
+      { label: '笼具', value: 'cage', icon: '/images/remix/ri-home-5-fill-green.png' },
+      { label: '幼鸟', value: 'baby_bird', icon: '/images/parrot-avatar-yellow.svg' },
+      { label: '种鸟', value: 'breeding_bird', icon: '/images/parrot-avatar-green.svg' },
+      { label: '其他', value: 'other', icon: '/images/remix/ri-information-fill-amber.png' }
+    ],
+    showKeyboard: false
   },
 
   observers: {
@@ -75,12 +90,12 @@ Component({
       const dateStr = `${yyyy}-${mm}-${dd}`
 
       // 初始化类别选项为支出类别
-      const categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
+      const categoryOptions = this.data.expenseCategories
 
       this.setData({
         formData: {
           type: '支出',
-          categoryIndex: 0,
+          categoryValue: 'food',
           amount: '',
           description: '',
           date: dateStr
@@ -93,42 +108,26 @@ Component({
     // 初始化编辑表单
     initFormWithEditData(editRecord) {
       let categoryOptions = []
-      let categoryIndex = 0
+      let categoryValue = ''
       
       if (editRecord.type === '收入') {
-        categoryOptions = this.data.incomeCategoryLabels || ['繁殖销售','鸟类销售','服务收入','比赛奖金','其他收入']
-        // 根据category找到对应的index
-        const categoryMap = {
-          'bird_sale': '鸟类销售',
-          'service': '服务收入',
-          'breeding_sale': '繁殖销售',
-          'competition': '比赛奖金',
-          'other': '其他收入'
-        }
-        const categoryLabel = categoryMap[editRecord.category] || editRecord.category
-        categoryIndex = categoryOptions.indexOf(categoryLabel)
-        if (categoryIndex === -1) categoryIndex = 0
+        categoryOptions = this.data.incomeCategories
+        categoryValue = editRecord.category
       } else {
-        categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
-        // 根据category找到对应的index
-        const categoryMap = {
-          'food': '食物',
-          'medical': '医疗',
-          'toys': '玩具',
-          'cage': '笼具',
-          'baby_bird': '幼鸟',
-          'breeding_bird': '种鸟',
-          'other': '其他'
-        }
-        const categoryLabel = categoryMap[editRecord.category] || editRecord.category
-        categoryIndex = categoryOptions.indexOf(categoryLabel)
-        if (categoryIndex === -1) categoryIndex = 0
+        categoryOptions = this.data.expenseCategories
+        categoryValue = editRecord.category
+      }
+
+      // 如果找不到对应的category，默认选中第一个
+      const found = categoryOptions.find(opt => opt.value === categoryValue)
+      if (!found && categoryOptions.length > 0) {
+        categoryValue = categoryOptions[0].value
       }
 
       this.setData({
         formData: {
           type: editRecord.type || '支出',
-          categoryIndex: categoryIndex,
+          categoryValue: categoryValue,
           amount: editRecord.amount ? editRecord.amount.toString() : '',
           description: editRecord.description || '',
           date: editRecord.date || ''
@@ -142,43 +141,50 @@ Component({
     setExpenseType(e) {
       const type = e.currentTarget.dataset.type
       let categoryOptions = []
+      let defaultCategoryValue = ''
+
       if (type === '收入') {
-        categoryOptions = this.data.incomeCategoryLabels || ['繁殖销售','鸟类销售','服务收入','比赛奖金','其他收入']
+        categoryOptions = this.data.incomeCategories
+        defaultCategoryValue = categoryOptions[0].value
       } else {
-        categoryOptions = this.data.expenseCategoryLabels || ['食物','医疗','玩具','笼具','幼鸟','种鸟','其他']
+        categoryOptions = this.data.expenseCategories
+        defaultCategoryValue = categoryOptions[0].value
       }
       this.setData({
         'formData.type': type,
         categoryOptions,
-        'formData.categoryIndex': 0
+        'formData.categoryValue': defaultCategoryValue
       })
       this.updateCanSubmit()
     },
 
     // 选择类别
     onCategoryChange(e) {
-      const idx = Number(e.detail.value)
-      this.setData({ 'formData.categoryIndex': idx })
+      const { value } = e.detail
+      this.setData({ 'formData.categoryValue': value })
       this.updateCanSubmit()
     },
 
-    // 金额输入
-    onAmountInput(e) {
-      let value = e.detail.value
-      // 只允许数字和小数点
-      value = value.replace(/[^\d.]/g, '')
-      // 只允许一个小数点
-      const parts = value.split('.')
-      if (parts.length > 2) {
-        value = parts[0] + '.' + parts.slice(1).join('')
-      }
-      // 限制小数位数为2位
-      if (parts[1] && parts[1].length > 2) {
-        value = parts[0] + '.' + parts[1].substring(0, 2)
-      }
-      
+    // 打开键盘
+    openKeyboard() {
+      this.setData({ showKeyboard: true })
+    },
+
+    // 关闭键盘
+    closeKeyboard() {
+      this.setData({ showKeyboard: false })
+    },
+
+    // 键盘输入
+    onKeyboardInput(e) {
+      const { value } = e.detail
       this.setData({ 'formData.amount': value })
       this.updateCanSubmit()
+    },
+
+    // 键盘确认
+    onKeyboardConfirm(e) {
+      this.setData({ showKeyboard: false })
     },
 
     // 描述输入
@@ -195,7 +201,7 @@ Component({
     // 更新提交可用态
     updateCanSubmit() {
       const f = this.data.formData || {}
-      const ok = !!(f.amount && Number(f.amount) > 0 && this.data.categoryOptions && this.data.categoryOptions.length > 0)
+      const ok = !!(f.amount && Number(f.amount) > 0 && f.categoryValue)
       this.setData({ canSubmit: ok })
     },
 
@@ -221,8 +227,9 @@ Component({
         app.showError('请输入有效金额')
         return
       }
-      const categoryLabel = (this.data.categoryOptions || [])[f.categoryIndex] || ''
-      if (!categoryLabel) {
+      
+      const categoryValue = f.categoryValue
+      if (!categoryValue) {
         app.showError('请选择类别')
         return
       }
@@ -232,21 +239,6 @@ Component({
       let method = 'POST'
       
       if (f.type === '收入') {
-        // 收入类别映射到后端值
-        const incomeMap = {
-          '鸟类销售': 'bird_sale',
-          '服务收入': 'service',
-          '繁殖销售': 'breeding_sale',
-          '比赛奖金': 'competition',
-          '其他收入': 'other',
-          '其他': 'other'
-        }
-        const categoryValue = incomeMap[categoryLabel]
-        if (!categoryValue) {
-          app.showError('不支持的收入类别')
-          return
-        }
-        
         // 组装收入payload
         payload = {
           category: categoryValue,
@@ -265,22 +257,6 @@ Component({
           method = 'POST'
         }
       } else {
-        // 支出类别映射到后端值
-        const expenseMap = {
-          '食物': 'food',
-          '医疗': 'medical',
-          '玩具': 'toys',
-          '笼具': 'cage',
-          '幼鸟': 'baby_bird',
-          '种鸟': 'breeding_bird',
-          '其他': 'other'
-        }
-        const categoryValue = expenseMap[categoryLabel]
-        if (!categoryValue) {
-          app.showError('不支持的支出类别')
-          return
-        }
-
         // 组装支出payload
         payload = {
           category: categoryValue,

@@ -1,4 +1,7 @@
 {
   "component": true,
-  "usingComponents": {}
+  "usingComponents": {
+    "icon-text-selector": "../icon-text-selector/icon-text-selector",
+    "numeric-keyboard": "../numeric-keyboard/numeric-keyboard"
+  }
 }

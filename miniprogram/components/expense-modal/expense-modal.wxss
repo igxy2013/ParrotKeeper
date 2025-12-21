@@ -97,6 +97,16 @@
   background: #ffffff;
 }
 
+.amount-display {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.amount-display.placeholder {
+  color: #808080; /* Placeholder color similar to default input placeholder */
+}
+
 /* 描述输入框特殊样式 */
 .text-input.description-input {
   height: 160rpx;

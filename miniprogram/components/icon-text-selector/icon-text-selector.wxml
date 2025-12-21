@@ -1,0 +1,17 @@
+<!-- components/icon-text-selector/icon-text-selector.wxml -->
+<view class="selector-container">
+  <view class="grid-layout">
+    <view 
+      wx:for="{{options}}" 
+      wx:key="value" 
+      class="grid-item {{selected === item.value ? 'active' : ''}}"
+      bindtap="onSelect"
+      data-value="{{item.value}}"
+    >
+      <view class="icon-wrapper">
+        <image class="item-icon" src="{{item.icon}}" mode="aspectFit" />
+      </view>
+      <text class="item-text">{{item.label}}</text>
+    </view>
+  </view>
+</view>
