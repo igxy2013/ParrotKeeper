@@ -5,7 +5,24 @@ Page({
     activeTab: 'expense',
     categories: [],
     showModal: false,
-    newCategoryName: ''
+    newCategoryName: '',
+    // 类别图标映射
+    incomeCategoryIcons: {
+      'breeding_sale': '/images/remix/ri-shopping-bag-fill-blue.png',
+      'bird_sale': '/images/parrot-avatar-yellow.svg',
+      'service': '/images/remix/service-line.png',
+      'competition': '/images/remix/trophy-line-orange.png',
+      'other': '/images/remix/ri-information-fill-green.png'
+    },
+    expenseCategoryIcons: {
+      'food': '/images/remix/ri-restaurant-fill-orange.png',
+      'medical': '/images/remix/ri-nurse-line-purple.png',
+      'toys': '/images/remix/ri-heart-fill-red.png',
+      'cage': '/images/remix/ri-home-5-fill-green.png',
+      'baby_bird': '/images/parrot-avatar-yellow.svg',
+      'breeding_bird': '/images/parrot-avatar-green.svg',
+      'other': '/images/remix/ri-information-fill-amber.png'
+    }
   },
 
   onLoad() {
@@ -26,8 +43,17 @@ Page({
     }).then((res) => {
       if (res && res.success) {
         const list = (res.data || []).map(item => {
+          const originalName = item.name // 保存原始名称（英文）
           if (!item.is_custom) {
             item.name = this.translateSystemCategory(item.name)
+            // 使用原始名称（英文）获取图标
+            const iconMap = this.data.activeTab === 'expense' 
+              ? this.data.expenseCategoryIcons 
+              : this.data.incomeCategoryIcons
+            item.icon = iconMap[originalName] || '/images/remix/ri-information-fill-amber.png'
+          } else {
+            // 自定义类别使用默认图标
+            item.icon = '/images/remix/ri-information-fill-amber.png'
           }
           return item
         })
@@ -52,6 +78,10 @@ Page({
 
   hideAddModal() {
     this.setData({ showModal: false })
+  },
+
+  stopPropagation() {
+    // 阻止事件冒泡，防止点击弹窗内容时关闭弹窗
   },
 
   onInputName(e) {

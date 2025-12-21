@@ -1,35 +1,332 @@
-.page-container { min-height: 100vh; background: #f8f9ff; }
-.page-content { padding: 20rpx; padding-bottom: 120rpx; }
+/* 页面容器 */
+.page-container { 
+  min-height: 100vh; 
+  background: linear-gradient(180deg, #f8f9ff 0%, #f0f2ff 50%, #e8ecff 100%);
+}
 
-.tabs { display: flex; background: #fff; border-radius: 16rpx; margin-bottom: 20rpx; padding: 8rpx; }
-.tab { flex: 1; text-align: center; padding: 20rpx; font-size: 28rpx; border-radius: 12rpx; color: #666; transition: all 0.3s; }
-.tab.active { background: #4CAF50; color: #fff; font-weight: bold; }
+.page-content { 
+  padding: 20rpx; 
+  padding-bottom: 120rpx; 
+}
 
-.category-list { background: #fff; border-radius: 16rpx; padding: 0 20rpx; }
-.category-item { display: flex; justify-content: space-between; align-items: center; padding: 30rpx 0; border-bottom: 1rpx solid #f0f0f0; }
-.category-item:last-child { border-bottom: none; }
+/* Tabs切换样式 */
+.tabs { 
+  display: flex; 
+  background: #ffffff; 
+  border-radius: 24rpx; 
+  margin-bottom: 24rpx; 
+  padding: 8rpx; 
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
+}
 
-.category-info { display: flex; align-items: center; gap: 16rpx; }
-.category-name { font-size: 30rpx; color: #333; }
-.category-tag { font-size: 20rpx; padding: 4rpx 12rpx; border-radius: 8rpx; background: #f0f0f0; color: #999; }
-.category-tag.custom { background: #e8f5e9; color: #4CAF50; }
+.tab { 
+  flex: 1; 
+  text-align: center; 
+  padding: 24rpx 20rpx; 
+  font-size: 28rpx; 
+  border-radius: 16rpx; 
+  color: #666666; 
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
 
-.action-btn { font-size: 26rpx; color: #ff4d4f; padding: 10rpx 20rpx; }
+.tab.active { 
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%); 
+  color: #ffffff; 
+  font-weight: 600;
+  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
+}
 
-.add-btn-wrapper { margin-top: 40rpx; padding: 0 20rpx; }
-.add-btn { background: #4CAF50; color: #fff; border-radius: 40rpx; }
+/* 类别列表样式 - 5列网格布局 */
+.category-list { 
+  background: #ffffff; 
+  border-radius: 24rpx; 
+  padding: 24rpx; 
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
 
-.empty-tip { text-align: center; color: #999; padding: 40rpx; font-size: 28rpx; }
+.category-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -10rpx;
+}
 
-/* Modal */
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; display: flex; justify-content: center; align-items: center; }
-.modal-mask { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-.modal-content { position: relative; width: 80%; background: #fff; border-radius: 24rpx; overflow: hidden; z-index: 101; }
-.modal-header { padding: 30rpx; text-align: center; font-size: 32rpx; font-weight: bold; border-bottom: 1rpx solid #eee; }
-.modal-body { padding: 40rpx; }
-.input { border: 1rpx solid #ddd; padding: 16rpx; border-radius: 8rpx; font-size: 28rpx; height: 80rpx; }
-.modal-footer { display: flex; border-top: 1rpx solid #eee; }
-.btn { flex: 1; border: none; background: #fff; border-radius: 0; padding: 24rpx 0; font-size: 30rpx; }
-.btn::after { border: none; }
-.btn.cancel { color: #666; border-right: 1rpx solid #eee; }
-.btn.confirm { color: #4CAF50; font-weight: bold; }
+.category-grid-item {
+  width: 20%; /* 5 items per row */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 32rpx;
+  padding: 0 10rpx;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.category-icon-wrapper {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.category-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.category-name {
+  font-size: 24rpx;
+  color: #666666;
+  text-align: center;
+  line-height: 1.2;
+  margin-bottom: 4rpx;
+  word-break: break-all;
+}
+
+.category-tag {
+  font-size: 20rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 8rpx;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: 4rpx;
+}
+
+/* 操作按钮 */
+.category-actions {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  z-index: 10;
+}
+
+.action-btn { 
+  font-size: 20rpx; 
+  color: #ffffff; 
+  padding: 4rpx 10rpx; 
+  border-radius: 12rpx;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2rpx 8rpx rgba(239, 68, 68, 0.3);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn.delete:active {
+  transform: scale(0.9);
+  box-shadow: 0 1rpx 4rpx rgba(239, 68, 68, 0.4);
+}
+
+/* 添加按钮 */
+.add-btn-wrapper { 
+  margin-top: 40rpx; 
+  padding: 0 20rpx; 
+}
+
+.add-btn { 
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%); 
+  color: #ffffff; 
+  border-radius: 40rpx; 
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.3);
+  border: none;
+  padding: 24rpx 0;
+}
+
+.add-btn::after {
+  border: none;
+}
+
+.add-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(76, 175, 80, 0.4);
+}
+
+/* 空状态 */
+.empty-tip { 
+  text-align: center; 
+  color: #999999; 
+  padding: 80rpx 40rpx; 
+  font-size: 28rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  opacity: 0.5;
+}
+
+.empty-text {
+  color: #9ca3af;
+}
+
+/* 弹窗样式 */
+.modal { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  z-index: 9999; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+}
+
+.modal-mask { 
+  position: absolute; 
+  width: 100%; 
+  height: 100%; 
+  background: rgba(0, 0, 0, 0.5); 
+  backdrop-filter: blur(8rpx);
+}
+
+.modal-content { 
+  position: relative; 
+  width: 90%; 
+  max-width: 600rpx;
+  background: #ffffff; 
+  border-radius: 48rpx; 
+  overflow: hidden; 
+  z-index: 10000;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.18);
+}
+
+/* 弹窗头部渐变区域 */
+.modal-header-gradient {
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  padding: 24rpx 32rpx;
+  position: relative;
+}
+
+.modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  color: #ffffff;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.modal-close-btn {
+  width: 56rpx;
+  height: 56rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10rpx);
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+}
+
+.modal-close-icon-img { 
+  width: 32rpx; 
+  height: 32rpx; 
+}
+
+/* 弹窗主体 */
+.modal-body {
+  padding: 0;
+}
+
+.form-section {
+  padding: 32rpx;
+}
+
+.form-item {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  color: #374151;
+  font-size: 26rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.text-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 24rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+  height: 88rpx;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.text-input:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+/* 弹窗底部 */
+.modal-footer { 
+  display: flex; 
+  gap: 12rpx;
+  padding: 20rpx 28rpx; 
+  border-top: 2rpx solid #f3f4f6; 
+  background: #f9fafb;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 18rpx 24rpx;
+  border-radius: 28rpx;
+  font-size: 26rpx;
+  background: #e5e7eb;
+  color: #374151;
+  border: none;
+  font-weight: 500;
+}
+
+.btn-secondary::after {
+  border: none;
+}
+
+.btn-secondary:active {
+  background: #d1d5db;
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  flex: 1;
+  padding: 18rpx 24rpx;
+  border-radius: 28rpx;
+  font-size: 26rpx;
+  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(76, 175, 80, 0.4);
+}

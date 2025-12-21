@@ -10,7 +10,6 @@ Page({
       name: '',
       brand: '',
       type: '',
-      price: '',
       unit: 'g'
     },
     typeOptions: [
@@ -23,12 +22,7 @@ Page({
     ],
     selectedTypeLabel: '',
     unitIsGram: true,
-    unitSelected: 'g',
-    keyboardVisible: false,
-    keyboardValue: '',
-    keyboardMaxLength: 10,
-    keyboardMaxDecimals: 2,
-    keyboardTitle: '请输入价格'
+    unitSelected: 'g'
   },
 
   onLoad() {
@@ -41,7 +35,19 @@ Page({
       method: 'GET'
     }).then((res) => {
       if (res && res.success) {
-        this.setData({ feedTypes: res.data })
+        const list = (res.data || []).map(item => {
+          // 转换类型为中文
+          if (item.type) {
+            const typeOption = this.data.typeOptions.find(opt => opt.value === item.type)
+            if (typeOption) {
+              item.typeLabel = typeOption.label
+            } else {
+              item.typeLabel = item.type
+            }
+          }
+          return item
+        })
+        this.setData({ feedTypes: list })
       }
     })
   },
@@ -51,12 +57,10 @@ Page({
       showModal: true,
       isEditing: false,
       editingId: null,
-      newFeed: { name: '', brand: '', type: '', price: '', unit: 'g' },
+      newFeed: { name: '', brand: '', type: '', unit: 'g' },
       selectedTypeLabel: '',
       unitIsGram: true,
-      unitSelected: 'g',
-      keyboardVisible: false,
-      keyboardValue: ''
+      unitSelected: 'g'
     })
   },
 
@@ -85,33 +89,8 @@ Page({
     this.setData({ unitSelected: val, 'newFeed.unit': val, unitIsGram: val === 'g' })
   },
 
-  openPriceKeyboard() {
-    const value = this.data.newFeed.price || ''
-    this.setData({
-      keyboardVisible: true,
-      keyboardValue: String(value || ''),
-      keyboardMaxLength: 10,
-      keyboardMaxDecimals: 2,
-      keyboardTitle: '请输入价格'
-    })
-  },
-
-  onKeyboardInput(e) {
-    const val = String((e && e.detail && e.detail.value) || '')
-    this.setData({ 'newFeed.price': val, keyboardValue: val })
-  },
-
-  onKeyboardConfirm() {
-    this.setData({ keyboardVisible: false })
-    this.saveFeedType()
-  },
-
-  closeKeyboard() {
-    this.setData({ keyboardVisible: false })
-  },
-
   saveFeedType() {
-    const { name, brand, type, price } = this.data.newFeed
+    const { name, brand, type } = this.data.newFeed
     if (!name.trim()) {
       wx.showToast({ title: '请输入名称', icon: 'none' })
       return
@@ -120,7 +99,6 @@ Page({
       name,
       brand,
       type,
-      price: price ? parseFloat(price) : null,
       unit: this.data.newFeed.unit || (this.data.unitIsGram ? 'g' : 'ml')
     }
     if (this.data.isEditing && this.data.editingId) {
@@ -168,14 +146,11 @@ Page({
         name: item.name || '',
         brand: item.brand || '',
         type: item.type || '',
-        price: item.price != null ? String(item.price) : '',
         unit
       },
       selectedTypeLabel: (typeOpt && typeOpt.label) || '',
       unitIsGram: unit === 'g',
-      unitSelected: unit,
-      keyboardVisible: false,
-      keyboardValue: ''
+      unitSelected: unit
     })
   },
 

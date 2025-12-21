@@ -62,9 +62,9 @@
 .grid-item .icon-wrapper { opacity: 1; }
 .grid-item.active .icon-wrapper { opacity: 1; }
 .grid-item.active { transform: scale(1.05); }
-.icon-wrapper { width: 88rpx; height: 88rpx; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; margin-bottom: 12rpx; border: 2rpx solid transparent; transition: all 0.2s ease; }
+.icon-wrapper { width: 120rpx; height: 120rpx; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; margin-bottom: 12rpx; border: 2rpx solid transparent; transition: all 0.2s ease; }
 .grid-item.active .icon-wrapper { background: #ecfdf5; border-color: #10b981; }
-.item-icon { width: 48rpx; height: 48rpx; }
+.item-icon { width: 72rpx; height: 72rpx; }
 .item-text { font-size: 24rpx; color: #666; text-align: center; line-height: 1.2; transition: color 0.2s ease; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .grid-item.active .item-text { color: #10b981; font-weight: 500; }
 

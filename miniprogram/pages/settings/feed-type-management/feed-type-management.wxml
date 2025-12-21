@@ -12,8 +12,7 @@
             </view>
           <view class="feed-details">
             <text wx:if="{{item.brand}}">品牌: {{item.brand}}</text>
-            <text wx:if="{{item.type}}">类型: {{item.type}}</text>
-            <text wx:if="{{item.price}}">价格: ¥{{item.price}}</text>
+            <text wx:if="{{item.typeLabel}}">类型: {{item.typeLabel}}</text>
             <text wx:if="{{item.unit}}">单位: {{item.unit}}</text>
           </view>
         </view>
@@ -23,7 +22,10 @@
         </view>
       </view>
       </block>
-      <view class="empty-tip" wx:if="{{feedTypes.length === 0}}">暂无数据</view>
+      <view class="empty-tip" wx:if="{{feedTypes.length === 0}}">
+        <text class="empty-icon">🍽️</text>
+        <text class="empty-text">暂无数据</text>
+      </view>
     </view>
 
     <view class="add-btn-wrapper">
@@ -37,7 +39,9 @@
     <view class="modal-header-gradient">
       <view class="modal-header-row">
         <text class="modal-title">{{isEditing ? '编辑食物类型' : '添加食物类型'}}</text>
-        <view class="modal-close-btn" bindtap="hideAddModal"><text class="modal-close-icon">✕</text></view>
+        <view class="modal-close-btn" bindtap="hideAddModal">
+          <image class="modal-close-icon-img" src="/images/remix/close-line-white.png" mode="widthFix"/>
+        </view>
       </view>
     </view>
     <scroll-view scroll-y="true" class="modal-scroll">
@@ -59,12 +63,6 @@
           </picker>
         </view>
         <view class="form-item">
-          <text class="form-label">价格</text>
-          <view class="text-input amount-display {{!newFeed.price ? 'placeholder' : ''}}" bindtap="openPriceKeyboard">
-            {{newFeed.price || '请输入价格'}}
-          </view>
-        </view>
-        <view class="form-item">
           <text class="form-label">单位</text>
           <view class="unit-switch-row">
             <view class="unit-btn unit-g {{unitSelected==='g' ? 'active' : ''}}" bindtap="setUnit" data-unit="g">g</view>
@@ -79,18 +77,4 @@
     </view>
   </view>
 
-  <!-- 数字键盘 -->
-  <numeric-keyboard
-    visible="{{keyboardVisible}}"
-    value="{{keyboardValue}}"
-    maxLength="{{keyboardMaxLength}}"
-    maxDecimals="{{keyboardMaxDecimals}}"
-    title="{{keyboardTitle}}"
-    bind:input="onKeyboardInput"
-    bind:confirm="onKeyboardConfirm"
-    bind:save="onKeyboardConfirm"
-    bind:close="closeKeyboard"
-    saveButtonText="确定"
-    catchtap="stopPropagation"
-  />
 </view>

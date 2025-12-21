@@ -8,19 +8,24 @@
     </view>
 
     <view class="category-list">
-      <block wx:for="{{categories}}" wx:key="id">
-        <view class="category-item">
-          <view class="category-info">
+      <view class="category-grid">
+        <block wx:for="{{categories}}" wx:key="id">
+          <view class="category-grid-item">
+            <view class="category-icon-wrapper">
+              <image class="category-icon" src="{{item.icon}}" mode="aspectFit" />
+              <view class="category-actions" wx:if="{{item.is_custom}}">
+                <view class="action-btn delete" bindtap="deleteCategory" data-id="{{item.id}}">删除</view>
+              </view>
+            </view>
             <text class="category-name">{{item.name}}</text>
-            <text class="category-tag" wx:if="{{!item.is_custom}}">系统默认</text>
-            <text class="category-tag custom" wx:else>自定义</text>
+            <text class="category-tag" wx:if="{{!item.is_custom}}">系统</text>
           </view>
-          <view class="category-actions" wx:if="{{item.is_custom}}">
-            <view class="action-btn delete" bindtap="deleteCategory" data-id="{{item.id}}">删除</view>
-          </view>
-        </view>
-      </block>
-      <view class="empty-tip" wx:if="{{categories.length === 0}}">暂无数据</view>
+        </block>
+      </view>
+      <view class="empty-tip" wx:if="{{categories.length === 0}}">
+        <text class="empty-icon">📋</text>
+        <text class="empty-text">暂无数据</text>
+      </view>
     </view>
 
     <view class="add-btn-wrapper">
@@ -29,16 +34,39 @@
   </view>
 
   <!-- Add Modal -->
-  <view class="modal" wx:if="{{showModal}}">
+  <view class="modal" wx:if="{{showModal}}" catchtouchmove="true">
     <view class="modal-mask" bindtap="hideAddModal"></view>
-    <view class="modal-content">
-      <view class="modal-header">添加{{activeTab === 'expense' ? '支出' : '收入'}}类别</view>
-      <view class="modal-body">
-        <input class="input" placeholder="请输入类别名称" value="{{newCategoryName}}" bindinput="onInputName" />
+    <view class="modal-content" catchtap="stopPropagation">
+      <!-- 渐变头部与关闭按钮 -->
+      <view class="modal-header-gradient">
+        <view class="modal-header-row">
+          <text class="modal-title">添加{{activeTab === 'expense' ? '支出' : '收入'}}类别</text>
+          <view class="modal-close-btn" bindtap="hideAddModal">
+            <image class="modal-close-icon-img" src="/images/remix/close-line-white.png" mode="widthFix"/>
+          </view>
+        </view>
       </view>
+      
+      <!-- 弹窗主体内容 -->
+      <view class="modal-body">
+        <view class="form-section">
+          <view class="form-item">
+            <text class="form-label">类别名称</text>
+            <input 
+              class="text-input" 
+              placeholder="请输入类别名称" 
+              value="{{newCategoryName}}" 
+              bindinput="onInputName"
+              maxlength="20"
+            />
+          </view>
+        </view>
+      </view>
+      
+      <!-- 底部按钮 -->
       <view class="modal-footer">
-        <button class="btn cancel" bindtap="hideAddModal">取消</button>
-        <button class="btn confirm" bindtap="addCategory">确定</button>
+        <button class="btn-secondary" bindtap="hideAddModal">取消</button>
+        <button class="btn-primary" bindtap="addCategory">确定</button>
       </view>
     </view>
   </view>
