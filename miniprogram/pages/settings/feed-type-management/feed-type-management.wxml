@@ -52,7 +52,11 @@
         </view>
         <view class="form-item">
           <text class="form-label">类型</text>
-          <input class="text-input" placeholder="例如: 奶粉/滋养丸(选填)" value="{{newFeed.type}}" bindinput="onInput" data-field="type" />
+          <picker mode="selector" range="{{typeOptions}}" range-key="label" bindchange="onTypeChange">
+            <view class="text-input amount-display {{selectedTypeLabel ? '' : 'placeholder'}}">
+              {{selectedTypeLabel || '请选择类型'}}
+            </view>
+          </picker>
         </view>
         <view class="form-item">
           <text class="form-label">价格</text>
@@ -84,7 +88,9 @@
     title="{{keyboardTitle}}"
     bind:input="onKeyboardInput"
     bind:confirm="onKeyboardConfirm"
+    bind:save="onKeyboardConfirm"
     bind:close="closeKeyboard"
+    saveButtonText="确定"
     catchtap="stopPropagation"
   />
 </view>

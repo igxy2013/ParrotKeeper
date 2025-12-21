@@ -13,6 +13,15 @@ Page({
       price: '',
       unit: 'g'
     },
+    typeOptions: [
+      { value: 'seed', label: '种子' },
+      { value: 'pellet', label: '颗粒' },
+      { value: 'fruit', label: '水果' },
+      { value: 'vegetable', label: '蔬菜' },
+      { value: 'supplement', label: '保健品' },
+      { value: 'milk_powder', label: '奶粉' }
+    ],
+    selectedTypeLabel: '',
     unitIsGram: true,
     unitSelected: 'g',
     keyboardVisible: false,
@@ -43,6 +52,7 @@ Page({
       isEditing: false,
       editingId: null,
       newFeed: { name: '', brand: '', type: '', price: '', unit: 'g' },
+      selectedTypeLabel: '',
       unitIsGram: true,
       unitSelected: 'g',
       keyboardVisible: false,
@@ -93,6 +103,7 @@ Page({
 
   onKeyboardConfirm() {
     this.setData({ keyboardVisible: false })
+    this.saveFeedType()
   },
 
   closeKeyboard() {
@@ -148,6 +159,7 @@ Page({
     const item = (this.data.feedTypes || []).find(ft => String(ft.id) === String(id))
     if (!item) return
     const unit = item.unit === 'ml' ? 'ml' : 'g'
+    const typeOpt = (this.data.typeOptions || []).find(o => o.value === (item.type || ''))
     this.setData({
       showModal: true,
       isEditing: true,
@@ -159,10 +171,27 @@ Page({
         price: item.price != null ? String(item.price) : '',
         unit
       },
+      selectedTypeLabel: (typeOpt && typeOpt.label) || '',
       unitIsGram: unit === 'g',
       unitSelected: unit,
       keyboardVisible: false,
       keyboardValue: ''
+    })
+  },
+
+  onTypeChange(e) {
+    const idx = Number((e && e.detail && e.detail.value) || 0)
+    const opts = this.data.typeOptions || []
+    const opt = opts[idx]
+    if (!opt) return
+    const shouldMl = opt.value === 'milk_powder' || opt.value === 'supplement'
+    const nextUnit = shouldMl ? 'ml' : (this.data.newFeed.unit || 'g')
+    this.setData({
+      'newFeed.type': opt.value,
+      selectedTypeLabel: opt.label,
+      'newFeed.unit': nextUnit,
+      unitSelected: nextUnit,
+      unitIsGram: nextUnit === 'g'
     })
   },
 

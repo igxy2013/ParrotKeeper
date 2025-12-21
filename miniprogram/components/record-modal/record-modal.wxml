@@ -1,0 +1,472 @@
+<view wx:if="{{visible}}" class="modal-overlay" catchtouchmove="preventTouchMove" bindtap="onOverlayClose">
+  <view class="modal-content" catchtap="stopPropagation">
+    <!-- 渐变头部 -->
+    <view class="modal-header-gradient" style="background: {{themeColorMap[recordType] || '#FF9F1C'}}">
+      <view class="modal-header-row">
+        <text class="modal-title">{{(recordId ? '编辑' : '添加') + (recordType === 'feeding' ? '喂食' : recordType === 'cleaning' ? '清洁' : recordType === 'health' ? '健康' : recordType === 'breeding' ? '繁殖' : '') + '记录'}}</text>
+        <view class="modal-close-btn" bindtap="onClose">
+            <image class="modal-close-icon-img" src="/images/remix/close-line-white.png" mode="widthFix"/>
+        </view>
+      </view>
+    </view>
+
+    <scroll-view scroll-y="true" class="modal-scroll">
+      <view class="form-content">
+        <!-- 记录类型 -->
+        <view class="form-section">
+          <view class="section-title">记录类型</view>
+          
+          <view class="type-selector">
+            <!-- 动态滑块 -->
+            <view class="type-cursor {{recordType}}" style="left: {{recordType === 'feeding' ? '2%' : recordType === 'cleaning' ? '27%' : recordType === 'health' ? '52%' : '77%'}}"></view>
+            
+            <view 
+              class="type-item {{recordType === 'feeding' ? 'active' : ''}}"
+              bindtap="selectType"
+              data-type="feeding"
+            >
+              <image class="type-icon-img" src="/images/remix/ri-restaurant-fill-orange.png" mode="aspectFit"></image>
+              <text class="type-text">喂食</text>
+            </view>
+            <view 
+              class="type-item {{recordType === 'cleaning' ? 'active' : ''}}"
+              bindtap="selectType"
+              data-type="cleaning"
+            >
+              <image class="type-icon-img" src="/images/remix/ri-calendar-fill-blue.png" mode="aspectFit"></image>
+              <text class="type-text">清洁</text>
+            </view>
+            <view 
+              class="type-item {{recordType === 'health' ? 'active' : ''}}"
+              bindtap="selectType"
+              data-type="health"
+            >
+              <image class="type-icon-img" src="/images/remix/ri-heart-fill-purple.png" mode="aspectFit"></image>
+              <text class="type-text">健康</text>
+            </view>
+            <view 
+              class="type-item {{recordType === 'breeding' ? 'active' : ''}}"
+              bindtap="selectType"
+              data-type="breeding"
+            >
+              <image class="type-icon-img" src="/images/remix/ri-book-fill-green.png" mode="aspectFit"></image>
+              <text class="type-text">繁殖</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 基本信息 -->
+        <view class="form-section">
+          <view class="section-title">基本信息</view>
+          
+          <view class="form-item">
+            <text class="form-label required">选择鹦鹉</text>
+            <view class="form-picker" bindtap="showParrotPicker">
+              <text class="picker-text {{formData.parrot_ids.length > 0 ? '' : 'placeholder'}}">
+                {{selectedParrotNames || (recordType === 'health' ? '请选择鹦鹉（单选）' : '请选择鹦鹉（可多选）')}}
+              </text>
+              <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
+            </view>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label required">记录时间</text>
+            <view class="datetime-picker">
+              <picker 
+                mode="date" 
+                value="{{formData.record_date}}" 
+                bindchange="onDateChange"
+                end="{{today}}"
+              >
+                <view class="picker-item">
+                  <text class="picker-text {{formData.record_date ? '' : 'placeholder'}}">
+                    {{formData.record_date || '选择日期'}}
+                  </text>
+                </view>
+              </picker>
+              <picker 
+                mode="time" 
+                value="{{formData.record_time}}" 
+                bindchange="onTimeChange"
+              >
+                <view class="picker-item">
+                  <text class="picker-text {{formData.record_time ? '' : 'placeholder'}}">
+                    {{formData.record_time || '选择时间'}}
+                  </text>
+                  <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
+                </view>
+              </picker>
+            </view>
+          </view>
+        </view>
+
+        <!-- 喂食记录特有字段 -->
+        <view class="form-section" wx:if="{{recordType === 'feeding'}}">
+          <view class="section-title">
+            <image class="section-icon" src="/images/remix/ri-restaurant-fill-orange.png" />
+            <text>喂食详情</text>
+          </view>
+            
+            <view class="form-item">
+              <text class="form-label required">食物类型</text>
+              <view class="form-picker" bindtap="showFeedTypePicker">
+                <text class="picker-text {{selectedFeedTypeNames ? '' : 'placeholder'}}">
+                  {{selectedFeedTypeNames || '选择食物类型（可多选）'}}
+                </text>
+                <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
+              </view>
+            </view>
+          
+          <!-- 当选择 0 或 1 个食物类型时，使用单个食物量输入 -->
+          <view class="form-item" wx:if="{{formData.food_types.length <= 1}}">
+            <text class="form-label required">食物量 ({{amountUnit}})</text>
+            <view 
+              class="form-input input-view {{formData.amount ? '' : 'placeholder'}}" 
+              bindtap="showKeyboard" 
+              data-field="amount" 
+              data-title="食物{{amountUnit === 'ml' ? '容量' : '重量'}}"
+              data-type="digit"
+            >
+              {{formData.amount || '请输入食物' + (amountUnit === 'ml' ? '容量' : '重量')}}
+            </view>
+          </view>
+
+          <!-- 当选择多个食物类型时，分别展示每个类型的食物量输入 -->
+          <view class="form-item" wx:if="{{formData.food_types.length > 1}}">
+            <text class="form-label required">各食物类型的食物量</text>
+            <block wx:for="{{selectedFeedTypes}}" wx:key="id">
+              <view class="form-item">
+                <text class="form-label">{{item.name}} ({{item.unit || 'g'}})</text>
+                <view 
+                  class="form-input input-view {{(formData.food_amounts && formData.food_amounts[item.id]) ? '' : 'placeholder'}}" 
+                  bindtap="showKeyboard" 
+                  data-field="food_amounts" 
+                  data-id="{{item.id}}"
+                  data-title="{{item.name}}{{(item.unit === 'ml') ? '容量' : '重量'}}"
+                  data-type="digit"
+                >
+                  {{(formData.food_amounts && formData.food_amounts[item.id]) || '请输入' + item.name + ((item.unit === 'ml') ? '容量' : '重量')}}
+                </view>
+              </view>
+            </block>
+          </view>
+        </view>
+
+        <!-- 清洁记录特有字段 -->
+        <view class="form-section" wx:if="{{recordType === 'cleaning'}}">
+          <view class="section-title">
+            <image class="section-icon" src="/images/remix/ri-calendar-fill-blue.png" />
+            <text>清洁详情</text>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label required">清洁类型</text>
+            <view class="form-picker" bindtap="showCleaningTypePicker">
+              <text class="picker-text {{selectedCleaningTypeNames ? '' : 'placeholder'}}">
+                {{selectedCleaningTypeNames || '请选择清洁类型'}}
+              </text>
+              <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
+            </view>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label">清洁描述</text>
+            <block wx:if="{{!showCleaningTypeModal && !showFeedTypeModal && !showParrotModal && !showMaleParrotModal && !showFemaleParrotModal && !showHealthStatusModal && !keyboardVisible}}">
+              <textarea 
+                class="form-textarea" 
+                placeholder="请输入清洁的详细描述" 
+                value="{{formData.description}}"
+                bindinput="onInputChange"
+                data-field="description"
+                maxlength="500"
+              />
+            </block>
+            <view wx:else class="form-textarea" style="color: {{formData.description ? '#111827' : '#9ca3af'}};">
+              {{formData.description || '请输入清洁的详细描述'}}
+            </view>
+          </view>
+        </view>
+
+        <!-- 健康检查特有字段 -->
+        <view class="form-section" wx:if="{{recordType === 'health'}}">
+          <view class="section-title">
+            <image class="section-icon" src="/images/remix/ri-heart-fill-purple.png" />
+            <text>健康详情</text>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label required">健康状态</text>
+            <view class="form-picker" bindtap="showHealthStatusPicker">
+              <text class="picker-text {{formData.health_status ? '' : 'placeholder'}}">
+                {{healthStatusText || '请选择健康状态'}}
+              </text>
+              <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
+            </view>
+          </view>
+
+          <view class="form-item">
+            <text class="form-label">体重 (g)</text>
+            <view 
+              class="form-input input-view {{formData.weight ? '' : 'placeholder'}}" 
+              bindtap="showKeyboard" 
+              data-field="weight" 
+              data-title="当前体重"
+              data-type="digit"
+            >
+              {{formData.weight || '请输入当前体重'}}
+            </view>
+          </view>
+        </view>
+
+        <!-- 繁殖记录特有字段 -->
+        <view class="form-section" wx:if="{{recordType === 'breeding'}}">
+          <view class="section-title">
+            <image class="section-icon" src="/images/remix/ri-book-fill-green.png" />
+            <text>繁殖详情</text>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label required">交配日期</text>
+            <picker 
+              mode="date" 
+              value="{{formData.mating_date}}" 
+              bindchange="onMatingDateChange"
+              end="{{today}}"
+            >
+              <view class="picker-item">
+                <text class="picker-text {{formData.mating_date ? '' : 'placeholder'}}">
+                  {{formData.mating_date || '选择交配日期'}}
+                </text>
+              </view>
+            </picker>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label">产蛋日期</text>
+            <picker 
+              mode="date" 
+              value="{{formData.egg_laying_date}}" 
+              bindchange="onEggLayingDateChange"
+              end="{{today}}"
+            >
+              <view class="picker-item">
+                <text class="picker-text {{formData.egg_laying_date ? '' : 'placeholder'}}">
+                  {{formData.egg_laying_date || '选择产蛋日期'}}
+                </text>
+              </view>
+            </picker>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label">蛋数量</text>
+            <view 
+              class="form-input input-view {{formData.egg_count ? '' : 'placeholder'}}" 
+              bindtap="showKeyboard" 
+              data-field="egg_count" 
+              data-title="蛋的数量"
+              data-type="integer"
+            >
+              {{formData.egg_count || '请输入蛋的数量'}}
+            </view>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label">孵化日期</text>
+            <picker 
+              mode="date" 
+              value="{{formData.hatching_date}}" 
+              bindchange="onHatchingDateChange"
+              end="{{today}}"
+            >
+              <view class="picker-item">
+                <text class="picker-text {{formData.hatching_date ? '' : 'placeholder'}}">
+                  {{formData.hatching_date || '选择孵化日期'}}
+                </text>
+              </view>
+            </picker>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label">幼鸟数量</text>
+            <view 
+              class="form-input input-view {{formData.chick_count ? '' : 'placeholder'}}" 
+              bindtap="showKeyboard" 
+              data-field="chick_count" 
+              data-title="幼鸟数量"
+              data-type="integer"
+            >
+              {{formData.chick_count || '请输入成功孵化的幼鸟数量'}}
+            </view>
+          </view>
+          
+          <view class="form-item">
+            <text class="form-label">成功率 (%)</text>
+            <view 
+              class="form-input input-view {{formData.success_rate ? '' : 'placeholder'}}" 
+              bindtap="showKeyboard" 
+              data-field="success_rate" 
+              data-title="繁殖成功率"
+              data-type="digit"
+            >
+              {{formData.success_rate || '请输入繁殖成功率'}}
+            </view>
+          </view>
+        </view>
+
+        <!-- 照片上传 -->
+        <view class="form-section">
+          <view class="section-title">
+            <image class="section-icon" src="/images/remix/ri-camera-fill-pink.png" />
+            <text>记录照片 (可选)</text>
+          </view>
+          
+          <view class="photo-upload">
+            <view class="photo-list" wx:if="{{formData.photos.length > 0}}">
+              <view 
+                class="photo-item" 
+                wx:for="{{formData.photos}}" 
+                wx:key="*this"
+              >
+                <image 
+                  class="photo-image" 
+                  src="{{item}}" 
+                  mode="aspectFill"
+                  bindtap="previewPhoto"
+                  data-url="{{item}}"
+                />
+                <view 
+                  class="photo-delete" 
+                  bindtap="deletePhoto"
+                  data-index="{{index}}"
+                >
+                  <image class="photo-delete-icon" src="/images/remix/delete-bin-line-gray.png" mode="aspectFit"></image>
+                </view>
+              </view>
+              
+              <view 
+                class="add-photo-btn" 
+                wx:if="{{formData.photos.length < 3}}"
+                bindtap="choosePhoto"
+              >
+                <image class="add-photo-icon" src="/images/remix/ri-add-fill-emerald.png" mode="aspectFit"></image>
+              </view>
+            </view>
+            
+            <view class="upload-area" wx:else bindtap="choosePhoto">
+              <image class="upload-icon-img" src="/images/remix/ri-camera-line-gray.png" mode="aspectFit"></image>
+              <text class="upload-text">添加照片</text>
+              <text class="upload-tip">最多可添加3张照片</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 备注信息 -->
+        <view class="form-section">
+          <view class="section-title">备注信息</view>
+          
+          <view class="form-item">
+            <text class="form-label">备注</text>
+            <block wx:if="{{!showCleaningTypeModal && !showFeedTypeModal && !showParrotModal && !showMaleParrotModal && !showFemaleParrotModal && !showHealthStatusModal && !keyboardVisible}}">
+              <textarea 
+                class="form-textarea" 
+                placeholder="请输入备注信息（可选）" 
+                value="{{formData.notes}}"
+                bindinput="onInputChange"
+                data-field="notes"
+                maxlength="500"
+                show-confirm-bar="{{false}}"
+              />
+            </block>
+            <view wx:else class="form-textarea" style="color: {{formData.notes ? '#111827' : '#9ca3af'}};">
+              {{formData.notes || '请输入备注信息（可选）'}}
+            </view>
+            <view class="char-count">{{formData.notes.length}}/500</view>
+          </view>
+        </view>
+        
+        <!-- Bottom spacing -->
+        <view style="height: 120rpx;"></view>
+      </view>
+    </scroll-view>
+
+    <!-- 提交按钮 -->
+    <view class="modal-footer">
+      <button class="btn btn-secondary" bindtap="onClose">取消</button>
+      <button 
+        class="btn btn-primary {{submitting ? 'loading' : ''}}" 
+        bindtap="submitForm"
+        disabled="{{!canSubmit || submitting}}"
+        style="background: {{themeColorMap[recordType] || '#FF9F1C'}}"
+      >
+        {{submitting ? '保存中...' : '保存记录'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 鹦鹉选择弹窗（通用选择器） -->
+  <bottom-icon-selector
+    visible="{{showParrotModal}}"
+    title="选择鹦鹉"
+    multiple="{{recordType !== 'health'}}"
+    options="{{parrotOptions}}"
+    selected="{{(formData.parrot_ids[0] || '') + ''}}"
+    selectedValues="{{formData.parrot_ids}}"
+    confirmButton="{{recordType !== 'health'}}"
+    bind:change="onParrotSelectorChange"
+    bind:confirm="confirmParrotSelection"
+    bind:close="hideParrotPicker"
+  />
+
+  <!-- 清洁类型选择器（通用选择器） -->
+  <bottom-icon-selector
+    visible="{{showCleaningTypeModal}}"
+    title="选择清洁类型"
+    multiple="{{true}}"
+    options="{{cleaningTypeOptions}}"
+    selectedValues="{{formData.cleaning_types}}"
+    confirmButton="{{true}}"
+    bind:change="onCleaningTypeSelectorChange"
+    bind:confirm="confirmCleaningTypeSelection"
+    bind:close="hideCleaningTypePicker"
+  />
+
+  <!-- 食物类型选择器（通用选择器） -->
+  <bottom-icon-selector
+    visible="{{showFeedTypeModal}}"
+    title="选择食物类型"
+    multiple="{{true}}"
+    options="{{feedTypeOptions}}"
+    selectedValues="{{formData.food_types}}"
+    confirmButton="{{true}}"
+    bind:change="onFeedTypesSelectorChange"
+    bind:confirm="confirmFeedTypeSelection"
+    bind:close="hideFeedTypePicker"
+  />
+
+  <!-- 健康状态选择器（通用选择器） -->
+  <bottom-icon-selector
+    visible="{{showHealthStatusModal}}"
+    title="选择健康状态"
+    multiple="{{false}}"
+    options="{{healthStatusOptions}}"
+    selected="{{formData.health_status}}"
+    confirmButton="{{false}}"
+    bind:change="onHealthStatusSelectorChange"
+    bind:close="hideHealthStatusPicker"
+  />
+
+
+  <numeric-keyboard
+    visible="{{keyboardVisible}}"
+    value="{{keyboardValue}}"
+    maxLength="{{keyboardMaxLength}}"
+    maxDecimals="{{keyboardMaxDecimals}}"
+    title="{{keyboardTitle}}"
+    bind:input="onKeyboardInput"
+    bind:confirm="onKeyboardConfirm"
+    bind:close="onKeyboardClose"
+    bind:save="onKeyboardSave"
+    saveButtonText="{{submitting ? '保存中...' : '保存记录'}}"
+    saveDisabled="{{!canSubmit || submitting}}"
+  />
+</view>

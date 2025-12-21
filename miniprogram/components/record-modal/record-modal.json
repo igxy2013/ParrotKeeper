@@ -1,0 +1,7 @@
+{
+  "component": true,
+  "usingComponents": {
+    "numeric-keyboard": "/components/numeric-keyboard/numeric-keyboard",
+    "bottom-icon-selector": "/components/bottom-icon-selector/bottom-icon-selector"
+  }
+}
