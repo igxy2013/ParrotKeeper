@@ -1,0 +1,48 @@
+<wxs module="utils">
+var isSelected = function(multiple, selected, selectedValues, itemValue) {
+  var valStr = '' + itemValue;
+  if (multiple) {
+    if (!selectedValues || selectedValues.length === 0) return false;
+    for (var i = 0; i < selectedValues.length; i++) {
+      if (('' + selectedValues[i]) === valStr) {
+        return true;
+      }
+    }
+    return false;
+  } else {
+    return ('' + selected) === valStr;
+  }
+}
+module.exports = {
+  isSelected: isSelected
+};
+</wxs>
+
+<view wx:if="{{visible}}" class="selector-overlay" catchtouchmove="true" bindtap="onOverlayTap">
+  <view class="selector-content" catchtap="stopPropagation">
+    <view class="selector-header">
+      <text class="selector-title">{{title}}</text>
+      <view class="selector-close" bindtap="onClose">×</view>
+    </view>
+    <scroll-view scroll-y="true" class="selector-body">
+  <view class="grid-layout">
+    <view
+      wx:for="{{options}}"
+      wx:key="value"
+      class="grid-item {{utils.isSelected(multiple, selected, selectedValues, item.value) ? 'active' : ''}}"
+      style="width: {{100 / columns}}%"
+      bindtap="onSelect"
+      data-value="{{item.value}}"
+    >
+      <view class="icon-wrapper">
+        <image class="item-icon" src="{{item.icon}}" mode="aspectFit" />
+      </view>
+      <text class="item-text">{{item.label}}</text>
+    </view>
+  </view>
+    </scroll-view>
+    <view class="selector-footer" wx:if="{{confirmButton}}">
+      <button class="confirm-btn" bindtap="onConfirm">{{confirmText}}</button>
+    </view>
+  </view>
+</view>

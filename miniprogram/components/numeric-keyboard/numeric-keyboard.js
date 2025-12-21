@@ -27,6 +27,18 @@ Component({
     showClear: {
       type: Boolean,
       value: true
+    },
+    saveButtonText: {
+      type: String,
+      value: '保存'
+    },
+    saveDisabled: {
+      type: Boolean,
+      value: false
+    },
+    theme: {
+      type: String,
+      value: ''
     }
   },
 
@@ -72,6 +84,12 @@ Component({
 
     handleDone() {
       this.triggerEvent('confirm', { value: this.data.value });
+      this.triggerEvent('close');
+    },
+
+    handleSave() {
+      if (this.data.saveDisabled) return;
+      this.triggerEvent('save', { value: this.data.value });
       this.triggerEvent('close');
     },
 

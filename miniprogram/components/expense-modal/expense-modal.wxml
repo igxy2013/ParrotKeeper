@@ -30,7 +30,16 @@
             bind:change="onCategoryChange" 
           />
         </view>
-
+        <!-- 日期 -->
+        <view class="form-item">
+          <text class="form-label">{{formData.type}}日期</text>
+          <picker mode="date" value="{{formData.date}}" bindchange="onDateChange">
+            <view class="picker-display">
+              <text>{{formData.date || '请选择日期'}}</text>
+              <image class="picker-arrow" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit" />
+            </view>
+          </picker>
+        </view>
         <!-- 金额 -->
         <view class="form-item">
           <text class="form-label">{{formData.type}}金额</text>
@@ -45,16 +54,7 @@
           <input class="text-input description-input" placeholder="请输入描述" value="{{formData.description}}" bindinput="onDescInput" />
         </view>
 
-        <!-- 日期 -->
-        <view class="form-item">
-          <text class="form-label">{{formData.type}}日期</text>
-          <picker mode="date" value="{{formData.date}}" bindchange="onDateChange">
-            <view class="picker-display">
-              <text>{{formData.date || '请选择日期'}}</text>
-              <image class="picker-arrow" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit" />
-            </view>
-          </picker>
-        </view>
+
       </view>
     </scroll-view>
 
@@ -68,9 +68,13 @@
   <numeric-keyboard
     visible="{{showKeyboard}}"
     value="{{formData.amount}}"
+    theme="{{formData.type==='收入' ? 'income' : 'expense'}}"
     bind:input="onKeyboardInput"
     bind:confirm="onKeyboardConfirm"
     bind:close="closeKeyboard"
+    bind:save="onKeyboardSave"
+    saveButtonText="{{isEdit ? '保存' : '添加'}}"
+    saveDisabled="{{!canSubmit}}"
     catchtap="stopPropagation"
   />
 </view>

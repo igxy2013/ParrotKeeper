@@ -1,7 +1,8 @@
 {
   "usingComponents": {
     "app-header": "/components/app-header/app-header",
-    "numeric-keyboard": "/components/numeric-keyboard/numeric-keyboard"
+    "numeric-keyboard": "/components/numeric-keyboard/numeric-keyboard",
+    "bottom-icon-selector": "/components/bottom-icon-selector/bottom-icon-selector"
   },
   "navigationStyle": "custom",
   "enablePullDownRefresh": false,

@@ -41,6 +41,9 @@
     <view class="key-cell action-key done-key" hover-class="done-hover" bindtap="handleDone">
       <text>完成</text>
     </view>
+    <view class="key-cell action-key save-key {{theme==='income' ? 'save-income' : (theme==='expense' ? 'save-expense' : '')}} {{saveDisabled ? 'disabled' : ''}}" hover-class="done-hover" bindtap="handleSave">
+      <text>{{saveButtonText}}</text>
+    </view>
   </view>
   </view>
 </view>

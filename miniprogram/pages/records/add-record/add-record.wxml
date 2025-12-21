@@ -1,9 +1,12 @@
 <!--pages/records/add-record/add-record.wxml-->
-<view class="page-container" bindtouchstart="touchStart" bindtouchend="touchEnd">
-  <!-- 使用项目通用顶部导航组件 -->
-  <app-header title="{{(recordId ? '编辑' : '添加') + (recordType === 'feeding' ? '喂食' : recordType === 'cleaning' ? '清洁' : recordType === 'health' ? '健康' : recordType === 'breeding' ? '繁殖' : '') + '记录'}}" subtitle="记录鹦鹉的日常护理" showBack="{{true}}" theme="{{navTheme}}">
-  </app-header>
-
+<view class="page-container">
+  <app-header 
+    title="{{(recordId ? '编辑' : '添加') + (recordType === 'feeding' ? '喂食' : recordType === 'cleaning' ? '清洁' : recordType === 'health' ? '健康' : recordType === 'breeding' ? '繁殖' : '') + '记录'}}" 
+    showBack="{{true}}" 
+    theme="{{navTheme}}" 
+    customBack="{{true}}" 
+    bind:back="goBack" 
+  />
   <view class="form-content">
     <form bindsubmit="submitForm">
       <!-- 记录类型 -->
@@ -191,6 +194,16 @@
       </view>
       
       <view class="form-item">
+        <text class="form-label required">健康状态</text>
+        <view class="form-picker" bindtap="showHealthStatusPicker">
+          <text class="picker-text {{formData.health_status ? '' : 'placeholder'}}">
+            {{healthStatusText || '请选择健康状态'}}
+          </text>
+          <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
+        </view>
+      </view>
+
+      <view class="form-item">
         <text class="form-label">体重 (g)</text>
         <view 
           class="form-input input-view {{formData.weight ? '' : 'placeholder'}}" 
@@ -202,18 +215,6 @@
           {{formData.weight || '请输入当前体重'}}
         </view>
       </view>
-      
-
-      
-      <view class="form-item">
-        <text class="form-label">健康状态</text>
-        <view class="form-picker" bindtap="showHealthStatusPicker">
-          <text class="picker-text {{formData.health_status ? '' : 'placeholder'}}">
-            {{healthStatusText || '请选择健康状态'}}
-          </text>
-          <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
-        </view>
-      </view>
     </view>
 
     <!-- 繁殖记录特有字段 -->
@@ -221,26 +222,6 @@
       <view class="section-title">
         <image class="section-icon" src="/images/remix/ri-book-fill-green.png" />
         <text>繁殖详情</text>
-      </view>
-      
-      <view class="form-item">
-        <text class="form-label required">雄性鹦鹉</text>
-        <view class="form-picker" bindtap="showMaleParrotPicker">
-          <text class="picker-text {{formData.male_parrot_id ? '' : 'placeholder'}}">
-            {{selectedMaleParrotName || '请选择雄性鹦鹉'}}
-          </text>
-          <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
-        </view>
-      </view>
-      
-      <view class="form-item">
-        <text class="form-label required">雌性鹦鹉</text>
-        <view class="form-picker" bindtap="showFemaleParrotPicker">
-          <text class="picker-text {{formData.female_parrot_id ? '' : 'placeholder'}}">
-            {{selectedFemaleParrotName || '请选择雌性鹦鹉'}}
-          </text>
-          <image class="picker-arrow-img" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit"></image>
-        </view>
       </view>
       
       <view class="form-item">
@@ -413,224 +394,63 @@
         {{submitting ? '保存中...' : '保存记录'}}
       </button>
     </view>
-  </form>
-</view>
-
-<!-- 鹦鹉选择弹窗 -->
-<view class="modal-overlay bottom-sheet" wx:if="{{showParrotModal}}" bindtap="hideParrotPicker" catchtouchmove="preventTouchMove">
-  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
-    <view class="modal-header">
-      <text class="modal-title">选择鹦鹉</text>
-      <view class="modal-close" bindtap="hideParrotPicker">×</view>
-    </view>
-    <scroll-view scroll-y="true" class="modal-body">
-      <!-- 健康记录：单选 -->
-      <radio-group wx:if="{{recordType === 'health'}}" bindchange="onParrotRadioChange">
-        <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
-          <view class="parrot-left">
-            <view class="parrot-avatar">
-              <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
-            </view>
-            <view class="parrot-info">
-              <view class="name-section">
-                <text class="parrot-name">{{item.name}}</text>
-                <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
-              </view>
-              <text class="parrot-species">{{item.species_name}}</text>
-            </view>
-            <view class="status-pills">
-              <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
-                <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
-                <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
-              </view>
-            </view>
-          </view>
-          <view class="parrot-right">
-            <radio class="parrot-radio" value="{{item.id}}" checked="{{item.selected}}" />
-            <image class="check-icon-img" wx:if="{{item.selected}}" src="{{checkIconSrc}}" mode="aspectFit" />
-          </view>
-        </label>
-      </radio-group>
-
-      <!-- 其他记录类型：多选 -->
-      <checkbox-group wx:else bindchange="onParrotChange">
-        <label class="parrot-item {{item.selected ? 'selected' : ''}}" wx:for="{{parrotList}}" wx:key="id">
-          <view class="parrot-left">
-            <view class="parrot-avatar">
-              <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
-            </view>
-            <view class="parrot-info">
-              <view class="name-section">
-                <text class="parrot-name">{{item.name}}</text>
-                <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
-              </view>
-              <text class="parrot-species">{{item.species_name}}</text>
-            </view>
-            <view class="status-pills">
-              <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
-                <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
-                <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
-              </view>
-            </view>
-          </view>
-          <view class="parrot-right">
-            <checkbox class="parrot-checkbox" value="{{item.id}}" checked="{{item.selected}}" />
-            <image class="check-icon-img" wx:if="{{item.selected}}" src="{{checkIconSrc}}" mode="aspectFit" />
-          </view>
-        </label>
-      </checkbox-group>
-    </scroll-view>
-    <view class="modal-footer" wx:if="{{recordType !== 'health'}}">
-      <button class="confirm-btn" bindtap="confirmParrotSelection">确定</button>
-    </view>
-  </view>
-</view>
-
-<!-- 清洁类型选择器模态框 -->
-<view class="modal-overlay bottom-sheet" wx:if="{{showCleaningTypeModal}}" bindtap="hideCleaningTypePicker" catchtouchmove="preventTouchMove">
-  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
-    <view class="modal-header">
-      <text class="modal-title">选择清洁类型</text>
-      <view class="modal-close" bindtap="hideCleaningTypePicker">×</view>
-    </view>
-    <scroll-view scroll-y="true" class="modal-body">
-      <checkbox-group class="cleaning-type-grid" bindchange="onCleaningTypeChange">
-        <label class="cleaning-type-item {{item.selected ? 'selected' : ''}}" wx:for="{{cleaningTypeList}}" wx:key="id">
-          <view class="cleaning-content">
-            <text class="cleaning-type-name">{{item.name}}</text>
-          </view>
-          <view class="checkbox-wrapper">
-             <checkbox class="cleaning-checkbox" value="{{item.id}}" checked="{{item.selected}}" />
-             <image class="check-icon-img" wx:if="{{item.selected}}" src="{{checkIconSrc}}" mode="aspectFit" />
-          </view>
-        </label>
-      </checkbox-group>
-    </scroll-view>
-    <view class="modal-footer">
-      <button class="confirm-btn" bindtap="confirmCleaningTypeSelection">确定</button>
-    </view>
-  </view>
-</view>
-
-<!-- 食物类型选择器模态框 -->
-<view class="modal-overlay bottom-sheet" wx:if="{{showFeedTypeModal}}" bindtap="hideFeedTypePicker" catchtouchmove="preventTouchMove">
-  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
-    <view class="modal-header">
-      <text class="modal-title">选择食物类型</text>
-      <view class="modal-close" bindtap="hideFeedTypePicker">×</view>
-    </view>
-    <scroll-view scroll-y="true" class="modal-body">
-      <view class="feed-type-list">
-        <view 
-          class="feed-type-item {{item.selected ? 'selected' : ''}}" 
-          wx:for="{{feedTypeList}}" 
-          wx:key="id"
-          bindtap="selectFeedType"
-          data-id="{{item.id}}"
-          data-name="{{item.displayName || item.name}}"
-        >
-          <view class="feed-type-icon-wrapper">
-             <image class="feed-type-icon" src="/images/remix/ri-restaurant-fill-orange.png" mode="aspectFit"></image>
-          </view>
-          <view class="feed-type-info">
-            <text class="feed-type-name">{{item.displayName || item.name}}</text>
-            <view class="feed-type-details">
-              <text class="feed-type-brand" wx:if="{{item.brand}}">{{item.brand}}</text>
-              <text class="feed-type-type" wx:if="{{item.typeText}}">{{item.typeText}}</text>
-            </view>
-          </view>
-          <view class="selection-indicator" wx:if="{{item.selected}}">✓</view>
-        </view>
+        </form>
       </view>
-    </scroll-view>
-    <view class="modal-footer">
-      <button class="confirm-btn" bindtap="confirmFeedTypeSelection">确定</button>
-    </view>
   </view>
-</view>
 
-<!-- 健康状态选择弹窗 -->
-<view class="modal-overlay bottom-sheet" wx:if="{{showHealthStatusModal}}" bindtap="hideHealthStatusPicker" catchtouchmove="preventTouchMove">
-  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
-    <view class="modal-header">
-      <text class="modal-title">选择健康状态</text>
-      <view class="modal-close" bindtap="hideHealthStatusPicker">×</view>
-    </view>
-    <scroll-view scroll-y="true" class="modal-body">
-      <radio-group class="status-list" bindchange="onHealthStatusChange">
-        <label class="status-item">
-          <view class="status-left">
-            <view class="status-indicator healthy"></view>
-            <text class="status-text">健康</text>
-          </view>
-          <radio class="status-radio" value="healthy" checked="{{formData.health_status === 'healthy'}}" />
-        </label>
-        <label class="status-item">
-          <view class="status-left">
-            <view class="status-indicator sick"></view>
-            <text class="status-text">生病</text>
-          </view>
-          <radio class="status-radio" value="sick" checked="{{formData.health_status === 'sick'}}" />
-        </label>
-        <label class="status-item">
-          <view class="status-left">
-            <view class="status-indicator recovering"></view>
-            <text class="status-text">康复中</text>
-          </view>
-          <radio class="status-radio" value="recovering" checked="{{formData.health_status === 'recovering'}}" />
-        </label>
-        <label class="status-item">
-          <view class="status-left">
-            <view class="status-indicator observation"></view>
-            <text class="status-text">观察中</text>
-          </view>
-          <radio class="status-radio" value="observation" checked="{{formData.health_status === 'observation'}}" />
-        </label>
-      </radio-group>
-    </scroll-view>
-  </view>
-</view>
+<!-- 鹦鹉选择弹窗（通用选择器） -->
+<bottom-icon-selector
+  visible="{{showParrotModal}}"
+  title="选择鹦鹉"
+  multiple="{{recordType !== 'health'}}"
+  options="{{parrotOptions}}"
+  selected="{{(formData.parrot_ids[0] || '') + ''}}"
+  selectedValues="{{formData.parrot_ids}}"
+  confirmButton="{{recordType !== 'health'}}"
+  bind:change="onParrotSelectorChange"
+  bind:confirm="confirmParrotSelection"
+  bind:close="hideParrotPicker"
+/>
 
-<!-- 雄性鹦鹉选择弹窗 -->
-<view class="modal-overlay bottom-sheet" wx:if="{{showMaleParrotModal}}" bindtap="hideMaleParrotPicker" catchtouchmove="preventTouchMove">
-  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
-    <view class="modal-header">
-      <text class="modal-title">选择雄性鹦鹉</text>
-      <text class="modal-close" bindtap="hideMaleParrotPicker">×</text>
-    </view>
-    <scroll-view scroll-y="true" class="modal-body">
-      <view class="parrot-list">
-        <view 
-          class="parrot-item" 
-          wx:for="{{maleParrotList}}" 
-          wx:key="id"
-          data-id="{{item.id}}"
-          data-name="{{item.name}}"
-          bindtap="selectMaleParrot"
-        >
-          <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
-          </view>
-          <view class="parrot-info">
-            <view class="name-section">
-              <text class="parrot-name">{{item.name}}</text>
-              <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
-            </view>
-            <text class="parrot-species">{{item.species_name}}</text>
-          </view>
-          <view class="status-pills">
-            <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
-              <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
-              <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </scroll-view>
-  </view>
-</view>
+<!-- 清洁类型选择器（通用选择器） -->
+<bottom-icon-selector
+  visible="{{showCleaningTypeModal}}"
+  title="选择清洁类型"
+  multiple="{{true}}"
+  options="{{cleaningTypeOptions}}"
+  selectedValues="{{formData.cleaning_types}}"
+  confirmButton="{{true}}"
+  bind:change="onCleaningTypeSelectorChange"
+  bind:confirm="confirmCleaningTypeSelection"
+  bind:close="hideCleaningTypePicker"
+/>
 
-<!-- 数字键盘 -->
+<!-- 食物类型选择器（通用选择器） -->
+<bottom-icon-selector
+  visible="{{showFeedTypeModal}}"
+  title="选择食物类型"
+  multiple="{{true}}"
+  options="{{feedTypeOptions}}"
+  selectedValues="{{formData.food_types}}"
+  confirmButton="{{true}}"
+  bind:change="onFeedTypesSelectorChange"
+  bind:confirm="confirmFeedTypeSelection"
+  bind:close="hideFeedTypePicker"
+/>
+
+<!-- 健康状态选择器（通用选择器） -->
+<bottom-icon-selector
+  visible="{{showHealthStatusModal}}"
+  title="选择健康状态"
+  multiple="{{false}}"
+  options="{{healthStatusOptions}}"
+  selected="{{formData.health_status}}"
+  confirmButton="{{false}}"
+  bind:change="onHealthStatusSelectorChange"
+  bind:close="hideHealthStatusPicker"
+/>
+
+
 <numeric-keyboard
   visible="{{keyboardVisible}}"
   value="{{keyboardValue}}"
@@ -640,44 +460,9 @@
   bind:input="onKeyboardInput"
   bind:confirm="onKeyboardConfirm"
   bind:close="onKeyboardClose"
+  bind:save="onKeyboardSave"
+  saveButtonText="{{submitting ? '保存中...' : '保存记录'}}"
+  saveDisabled="{{!canSubmit || submitting}}"
 />
-</view>
 
-<!-- 雌性鹦鹉选择弹窗 -->
-<view class="modal-overlay bottom-sheet" wx:if="{{showFemaleParrotModal}}" bindtap="hideFemaleParrotPicker" catchtouchmove="preventTouchMove">
-  <view class="modal-content bottom-sheet-content" catchtap="stopPropagation">
-    <view class="modal-header">
-      <text class="modal-title">选择雌性鹦鹉</text>
-      <text class="modal-close" bindtap="hideFemaleParrotPicker">×</text>
-    </view>
-    <scroll-view scroll-y="true" class="modal-body">
-      <view class="parrot-list">
-        <view 
-          class="parrot-item" 
-          wx:for="{{femaleParrotList}}" 
-          wx:key="id"
-          data-id="{{item.id}}"
-          data-name="{{item.name}}"
-          bindtap="selectFemaleParrot"
-        >
-          <view class="parrot-avatar">
-            <image class="parrot-image" src="{{item.thumb_url || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
-          </view>
-          <view class="parrot-info">
-            <view class="name-section">
-              <text class="parrot-name">{{item.name}}</text>
-              <text class="parrot-gender {{item.gender}}">{{item.gender === 'male' ? '♂' : item.gender === 'female' ? '♀' : '？'}}</text>
-            </view>
-            <text class="parrot-species">{{item.species_name}}</text>
-          </view>
-          <view class="status-pills">
-            <view class="status-pill pill-{{item.current_health_status || 'healthy'}}">
-              <text class="pill-icon">{{(item.current_health_status || 'healthy') === 'healthy' ? '✓' : (item.current_health_status || 'healthy') === 'sick' ? '!' : (item.current_health_status || 'healthy') === 'recovering' ? '↗' : '👁'}}</text>
-              <text class="pill-text">{{(item.current_health_status || 'healthy') === 'healthy' ? '健康' : (item.current_health_status || 'healthy') === 'sick' ? '生病' : (item.current_health_status || 'healthy') === 'recovering' ? '康复中' : '观察中'}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </scroll-view>
-  </view>
-</view>
+

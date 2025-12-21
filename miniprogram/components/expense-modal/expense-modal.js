@@ -187,6 +187,11 @@ Component({
       this.setData({ showKeyboard: false })
     },
 
+    // 键盘保存（与底部“添加/保存”一致）
+    onKeyboardSave() {
+      this.onSubmit()
+    },
+
     // 描述输入
     onDescInput(e) {
       this.setData({ 'formData.description': e.detail.value })

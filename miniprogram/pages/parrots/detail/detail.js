@@ -1004,8 +1004,9 @@ Page({
 
   // 查看记录
   viewRecords() {
+    const pid = encodeURIComponent(String(this.data.parrotId || ''))
     wx.navigateTo({
-      url: `/pages/records/records?parrotId=${this.data.parrotId}`
+      url: `/pages/records/feeding/feeding${pid ? `?parrotId=${pid}` : ''}`
     })
   },
 

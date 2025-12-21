@@ -998,6 +998,7 @@
 .modal-overlay.bottom-sheet {
   justify-content: flex-end;
   align-items: flex-end;
+  background: transparent;
 }
 
 .modal-content.bottom-sheet-content {

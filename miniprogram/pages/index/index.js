@@ -1739,11 +1739,11 @@ Page({
       return
     }
     
-    console.log('准备跳转到记录页面')
+    console.log('准备跳转到喂食记录页面')
     wx.navigateTo({
-      url: '/pages/records/records',
+      url: '/pages/records/feeding/feeding',
       success: () => {
-        console.log('跳转成功')
+        console.log('跳转到喂食记录页面成功')
       },
       fail: (err) => {
         console.error('跳转失败:', err)
