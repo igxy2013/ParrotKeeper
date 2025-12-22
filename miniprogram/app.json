@@ -36,7 +36,6 @@
     {
       "root": "pages/records",
       "pages": [
-        "records",
         "cleaning/cleaning",
         "add-record/add-record",
         "feeding/feeding",
