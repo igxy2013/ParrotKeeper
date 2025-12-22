@@ -20,16 +20,23 @@
 .user-card {
   position: relative;
   border-radius: 32rpx;
-  padding: 32rpx; /* 参考APP p-6 对齐 */
+  padding: 32rpx 32rpx 16rpx; /* 顶部和左右32rpx，底部16rpx，减小统计卡片与底部的距离 */
   margin: 0 20rpx 16rpx; /* 收紧与下方容器的垂直间距 */
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   color: #1f2937;
   overflow: hidden;
   backdrop-filter: blur(16rpx); /* 与参考APP的 blur-sm 接近 */
   background: transparent; /* 使用覆盖层统一渐变 */
   border: 1rpx solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.10);
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08);
+}
+
+.user-card-top {
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
 .card-background {
@@ -102,6 +109,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .nickname-display {
@@ -421,19 +429,18 @@
 }
 
 .function-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20rpx);
-  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  background: #ffffff;
+  border: none;
   border-radius: 32rpx;
   padding: 24rpx;
   margin: 12rpx 12rpx; /* 收紧与上下容器的间距与左右留白 */
-  box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
 }
 
 .function-card:active {
   transform: scale(0.98);
-  background: rgba(255, 255, 255, 0.2);
+  background: #ffffff;
 }
 
 /* 卡片头部 */
@@ -1049,8 +1056,8 @@
   background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.06));
   border-color: rgba(255,255,255,0.12);
 }
-.page-container.theme-dark .stat-card .stat-value { color: #e5e7eb; }
-.page-container.theme-dark .stat-card .stat-label { color: #9ca3af; }
+.page-container.theme-dark .stat-card .stat-value { color: #ffffff; }
+.page-container.theme-dark .stat-card .stat-label { color: rgba(255, 255, 255, 0.9); }
 .page-container.theme-dark .achievement-title,
 .page-container.theme-dark .team-item-title,
 .page-container.theme-dark .menu-item-title { color: #e5e7eb; }
@@ -1605,57 +1612,87 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4rpx !important; /* 显著收紧卡片之间的整体间距 */
-  column-gap: 4rpx !important; /* 兼容部分不支持 gap 的环境 */
-  row-gap: 4rpx !important;
-  margin: 6rpx 6rpx !important; /* 显著收紧容器与上下/左右的外边距 */
+  gap: 8rpx;
+  column-gap: 8rpx;
+  row-gap: 8rpx;
+  margin-top: 24rpx;
+  width: 100%;
+}
+
+/* 用户信息卡片内的统计网格 */
+.user-card .stats-grid {
+  margin-top: 24rpx;
+  gap: 8rpx;
+  column-gap: 8rpx;
+  row-gap: 8rpx;
 }
 
 /* 在当前页面提升选择器优先级，覆盖全局断点下的更大gap设置 */
 .page-content .stats-grid {
-  gap: 4rpx !important;
-  column-gap: 4rpx !important;
-  row-gap: 4rpx !important;
-  margin: 6rpx 6rpx !important;
+  gap: 8rpx;
+  column-gap: 8rpx;
+  row-gap: 8rpx;
 }
 
 /* 覆盖全局小屏幕下的更大间距设置，保持更紧凑布局 */
 @media screen and (max-width: 750rpx) {
   .stats-grid {
-    gap: 4rpx !important;
-    column-gap: 4rpx !important;
-    row-gap: 4rpx !important;
-    margin: 6rpx 6rpx !important;
+    gap: 8rpx;
+    column-gap: 8rpx;
+    row-gap: 8rpx;
   }
 }
 .stat-card {
-  background: rgba(255,255,255,0.80); /* bg-white/80 */
-  border: 1rpx solid rgba(255,255,255,0.5); /* border-white/50 */
-  backdrop-filter: blur(8rpx);
-  border-radius: 24rpx; /* rounded-2xl */
-  padding: 20rpx; /* 收紧卡片内部左右间距 */
+  background: transparent; /* 无背景，与个人信息卡片融合 */
+  border: none; /* 无边框 */
+  backdrop-filter: none;
+  border-radius: 0;
+  padding: 16rpx 12rpx; /* 收紧卡片内部间距 */
   text-align: center;
-  box-shadow: 0 12rpx 24rpx rgba(0,0,0,0.08); /* shadow-lg 接近 */
+  box-shadow: none; /* 无阴影 */
 }
-.stat-card .stat-icon { width: 48rpx; height: 48rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; margin: 0 auto 8rpx; }
-.stat-icon-img { width: 40rpx; height: auto; }
-.stat-icon-red { background: #fee2e2; }
-.stat-icon-orange { background: #ffedd5; }
-.stat-icon-green { background: #dcfce7; }
-.stat-card .stat-value { font-size: 44rpx; font-weight: 700; margin-bottom: 10rpx; }
-.stat-card .stat-label { font-size: 20rpx; color: #6b7280; font-weight: 600; }
-.stat-card.red .stat-value { color: #ef4444; }
-.stat-card.orange .stat-value { color: #f59e0b; }
-.stat-card.green .stat-value { color: #22c55e; }
+.stat-card .stat-icon { 
+  width: 48rpx; 
+  height: 48rpx; 
+  border-radius: 12rpx; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin: 0 auto 8rpx;
+  background: rgba(255, 255, 255, 0.2); /* 半透明白色背景 */
+  backdrop-filter: blur(8rpx);
+}
+.stat-icon-img { 
+  width: 40rpx; 
+  height: auto;
+  filter: brightness(0) invert(1); /* 图标改为白色 */
+}
+.stat-icon-red { background: rgba(255, 255, 255, 0.2); }
+.stat-icon-orange { background: rgba(255, 255, 255, 0.2); }
+.stat-icon-green { background: rgba(255, 255, 255, 0.2); }
+.stat-card .stat-value { 
+  font-size: 40rpx; 
+  font-weight: 700; 
+  margin-bottom: 8rpx;
+  color: #ffffff; /* 白色文字 */
+}
+.stat-card .stat-label { 
+  font-size: 20rpx; 
+  color: rgba(255, 255, 255, 0.9); /* 半透明白色文字 */
+  font-weight: 600; 
+}
+.stat-card.red .stat-value { color: #ffffff; }
+.stat-card.orange .stat-value { color: #ffffff; }
+.stat-card.green .stat-value { color: #ffffff; }
 
 /* 新增：成就模块样式 */
 .achievements-card {
-  background: rgba(255,255,255,0.9);
-  border: 1rpx solid rgba(255,255,255,0.6);
+  background: #ffffff;
+  border: none;
   border-radius: 32rpx;
-  margin: 24rpx 20rpx;
+  margin: 24rpx 20rpx 6rpx;
   padding: 24rpx;
-  box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06);
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08);
 }
 .section-title { display: flex; align-items: center; gap: 12rpx; font-weight: 800; color: #1f2937; margin-bottom: 24rpx; font-size: 30rpx; }
 .title-icon { font-size: 36rpx; }
@@ -1761,7 +1798,7 @@
 .bg-pink { background: #fce7f3; color: #db2777; }
 
 /* 新增：团队协作样式 */
-.team-card { background: rgba(255,255,255,0.9); border: 1rpx solid rgba(255,255,255,0.6); border-radius: 32rpx; margin: 24rpx 20rpx; padding: 24rpx; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); }
+.team-card { background: #ffffff; border: none; border-radius: 32rpx; margin: 24rpx 20rpx; padding: 24rpx; box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08); }
 .team-list { display: flex; flex-direction: column; gap: 24rpx; }
 .team-item { display: flex; align-items: center; gap: 20rpx; padding: 24rpx; background: linear-gradient(135deg, #fff, #f8fafc); border: 1rpx solid #eef2f7; border-radius: 24rpx; box-shadow: 0 8rpx 20rpx rgba(17, 24, 39, 0.04); }
 .team-item-icon { width: 64rpx; height: 64rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 36rpx; }
@@ -1772,7 +1809,7 @@
 .arrow-icon { width: 32rpx; height: 32rpx; margin-left: auto; }
 
 /* 后台管理入口按钮（参考添加鹦鹉按钮样式，宽度对齐） */
-.admin-entry-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20rpx); border-radius: 32rpx; padding: 24rpx; margin: 0 20rpx 24rpx; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); border: 1rpx solid rgba(255,255,255,0.6); }
+.admin-entry-card { background: #ffffff; border: none; border-radius: 32rpx; padding: 24rpx; margin: 0 20rpx 24rpx; box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08); }
 .admin-entry-btn { height: 96rpx; border-radius: 48rpx; background: #10b981; display: flex; align-items: center; justify-content: center; gap: 16rpx; box-shadow: 0 8rpx 24rpx rgba(16, 185, 129, 0.25); }
 .admin-entry-btn:active { transform: translateY(2rpx) scale(0.98); box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.35); }
 .admin-entry-icon { width: 36rpx; height: 36rpx; }
@@ -1839,6 +1876,7 @@
   width: 32rpx;
   height: 32rpx;
   margin-right: 12rpx;
+  filter: brightness(0) saturate(100%); /* 将白色图标转为黑色，在白色背景上可见 */
 }
 
 /* 头像编辑与昵称编辑图标 */
@@ -1886,7 +1924,7 @@
 }
 
 /* 新增：功能菜单样式 */
-.menu-card { background: rgba(255,255,255,0.9); border: 1rpx solid rgba(255,255,255,0.6); border-radius: 32rpx; margin: 24rpx 20rpx; padding: 24rpx; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); }
+.menu-card { background: #ffffff; border: none; border-radius: 32rpx; margin: 24rpx 20rpx; padding: 24rpx; box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08); }
 .menu-list { display: flex; flex-direction: column; gap: 16rpx; }
 .menu-item { display: flex; align-items: center; gap: 20rpx; padding: 20rpx; background: linear-gradient(135deg, #fff, #f8fafc); border: 1rpx solid #eef2f7; border-radius: 24rpx; position: relative; }
 .menu-item-icon { width: 64rpx; height: 64rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 32rpx; }
@@ -1975,7 +2013,7 @@ button.menu-item {
 button.menu-item::after { border: none; }
 
 /* 新增：版本信息样式 */
-.version-card { background: rgba(255,255,255,0.92); border: 1rpx solid rgba(255,255,255,0.6); border-radius: 32rpx; margin: 24rpx 20rpx 40rpx; padding: 24rpx; text-align: center; box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.06); }
+.version-card { background: #ffffff; border: none; border-radius: 32rpx; margin: 24rpx 20rpx 40rpx; padding: 24rpx; text-align: center; box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.08); }
 .version-logo { width: 96rpx; height: 96rpx; border-radius: 20rpx; display: flex; align-items: center; justify-content: center; font-size: 46rpx; margin: 0 auto 16rpx; background: linear-gradient(135deg, #10b981, #06b6d4); color: #fff; }
 .version-title { font-weight: 700; color: #111827; font-size: 30rpx; margin-bottom: 8rpx; }
 .version-sub { font-size: 24rpx; color: #6b7280; margin-bottom: 12rpx; }
@@ -1998,8 +2036,8 @@ button.menu-item::after { border: none; }
 }
 .theme-dark .team-placeholder { color: #d1d5db; }
 .theme-dark .team-placeholder .placeholder-title { color: #f9fafb; }
-.theme-dark .stat-card .stat-value { color: #e5e7eb; }
-.theme-dark .stat-card .stat-label { color: #9ca3af; }
+.theme-dark .stat-card .stat-value { color: #ffffff; }
+.theme-dark .stat-card .stat-label { color: rgba(255, 255, 255, 0.9); }
 .theme-dark .achievement-title,
 .theme-dark .team-item-title,
 .theme-dark .menu-item-title { color: #e5e7eb; }

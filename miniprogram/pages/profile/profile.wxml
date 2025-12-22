@@ -5,20 +5,21 @@
   <!-- 用户信息卡片 -->
   <view class="user-card" wx:if="{{isLogin}}">
     <view class="card-background"></view>
-    <view class="user-avatar">
-        <button class="avatar-container" open-type="chooseAvatar" bindchooseavatar="onChooseWeChatAvatar">
-          <image 
-            class="avatar-image {{isEditingNickname ? 'editable' : ''}}" 
-            src="{{userInfo.avatar_url || '/images/parrot-avatar-green.svg'}}" 
-            mode="aspectFill"
-          />
-          <view class="avatar-edit-overlay" wx:if="{{isEditingNickname}}">
-            <image class="edit-icon-img" src="{{iconPaths.cameraLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="cameraLine" catchtap="chooseAvatarPhoto" />
-            <text class="avatar-edit-text">点击更换</text>
-          </view>
-        </button>
-    </view>
-    <view class="user-info">
+    <view class="user-card-top">
+      <view class="user-avatar">
+          <button class="avatar-container" open-type="chooseAvatar" bindchooseavatar="onChooseWeChatAvatar">
+            <image 
+              class="avatar-image {{isEditingNickname ? 'editable' : ''}}" 
+              src="{{userInfo.avatar_url || '/images/parrot-avatar-green.svg'}}" 
+              mode="aspectFill"
+            />
+            <view class="avatar-edit-overlay" wx:if="{{isEditingNickname}}">
+              <image class="edit-icon-img" src="{{iconPaths.cameraLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="cameraLine" catchtap="chooseAvatarPhoto" />
+              <text class="avatar-edit-text">点击更换</text>
+            </view>
+          </button>
+      </view>
+      <view class="user-info">
       <view class="nickname-display">
         <text class="user-name">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
         <view class="edit-nickname-btn" bindtap="toggleNicknameEdit">
@@ -53,6 +54,32 @@
           <text class="user-points-val">{{points}}</text>
         </view>
       </view>
+      </view>
+    </view>
+    
+    <!-- 统计信息网格 -->
+    <view class="stats-grid" wx:if="{{isLogin}}">
+      <view class="stat-card red">
+        <view class="stat-icon stat-icon-red">
+          <image class="stat-icon-img" src="{{iconPaths.statHeartRed}}" mode="widthFix" binderror="onProfileIconError" data-key="statHeartRed" />
+        </view>
+        <view class="stat-value">{{stats.parrotCount}}</view>
+        <view class="stat-label">我的鹦鹉</view>
+      </view>
+      <view class="stat-card orange">
+        <view class="stat-icon stat-icon-orange">
+          <image class="stat-icon-img" src="{{iconPaths.statFeedingOrange}}" mode="widthFix" binderror="onProfileIconError" data-key="statFeedingOrange" />
+        </view>
+        <view class="stat-value">{{stats.totalFeedings}}</view>
+        <view class="stat-label">总喂食次数</view>
+      </view>
+      <view class="stat-card green">
+        <view class="stat-icon stat-icon-green">
+          <image class="stat-icon-img" src="{{iconPaths.statShieldBlue}}" mode="widthFix" binderror="onProfileIconError" data-key="statShieldBlue" />
+        </view>
+        <view class="stat-value">{{stats.totalCheckups}}</view>
+        <view class="stat-label">健康检查</view>
+      </view>
     </view>
   </view>
     <!-- 登录提示 -->
@@ -80,31 +107,6 @@
           <view class="mode-pill {{userMode === 'team' ? 'active' : ''}}" data-mode="team" bindtap="chooseUserMode">团队模式</view>
         </view>
     </view>
-
-<!-- 在用户信息卡片后新增统计网格 -->
-<view class="stats-grid" wx:if="{{isLogin}}">
-  <view class="stat-card red">
-    <view class="stat-icon stat-icon-red">
-      <image class="stat-icon-img" src="{{iconPaths.statHeartRed}}" mode="widthFix" binderror="onProfileIconError" data-key="statHeartRed" />
-    </view>
-    <view class="stat-value">{{stats.parrotCount}}</view>
-    <view class="stat-label">我的鹦鹉</view>
-  </view>
-  <view class="stat-card orange">
-    <view class="stat-icon stat-icon-orange">
-      <image class="stat-icon-img" src="{{iconPaths.statFeedingOrange}}" mode="widthFix" binderror="onProfileIconError" data-key="statFeedingOrange" />
-    </view>
-    <view class="stat-value">{{stats.totalFeedings}}</view>
-    <view class="stat-label">总喂食次数</view>
-  </view>
-  <view class="stat-card green">
-    <view class="stat-icon stat-icon-green">
-      <image class="stat-icon-img" src="{{iconPaths.statShieldBlue}}" mode="widthFix" binderror="onProfileIconError" data-key="statShieldBlue" />
-    </view>
-    <view class="stat-value">{{stats.totalCheckups}}</view>
-    <view class="stat-label">健康检查</view>
-  </view>
-</view>
 
 <!-- 团队信息弹窗 -->
 <view class="modal-overlay" wx:if="{{showTeamInfoModal}}" bindtap="hideTeamInfoModal">
