@@ -183,6 +183,7 @@ Page({
 
     // 仅更新本地开关；订阅权限必须通过“订阅权限”按钮点击触发
     this.updateNotificationSettings(requestedEnabled)
+    this.savePreferences()
 
     if (requestedEnabled && this.data.hasTemplateIds) {
       wx.showToast({ title: '已开启本地通知，请点击“订阅权限”授权', icon: 'none' })

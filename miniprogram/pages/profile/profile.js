@@ -748,7 +748,9 @@ Page({
   // 偏好读取
   loadPreferences() {
     try {
-      const notificationsEnabled = wx.getStorageSync('pref_notifications') || false;
+      const nm = app.globalData.notificationManager
+      const ns = nm && nm.getNotificationSettings ? nm.getNotificationSettings() : {}
+      const notificationsEnabled = !!(ns.enabled)
       const theme = wx.getStorageSync('pref_theme') || 'system';
       // 优先使用全局 userMode，其次从统一键 userMode 读取，最后回退当前值
       const storedMode = wx.getStorageSync('userMode');
@@ -780,8 +782,29 @@ Page({
   savePreferences() {
     const { notificationsEnabled, theme } = this.data;
     try {
-      wx.setStorageSync('pref_notifications', notificationsEnabled);
       wx.setStorageSync('pref_theme', theme);
+      const nm = app.globalData.notificationManager
+      const current = nm.getNotificationSettings()
+      nm.saveNotificationSettings({ ...current, enabled: !!notificationsEnabled })
+      try {
+        app.request({
+          url: '/api/reminders/settings',
+          method: 'PUT',
+          data: {
+            enabled: !!notificationsEnabled,
+            feedingReminder: !!current.feedingReminder,
+            healthReminder: !!current.healthReminder,
+            cleaningReminder: !!current.cleaningReminder,
+            medicationReminder: !!current.medicationReminder,
+            breedingReminder: !!current.breedingReminder,
+            feedingReminderTime: current.feedingReminderTime || null,
+            cleaningReminderTime: current.cleaningReminderTime || null,
+            medicationReminderTime: current.medicationReminderTime || null,
+            healthAlertPreferences: current.healthAlertPreferences || {},
+            pinnedHealthAlertTypes: (wx.getStorageSync('pinnedHealthAlertTypes_global') || [])
+          }
+        })
+      } catch (_) {}
     } catch (e) {
       console.warn('保存偏好失败', e);
     }
@@ -789,8 +812,13 @@ Page({
 
   // 通知开关
   toggleNotifications(e) {
-    const enabled = e.detail.value;
+    const enabled = !!(e && e.detail && typeof e.detail.value !== 'undefined' ? e.detail.value : !this.data.notificationsEnabled)
+    const nm = app.globalData.notificationManager
+    const current = nm.getNotificationSettings()
+    const next = { ...current, enabled }
+    nm.saveNotificationSettings(next)
     this.setData({ notificationsEnabled: enabled });
+    try { if (enabled) nm.generateDailyRemindersForToday() } catch (_) {}
     this.savePreferences();
     wx.showToast({ title: enabled ? '已开启通知' : '已关闭通知', icon: 'none' });
   },
