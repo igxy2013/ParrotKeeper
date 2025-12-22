@@ -19,6 +19,9 @@ Component({
       gender: '',
       gender_display: '',
       color: '',
+      birth_place_province: '',
+      birth_place_city: '',
+      birth_place_text: '',
       birth_date: '',
       notes: '',
       parrot_number: '',
@@ -53,6 +56,9 @@ Component({
         gender: parrot.gender || '',
         gender_display: genderDisplay,
         color: parrot.color || '',
+        birth_place_province: parrot.birth_place_province || '',
+        birth_place_city: parrot.birth_place_city || '',
+        birth_place_text: parrot.birth_place || '',
         birth_date: parrot.birth_date || parrot.birthDate || '',
         notes: parrot.notes || '',
         parrot_number: parrot.parrot_number || '',
@@ -191,6 +197,20 @@ Component({
       const field = e.currentTarget.dataset.field
       const value = e.detail.value
       this.setData({ [`form.${field}`]: value })
+    },
+
+    onBirthPlaceChange(e) {
+      try {
+        const arr = e && e.detail && e.detail.value ? e.detail.value : []
+        const province = arr[0] || ''
+        const city = arr[1] || ''
+        const text = [province, city].filter(Boolean).join(' ')
+        this.setData({
+          'form.birth_place_province': province,
+          'form.birth_place_city': city,
+          'form.birth_place_text': text
+        })
+      } catch (_) {}
     },
 
     onInputClaimCode(e) {
@@ -436,6 +456,9 @@ Component({
         name: f.name,
         species_id,
         gender: f.gender || this.displayGenderToApi(f.gender_display),
+        birth_place: f.birth_place_text || '',
+        birth_place_province: f.birth_place_province || '',
+        birth_place_city: f.birth_place_city || '',
         birth_date: f.birth_date || '',
         color: f.color || '',
         weight: f.weight || '',

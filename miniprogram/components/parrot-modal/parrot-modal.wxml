@@ -78,6 +78,16 @@
           />
         </view>
 
+        <!-- 出生地（省/市 两级） -->
+        <view class="form-item">
+          <text class="form-label">出生地</text>
+          <picker mode="region" bindchange="onBirthPlaceChange">
+            <view class="picker-display">
+              <text>{{form.birth_place_text ? form.birth_place_text : '请选择省/市'}}</text>
+            </view>
+          </picker>
+        </view>
+
         <!-- 出生日期 -->
         <view class="form-item">
           <text class="form-label">出生日期</text>

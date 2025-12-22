@@ -363,6 +363,7 @@ const app = getApp()
           'pellet': '颗粒',
           'fruit': '水果',
           'vegetable': '蔬菜',
+          'nut': '坚果',
           'supplement': '保健品',
           'milk_powder': '奶粉'
         }
@@ -442,10 +443,10 @@ const app = getApp()
   // 初始化健康状态选项
   initHealthStatusOptions: function() {
     const options = [
-      { value: 'healthy', label: '健康', icon: '/images/remix/ri-heart-fill-green.png' },
-      { value: 'sick', label: '生病', icon: '/images/remix/ri-information-fill-red.png' },
-      { value: 'recovering', label: '康复中', icon: '/images/remix/ri-nurse-line-purple.png' },
-      { value: 'observation', label: '观察中', icon: '/images/remix/eye-fill.png' }
+      { value: 'healthy', label: '健康', icon: 'https://img.icons8.com/3d-fluency/96/heart-with-pulse.png' },
+      { value: 'sick', label: '生病', icon: 'https://img.icons8.com/3d-fluency/96/face-with-thermometer.png' },
+      { value: 'recovering', label: '康复中', icon: 'https://img.icons8.com/3d-fluency/96/stethoscope.png' },
+      { value: 'observation', label: '观察中', icon: 'https://img.icons8.com/3d-fluency/96/eye.png' }
     ]
     this.setData({ healthStatusOptions: options })
   },
@@ -996,20 +997,54 @@ const app = getApp()
     this.setData({ parrotOptions: opts })
   },
   updateFeedTypeOptions: function() {
-    const icon = '/images/remix/ri-restaurant-fill-orange.png'
-    const opts = (this.data.feedTypeList || []).map(f => ({
-      value: String(f.id),
-      label: f.displayName || f.name,
-      icon
-    }))
+    const defaultIcon = 'https://img.icons8.com/ios-filled/96/FF7A00/restaurant.png'
+    const seedIcon = 'https://img.icons8.com/3d-fluency/94/seeds.png'
+    const pelletIcon = 'https://img.icons8.com/3d-fluency/94/cookies.png'
+    const appleIcon = 'https://img.icons8.com/3d-fluency/94/apple.png'
+    const carrotIcon = 'https://img.icons8.com/3d-fluency/94/carrot.png'
+    const supplementIcon = 'https://img.icons8.com/3d-fluency/94/doctors-bag.png'
+    const milkPowderIcon = 'https://img.icons8.com/3d-fluency/94/yogurt.png'
+    const nutIcon = 'https://img.icons8.com/3d-fluency/94/nut.png'
+    const opts = (this.data.feedTypeList || []).map(f => {
+      const name = String(f.displayName || f.name || '')
+      const type = String(f.type || '')
+      let icon = defaultIcon
+      if (type === 'seed' || name.indexOf('种子') !== -1 || name.indexOf('混合种子') !== -1) {
+        icon = seedIcon
+      } else if (type === 'pellet' || name.indexOf('颗粒') !== -1) {
+        icon = pelletIcon
+      } else if (type === 'fruit' || String(f.name || '').indexOf('苹果') !== -1) {
+        icon = appleIcon
+      } else if (type === 'vegetable' || String(f.name || '').indexOf('胡萝卜') !== -1) {
+        icon = carrotIcon
+      } else if (type === 'nut' || name.indexOf('坚果') !== -1 || name.indexOf('核桃') !== -1 || name.indexOf('杏仁') !== -1 || name.indexOf('腰果') !== -1 || name.indexOf('花生') !== -1 || name.indexOf('松子') !== -1) {
+        icon = nutIcon
+      } else if (type === 'supplement' || name.indexOf('保健') !== -1) {
+        icon = supplementIcon
+      } else if (type === 'milk_powder' || name.indexOf('奶粉') !== -1) {
+        icon = milkPowderIcon
+      }
+      return {
+        value: String(f.id),
+        label: name,
+        icon
+      }
+    })
     this.setData({ feedTypeOptions: opts })
   },
   updateCleaningTypeOptions: function() {
-    const icon = '/images/remix/ri-shield-check-fill-blue.png'
+    const iconMap = {
+      'cage': 'https://img.icons8.com/3d-fluency/96/broom.png',
+      'toys': 'https://img.icons8.com/3d-fluency/96/soap.png',
+      'perches': 'https://img.icons8.com/3d-fluency/94/logs.png',
+      'food_water': 'https://img.icons8.com/3d-fluency/96/water.png',
+      'disinfection': 'https://img.icons8.com/3d-fluency/96/spray.png',
+      'bath': 'https://img.icons8.com/3d-fluency/96/bathtub.png'
+    }
     const opts = (this.data.cleaningTypeList || []).map(c => ({
       value: c.id,
       label: c.name,
-      icon
+      icon: iconMap[c.id] || 'https://img.icons8.com/3d-fluency/96/broom.png'
     }))
     this.setData({ cleaningTypeOptions: opts })
   },

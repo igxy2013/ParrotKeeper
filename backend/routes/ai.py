@@ -183,7 +183,7 @@ def _parse_health(text: str) -> dict:
 
 def _parse_feeding(text: str) -> dict:
     """解析喂食类型与分量。返回按类型的集合与全局分量。
-    前端的 feedTypeList 每项包含字段 type: 'seed'|'pellet'|'fruit'|'vegetable'|'supplement'|'milk_powder'
+    前端的 feedTypeList 每项包含字段 type: 'seed'|'pellet'|'fruit'|'vegetable'|'nut'|'supplement'|'milk_powder'
     这里不直接返回具体 ID，而是返回类型列表，由前端据此匹配选择项。
     """
     lowered = text.lower()
@@ -195,6 +195,7 @@ def _parse_feeding(text: str) -> dict:
         'milk_powder': ['奶粉', '幼鸟奶粉', '泡奶'],
         'pellet': ['颗粒', '配方粮', '饲料颗粒'],
         'seed': ['种子', '谷子', '黍子', '葵花籽'],
+        'nut': ['坚果', '核桃', '腰果', '杏仁', '花生', '松子'],
         'supplement': ['保健品', '维生素', '钙片', '益生菌']
     }
 

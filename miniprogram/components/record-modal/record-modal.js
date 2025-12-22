@@ -334,10 +334,10 @@ Component({
 
     initHealthStatusOptions: function() {
       const options = [
-        { value: 'healthy', label: '健康', icon: '/images/remix/ri-heart-fill-green.png' },
-        { value: 'sick', label: '生病', icon: '/images/remix/ri-information-fill-red.png' },
-        { value: 'recovering', label: '康复中', icon: '/images/remix/ri-nurse-line-purple.png' },
-        { value: 'observation', label: '观察中', icon: '/images/remix/eye-fill.png' }
+        { value: 'healthy', label: '健康', icon: 'https://img.icons8.com/3d-fluency/96/heart-with-pulse.png' },
+        { value: 'sick', label: '生病', icon: 'https://img.icons8.com/3d-fluency/96/face-with-thermometer.png' },
+        { value: 'recovering', label: '康复中', icon: 'https://img.icons8.com/3d-fluency/96/stethoscope.png' },
+        { value: 'observation', label: '观察中', icon: 'https://img.icons8.com/3d-fluency/96/eye.png' }
       ]
       this.setData({ healthStatusOptions: options })
     },
@@ -389,9 +389,18 @@ Component({
     },
 
     updateCleaningTypeOptions: function() {
-      const options = this.data.cleaningTypeList.map(c => ({
-        id: c.id,
-        name: c.name
+      const iconMap = {
+        'cage': 'https://img.icons8.com/3d-fluency/96/broom.png',
+        'toys': 'https://img.icons8.com/3d-fluency/96/soap.png',
+        'perches': 'https://img.icons8.com/3d-fluency/96/mop.png',
+        'food_water': 'https://img.icons8.com/3d-fluency/96/water.png',
+        'disinfection': 'https://img.icons8.com/3d-fluency/96/spray.png',
+        'bath': 'https://img.icons8.com/3d-fluency/96/bathtub.png'
+      }
+      const options = (this.data.cleaningTypeList || []).map(c => ({
+        value: c.id,
+        label: c.name,
+        icon: iconMap[c.id] || 'https://img.icons8.com/3d-fluency/96/broom.png'
       }))
       this.setData({ cleaningTypeOptions: options })
     },
@@ -495,7 +504,7 @@ Component({
     },
 
     confirmCleaningTypeSelection: function(e) {
-      const selectedIds = e.detail.value || [] // Array of strings
+      const selectedIds = e.detail.values || [] 
       
       const selectedCleaningTypes = this.data.cleaningTypeList
         .filter(c => selectedIds.includes(c.id))

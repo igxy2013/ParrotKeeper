@@ -17,6 +17,7 @@ Page({
       { value: 'pellet', label: '颗粒' },
       { value: 'fruit', label: '水果' },
       { value: 'vegetable', label: '蔬菜' },
+      { value: 'nut', label: '坚果' },
       { value: 'supplement', label: '保健品' },
       { value: 'milk_powder', label: '奶粉' }
     ],
