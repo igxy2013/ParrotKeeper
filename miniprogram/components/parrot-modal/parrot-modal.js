@@ -21,6 +21,7 @@ Component({
       color: '',
       birth_place_province: '',
       birth_place_city: '',
+      birth_place_county: '',
       birth_place_text: '',
       birth_date: '',
       notes: '',
@@ -30,6 +31,7 @@ Component({
       photo_url: '',
       photo_preview: ''
     },
+    regionValue: ['', '', ''],
     typeIndex: 0,
     createMode: 'form',
     claimCode: '',
@@ -58,6 +60,7 @@ Component({
         color: parrot.color || '',
         birth_place_province: parrot.birth_place_province || '',
         birth_place_city: parrot.birth_place_city || '',
+        birth_place_county: parrot.birth_place_county || '',
         birth_place_text: parrot.birth_place || '',
         birth_date: parrot.birth_date || parrot.birthDate || '',
         notes: parrot.notes || '',
@@ -81,7 +84,12 @@ Component({
         form.photo_preview = resolved || ''
       } catch (_) {}
       const splitIds = (parrot && Array.isArray(parrot.plumage_split_ids)) ? parrot.plumage_split_ids : []
-      this.setData({ form, typeIndex, photoTouched: false, plumageSplitIds: splitIds })
+      const rv = [
+        form.birth_place_province || '',
+        form.birth_place_city || '',
+        form.birth_place_county || ''
+      ]
+      this.setData({ form, typeIndex, photoTouched: false, plumageSplitIds: splitIds, regionValue: rv })
       this.refreshPlumageOptions()
     }
   },
@@ -204,12 +212,14 @@ Component({
         const arr = e && e.detail && e.detail.value ? e.detail.value : []
         const province = arr[0] || ''
         const city = arr[1] || ''
-        const text = [province, city].filter(Boolean).join(' ')
+        const county = arr[2] || ''
+        const text = [province, city, county].filter(Boolean).join(' ')
         this.setData({
           'form.birth_place_province': province,
           'form.birth_place_city': city,
+          'form.birth_place_county': county,
           'form.birth_place_text': text
-        })
+        , regionValue: [province, city, county] })
       } catch (_) {}
     },
 
@@ -459,6 +469,7 @@ Component({
         birth_place: f.birth_place_text || '',
         birth_place_province: f.birth_place_province || '',
         birth_place_city: f.birth_place_city || '',
+        birth_place_county: f.birth_place_county || '',
         birth_date: f.birth_date || '',
         color: f.color || '',
         weight: f.weight || '',

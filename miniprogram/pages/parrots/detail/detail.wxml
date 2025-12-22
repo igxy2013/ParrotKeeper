@@ -141,6 +141,15 @@
               </view>
               <view class="grid-value">{{parrot.birth_date || '未设置'}}</view>
             </view>
+            <view class="info-grid-item birthplace-info">
+              <view class="grid-label-wrap">
+                <image class="grid-icon" src="/images/remix/ri-home-5-fill-green.png" />
+                <text class="grid-label">出生地</text>
+              </view>
+              <view class="grid-value">
+                {{(parrot.birth_place_province || parrot.birth_place_city || parrot.birth_place_county) ? ((parrot.birth_place_province || '') + (parrot.birth_place_city || '') + (parrot.birth_place_county || '')) : '未设置'}}
+              </view>
+            </view>
             <view class="info-grid-item color-info">
               <view class="grid-label-wrap">
                 <image class="grid-icon" src="/images/remix/ri-camera-fill-pink.png" />

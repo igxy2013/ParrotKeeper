@@ -288,6 +288,10 @@ def create_parrot():
             birth_date=birth_date,
             acquisition_date=acquisition_date,
             color=data.get('color'),
+            birth_place=data.get('birth_place'),
+            birth_place_province=data.get('birth_place_province'),
+            birth_place_city=data.get('birth_place_city'),
+            birth_place_county=data.get('birth_place_county'),
             plumage_splits_json=(json.dumps(data.get('plumage_split_ids')) if isinstance(data.get('plumage_split_ids'), list) else None),
             weight=weight,
             health_status=data.get('health_status', 'healthy'),
@@ -369,6 +373,14 @@ def update_parrot(parrot_id):
                 parrot.acquisition_date = None
         if 'color' in data:
             parrot.color = data['color']
+        if 'birth_place' in data:
+            parrot.birth_place = data.get('birth_place')
+        if 'birth_place_province' in data:
+            parrot.birth_place_province = data.get('birth_place_province')
+        if 'birth_place_city' in data:
+            parrot.birth_place_city = data.get('birth_place_city')
+        if 'birth_place_county' in data:
+            parrot.birth_place_county = data.get('birth_place_county')
         if 'plumage_split_ids' in data:
             try:
                 ids = data.get('plumage_split_ids')

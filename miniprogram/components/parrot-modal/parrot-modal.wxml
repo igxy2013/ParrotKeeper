@@ -78,12 +78,12 @@
           />
         </view>
 
-        <!-- 出生地（省/市 两级） -->
+        <!-- 出生地（省/市/区 三级） -->
         <view class="form-item">
           <text class="form-label">出生地</text>
-          <picker mode="region" bindchange="onBirthPlaceChange">
+          <picker mode="region" value="{{regionValue}}" custom-item="请选择" bindchange="onBirthPlaceChange">
             <view class="picker-display">
-              <text>{{form.birth_place_text ? form.birth_place_text : '请选择省/市'}}</text>
+              <text>{{form.birth_place_text || ((form.birth_place_province || form.birth_place_city || form.birth_place_county) ? ((form.birth_place_province || '') + ' ' + (form.birth_place_city || '') + (form.birth_place_county ? (' ' + form.birth_place_county) : '')) : '请选择省/市/区')}}</text>
             </view>
           </picker>
         </view>

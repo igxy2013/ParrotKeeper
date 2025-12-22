@@ -348,6 +348,34 @@ def init_db(app):
                 pass
             print(f"添加区间字段失败: {e}")
 
+        try:
+            # 为 parrots 表添加出生地相关字段（若不存在）
+            with db.engine.connect() as connection:
+                def add_column_if_missing(col_sql):
+                    try:
+                        connection.execute(text(col_sql))
+                    except Exception:
+                        pass
+                r = connection.execute(text("SHOW COLUMNS FROM parrots LIKE 'birth_place'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrots ADD COLUMN birth_place VARCHAR(255) NULL AFTER color")
+                r = connection.execute(text("SHOW COLUMNS FROM parrots LIKE 'birth_place_province'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrots ADD COLUMN birth_place_province VARCHAR(100) NULL AFTER birth_place")
+                r = connection.execute(text("SHOW COLUMNS FROM parrots LIKE 'birth_place_city'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrots ADD COLUMN birth_place_city VARCHAR(100) NULL AFTER birth_place_province")
+                r = connection.execute(text("SHOW COLUMNS FROM parrots LIKE 'birth_place_county'")).fetchone()
+                if not r:
+                    add_column_if_missing("ALTER TABLE parrots ADD COLUMN birth_place_county VARCHAR(100) NULL AFTER birth_place_city")
+                print("已检查并添加 parrots 出生地相关字段")
+        except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            print(f"添加 parrots 出生地字段失败: {e}")
+
 def init_scheduler(app):
     """初始化APScheduler并注册定时推送任务"""
     try:
