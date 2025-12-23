@@ -39,9 +39,13 @@
     <el-container>
       <el-header>
         <div class="header-content">
-          <span>欢迎, {{ authStore.user?.nickname }}</span>
+          <div class="user-area" @click="openProfile">
+            <img :src="avatarSrc" class="header-avatar" @error="onHeaderAvatarError" />
+            <span>{{ authStore.user?.nickname || '未命名用户' }}</span>
+          </div>
           <el-button link @click="handleLogout">退出登录</el-button>
         </div>
+        <UserProfileModal v-model="showProfile" />
       </el-header>
       <el-main>
         <router-view />
@@ -51,19 +55,38 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import UserProfileModal from '@/components/UserProfileModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const showProfile = ref(false)
 
 const activeMenu = computed(() => route.path)
 
 const handleLogout = () => {
   authStore.logout()
 }
+
+onMounted(() => {
+  authStore.refreshProfile && authStore.refreshProfile()
+})
+
+const avatarSrc = computed(() => {
+  const u = authStore.user || {}
+  const url = u.avatar_url
+  if (!url) return '/profile.png'
+  const s = String(url)
+  if (/^https?:\/\//.test(s)) return s
+  if (s.startsWith('/uploads/')) return s
+  return '/uploads/' + s.replace(/^\/?uploads\/?/, '')
+})
+
+const onHeaderAvatarError = () => {}
+const openProfile = () => { showProfile.value = true }
 </script>
 
 <style scoped>
@@ -118,6 +141,8 @@ const handleLogout = () => {
   gap: 20px;
   font-weight: 500;
 }
+.user-area { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.header-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,0.3); }
 .header-content .el-button {
   color: rgba(255, 255, 255, 0.9);
 }

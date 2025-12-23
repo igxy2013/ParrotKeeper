@@ -44,5 +44,25 @@ export const useAuthStore = defineStore('auth', () => {
     window.location.href = '/login'
   }
 
-  return { user, userId, login, logout }
+  const refreshProfile = async () => {
+    try {
+      const res = await api.get('/auth/profile')
+      if (res.data && res.data.success) {
+        const u = res.data.data
+        user.value = u
+        if (u && u.id) {
+          userId.value = u.id
+          localStorage.setItem('user_id', u.id)
+        }
+        localStorage.setItem('user', JSON.stringify(u))
+        return u
+      }
+      return null
+    } catch (e) {
+      console.error('刷新用户信息失败', e)
+      return null
+    }
+  }
+
+  return { user, userId, login, logout, refreshProfile }
 })

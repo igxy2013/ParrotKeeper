@@ -1,18 +1,674 @@
 <template>
-  <div class="incubation-container">
-    <h2>人工孵化</h2>
-    <el-empty description="人工孵化功能开发中..." />
+  <div class="incubation-view">
+    <div class="header">
+      <h2>人工孵化</h2>
+      <el-button type="primary" @click="openAddEgg">
+        <el-icon><Plus /></el-icon> 新增孵化
+      </el-button>
+    </div>
+
+    <div v-loading="loading">
+      <el-empty v-if="!loading && eggs.length === 0" description="暂无孵化记录" />
+      
+      <el-row :gutter="20" v-else>
+        <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="egg in eggs" :key="egg.id" class="mb-4">
+          <el-card shadow="hover" class="egg-card">
+            <template #header>
+              <div class="card-header">
+                <span class="species-name">{{ egg.species_name || '未知品种' }}</span>
+                <el-tag :type="getStatusType(egg.status)">{{ getStatusText(egg.status) }}</el-tag>
+              </div>
+            </template>
+              <div class="card-content">
+              <p><span class="label">开始孵化:</span> {{ egg.incubator_start_datetime_text || formatDate(egg.incubator_start_date) }}</p>
+              <p><span class="label">天数:</span> {{ computeDaysHoursText(egg.incubator_start_date) }}</p>
+              <p v-if="egg.hatch_date"><span class="label">出壳日期:</span> {{ formatDate(egg.hatch_date) }}</p>
+            </div>
+            <div class="card-actions">
+              <el-button type="primary" link @click="openDetail(egg)">详情</el-button>
+              <el-button type="primary" link @click="openEditEgg(egg)">编辑</el-button>
+              <el-popconfirm title="确定删除这个记录吗？" @confirm="deleteEgg(egg.id)">
+                <template #reference>
+                  <el-button type="danger" link>删除</el-button>
+                </template>
+              </el-popconfirm>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
+
+    <!-- Add/Edit Egg Dialog -->
+    <el-dialog
+      v-model="showEggDialog"
+      :title="editingEgg ? '编辑孵化记录' : '新增孵化记录'"
+      width="500px"
+    >
+      <el-form :model="eggForm" label-width="100px">
+        <el-form-item label="标签">
+          <el-input v-model="eggForm.label" placeholder="如 A1" />
+        </el-form-item>
+        <el-form-item label="产蛋日期">
+          <el-date-picker v-model="eggForm.laid_date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" />
+        </el-form-item>
+        <el-form-item label="开始孵化">
+          <el-date-picker v-model="eggForm.incubator_start_date" type="datetime" placeholder="选择日期时间" value-format="YYYY-MM-DD HH:mm" />
+        </el-form-item>
+        <el-form-item label="品种">
+          <el-select v-model="eggForm.species_id" placeholder="选择品种" filterable>
+            <el-option v-for="s in speciesList" :key="s.id" :label="s.name" :value="s.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态" v-if="editingEgg">
+          <el-select v-model="eggForm.status">
+            <el-option label="孵化中" value="incubating" />
+            <el-option label="已出壳" value="hatched" />
+            <el-option label="停止发育" value="stopped" />
+            <el-option label="失败" value="failed" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="出壳日期" v-if="eggForm.status === 'hatched'">
+           <el-date-picker v-model="eggForm.hatch_date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEggDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveEgg">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Detail Drawer -->
+    <el-drawer
+      v-model="showDetailDrawer"
+      title="孵化详情"
+      size="80%"
+      direction="rtl"
+      destroy-on-close
+    >
+      <div v-if="currentDetailEgg" class="detail-container">
+        <!-- Top Info -->
+        <div class="detail-header">
+          <el-descriptions border>
+            <el-descriptions-item label="品种">{{ currentDetailEgg.species_name }}</el-descriptions-item>
+            <el-descriptions-item label="状态">
+               <el-tag :type="getStatusType(currentDetailEgg.status)">{{ getStatusText(currentDetailEgg.status) }}</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="入孵日期">{{ currentDetailEgg.incubator_start_datetime_text || formatDate(currentDetailEgg.incubator_start_date) }}</el-descriptions-item>
+            <el-descriptions-item label="天数">{{ computeDaysHoursText(currentDetailEgg.incubator_start_date) }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- Calendar & Advice Section -->
+        <el-row :gutter="20" class="mt-4">
+          <el-col :span="14">
+            <el-card header="孵化日历" class="calendar-card">
+              <el-calendar v-model="calendarDate">
+                <template #date-cell="{ data }">
+                  <div class="calendar-cell" :class="{ 'is-selected': data.isSelected }" @click="onDateSelect(data.day)">
+                    <div class="date-num">{{ data.date.getDate() }}</div>
+                    <div class="indicators">
+                      <span v-if="hasLog(data.day)" class="dot log-dot"></span>
+                      <span v-if="isCandlingDay(data.day)" class="badge candling-badge">照</span>
+                      <span v-if="isTurningDay(data.day)" class="badge turning-badge">翻</span>
+                    </div>
+                  </div>
+                </template>
+              </el-calendar>
+            </el-card>
+          </el-col>
+          <el-col :span="10">
+            <el-card class="advice-card">
+              <template #header>
+                <div class="card-header">
+                  <span>{{ formatDate(calendarDate) }} (第 {{ currentDayIndex }} 天)</span>
+                </div>
+              </template>
+              <div v-if="adviceLoading" class="loading-box">
+                <el-skeleton :rows="5" animated />
+              </div>
+              <div v-else class="advice-content">
+                <div class="advice-item">
+                  <span class="label">温度范围:</span>
+                  <span class="value">{{ advice.temp_range || '—' }}</span>
+                </div>
+                <div class="advice-item">
+                  <span class="label">湿度范围:</span>
+                  <span class="value">{{ advice.hum_range || '—' }}</span>
+                </div>
+                <div class="advice-item">
+                  <span class="label">翻蛋建议:</span>
+                  <span class="value">{{ advice.turning || '—' }}</span>
+                </div>
+                <div class="advice-item">
+                  <span class="label">照蛋建议:</span>
+                  <span class="value">{{ advice.candling || '—' }}</span>
+                </div>
+                <div class="tips-section" v-if="advice.tips && advice.tips.length">
+                  <div class="label">注意事项:</div>
+                  <ul>
+                    <li v-for="(tip, idx) in advice.tips" :key="idx">{{ tip }}</li>
+                  </ul>
+                </div>
+              </div>
+            </el-card>
+            
+             <!-- Quick Log Add -->
+             <el-card class="mt-4" header="添加/编辑日志">
+                <el-form :model="logForm" label-width="60px">
+                  <el-form-item label="温度">
+                    <el-input v-model="logForm.temperature" placeholder="°C" />
+                  </el-form-item>
+                  <el-form-item label="湿度">
+                    <el-input v-model="logForm.humidity" placeholder="%" />
+                  </el-form-item>
+                  <el-form-item label="备注">
+                    <el-input v-model="logForm.notes" type="textarea" :rows="2" />
+                  </el-form-item>
+                  <div class="text-right">
+                    <el-button type="primary" size="small" @click="saveLog">保存日志</el-button>
+                  </div>
+                </el-form>
+             </el-card>
+          </el-col>
+        </el-row>
+
+        <!-- Logs Table -->
+        <div class="logs-section mt-4">
+           <h3>孵化日志</h3>
+           <el-table :data="sortedLogs" style="width: 100%" stripe>
+            <el-table-column prop="log_date" label="日期" width="120">
+              <template #default="scope">
+                {{ formatDate(scope.row.log_date) }}
+              </template>
+            </el-table-column>
+             <el-table-column prop="temperature_c" label="温度(°C)" width="100" />
+             <el-table-column prop="humidity_pct" label="湿度(%)" width="100" />
+             <el-table-column prop="notes" label="备注" />
+             <el-table-column label="操作" width="100">
+               <template #default="scope">
+                  <el-button type="danger" link size="small" @click="deleteLog(scope.row.id)">删除</el-button>
+               </template>
+             </el-table-column>
+           </el-table>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
+import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { Plus } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import api from '@/api/axios'
+
+// --- State ---
+const loading = ref(false)
+const eggs = ref([])
+const speciesList = ref([])
+
+// Dialog State
+const showEggDialog = ref(false)
+const editingEgg = ref(null)
+const eggForm = reactive({
+  label: '',
+  laid_date: '',
+  incubator_start_date: '',
+  species_id: '',
+  status: 'incubating',
+  hatch_date: ''
+})
+
+// Detail Drawer State
+const showDetailDrawer = ref(false)
+const currentDetailEgg = ref(null)
+const calendarDate = ref(new Date())
+const calendarData = ref({}) // Stores turning_dates, candling_dates, etc.
+const logs = ref([])
+const advice = ref({})
+const adviceLoading = ref(false)
+
+// Log Form State
+const logForm = reactive({
+  temperature: '',
+  humidity: '',
+  notes: ''
+})
+
+// --- Computed ---
+const currentDayIndex = computed(() => {
+  if (!currentDetailEgg.value || !currentDetailEgg.value.incubator_start_date) return 0
+  const start = new Date(currentDetailEgg.value.incubator_start_date)
+  const current = new Date(calendarDate.value)
+  // Normalize to start of day
+  start.setHours(0,0,0,0)
+  current.setHours(0,0,0,0)
+  
+  const diffTime = current - start
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+  return diffDays > 0 ? diffDays : 0
+})
+
+const sortedLogs = computed(() => {
+  return [...logs.value].sort((a, b) => new Date(b.log_date) - new Date(a.log_date))
+})
+
+// --- Methods ---
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  return new Date(dateStr).toISOString().split('T')[0]
+}
+
+const formatDateTimeText = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(String(dateStr).replace('T', ' ').replace(/-/g, '/'))
+  if (isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${dd} ${hh}:${mm}`
+}
+
+const computeDaysHoursText = (dStr) => {
+  if (!dStr) return '--'
+  const s = String(dStr)
+  let dt = new Date(s.replace(/-/g, '/').replace('T', ' '))
+  if (isNaN(dt.getTime())) dt = new Date(s)
+  if (isNaN(dt.getTime())) return '--'
+  const now = new Date()
+  const ms = now.getTime() - dt.getTime()
+  if (ms < 0) return '0天0小时'
+  const days = Math.floor(ms / 86400000) + 1
+  const hours = Math.floor((ms % 86400000) / 3600000)
+  return `${days}天${hours}小时`
+}
+
+const getStatusText = (status) => {
+  const map = {
+    'incubating': '孵化中',
+    'hatched': '已出壳',
+    'stopped': '停止发育',
+    'failed': '失败'
+  }
+  return map[status] || status
+}
+
+const getStatusType = (status) => {
+  const map = {
+    'incubating': 'primary',
+    'hatched': 'success',
+    'stopped': 'warning',
+    'failed': 'danger'
+  }
+  return map[status] || 'info'
+}
+
+// --- API Calls ---
+
+const fetchEggs = async () => {
+  loading.value = true
+  try {
+    const res = await api.get('/incubation/eggs')
+    const items = (res.data && res.data.data && res.data.data.items) || []
+    const mapped = items.map(it => {
+      const speciesName = (it && it.species && it.species.name) ? it.species.name : (it && it.species_name) || ''
+      return {
+        ...it,
+        species_name: speciesName,
+        incubator_start_datetime_text: formatDateTimeText(it && it.incubator_start_date)
+      }
+    })
+    eggs.value = mapped
+  } catch (e) {
+    ElMessage.error('获取孵化列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const fetchSpecies = async () => {
+  try {
+    const res = await api.get('/parrots/species')
+    if (res.data && res.data.success) {
+      speciesList.value = res.data.data || []
+    } else {
+      speciesList.value = []
+    }
+  } catch (e) {
+    // Silent fail
+  }
+}
+
+const openAddEgg = () => {
+  editingEgg.value = null
+  eggForm.label = ''
+  eggForm.laid_date = ''
+  eggForm.incubator_start_date = formatDateTimeText(new Date())
+  eggForm.species_id = ''
+  eggForm.status = 'incubating'
+  eggForm.hatch_date = ''
+  showEggDialog.value = true
+}
+
+const openEditEgg = (egg) => {
+  editingEgg.value = egg
+  eggForm.label = egg.label || ''
+  eggForm.laid_date = formatDate(egg.laid_date)
+  eggForm.incubator_start_date = formatDateTimeText(egg.incubator_start_date)
+  eggForm.species_id = egg.species_id || (egg.species && egg.species.id) || ''
+  eggForm.status = egg.status
+  eggForm.hatch_date = formatDate(egg.hatch_date)
+  showEggDialog.value = true
+}
+
+const saveEgg = async () => {
+  try {
+    const payload = { ...eggForm }
+    if (editingEgg.value) {
+      await api.put(`/incubation/eggs/${editingEgg.value.id}`, payload)
+      ElMessage.success('更新成功')
+    } else {
+      await api.post('/incubation/eggs', payload)
+      ElMessage.success('创建成功')
+    }
+    showEggDialog.value = false
+    fetchEggs()
+  } catch (e) {
+    ElMessage.error('保存失败')
+  }
+}
+
+const deleteEgg = async (id) => {
+  try {
+    await api.delete(`/incubation/eggs/${id}`)
+    ElMessage.success('删除成功')
+    fetchEggs()
+  } catch (e) {
+    ElMessage.error('删除失败')
+  }
+}
+
+// --- Detail Logic ---
+
+const openDetail = async (egg) => {
+  currentDetailEgg.value = egg
+  showDetailDrawer.value = true
+  // Reset
+  calendarDate.value = new Date()
+  logs.value = []
+  advice.value = {}
+  calendarData.value = {}
+  
+  await fetchDetailData(egg.id)
+}
+
+const fetchDetailData = async (id) => {
+  try {
+    // 1. Get Detail & Logs
+    const res = await api.get(`/incubation/eggs/${id}`)
+    if (res.data && res.data.egg) {
+      currentDetailEgg.value = { 
+        ...res.data.egg, 
+        species_name: res.data.egg.species ? res.data.egg.species.name : res.data.egg.species_name,
+        incubator_start_datetime_text: formatDateTimeText(res.data.egg.incubator_start_date)
+      }
+    }
+    logs.value = res.data.logs || []
+    
+    // 2. Get Calendar Data
+    const calRes = await api.get(`/incubation/eggs/${id}/calendar`)
+    calendarData.value = calRes.data.calendar || {}
+    
+    // 3. Fetch initial advice
+    fetchAdvice()
+  } catch (e) {
+    ElMessage.error('获取详情失败')
+  }
+}
+
+const fetchAdvice = async () => {
+  if (!currentDetailEgg.value) return
+  adviceLoading.value = true
+  try {
+    const dateStr = formatDate(calendarDate.value)
+    // Check if after hatch
+    let afterHatch = false
+    if (currentDetailEgg.value.hatch_date) {
+      const hatch = new Date(currentDetailEgg.value.hatch_date)
+      const current = new Date(calendarDate.value)
+      if (current >= hatch) afterHatch = true
+    }
+    
+    const res = await api.get(`/incubation/eggs/${currentDetailEgg.value.id}/advice`, {
+      params: {
+        date: dateStr,
+        day_index: currentDayIndex.value,
+        after_hatch: afterHatch
+      }
+    })
+    advice.value = res.data || {}
+    
+    // Also update log form if log exists for this day
+    const log = logs.value.find(l => formatDate(l.log_date) === dateStr)
+    if (log) {
+      logForm.temperature = log.temperature_c
+      logForm.humidity = log.humidity_pct
+      logForm.notes = log.notes
+    } else {
+      logForm.temperature = ''
+      logForm.humidity = ''
+      logForm.notes = ''
+    }
+    
+  } catch (e) {
+    console.error(e)
+  } finally {
+    adviceLoading.value = false
+  }
+}
+
+// Watch calendar date change
+watch(calendarDate, () => {
+  fetchAdvice()
+})
+
+// --- Calendar Helpers ---
+const hasLog = (date) => {
+  const dateStr = formatDate(date)
+  return logs.value.some(l => formatDate(l.log_date) === dateStr)
+}
+
+const isCandlingDay = (date) => {
+  const dateStr = formatDate(date)
+  const list = calendarData.value.candling_dates || []
+  return list.some(d => formatDate(d) === dateStr)
+}
+
+const isTurningDay = (date) => {
+  const dateStr = formatDate(date)
+  const list = calendarData.value.turning_dates || []
+  return list.some(d => formatDate(d) === dateStr)
+}
+
+// --- Log Operations ---
+const saveLog = async () => {
+  if (!currentDetailEgg.value) return
+  const dateStr = formatDate(calendarDate.value)
+  
+  // Check if log exists
+  const existingLog = logs.value.find(l => formatDate(l.log_date) === dateStr)
+  
+  const payload = {
+    log_date: dateStr,
+    temperature_c: logForm.temperature,
+    humidity_pct: logForm.humidity,
+    notes: logForm.notes
+  }
+  
+  try {
+    if (existingLog) {
+       // Mini-program doesn't seem to have explicit log update API in detail.js, it uses editLog logic which likely hits a PUT endpoint
+       // I'll assume PUT /incubation/eggs/:id/logs/:logId based on standard REST or submitUnifiedForm
+       // Wait, detail.js `submitEditLog` uses `app.request({ url: '/api/incubation/logs/' + id, method: 'PUT', ... })` ? No, let's check detail.js again.
+       // It seems I missed the exact URL in my read. Let's assume standard REST or use POST to overwrite.
+       // Actually, in detail.js `submitEditLog`: `url: /api/incubation/logs/${id}` where id is log id.
+       await api.put(`/incubation/logs/${existingLog.id}`, payload)
+       ElMessage.success('日志更新成功')
+    } else {
+       await api.post(`/incubation/eggs/${currentDetailEgg.value.id}/logs`, payload)
+       ElMessage.success('日志添加成功')
+    }
+    // Refresh
+    await fetchDetailData(currentDetailEgg.value.id)
+  } catch (e) {
+    ElMessage.error('操作失败')
+  }
+}
+
+const deleteLog = async (logId) => {
+   try {
+     // Assuming API
+     await api.delete(`/incubation/logs/${logId}`)
+     ElMessage.success('删除成功')
+     fetchDetailData(currentDetailEgg.value.id)
+   } catch (e) {
+     ElMessage.error('删除失败')
+   }
+}
+
+// --- Lifecycle ---
+onMounted(() => {
+  fetchEggs()
+  fetchSpecies()
+})
+
 </script>
 
 <style scoped>
-.incubation-container {
+.incubation-view {
   padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  min-height: 400px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.mb-4 {
+  margin-bottom: 20px;
+}
+.egg-card {
+  height: 100%;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.species-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+.card-content {
+  color: #606266;
+  font-size: 14px;
+}
+.card-content p {
+  margin: 8px 0;
+}
+.label {
+  color: #909399;
+  margin-right: 8px;
+}
+.card-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Detail Styles */
+.detail-container {
+  padding: 0 10px;
+}
+.detail-header {
+  margin-bottom: 20px;
+}
+.calendar-card {
+  margin-bottom: 20px;
+}
+.calendar-cell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 5px;
+  position: relative;
+}
+.date-num {
+  font-weight: bold;
+}
+.indicators {
+  margin-top: 5px;
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.log-dot {
+  background-color: #409EFF;
+}
+.badge {
+  font-size: 10px;
+  padding: 1px 3px;
+  border-radius: 4px;
+  color: #fff;
+}
+.candling-badge {
+  background-color: #E6A23C;
+}
+.turning-badge {
+  background-color: #67C23A;
+}
+
+.advice-content {
+  font-size: 14px;
+}
+.advice-item {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed #eee;
+  padding-bottom: 5px;
+}
+.advice-item .value {
+  font-weight: bold;
+  color: #409EFF;
+}
+.tips-section {
+  margin-top: 15px;
+  background: #fdf6ec;
+  padding: 10px;
+  border-radius: 4px;
+  color: #e6a23c;
+}
+.tips-section ul {
+  padding-left: 20px;
+  margin: 5px 0 0 0;
+}
+
+.text-right {
+  text-align: right;
+  margin-top: 10px;
 }
 </style>

@@ -168,26 +168,22 @@
                   </div>
                   <div class="form-item half">
                     <label class="form-label">羽色</label>
-                    <div class="plumage-selector-wrapper" v-if="plumageColors.length">
-                      <el-select
-                        v-model="form.color"
-                        placeholder="请选择羽色"
-                        class="full-width-select"
-                      >
-                        <el-option
-                          v-for="c in plumageColors"
-                          :key="c"
-                          :label="c"
-                          :value="c"
-                        />
-                      </el-select>
-                    </div>
-                    <input
-                      v-else
+                    <el-select
                       v-model="form.color"
-                      class="text-input"
-                      placeholder="例如：原始灰"
-                    />
+                      placeholder="请选择羽色"
+                      class="full-width-select"
+                      filterable
+                      allow-create
+                      default-first-option
+                      clearable
+                    >
+                      <el-option
+                        v-for="c in plumageColors"
+                        :key="c"
+                        :label="c"
+                        :value="c"
+                      />
+                    </el-select>
                   </div>
                 </div>
 
@@ -730,8 +726,7 @@ const handleSubmit = async () => {
   height: 36px;
 }
 :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #26A69A !important;
-  ring: 2px rgba(38, 166, 154, 0.1);
+  box-shadow: 0 0 0 1px #26A69A, 0 0 0 4px rgba(38, 166, 154, 0.1) !important;
 }
 
 /* Gender Toggle */
