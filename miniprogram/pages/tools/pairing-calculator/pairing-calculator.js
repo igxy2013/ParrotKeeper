@@ -228,7 +228,10 @@ Page({
       return s
     } else if (species === '牡丹鹦鹉') {
       if (s.includes('白面绿桃')) return '白面桃'
-      if (s.includes('蓝派特')) return '蓝派特'
+      if (s === '绿桃' || s.includes('野生型')) return '野生型（绿桃）'
+      if (s === '白桃') return '白桃（白化）'
+      if (s === '黄桃') return '黄桃（黄化）'
+      if (s.includes('蓝派特')) return '派特桃'
       return s
     } else if (species === '小太阳鹦鹉') {
       if (s.includes('派特')) return '派特小太阳'
@@ -268,7 +271,11 @@ Page({
       })
     } else if (species === '牡丹鹦鹉') {
       const alias = {
-        '白面桃': ['白面绿桃']
+        '白面桃': ['白面绿桃'],
+        '野生型（绿桃）': ['野生型','绿桃'],
+        '白桃（白化）': ['白桃'],
+        '黄桃（黄化）': ['黄桃'],
+        '派特桃': ['蓝派特','派特']
       }
       Object.keys(alias).forEach(canon => {
         const syns = alias[canon]

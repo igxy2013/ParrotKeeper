@@ -80,9 +80,7 @@ def build_plumage_for_species(name: str):
         }
         colors = [
             {'name': '绿和尚', 'genes': {}},
-            {'name': '绿色', 'genes': {}},
             {'name': '蓝和尚', 'genes': {'blue': 2}},
-            {'name': '蓝色', 'genes': {'blue': 2}},
             {'name': '黄和尚', 'genes': {'ino': 1}}, # Lutino
             {'name': '白和尚', 'genes': {'blue': 2, 'ino': 1}}, # Albino
             {'name': '深绿和尚', 'genes': {'dark': 1}},
@@ -138,9 +136,8 @@ def build_plumage_for_species(name: str):
             'orange_face': {'label': '橙面', 'type': 'autosomal'},
         }
         colors = [
-            {'name': '绿桃', 'genes': {}},
-            {'name': '野生型', 'genes': {}},
-            {'name': '黄桃', 'genes': {'ino': 1}}, # Lutino
+            {'name': '野生型（绿桃）', 'genes': {}},
+            {'name': '黄桃（黄化）', 'genes': {'ino': 1}}, # Lutino
             {'name': '蓝银顶', 'genes': {'blue': 2}}, # Dutch Blue
             {'name': '绿金顶', 'genes': {'blue': 1}}, # Split Blue? No, Parblue? Or Orange Face? JS says if splitBlue -> 绿金顶. 
             # In JS: if (isBlue) color = '蓝银顶'; else if (isSplitBlue) color = '绿金顶'.
@@ -151,14 +148,15 @@ def build_plumage_for_species(name: str):
             # To make a visual '绿金顶', we might need to simulate it. But 'Split' is usually hidden.
             # However, in some contexts, "Green Split Blue" is just Green. 
             # "绿金顶" might be Orange Face?
-            {'name': '白桃', 'genes': {'blue': 2, 'ino': 1}}, # Albino
+            {'name': '白桃（白化）', 'genes': {'blue': 2, 'ino': 1}}, # Albino
+            {'name': '白面桃', 'genes': {'white_face': 2}},
             {'name': '紫罗兰', 'genes': {'blue': 2, 'violet': 1}},
             {'name': '墨蓝', 'genes': {'blue': 2, 'dark': 2}},
             {'name': '钴蓝', 'genes': {'blue': 2, 'dark': 1}},
             {'name': '深绿', 'genes': {'dark': 1}},
             {'name': '橄榄绿', 'genes': {'dark': 2}},
-            {'name': '肉桂', 'genes': {'cinnamon': 1}},
-            {'name': '派特', 'genes': {'pied': 2}},
+            {'name': '肉桂桃', 'genes': {'cinnamon': 1}},
+            {'name': '派特桃', 'genes': {'pied': 2}},
         ]
         return {'colors': colors, 'loci': loci}
 
@@ -191,6 +189,12 @@ def merge_plumage(existing_json: str, new_data: dict):
             '金太阳'  # 错误名称
         ]
         deprecated_colors.extend(deprecated_sun_conure_colors)
+        # 和尚鹦鹉重复/别名
+        deprecated_monk_colors = ['绿色', '蓝色']
+        deprecated_colors.extend(deprecated_monk_colors)
+        # 牡丹鹦鹉重复/别名
+        deprecated_lovebird_colors = ['绿桃', '野生型', '白桃', '黄桃', '白面绿桃', '派特', '白色', '黄色']
+        deprecated_colors.extend(deprecated_lovebird_colors)
         for d in deprecated_colors:
             if d in color_map:
                 del color_map[d]
