@@ -51,14 +51,19 @@
     <el-container>
       <el-header>
         <div class="header-content">
-          <div class="user-area">
-            <img :src="avatarSrc" class="header-avatar" @error="onHeaderAvatarError" />
-            <div class="user-info">
-              <span class="nickname">{{ authStore.user?.nickname || '未命名用户' }}</span>
-              <el-tag class="role-tag" size="small" :type="roleTagType" effect="dark">{{ roleLabel }}</el-tag>
-            </div>
+          <div class="left-zone">
+            <el-tag class="mode-tag" size="small" :type="modeTagType" effect="dark">{{ modeLabel }}</el-tag>
           </div>
-          <el-button link @click="handleLogout">退出登录</el-button>
+          <div class="right-zone">
+            <div class="user-area">
+              <img :src="avatarSrc" class="header-avatar" @error="onHeaderAvatarError" />
+              <div class="user-info">
+                <span class="nickname">{{ authStore.user?.nickname || '未命名用户' }}</span>
+                <el-tag class="role-tag" size="small" :type="roleTagType" effect="dark">{{ roleLabel }}</el-tag>
+              </div>
+            </div>
+            <el-button link @click="handleLogout">退出登录</el-button>
+          </div>
         </div>
       </el-header>
       <el-main>
@@ -94,6 +99,10 @@ const roleTagType = computed(() => {
   if (r === 'admin') return 'warning'
   return 'info'
 })
+
+const userMode = computed(() => localStorage.getItem('user_mode') || 'personal')
+const modeLabel = computed(() => userMode.value === 'team' ? '团队模式' : '个人模式')
+const modeTagType = computed(() => userMode.value === 'team' ? 'warning' : 'success')
 
 const handleLogout = () => {
   authStore.logout()
@@ -157,7 +166,7 @@ const onHeaderAvatarError = () => {}
   color: white;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding-right: 20px;
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
   height: 64px !important;
@@ -166,9 +175,14 @@ const onHeaderAvatarError = () => {}
   display: flex;
   align-items: center;
   gap: 20px;
+  justify-content: space-between;
+  width: 100%;
   font-weight: 500;
 }
+.left-zone { display:flex; align-items:center; }
+.right-zone { display:flex; align-items:center; gap: 20px; }
 .user-area { display: flex; align-items: center; gap: 10px; }
+.mode-tag { align-self: center; }
 .user-info { display:flex; flex-direction:column; line-height: 1.2; }
 .nickname { color: #fff; }
 .role-tag { margin-top: 2px; align-self: flex-start; }
