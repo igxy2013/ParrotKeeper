@@ -91,7 +91,7 @@ class Parrot(db.Model):
     birth_place_county = db.Column(db.String(100))
     plumage_splits_json = db.Column(db.Text)
     weight = db.Column(db.Numeric(5, 2))
-    health_status = db.Column(db.Enum('healthy', 'sick', 'recovering'), default='healthy')
+    health_status = db.Column(db.Enum('healthy', 'sick', 'recovering', 'observation'), default='healthy')
     photo_url = db.Column(db.String(255))
     avatar_url = db.Column(db.String(255))  # 头像URL
     parrot_number = db.Column(db.String(50))  # 编号

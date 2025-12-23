@@ -31,6 +31,11 @@ Page({
   goToFeedTypeManagement() {
     wx.navigateTo({ url: '/pages/settings/feed-type-management/feed-type-management' });
   },
+
+  goToAccountManagement() {
+    wx.navigateTo({ url: '/pages/account-management/account-management' });
+  },
+
   showHelp() {
     wx.navigateTo({ url: '/pages/settings/feedback/feedback' })
   },

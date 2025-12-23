@@ -1,0 +1,110 @@
+<view class="page-container">
+  <app-header title="账号管理" subtitle="绑定或设置登录账号" showBack="true"></app-header>
+  <view class="page-content">
+    <!-- Current Status -->
+    <view class="status-card">
+      <view class="status-header">
+        <text class="status-title">当前状态</text>
+        <view class="status-badge {{username ? 'active' : ''}}">
+          {{username ? '已设置账号' : '未设置账号'}}
+        </view>
+      </view>
+      <view class="status-info">
+         <view class="info-row">
+            <text class="label">用户名：</text>
+            <text class="value">{{username || '未设置'}}</text>
+         </view>
+         <view class="info-row">
+            <text class="label">微信绑定：</text>
+            <text class="value highlight">已绑定</text>
+         </view>
+      </view>
+    </view>
+
+    <!-- Actions -->
+    <view class="action-list">
+      <view class="action-card" bindtap="showBindModal">
+        <view class="action-icon-bg bind-bg">
+          <text class="action-icon">🔗</text>
+        </view>
+        <view class="action-text">
+          <view class="action-title">绑定已有账号</view>
+          <view class="action-desc">将当前微信关联到已有账号（合并数据）</view>
+        </view>
+        <view class="action-arrow">></view>
+      </view>
+
+      <view class="action-card" bindtap="showSetupModal">
+        <view class="action-icon-bg setup-bg">
+          <text class="action-icon">📝</text>
+        </view>
+        <view class="action-text">
+          <view class="action-title">建立新账号</view>
+          <view class="action-desc">设置用户名和密码，用于账号登录</view>
+        </view>
+        <view class="action-arrow">></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Bind Modal -->
+  <view class="modal-overlay" wx:if="{{showBindModal}}" bindtap="hideBindModal">
+    <view class="modal-container" catchtap="stopPropagation">
+       <view class="modal-header">
+         <text>绑定已有账号</text>
+         <view class="close-btn" bindtap="hideBindModal">×</view>
+       </view>
+       <view class="modal-body">
+          <view class="input-group">
+            <text class="input-label">用户名</text>
+            <input class="input" placeholder="请输入已有账号用户名" model:value="{{bindUsername}}" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">密码</text>
+            <input class="input" password placeholder="请输入密码" model:value="{{bindPassword}}" />
+          </view>
+          <view class="warning-text">注意：绑定后将切换至目标账号，当前临时数据可能丢失。</view>
+       </view>
+       <view class="modal-footer">
+          <button class="btn cancel" bindtap="hideBindModal">取消</button>
+          <button class="btn confirm" bindtap="handleBind">确认绑定</button>
+       </view>
+    </view>
+  </view>
+
+  <!-- Setup Modal -->
+  <view class="modal-overlay" wx:if="{{showSetupModal}}" bindtap="hideSetupModal">
+    <view class="modal-container" catchtap="stopPropagation">
+       <view class="modal-header">
+         <text>建立新账号</text>
+         <view class="close-btn" bindtap="hideSetupModal">×</view>
+       </view>
+       <view class="modal-body">
+          <view class="input-group">
+            <text class="input-label">用户名</text>
+            <input class="input {{setupUsernameError ? 'error-border' : ''}}" 
+                   placeholder="设置用户名" 
+                   value="{{setupUsername}}" 
+                   bindinput="onSetupUsernameInput"
+                   bindblur="checkSetupUsername" />
+            <view class="error-text" wx:if="{{setupUsernameError}}">
+               <icon type="warn" size="14" color="#ef4444" style="margin-right: 8rpx;"/>
+               <text >{{setupUsernameError}}</text>
+            </view>
+          </view>
+          <view class="input-group">
+            <text class="input-label">密码</text>
+            <input class="input" password placeholder="设置密码" model:value="{{setupPassword}}" />
+          </view>
+          <view class="input-group">
+            <text class="input-label">确认密码</text>
+            <input class="input" password placeholder="再次输入密码" model:value="{{setupConfirmPassword}}" />
+          </view>
+       </view>
+       <view class="modal-footer">
+          <button class="btn cancel" bindtap="hideSetupModal">取消</button>
+          <button class="btn confirm" bindtap="handleSetup">确认设置</button>
+       </view>
+    </view>
+  </view>
+</view>

@@ -2,7 +2,8 @@
   "pages": [
     "pages/index/index",
     "pages/login/login",
-    "pages/register/register"
+    "pages/register/register",
+    "pages/account-management/account-management"
   ],
   "subpackages": [
     {
