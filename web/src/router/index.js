@@ -7,6 +7,17 @@ import RecordsView from '../views/RecordsView.vue'
 import IncubationView from '../views/IncubationView.vue'
 import PairingView from '../views/PairingView.vue'
 import SettingsView from '../views/SettingsView.vue'
+import CareGuideView from '../views/CareGuideView.vue'
+import AnnouncementsCenterView from '../views/AnnouncementsCenterView.vue'
+import AdminView from '../views/AdminView.vue'
+import AdminFeedbacksView from '../views/admin/AdminFeedbacksView.vue'
+import AdminCareGuideEditorView from '../views/admin/AdminCareGuideEditorView.vue'
+import AdminIncubationSuggestionsView from '../views/admin/AdminIncubationSuggestionsView.vue'
+import AdminMarketPricesView from '../views/admin/AdminMarketPricesView.vue'
+import AdminParrotSpeciesView from '../views/admin/AdminParrotSpeciesView.vue'
+import AdminUserRoleView from '../views/admin/AdminUserRoleView.vue'
+import AdminAnnouncementsView from '../views/admin/AdminAnnouncementsView.vue'
+import AdminApiConfigsView from '../views/admin/AdminApiConfigsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,10 +57,34 @@ const router = createRouter({
           component: PairingView
         },
         {
+          path: 'announcements',
+          name: 'announcements-center',
+          component: AnnouncementsCenterView
+        },
+        {
+          path: 'care-guide',
+          name: 'care-guide',
+          component: CareGuideView
+        },
+        {
           path: 'settings',
           name: 'settings',
           component: SettingsView
         }
+        ,
+        {
+          path: 'admin',
+          name: 'admin',
+          component: AdminView
+        },
+        { path: 'admin/feedbacks', name: 'admin-feedbacks', component: AdminFeedbacksView },
+        { path: 'admin/care-guide-editor', name: 'admin-care-guide-editor', component: AdminCareGuideEditorView },
+        { path: 'admin/incubation-suggestions', name: 'admin-incubation-suggestions', component: AdminIncubationSuggestionsView },
+        { path: 'admin/market-prices', name: 'admin-market-prices', component: AdminMarketPricesView },
+        { path: 'admin/parrot-species', name: 'admin-parrot-species', component: AdminParrotSpeciesView },
+        { path: 'admin/user-role', name: 'admin-user-role', component: AdminUserRoleView },
+        { path: 'admin/announcements', name: 'admin-announcements', component: AdminAnnouncementsView },
+        { path: 'admin/api-configs', name: 'admin-api-configs', component: AdminApiConfigsView }
       ]
     }
   ]

@@ -18,9 +18,13 @@
           <img src="/parrot.png" class="menu-icon" />
           <span>我的鹦鹉</span>
         </el-menu-item>
-         <el-menu-item index="/records">
+        <el-menu-item index="/records">
           <img src="/chart.png" class="menu-icon" />
           <span>记录</span>
+        </el-menu-item>
+        <el-menu-item index="/care-guide">
+          <el-icon class="menu-icon-el"><Notebook /></el-icon>
+          <span>护理指南</span>
         </el-menu-item>
         <el-menu-item index="/incubation">
           <el-icon class="menu-icon-el"><Sunny /></el-icon>
@@ -30,22 +34,32 @@
           <el-icon class="menu-icon-el"><Connection /></el-icon>
           <span>配对计算器</span>
         </el-menu-item>
+        <el-menu-item index="/announcements">
+          <el-icon class="menu-icon-el"><Notification /></el-icon>
+          <span>公告中心</span>
+        </el-menu-item>
         <el-menu-item index="/settings">
+          <img src="/profile.png" class="menu-icon" />
+          <span>个人中心</span>
+        </el-menu-item>
+        <el-menu-item v-if="isSuperAdmin" index="/admin">
           <el-icon class="menu-icon-el"><Setting /></el-icon>
-          <span>模式设置</span>
+          <span>后台管理</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
       <el-header>
         <div class="header-content">
-          <div class="user-area" @click="openProfile">
+          <div class="user-area">
             <img :src="avatarSrc" class="header-avatar" @error="onHeaderAvatarError" />
-            <span>{{ authStore.user?.nickname || '未命名用户' }}</span>
+            <div class="user-info">
+              <span class="nickname">{{ authStore.user?.nickname || '未命名用户' }}</span>
+              <el-tag class="role-tag" size="small" :type="roleTagType" effect="dark">{{ roleLabel }}</el-tag>
+            </div>
           </div>
           <el-button link @click="handleLogout">退出登录</el-button>
         </div>
-        <UserProfileModal v-model="showProfile" />
       </el-header>
       <el-main>
         <router-view />
@@ -55,17 +69,31 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import UserProfileModal from '@/components/UserProfileModal.vue'
+import { Notebook, Sunny, Connection, Setting, Notification } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const showProfile = ref(false)
 
 const activeMenu = computed(() => route.path)
+
+const isSuperAdmin = computed(() => String((authStore.user || {}).role || 'user') === 'super_admin')
+
+const roleLabel = computed(() => {
+  const r = String((authStore.user || {}).role || 'user')
+  if (r === 'super_admin') return '超级管理员'
+  if (r === 'admin') return '管理员'
+  return '普通用户'
+})
+const roleTagType = computed(() => {
+  const r = String((authStore.user || {}).role || 'user')
+  if (r === 'super_admin') return 'danger'
+  if (r === 'admin') return 'warning'
+  return 'info'
+})
 
 const handleLogout = () => {
   authStore.logout()
@@ -86,7 +114,6 @@ const avatarSrc = computed(() => {
 })
 
 const onHeaderAvatarError = () => {}
-const openProfile = () => { showProfile.value = true }
 </script>
 
 <style scoped>
@@ -141,7 +168,10 @@ const openProfile = () => { showProfile.value = true }
   gap: 20px;
   font-weight: 500;
 }
-.user-area { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.user-area { display: flex; align-items: center; gap: 10px; }
+.user-info { display:flex; flex-direction:column; line-height: 1.2; }
+.nickname { color: #fff; }
+.role-tag { margin-top: 2px; align-self: flex-start; }
 .header-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,0.3); }
 .header-content .el-button {
   color: rgba(255, 255, 255, 0.9);
@@ -152,5 +182,14 @@ const openProfile = () => { showProfile.value = true }
 .el-main {
   background-color: #f8f9fa;
   padding: 24px;
+}
+:deep(.el-menu-vertical) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+:deep(.el-menu-vertical .el-menu-item:last-child) {
+  margin-top: auto;
+  border-top: 1px solid #f0f0f0;
 }
 </style>
