@@ -54,7 +54,7 @@
                 <!-- Row 1: Name & Species -->
                 <div class="form-row">
                   <div class="form-item half">
-                    <label class="form-label">鹦鹉名字 *</label>
+                    <label class="form-label">鹦鹉名称 *</label>
                     <input 
                       v-model="form.name" 
                       class="text-input" 
@@ -405,12 +405,21 @@ const handleClose = () => {
 
 const getPreviewImage = (url) => {
 	if (!url) return ''
-	if (url.startsWith('http')) return url
-	if (url.startsWith('/images/')) return url
-	if (url.startsWith('/uploads/')) return url
-	if (url.startsWith('uploads/')) return `/${url}`
-	if (url.startsWith('/parrot-avatar-')) return url
-	return `/uploads/${url}`
+	let u = String(url).replace(/\\/g, '/').trim()
+	if (/^https?:\//.test(u)) return u
+	if (u.startsWith('data:')) return u
+	if (/\/uploads\//.test(u)) {
+		const suffix = u.split('/uploads/')[1] || ''
+		return `/uploads/${suffix.replace(/^images\//, '')}`
+	}
+	if (/^\/?uploads\//.test(u)) {
+		const normalized = u.replace(/^\//, '').replace(/^uploads\/images\//, 'uploads/').replace(/^uploads\//, 'uploads/')
+		return `/${normalized}`
+	}
+	if (/^\/?images\/parrot-avatar-/.test(u)) return `/${u.replace(/^\/?images\//, '')}`
+	if (/^\/?images\//.test(u)) return `/${u.replace(/^\/?images\//, '')}`
+	if (/^\/?parrot-avatar-/.test(u)) return u.startsWith('/') ? u : `/${u}`
+	return `/uploads/${u.replace(/^\//, '').replace(/^images\//, '')}`
 }
 
 let fileInput = null
@@ -496,7 +505,7 @@ const handleSubmit = async () => {
   }
 
   if (!form.value.name) {
-    ElMessage.warning('请输入鹦鹉名字')
+    ElMessage.warning('请输入鹦鹉名称')
     return
   }
 

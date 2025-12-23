@@ -4,6 +4,9 @@ import DashboardLayout from '../layouts/DashboardLayout.vue'
 import DashboardView from '../views/DashboardView.vue'
 import ParrotsView from '../views/ParrotsView.vue'
 import RecordsView from '../views/RecordsView.vue'
+import IncubationView from '../views/IncubationView.vue'
+import PairingView from '../views/PairingView.vue'
+import SettingsView from '../views/SettingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,6 +34,21 @@ const router = createRouter({
           path: 'records',
           name: 'records',
           component: RecordsView
+        },
+        {
+          path: 'incubation',
+          name: 'incubation',
+          component: IncubationView
+        },
+        {
+          path: 'pairing',
+          name: 'pairing',
+          component: PairingView
+        },
+        {
+          path: 'settings',
+          name: 'settings',
+          component: SettingsView
         }
       ]
     }

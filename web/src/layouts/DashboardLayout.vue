@@ -22,13 +22,25 @@
           <img src="/chart.png" class="menu-icon" />
           <span>记录</span>
         </el-menu-item>
+        <el-menu-item index="/incubation">
+          <el-icon class="menu-icon-el"><Sunny /></el-icon>
+          <span>人工孵化</span>
+        </el-menu-item>
+        <el-menu-item index="/pairing">
+          <el-icon class="menu-icon-el"><Connection /></el-icon>
+          <span>配对计算器</span>
+        </el-menu-item>
+        <el-menu-item index="/settings">
+          <el-icon class="menu-icon-el"><Setting /></el-icon>
+          <span>模式设置</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
       <el-header>
         <div class="header-content">
           <span>欢迎, {{ authStore.user?.nickname }}</span>
-          <el-button type="text" @click="handleLogout">退出登录</el-button>
+          <el-button link @click="handleLogout">退出登录</el-button>
         </div>
       </el-header>
       <el-main>
@@ -82,6 +94,13 @@ const handleLogout = () => {
   height: 20px;
   margin-right: 12px;
   object-fit: contain;
+}
+.menu-icon-el {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  font-size: 20px;
+  vertical-align: middle;
 }
 .el-header {
   background: var(--primary-gradient);
