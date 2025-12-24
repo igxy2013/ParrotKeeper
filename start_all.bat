@@ -1,5 +1,6 @@
 @echo off
 echo Starting ParrotKeeper Backend...
+set FLASK_ENV=development
 start "ParrotKeeper Backend" cmd /k "cd backend && python app.py"
 
 echo Starting ParrotKeeper Web Frontend...
