@@ -116,16 +116,8 @@ def get_transactions():
         end = start + per_page
         sliced = all_records[start:end]
         
-        # 4. 补充详情（鹦鹉信息等）
+        # 4. 补充详情
         items = []
-        parrot_ids = set()
-        for item in sliced:
-            obj = item['raw']
-            if obj.parrot_id:
-                parrot_ids.add(obj.parrot_id)
-        
-        parrots = {p.id: p for p in Parrot.query.filter(Parrot.id.in_(parrot_ids)).all()} if parrot_ids else {}
-        
         expense_cat_map = {
             'food': '食物', 'medical': '医疗', 'toys': '玩具', 'cage': '笼具',
             'baby_bird': '幼鸟', 'breeding_bird': '种鸟', 'other': '其他'
@@ -138,7 +130,6 @@ def get_transactions():
         for item in sliced:
             obj = item['raw']
             rtype = item['type']
-            parrot = parrots.get(obj.parrot_id) if obj.parrot_id else None
             
             if rtype == '支出':
                 cat_text = expense_cat_map.get(obj.category, obj.category)
@@ -162,9 +153,7 @@ def get_transactions():
                 'amount': amount,
                 'description': obj.description,
                 'date': date_str,
-                'created_at': obj.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'parrot_id': obj.parrot_id,
-                'parrot_name': parrot.name if parrot else None
+                'created_at': obj.created_at.strftime('%Y-%m-%d %H:%M:%S')
             })
             
         return success_response({

@@ -91,7 +91,7 @@
       </div>
 
       <!-- User Profile -->
-      <div class="user-profile">
+      <div class="user-profile" @click="goAccount">
         <img :src="userAvatar" class="avatar" alt="User" />
         <div class="user-info" v-show="!isCollapse">
           <div class="user-name">{{ userName }}</div>
@@ -105,7 +105,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import api from '../api/axios'
 import { 
@@ -133,6 +133,7 @@ const props = defineProps({
 })
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 
 const currentMode = ref(localStorage.getItem('user_mode') || 'personal')
@@ -174,7 +175,19 @@ const userRole = computed(() => {
     const role = (authStore.user || {}).role || 'user'
     return role === 'super_admin' ? '超级管理员' : (role === 'admin' ? '管理员' : '普通用户')
 })
-const userAvatar = computed(() => '/parrot-avatar-blue.svg') 
+const userAvatar = computed(() => {
+  const u = authStore.user || {}
+  const url = u.avatar_url
+  if (!url) return '/profile.png'
+  const s = String(url)
+  if (/^https?:\/\//.test(s)) return s
+  if (s.startsWith('/uploads/')) return s
+  return '/uploads/' + s.replace(/^\/?uploads\/?/, '')
+}) 
+
+const goAccount = () => {
+  router.push('/settings/account')
+}
 
 const isChildActive = (item) => {
   if (!item.children) return false
@@ -184,7 +197,8 @@ const isChildActive = (item) => {
 const menuItems = computed(() => [
   { path: '/', label: '概览', icon: Odometer },
   { path: '/parrots', label: '我的鹦鹉', icon: Files }, 
-  { path: '/records', label: '记录', icon: TrendCharts },
+  { path: '/records', label: '饲养记录', icon: TrendCharts },
+  { path: '/expenses', label: '收支管理', icon: TrendCharts },
   { path: '/care-guide', label: '护理指南', icon: Reading }, 
   { path: '/incubation', label: '人工孵化', icon: Sunny },
   { path: '/pairing', label: '配对计算器', icon: Connection },
