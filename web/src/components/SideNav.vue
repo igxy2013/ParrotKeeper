@@ -122,7 +122,8 @@ import {
   ChatLineSquare,
   Edit,
   Notification,
-  ArrowRight
+  ArrowRight,
+  Download
 } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -208,6 +209,11 @@ const menuItems = computed(() => [
     icon: Bell, 
     badge: messageCount.value > 0 ? (messageCount.value > 99 ? '99+' : messageCount.value) : null, 
     badgeColor: 'green' 
+  },
+  {
+    path: '/reports',
+    label: '报表导出',
+    icon: Download
   },
   { 
     path: '/settings', 

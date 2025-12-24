@@ -20,6 +20,11 @@
         <el-select v-model="selectedSpeciesId" placeholder="全部品种" clearable filterable class="filter-item">
           <el-option v-for="s in speciesList" :key="s.id" :label="s.name" :value="s.id" />
         </el-select>
+        <el-select v-model="selectedGender" placeholder="全部性别" clearable class="filter-item">
+          <el-option :label="'公'" :value="'male'" />
+          <el-option :label="'母'" :value="'female'" />
+          <el-option :label="'未知'" :value="'unknown'" />
+        </el-select>
         <el-select v-model="selectedStatus" placeholder="全部状态" clearable class="filter-item">
           <el-option :label="'健康'" :value="'healthy'" />
           <el-option :label="'生病'" :value="'sick'" />
@@ -132,6 +137,7 @@ const searchKeyword = ref('')
 let searchTimer = null
 const speciesList = ref([])
 const selectedSpeciesId = ref('')
+const selectedGender = ref('')
 const selectedStatus = ref('')
 const selectedSort = ref('created_desc')
 const viewMode = ref('card')
@@ -182,6 +188,7 @@ const fetchParrots = async () => {
         per_page: pageSize.value,
         search: searchKeyword.value,
         species_id: selectedSpeciesId.value || undefined,
+        gender: selectedGender.value || undefined,
         health_status: selectedStatus.value || undefined,
         sort_by: sortOptions.find(o => o.value === selectedSort.value)?.by || 'created_at',
         sort_order: sortOptions.find(o => o.value === selectedSort.value)?.order || 'desc'
@@ -361,7 +368,7 @@ watch(searchKeyword, () => {
   }, 300)
 })
 
-watch([selectedSpeciesId, selectedStatus, selectedSort], () => {
+watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
   currentPage.value = 1
   fetchParrots()
 })

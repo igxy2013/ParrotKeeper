@@ -123,3 +123,71 @@ body {
   color: var(--primary-color) !important;
   border-right: 3px solid var(--primary-color);
 }
+
+/* 固定所有页面的时间范围选择器宽度 */
+.el-date-editor--daterange,
+.el-date-editor.el-range-editor.el-date-editor--daterange {
+  width: 200px !important;
+  min-width: 200px !important;
+}
+
+/* 兼容日期时间范围 */
+.el-date-editor--datetimerange,
+.el-date-editor.el-range-editor.el-date-editor--datetimerange {
+  width: 200px !important;
+  min-width: 200px !important;
+}
+
+/* 当组件上带有自定义类时同样固定宽度 */
+.filter-item.el-date-editor--daterange {
+  width: 200px !important;
+  min-width: 200px !important;
+}
+
+/* 缩小内部输入框宽度，防止撑开整体 */
+.el-date-editor--daterange .el-range-input,
+.el-date-editor--datetimerange .el-range-input {
+  width: 70px !important;
+}
+
+/* 分隔符保持紧凑 */
+.el-date-editor--daterange .el-range__separator,
+.el-date-editor--datetimerange .el-range__separator {
+  margin: 0 4px !important;
+}
+
+/* Report Export: default hide print header in screen */
+.report-export-page .print-header { display: none; }
+
+/* Global Print Styles */
+@media print {
+  /* Hide sidebar and header globally */
+  .aside-container,
+  .el-aside,
+  .el-header,
+  .header-content,
+  .sidebar-container, 
+  nav,
+  .el-button,
+  .header-actions {
+    display: none !important;
+  }
+  
+  /* Ensure main content takes full width */
+  .el-container,
+  .el-main,
+  .layout-container {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  /* Reset body */
+  body {
+    background: white !important;
+    overflow: visible !important;
+  }
+}

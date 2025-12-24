@@ -1,103 +1,135 @@
 <template>
-  <div>
-    <h2>仪表盘</h2>
-    <el-row :gutter="20" v-loading="loading">
+  <div class="dashboard-container">
+    <div class="page-header">
+       <h2>仪表盘</h2>
+       <div class="header-date">{{ currentDate }}</div>
+    </div>
+
+    <!-- Top Stats Row -->
+    <el-row :gutter="24" v-loading="loading">
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>鹦鹉总数</span>
-            </div>
-          </template>
-          <div class="statistic-value">{{ stats.total_parrots || 0 }}</div>
-        </el-card>
-      </el-col>
-       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>本月支出</span>
-            </div>
-          </template>
-          <div class="statistic-value">¥{{ stats.monthly_expense || 0 }}</div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>本月收入</span>
-            </div>
-          </template>
-          <div class="statistic-value income">¥{{ stats.monthly_income || 0 }}</div>
-        </el-card>
-      </el-col>
-       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>健康状况</span>
-            </div>
-          </template>
-          <div class="health-stats">
-             <el-tag type="success">健康: {{ stats.health_status?.healthy || 0 }}</el-tag>
-             <el-tag type="danger" v-if="stats.health_status?.sick">生病: {{ stats.health_status?.sick }}</el-tag>
-             <el-tag type="warning" v-if="stats.health_status?.recovering">康复中: {{ stats.health_status?.recovering }}</el-tag>
-             <el-tag type="info" v-if="stats.health_status?.observation || stats.health_status?.observing">观察中: {{ stats.health_status?.observation || stats.health_status?.observing }}</el-tag>
+        <div class="stat-card primary-card">
+          <div class="stat-icon-wrapper">
+             <el-icon><User /></el-icon>
           </div>
-        </el-card>
+          <div class="stat-content">
+             <div class="stat-label">鹦鹉总数</div>
+             <div class="stat-value">{{ stats.total_parrots || 0 }}</div>
+          </div>
+        </div>
+      </el-col>
+      <el-col :span="6">
+        <div class="stat-card danger-card">
+           <div class="stat-icon-wrapper">
+             <el-icon><Wallet /></el-icon>
+          </div>
+          <div class="stat-content">
+             <div class="stat-label">本月支出</div>
+             <div class="stat-value">¥{{ stats.monthly_expense || 0 }}</div>
+          </div>
+        </div>
+      </el-col>
+      <el-col :span="6">
+        <div class="stat-card success-card">
+           <div class="stat-icon-wrapper">
+             <el-icon><Money /></el-icon>
+          </div>
+          <div class="stat-content">
+             <div class="stat-label">本月收入</div>
+             <div class="stat-value">¥{{ stats.monthly_income || 0 }}</div>
+          </div>
+        </div>
+      </el-col>
+      <el-col :span="6">
+        <div class="stat-card info-card">
+           <div class="stat-icon-wrapper">
+             <el-icon><FirstAidKit /></el-icon>
+          </div>
+          <div class="stat-content">
+             <div class="stat-label">健康状况</div>
+             <div class="health-tags">
+                <div class="health-row">
+                   <span class="health-dot healthy"></span>
+                   <span class="health-text">健康 {{ stats.health_status?.healthy || 0 }}</span>
+                </div>
+                <div class="health-row" v-if="stats.health_status?.sick">
+                   <span class="health-dot sick"></span>
+                   <span class="health-text text-danger">生病 {{ stats.health_status?.sick }}</span>
+                </div>
+                <div class="health-row" v-if="stats.health_status?.recovering">
+                   <span class="health-dot recovering"></span>
+                   <span class="health-text text-warning">康复 {{ stats.health_status?.recovering }}</span>
+                </div>
+             </div>
+          </div>
+        </div>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px" v-loading="loading">
+    <!-- Secondary Stats Row -->
+    <el-row :gutter="24" class="mt-6" v-loading="loading">
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header><div class="card-header">总喂食次数</div></template>
-          <div class="mini-value">{{ stats.total_feedings || 0 }}</div>
-        </el-card>
+        <div class="mini-stat-card">
+           <div class="mini-icon bg-blue-light"><el-icon class="text-blue"><Dish /></el-icon></div>
+           <div class="mini-info">
+              <div class="mini-label">总喂食次数</div>
+              <div class="mini-num">{{ stats.total_feedings || 0 }}</div>
+           </div>
+        </div>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header><div class="card-header">总健康检查</div></template>
-          <div class="mini-value">{{ stats.total_checkups || 0 }}</div>
-        </el-card>
+        <div class="mini-stat-card">
+           <div class="mini-icon bg-purple-light"><el-icon class="text-purple"><FirstAidKit /></el-icon></div>
+           <div class="mini-info">
+              <div class="mini-label">总健康检查</div>
+              <div class="mini-num">{{ stats.total_checkups || 0 }}</div>
+           </div>
+        </div>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header><div class="card-header">本月喂食</div></template>
-          <div class="mini-value">{{ stats.monthly_feeding || 0 }}</div>
-        </el-card>
+        <div class="mini-stat-card">
+           <div class="mini-icon bg-green-light"><el-icon class="text-green"><Calendar /></el-icon></div>
+           <div class="mini-info">
+              <div class="mini-label">本月喂食</div>
+              <div class="mini-num">{{ stats.monthly_feeding || 0 }}</div>
+           </div>
+        </div>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header><div class="card-header">本月健康检查</div></template>
-          <div class="mini-value">{{ stats.monthly_health_checks || 0 }}</div>
-        </el-card>
+        <div class="mini-stat-card">
+           <div class="mini-icon bg-orange-light"><el-icon class="text-orange"><Timer /></el-icon></div>
+           <div class="mini-info">
+              <div class="mini-label">本月检查</div>
+              <div class="mini-num">{{ stats.monthly_health_checks || 0 }}</div>
+           </div>
+        </div>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px" v-loading="loading">
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>体重趋势（{{ trendDays }} 天）</span>
-            </div>
-          </template>
-          <div class="trend-card">
-            <div class="trend-header">
-              <div class="avg-meta"><span class="meta-label">平均体重</span><span class="meta-value">{{ weightAvgChart || '--' }}</span></div>
-              <div class="parrot-selector" @click.stop="toggleParrotDropdown">
-                <div class="selector-wrapper">
-                  <span class="selector-text">{{ selectedParrotName || '全部鹦鹉' }}</span>
-                  <span class="selector-arrow">▼</span>
-                </div>
-                <div class="dropdown-menu" v-if="showParrotDropdown">
-                  <div class="dropdown-item" @click.stop="selectParrot('','')"><span class="item-text">全部鹦鹉</span><span class="check-icon">{{ !selectedParrotId ? '✓' : '' }}</span></div>
-                  <div class="dropdown-item" v-for="s in weightSeries" :key="s.parrot_id" @click.stop="selectParrot(s.parrot_id, s.parrot_name)"><span class="item-text">{{ s.parrot_name }}</span><span class="check-icon">{{ selectedParrotId == s.parrot_id ? '✓' : '' }}</span></div>
-                </div>
+    <!-- Chart Row -->
+    <el-row :gutter="24" class="mt-6" v-loading="loading">
+      <el-col :span="16">
+        <div class="chart-card">
+          <div class="chart-header">
+             <div class="header-title">
+                 <el-icon><TrendCharts /></el-icon>
+                 <span>体重趋势（{{ trendDays }} 天）</span>
               </div>
-            </div>
+              <div class="header-actions">
+                 <div class="avg-meta"><span class="meta-label">平均体重</span><span class="meta-value">{{ weightAvgChart || '--' }}</span></div>
+                  <div class="parrot-selector" @click.stop="toggleParrotDropdown">
+                    <div class="selector-wrapper">
+                      <span class="selector-text">{{ selectedParrotName || '全部鹦鹉' }}</span>
+                      <span class="selector-arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu" v-if="showParrotDropdown">
+                      <div class="dropdown-item" @click.stop="selectParrot('','')"><span class="item-text">全部鹦鹉</span><span class="check-icon">{{ !selectedParrotId ? '✓' : '' }}</span></div>
+                      <div class="dropdown-item" v-for="s in weightSeries" :key="s.parrot_id" @click.stop="selectParrot(s.parrot_id, s.parrot_name)"><span class="item-text">{{ s.parrot_name }}</span><span class="check-icon">{{ selectedParrotId == s.parrot_id ? '✓' : '' }}</span></div>
+                    </div>
+                  </div>
+              </div>
+          </div>
+          <div class="trend-card">
             <div class="chart-wrapper">
               <canvas 
                 ref="weightCanvas" 
@@ -116,21 +148,40 @@
               </div>
             </div>
           </div>
-        </el-card>
+        </div>
       </el-col>
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>今日记录</span>
-            </div>
-          </template>
-          <div class="today-stats">
-            <el-tag type="success">喂食：{{ stats.today_records?.feeding || 0 }}</el-tag>
-            <el-tag type="info">清洁：{{ stats.today_records?.cleaning || 0 }}</el-tag>
-            <el-tag>统计访问：{{ stats.stats_views || 0 }}</el-tag>
-          </div>
-        </el-card>
+      <el-col :span="8">
+        <div class="chart-card h-full">
+           <div class="chart-header">
+              <div class="header-title">
+                 <el-icon><List /></el-icon>
+                 <span>今日记录</span>
+              </div>
+           </div>
+           <div class="today-stats-container">
+              <div class="today-stat-box success-box">
+                 <div class="today-icon"><el-icon><Dish /></el-icon></div>
+                 <div class="today-content">
+                    <div class="today-label">今日喂食</div>
+                    <div class="today-val">{{ stats.today_records?.feeding || 0 }}</div>
+                 </div>
+              </div>
+              <div class="today-stat-box info-box">
+                 <div class="today-icon"><el-icon><Brush /></el-icon></div>
+                 <div class="today-content">
+                    <div class="today-label">今日清洁</div>
+                    <div class="today-val">{{ stats.today_records?.cleaning || 0 }}</div>
+                 </div>
+              </div>
+              <div class="today-stat-box warning-box">
+                 <div class="today-icon"><el-icon><View /></el-icon></div>
+                 <div class="today-content">
+                    <div class="today-label">统计访问</div>
+                    <div class="today-val">{{ stats.stats_views || 0 }}</div>
+                 </div>
+              </div>
+           </div>
+        </div>
       </el-col>
     </el-row>
   </div>
@@ -138,8 +189,10 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
+import { User, Wallet, Money, FirstAidKit, Dish, Calendar, Timer, TrendCharts, List, Brush, View } from '@element-plus/icons-vue'
 import api from '../api/axios'
 
+const currentDate = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 const stats = ref({})
 const loading = ref(true)
 const trendDays = ref(30)
@@ -629,61 +682,232 @@ const onWeightMouseLeave = () => {}
 </script>
 
 <style scoped>
-.statistic-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: var(--primary-color);
-  background: var(--primary-gradient);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.statistic-value.income {
-    background: var(--theme-blue);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.health-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-h2 {
-  color: var(--text-primary);
-  margin-bottom: 24px;
-}
-.card-header {
-  font-weight: 600;
-  color: var(--text-secondary);
+.dashboard-container {
+  padding: 0 4px;
 }
 
-.mini-value {
-  font-size: 22px;
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-header h2 {
+  font-size: 24px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #111827;
+  margin: 0;
+}
+.header-date {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Main Stats Cards */
+.stat-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(0,0,0,0.03);
+  height: 100px;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.stat-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.primary-card .stat-icon-wrapper { background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); color: #2563eb; }
+.danger-card .stat-icon-wrapper { background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); color: #dc2626; }
+.success-card .stat-icon-wrapper { background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); color: #16a34a; }
+.info-card .stat-icon-wrapper { background: linear-gradient(135deg, #f3e8ff 0%, #faf5ff 100%); color: #9333ea; }
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+.stat-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+/* Health Tags */
+.health-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.health-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.health-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.health-dot.healthy { background: #10b981; }
+.health-dot.sick { background: #ef4444; }
+.health-dot.recovering { background: #f59e0b; }
+.health-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+.text-danger { color: #ef4444; }
+.text-warning { color: #f59e0b; }
+
+/* Mini Cards */
+.mini-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #f3f4f6;
+  transition: all 0.2s;
+}
+.mini-stat-card:hover {
+  border-color: #e5e7eb;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.mini-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.bg-blue-light { background: #eff6ff; }
+.text-blue { color: #3b82f6; }
+.bg-purple-light { background: #faf5ff; }
+.text-purple { color: #a855f7; }
+.bg-green-light { background: #f0fdf4; }
+.text-green { color: #22c55e; }
+.bg-orange-light { background: #fff7ed; }
+.text-orange { color: #f97316; }
+
+.mini-info { flex: 1; }
+.mini-label { font-size: 12px; color: #6b7280; margin-bottom: 2px; }
+.mini-num { font-size: 18px; font-weight: 700; color: #1f2937; }
+
+/* Chart Cards */
+.chart-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(0,0,0,0.03);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  height: 100%;
+}
+.h-full { height: 100%; box-sizing: border-box; }
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .trend-card { display: flex; flex-direction: column; gap: 8px; }
-.trend-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .avg-meta { display: flex; align-items: baseline; gap: 6px; }
 .meta-label { font-size: 13px; color: #6b7280; }
 .meta-value { font-size: 16px; font-weight: 700; color: #1f2937; }
+
 .parrot-selector { position: relative; }
-.selector-wrapper { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 16px; background: #f3f4f6; cursor: pointer; }
-.selector-text { font-size: 13px; color: #374151; }
-.selector-arrow { font-size: 12px; color: #6b7280; }
-.dropdown-menu { position: absolute; top: 100%; right: 0; margin-top: 6px; min-width: 160px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 8px 16px rgba(0,0,0,0.08); z-index: 10; }
-.dropdown-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; }
+.selector-wrapper { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; background: #f3f4f6; cursor: pointer; transition: background 0.2s; }
+.selector-wrapper:hover { background: #e5e7eb; }
+.selector-text { font-size: 13px; color: #374151; font-weight: 500; }
+.selector-arrow { font-size: 10px; color: #6b7280; }
+.dropdown-menu { position: absolute; top: 100%; right: 0; margin-top: 6px; min-width: 160px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08); z-index: 10; padding: 4px; }
+.dropdown-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; border-radius: 6px; }
 .dropdown-item:hover { background: #f9fafb; }
 .item-text { font-size: 13px; color: #374151; }
 .check-icon { font-size: 12px; color: #10b981; }
+
 .chart-wrapper { width: 100%; margin: 0 -12px; }
 .weight-canvas { width: 100%; height: 180px; display: block; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 12px; margin-top: 8px; }
 .legend-item { display: flex; align-items: center; }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-.legend-name { font-size: 13px; color: #444; }
+.legend-name { font-size: 12px; color: #6b7280; }
 
-.today-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Today Stats */
+.today-stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.today-stat-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+.today-stat-box:hover { transform: translateX(4px); }
+.success-box { background: #f0fdf4; border: 1px solid #dcfce7; }
+.info-box { background: #eff6ff; border: 1px solid #dbeafe; }
+.warning-box { background: #fff7ed; border: 1px solid #ffedd5; }
+
+.today-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.success-box .today-icon { color: #16a34a; }
+.info-box .today-icon { color: #2563eb; }
+.warning-box .today-icon { color: #ea580c; }
+
+.today-content { flex: 1; }
+.today-label { font-size: 13px; color: #6b7280; margin-bottom: 2px; }
+.today-val { font-size: 20px; font-weight: 700; color: #111827; }
+
+.mt-6 { margin-top: 24px; }
 </style>

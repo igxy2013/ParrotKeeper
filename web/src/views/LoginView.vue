@@ -14,7 +14,7 @@
               <el-input v-model="loginForm.username" placeholder="用户名" :prefix-icon="User" />
             </el-form-item>
             <el-form-item>
-              <el-input v-model="loginForm.password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
+              <el-input v-model="loginForm.password" type="password" placeholder="密码" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
             </el-form-item>
             <el-button type="primary" :loading="loading" class="w-100" @click="handleLogin">登录</el-button>
           </el-form>

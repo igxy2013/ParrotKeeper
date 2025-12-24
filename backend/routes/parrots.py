@@ -180,6 +180,12 @@ def get_parrots():
         if health_status:
             query = query.filter_by(health_status=health_status)
             print(f"[DEBUG] 应用健康状态过滤: {health_status}")
+
+        # 性别过滤
+        gender = request.args.get('gender')
+        if gender:
+            query = query.filter_by(gender=gender)
+            print(f"[DEBUG] 应用性别过滤: {gender}")
         
         # 排序
         sort_by = request.args.get('sort_by', 'created_at')
