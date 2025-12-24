@@ -105,6 +105,8 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     created_by_nickname = fields.Method('get_created_by_nickname', dump_only=True)
     # 确保parrot_id字段被包含
     parrot_id = fields.Integer(dump_only=True)
+    parrot_number = fields.Method('get_parrot_number', dump_only=True)
+    ring_number = fields.Method('get_ring_number', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
     
     def get_parrot_name(self, obj):
@@ -118,6 +120,12 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_nickname(self, obj):
         return obj.created_by.nickname if obj.created_by else None
+
+    def get_parrot_number(self, obj):
+        return obj.parrot.parrot_number if obj.parrot else None
+
+    def get_ring_number(self, obj):
+        return obj.parrot.ring_number if obj.parrot else None
     
     def get_photos(self, obj):
         try:
@@ -141,6 +149,8 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
     created_by_nickname = fields.Method('get_created_by_nickname', dump_only=True)
     health_status_text = fields.Method('get_health_status_text', dump_only=True)
+    parrot_number = fields.Method('get_parrot_number', dump_only=True)
+    ring_number = fields.Method('get_ring_number', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
     
     def get_parrot_name(self, obj):
@@ -151,6 +161,12 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_nickname(self, obj):
         return obj.created_by.nickname if obj.created_by else None
+
+    def get_parrot_number(self, obj):
+        return obj.parrot.parrot_number if obj.parrot else None
+
+    def get_ring_number(self, obj):
+        return obj.parrot.ring_number if obj.parrot else None
     
     def get_health_status_text(self, obj):
         """将英文健康状态转换为中文显示"""
@@ -184,6 +200,8 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
     created_by_nickname = fields.Method('get_created_by_nickname', dump_only=True)
     cleaning_type_text = fields.Method('get_cleaning_type_text', dump_only=True)
+    parrot_number = fields.Method('get_parrot_number', dump_only=True)
+    ring_number = fields.Method('get_ring_number', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
     
     def get_parrot_name(self, obj):
@@ -194,6 +212,12 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
     
     def get_created_by_nickname(self, obj):
         return obj.created_by.nickname if obj.created_by else None
+
+    def get_parrot_number(self, obj):
+        return obj.parrot.parrot_number if obj.parrot else None
+
+    def get_ring_number(self, obj):
+        return obj.parrot.ring_number if obj.parrot else None
     
     def get_cleaning_type_text(self, obj):
         """将英文清洁类型转换为中文显示"""

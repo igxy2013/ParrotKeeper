@@ -5,13 +5,12 @@
       <block wx:for="{{feedTypes}}" wx:key="id">
         <view class="feed-item">
           <view class="feed-main">
-            <view class="feed-header">
-              <text class="feed-name">{{item.name}}</text>
-              <text class="feed-tag" wx:if="{{!item.is_custom}}">系统默认</text>
-              <text class="feed-tag custom" wx:else>自定义</text>
-            </view>
+          <view class="feed-header">
+            <text class="feed-name">{{item.name}}</text>
+            <text class="feed-tag" wx:if="{{!item.is_custom}}">系统默认</text>
+            <text class="feed-tag custom" wx:else>自定义</text>
+          </view>
           <view class="feed-details">
-            <text wx:if="{{item.brand}}">品牌: {{item.brand}}</text>
             <text wx:if="{{item.typeLabel}}">类型: {{item.typeLabel}}</text>
             <text wx:if="{{item.unit}}">单位: {{item.unit}}</text>
           </view>
@@ -49,10 +48,6 @@
         <view class="form-item">
           <text class="form-label">名称 *</text>
           <input class="text-input" placeholder="请输入食物名称" value="{{newFeed.name}}" bindinput="onInput" data-field="name" />
-        </view>
-        <view class="form-item">
-          <text class="form-label">品牌</text>
-          <input class="text-input" placeholder="请输入品牌(选填)" value="{{newFeed.brand}}" bindinput="onInput" data-field="brand" />
         </view>
         <view class="form-item">
           <text class="form-label">类型</text>

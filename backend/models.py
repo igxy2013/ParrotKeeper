@@ -91,7 +91,7 @@ class Parrot(db.Model):
     birth_place_county = db.Column(db.String(100))
     plumage_splits_json = db.Column(db.Text)
     weight = db.Column(db.Numeric(5, 2))
-    health_status = db.Column(db.Enum('healthy', 'sick', 'recovering'), default='healthy')
+    health_status = db.Column(db.Enum('healthy', 'sick', 'recovering', 'observation'), default='healthy')
     photo_url = db.Column(db.String(255))
     avatar_url = db.Column(db.String(255))  # 头像URL
     parrot_number = db.Column(db.String(50))  # 编号
@@ -115,7 +115,6 @@ class FeedType(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    brand = db.Column(db.String(100))
     type = db.Column(db.Enum('seed', 'pellet', 'fruit', 'vegetable', 'supplement', 'milk_powder'))
     nutrition_info = db.Column(db.Text)
     price = db.Column(db.Numeric(8, 2))

@@ -69,6 +69,16 @@
       <text>账户</text>
     </view>
     <view class="settings-actions">
+      <view class="setting-action-item" bindtap="goToAccountManagement">
+        <view class="setting-icon-wrapper">
+          <view class="setting-icon">🔐</view>
+        </view>
+        <view class="setting-content">
+          <view class="setting-name">账号管理</view>
+          <view class="setting-desc">账号绑定与设置</view>
+        </view>
+        <view class="setting-arrow">></view>
+      </view>
       <view class="setting-action-item logout-item" bindtap="handleLogout">
         <view class="setting-icon-wrapper">
           <view class="setting-icon logout-icon">🚪</view>
