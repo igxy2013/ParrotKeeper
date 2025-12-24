@@ -14,7 +14,7 @@
         <el-table-column prop="unit" label="计量单位" width="120" />
         <el-table-column label="操作" width="160">
           <template #default="scope">
-            <el-button link type="primary" size="small" @click="openEdit(scope.row)">编辑</el-button>
+            <el-button link type="success" size="small" @click="openEdit(scope.row)">编辑</el-button>
             <el-button link type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>

@@ -730,10 +730,15 @@ def get_record_by_type(record_type, record_id):
 
 # 饲料类型相关
 @records_bp.route('/feed-types', methods=['GET'])
+@login_required
 def get_feed_types():
-    """获取饲料类型列表"""
+    """获取饲料类型列表（与食物类型管理保持一致，仅返回系统默认和当前用户的类型）"""
     try:
-        feed_types = FeedType.query.all()
+        user = request.current_user
+        query = FeedType.query
+        if user is not None:
+            query = query.filter((FeedType.user_id == None) | (FeedType.user_id == user.id))
+        feed_types = query.all()
         return success_response(feed_types_schema.dump(feed_types))
     except Exception as e:
         return error_response(f'获取饲料类型失败: {str(e)}')
