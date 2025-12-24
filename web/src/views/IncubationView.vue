@@ -19,7 +19,10 @@
                   <span class="egg-label">{{ egg.label || ('蛋 ' + egg.id) }}</span>
                   <span class="egg-species">{{ egg.species_name || '未设置品种' }}</span>
                 </div>
-                <el-tag :type="getStatusType(egg.status)">{{ egg.status_text || getStatusText(egg.status) }}</el-tag>
+                <div class="status-with-icon">
+                  <img class="egg-status-icon" src="/egg.png" alt="蛋" />
+                  <el-tag :type="getStatusType(egg.status)">{{ egg.status_text || getStatusText(egg.status) }}</el-tag>
+                </div>
               </div>
             </template>
             <div class="card-content">
@@ -784,6 +787,15 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.status-with-icon {
+  display: flex;
+  align-items: center;
+  gap:220px;
+}
+.egg-status-icon {
+  width: 36px;
+  height: 36px;
 }
 .card-title {
   display: flex;
