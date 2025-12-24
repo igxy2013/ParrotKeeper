@@ -138,7 +138,7 @@ const authStore = useAuthStore()
 const currentMode = ref(localStorage.getItem('user_mode') || 'personal')
 const isDarkMode = ref(false)
 const messageCount = ref(0)
-const expandedMenus = ref(['/admin']) // Default expand admin if needed, or empty
+const expandedMenus = ref([]) // Default empty
 
 const calculateMessageCount = (announcements) => {
   try {

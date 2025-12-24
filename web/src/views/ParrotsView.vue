@@ -13,6 +13,10 @@
         class="search-input"
       />
       <div class="toolbar-right">
+        <el-radio-group v-model="viewMode" class="view-toggle">
+          <el-radio-button label="card"><el-icon><Grid /></el-icon></el-radio-button>
+          <el-radio-button label="list"><el-icon><Tickets /></el-icon></el-radio-button>
+        </el-radio-group>
         <el-select v-model="selectedSpeciesId" placeholder="全部品种" clearable filterable class="filter-item">
           <el-option v-for="s in speciesList" :key="s.id" :label="s.name" :value="s.id" />
         </el-select>
@@ -59,7 +63,7 @@
       <el-skeleton :rows="3" animated />
     </div>
 
-    <div v-else class="parrot-list">
+    <div v-else class="parrot-list" :class="`view-${viewMode}`">
       <div v-for="parrot in parrots" :key="parrot.id" class="parrot-item" @click="handleEdit(parrot)">
         <div class="parrot-avatar-container">
           <img :src="getParrotImage(parrot)" class="parrot-avatar" @error="onAvatarError($event, parrot)" />
@@ -111,10 +115,12 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { Plus, Male, Female, ArrowRight, Search } from '@element-plus/icons-vue'
+import { Plus, Male, Female, ArrowRight, Search, Grid, Tickets } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import ParrotModal from '../components/ParrotModal.vue'
+import { useAuthStore } from '../stores/auth'
 
+const authStore = useAuthStore()
 const parrots = ref([])
 const loading = ref(false)
 const showModal = ref(false)
@@ -128,6 +134,37 @@ const speciesList = ref([])
 const selectedSpeciesId = ref('')
 const selectedStatus = ref('')
 const selectedSort = ref('created_desc')
+const viewMode = ref('card')
+
+// Initialize viewMode from localStorage or user_mode
+const initViewMode = () => {
+  const mode = localStorage.getItem('user_mode')
+  if (mode === 'team') {
+    viewMode.value = 'list'
+  } else {
+    viewMode.value = 'card'
+  }
+}
+
+onMounted(() => {
+  initViewMode()
+  fetchParrots()
+  // ... other onMounted logic if any
+})
+
+// Watch for user mode changes via storage event or other mechanism if needed
+// But since SideNav reloads the page on switchMode, initViewMode is sufficient on load.
+// However, if we want to be safe in case page doesn't reload (future changes):
+watch(() => authStore.user?.user_mode, (newMode) => {
+   // This might not trigger if SideNav just sets localStorage and reloads without updating pinia state first
+   // But let's keep it just in case
+   if (newMode === 'team') {
+     viewMode.value = 'list'
+   } else {
+     viewMode.value = 'card'
+   }
+})
+
 const sortOptions = [
   { label: '最新添加', value: 'created_desc', by: 'created_at', order: 'desc' },
   { label: '名称 A-Z', value: 'name_asc', by: 'name', order: 'asc' },
@@ -180,16 +217,36 @@ const calculateAge = (birthDate) => {
   if (!birthDate) return '年龄未知'
   const birth = new Date(birthDate)
   const now = new Date()
+  
+  birth.setHours(0, 0, 0, 0)
+  now.setHours(0, 0, 0, 0)
+  
+  if (birth > now) return '未出生'
+
   let years = now.getFullYear() - birth.getFullYear()
-  const m = now.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+  let months = now.getMonth() - birth.getMonth()
+  let days = now.getDate() - birth.getDate()
+
+  if (days < 0) {
+    months--
+    // Get days in previous month
+    const lastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+    days += lastMonth.getDate()
+  }
+
+  if (months < 0) {
     years--
+    months += 12
   }
-  if (years === 0) {
-      const months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
-      return `${months} 个月`
-  }
-  return `${years} 岁`
+
+  let ageStr = ''
+  if (years > 0) ageStr += `${years}岁`
+  if (months > 0) ageStr += `${months}个月`
+  if (days > 0) ageStr += `${days}天`
+  
+  if (!ageStr) ageStr = '0天'
+  
+  return ageStr
 }
 
 const getHealthLabel = (status) => {
@@ -337,7 +394,7 @@ watch([selectedSpeciesId, selectedStatus, selectedSort], () => {
   flex-wrap: wrap;
 }
 .search-input { flex: 1 1 360px; min-width: 260px; }
-.toolbar-right { display: flex; gap: 12px; }
+.toolbar-right { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; }
 .filter-item { min-width: 150px; }
 
 .stats-overview {
@@ -496,5 +553,132 @@ watch([selectedSpeciesId, selectedStatus, selectedSort], () => {
 .pagination {
   margin-top: 20px;
   justify-content: center;
+}
+
+/* View Mode Styles */
+.view-toggle {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+/* Card View (Grid) */
+  .parrot-list.view-card {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 24px !important;
+  }
+  
+  .parrot-list.view-card .parrot-item {
+    width: auto !important;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px 16px;
+    height: auto;
+    margin-bottom: 0 !important;
+  }
+  
+  @media (max-width: 1400px) {
+    .parrot-list.view-card { grid-template-columns: repeat(4, 1fr) !important; }
+  }
+  @media (max-width: 1100px) {
+    .parrot-list.view-card { grid-template-columns: repeat(3, 1fr) !important; }
+  }
+  @media (max-width: 800px) {
+    .parrot-list.view-card { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+  @media (max-width: 500px) {
+    .parrot-list.view-card { grid-template-columns: repeat(1, 1fr) !important; }
+  }
+
+.parrot-list.view-card .parrot-avatar-container {
+  margin-right: 0;
+  margin-bottom: 12px;
+  width: 80px;
+  height: 80px;
+}
+
+.parrot-list.view-card .parrot-content {
+  width: 100%;
+  align-items: center;
+}
+
+.parrot-list.view-card .parrot-main-info {
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.parrot-list.view-card .parrot-sub-info {
+  justify-content: center;
+}
+
+.parrot-list.view-card .parrot-extra-info {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.parrot-list.view-card .parrot-action {
+  display: none;
+}
+
+/* List View (Compact) */
+.parrot-list.view-list {
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.parrot-list.view-list .parrot-item {
+  border-radius: 0;
+  box-shadow: none;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 0;
+}
+
+.parrot-list.view-list .parrot-item:last-child {
+  border-bottom: none;
+}
+
+.parrot-list.view-list .parrot-item:hover {
+  background-color: #f9f9fa;
+  transform: none;
+  box-shadow: none;
+}
+
+.parrot-list.view-list .parrot-avatar-container {
+  display: none;
+}
+
+.parrot-list.view-list .parrot-content {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.parrot-list.view-list .parrot-main-info {
+  flex: 0 0 auto;
+  min-width: 180px;
+}
+
+.parrot-list.view-list .parrot-sub-info {
+  flex: 0 0 auto;
+}
+
+.parrot-list.view-list .parrot-extra-info {
+  flex: 1;
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
+.parrot-list.view-list .parrot-action {
+  margin-left: 12px;
 }
 </style>
