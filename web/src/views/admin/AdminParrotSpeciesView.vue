@@ -1,10 +1,7 @@
 <template>
   <div class="admin-page">
     <div class="header">
-      <div class="header-left">
-        <el-button link @click="goBack">返回</el-button>
-        <h2>鹦鹉品种管理</h2>
-      </div>
+      <h2>鹦鹉品种管理</h2>
       <div class="header-actions">
         <el-button type="primary" @click="openCreate">新增品种</el-button>
       </div>
@@ -93,8 +90,6 @@ const save = async () => {
   try { const payload = { ...form.value }; if (editing.value) { const r = await api.put(`/parrots/species/${payload.id}`, payload); if (r.data?.success) { ElMessage.success('更新成功'); showDialog.value=false; fetchList() } else ElMessage.error(r.data?.message||'更新失败') } else { const r = await api.post('/parrots/species', payload); if (r.data?.success) { ElMessage.success('创建成功'); showDialog.value=false; fetchList() } else ElMessage.error(r.data?.message||'创建失败') } } catch (_) { ElMessage.error('保存失败') }
 }
 const remove = async (id) => { try { await ElMessageBox.confirm('确认删除该品种？若存在引用将失败', '提示', { type:'warning' }); const r = await api.delete(`/parrots/species/${id}`); if (r.data?.success) { ElMessage.success('已删除'); fetchList() } else ElMessage.error(r.data?.message||'删除失败') } catch (_) {} }
-
-const goBack = () => { router.push('/admin') }
 
 onMounted(async () => { await (authStore.refreshProfile && authStore.refreshProfile()); if (isSuperAdmin.value) fetchList() })
 </script>

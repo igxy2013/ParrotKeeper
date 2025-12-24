@@ -1,10 +1,7 @@
 <template>
   <div class="admin-page">
     <div class="header">
-      <div class="header-left">
-        <el-button link @click="goBack">返回</el-button>
-        <h2>系统公告发布</h2>
-      </div>
+      <h2>系统公告发布</h2>
       <div class="header-actions">
         <el-button type="primary" @click="openCreate">新建公告</el-button>
       </div>
@@ -84,8 +81,6 @@ const save = async () => {
   } catch (_) { ElMessage.error('保存失败') }
 }
 const remove = async (id) => { try { await ElMessageBox.confirm('确认删除该公告？', '提示', { type:'warning' }); const r = await api.delete(`/admin/announcements/${id}`); if (r.data?.success) { ElMessage.success('已删除'); fetchList() } else ElMessage.error(r.data?.message||'删除失败') } catch (_) {} }
-
-const goBack = () => { router.push('/admin') }
 
 onMounted(async () => { await (authStore.refreshProfile && authStore.refreshProfile()); if (isSuperAdmin.value) fetchList() })
 </script>

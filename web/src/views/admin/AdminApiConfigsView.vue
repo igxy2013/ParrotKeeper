@@ -1,10 +1,7 @@
 <template>
   <div class="admin-page">
     <div class="header">
-      <div class="header-left">
-        <el-button link @click="goBack">返回</el-button>
-        <h2>API配置管理</h2>
-      </div>
+      <h2>API配置管理</h2>
       <div class="header-actions">
         <el-button type="primary" @click="save" :loading="saving">保存配置</el-button>
       </div>
@@ -93,8 +90,6 @@ const save = async () => {
     else ElMessage.error(r.data?.message||'保存失败')
   } catch (_) { ElMessage.error('保存失败') } finally { saving.value = false }
 }
-
-const goBack = () => { router.push('/admin') }
 
 onMounted(async () => { await (authStore.refreshProfile && authStore.refreshProfile()); if (isSuperAdmin.value) fetchConfigs() })
 </script>

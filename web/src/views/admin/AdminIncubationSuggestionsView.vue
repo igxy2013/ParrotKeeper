@@ -1,10 +1,7 @@
 <template>
   <div class="admin-page">
     <div class="header">
-      <div class="header-left">
-        <el-button link @click="goBack">返回</el-button>
-        <h2>孵化建议管理</h2>
-      </div>
+      <h2>孵化建议管理</h2>
       <div class="header-actions">
         <el-button type="primary" @click="openCreate">新增建议</el-button>
       </div>
@@ -128,8 +125,6 @@ const save = async () => {
 const remove = async (id) => {
   try { await ElMessageBox.confirm('确认删除该建议？', '提示', { type: 'warning' }); const r = await api.delete(`/incubation/suggestions/${id}`); if (r.data?.success) { ElMessage.success('已删除'); fetchList() } else ElMessage.error(r.data?.message||'删除失败') } catch (_) {}
 }
-
-const goBack = () => { router.push('/admin') }
 
 onMounted(async () => { await (authStore.refreshProfile && authStore.refreshProfile()); await fetchSpecies(); if (isAdminOrSuper.value) fetchList() })
 </script>

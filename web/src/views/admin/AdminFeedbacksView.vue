@@ -1,10 +1,7 @@
 <template>
   <div class="admin-page">
     <div class="header">
-      <div class="header-left">
-        <el-button link @click="goBack">返回</el-button>
-        <h2>反馈管理</h2>
-      </div>
+      <h2>反馈管理</h2>
       <div class="header-actions">
         <el-button type="primary" @click="markAllRead" :loading="marking">标记全部已读</el-button>
       </div>
@@ -72,13 +69,11 @@ const remove = async (id) => {
 const markAllRead = async () => {
   marking.value = true
   try {
-    const res = await api.post('/feedback/mark_all_read')
-    if (res.data && res.data.success) ElMessage.success('已标记全部已读')
+    const res = await api.put('/admin/feedbacks/read-all')
+    if (res.data && res.data.success) { ElMessage.success('已标记全部已读'); fetchList() }
     else ElMessage.error(res.data?.message || '操作失败')
   } catch (_) { ElMessage.error('操作失败') } finally { marking.value = false }
 }
-
-const goBack = () => { router.push('/admin') }
 
 onMounted(async () => {
   await (authStore.refreshProfile && authStore.refreshProfile())

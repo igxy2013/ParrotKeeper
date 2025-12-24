@@ -22,59 +22,23 @@
       </div>
       <UserProfileModal v-model="showProfile" />
     </div>
-
-    <h2>个人中心</h2>
-    <div class="settings-content">
-      <el-form label-width="120px">
-        <el-form-item label="当前模式">
-          <el-radio-group v-model="mode">
-            <el-radio-button label="personal">个人模式</el-radio-button>
-            <el-radio-button label="team">团队模式</el-radio-button>
-          </el-radio-group>
-        </el-form-item>
-
-        <div class="mode-description">
-          <p v-if="mode === 'personal'">当前处于<strong>个人模式</strong>。您将看到您个人的鹦鹉数据和记录。</p>
-          <p v-else>当前处于<strong>团队模式</strong>。您将看到团队共享的鹦鹉数据和记录。</p>
-        </div>
-
-        <el-form-item>
-          <el-button type="primary" @click="saveSettings" :loading="saving">保存并应用</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import UserProfileModal from '@/components/UserProfileModal.vue'
 
 const authStore = useAuthStore()
 const showProfile = ref(false)
 const mode = ref('personal')
-const saving = ref(false)
 
 onMounted(async () => {
   const savedMode = localStorage.getItem('user_mode')
   if (savedMode && ['personal', 'team'].includes(savedMode)) mode.value = savedMode
   await (authStore.refreshProfile && authStore.refreshProfile())
 })
-
-const saveSettings = () => {
-  saving.value = true
-  try {
-    localStorage.setItem('user_mode', mode.value)
-    ElMessage.success('设置已保存，正在切换模式...')
-    setTimeout(() => { window.location.reload() }, 1000)
-  } catch (e) {
-    ElMessage.error('保存失败')
-  } finally {
-    saving.value = false
-  }
-}
 
 const avatarSrc = computed(() => {
   const u = authStore.user || {}
@@ -128,20 +92,6 @@ const modeDisplay = computed(() => mode.value === 'team' ? '团队模式' : '个
 .user-meta { display: flex; gap: 8px; color: #666; font-size: 13px; margin-top: 4px; }
 .divider { color: #dcdfe6; }
 .user-actions { display: flex; align-items: center; }
-.edit-btn { background: linear-gradient(135deg, #4CAF50, #26A69A); color: #ffffff; border: none; }
+.edit-btn { background: linear-gradient(135deg, #10b981, #26A69A); color: #ffffff; border: none; }
 .edit-btn:hover { box-shadow: 0 4px 12px rgba(38, 166, 154, 0.3); }
-.settings-content {
-  margin-top: 24px;
-  max-width: 600px;
-}
-.mode-description {
-  margin-left: 120px;
-  margin-bottom: 24px;
-  color: #666;
-  font-size: 14px;
-  line-height: 1.5;
-  padding: 12px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-}
 </style>

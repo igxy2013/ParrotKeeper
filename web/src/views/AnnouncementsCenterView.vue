@@ -68,6 +68,19 @@ const loadMore = async () => {
 const openDetail = (a) => {
   current.value = a
   showDetail.value = true
+
+  // Mark as read in localStorage
+  try {
+    const readIds = JSON.parse(localStorage.getItem('read_announcements') || '[]')
+    if (!readIds.includes(a.id)) {
+      readIds.push(a.id)
+      localStorage.setItem('read_announcements', JSON.stringify(readIds))
+      // Dispatch event to update SideNav badge
+      window.dispatchEvent(new Event('announcement-read'))
+    }
+  } catch (e) {
+    console.error('Failed to mark announcement as read', e)
+  }
 }
 
 const preview = (s) => {

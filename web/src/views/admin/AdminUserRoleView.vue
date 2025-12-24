@@ -1,10 +1,7 @@
 <template>
   <div class="admin-page">
     <div class="header">
-      <div class="header-left">
-        <el-button link @click="goBack">返回</el-button>
-        <h2>用户与角色管理</h2>
-      </div>
+      <h2>用户与角色管理</h2>
       <div class="header-actions">
         <el-input v-model="keyword" placeholder="按昵称/用户名/手机号搜索" style="width:280px" />
         <el-button @click="fetchUsers" :loading="loading">搜索</el-button>
@@ -81,8 +78,6 @@ const updateRole = async (id, role) => {
     else ElMessage.error(r.data?.message||'更新失败')
   } catch (_) { ElMessage.error('更新失败') }
 }
-
-const goBack = () => { router.push('/admin') }
 
 onMounted(async () => { await (authStore.refreshProfile && authStore.refreshProfile()); if (isSuperAdmin.value) fetchUsers() })
 </script>
