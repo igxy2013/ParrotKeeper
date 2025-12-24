@@ -173,14 +173,55 @@
                     <div class="today-val">{{ stats.today_records?.cleaning || 0 }}</div>
                  </div>
               </div>
-              <div class="today-stat-box warning-box">
-                 <div class="today-icon"><el-icon><View /></el-icon></div>
-                 <div class="today-content">
-                    <div class="today-label">统计访问</div>
-                    <div class="today-val">{{ stats.stats_views || 0 }}</div>
-                 </div>
-              </div>
            </div>
+        </div>
+     </el-col>
+    </el-row>
+    <el-row :gutter="24" class="mt-12" v-loading="loading">
+      <el-col :span="12">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="header-title">
+              <el-icon><List /></el-icon>
+              <span>最近活动</span>
+            </div>
+          </div>
+          <div class="recent-list">
+            <div v-if="!recentActivities.length" class="empty-tip">暂无最近活动</div>
+            <div v-else class="recent-items">
+              <div class="recent-item" v-for="item in recentActivities" :key="item.key">
+                <div class="recent-icon" :class="item.type">
+                  <el-icon v-if="item.type==='feeding'"><Dish /></el-icon>
+                  <el-icon v-else-if="item.type==='cleaning'"><Brush /></el-icon>
+                  <el-icon v-else-if="item.type==='health'"><FirstAidKit /></el-icon>
+                  <el-icon v-else><Calendar /></el-icon>
+                </div>
+                <div class="recent-content">
+                  <div class="recent-title">{{ item.title }}</div>
+                  <div class="recent-meta">{{ item.time }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </el-col>
+      <el-col :span="12">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="header-title">
+              <el-icon><Warning /></el-icon>
+              <span>健康提醒</span>
+            </div>
+          </div>
+          <div class="alert-list">
+            <div v-if="!healthAlerts.length" class="empty-tip">暂无健康异常</div>
+            <div v-else class="alert-items">
+              <div class="alert-item" v-for="a in healthAlerts" :key="a.key">
+                <span class="alert-badge" :class="a.severity">{{ a.severity==='high' ? '高' : '中' }}</span>
+                <span class="alert-text">{{ a.parrot_name }}：{{ a.message }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </el-col>
     </el-row>
@@ -189,7 +230,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
-import { User, Wallet, Money, FirstAidKit, Dish, Calendar, Timer, TrendCharts, List, Brush, View } from '@element-plus/icons-vue'
+import { User, Wallet, Money, FirstAidKit, Dish, Calendar, Timer, TrendCharts, List, Brush, Warning } from '@element-plus/icons-vue'
 import api from '../api/axios'
 
 const currentDate = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
@@ -218,6 +259,63 @@ const displaySeries = computed(() => {
   if (sid) return list.filter(s => String(s.parrot_id) === String(sid))
   return list.slice(0, 12)
 })
+
+const recentActivities = ref([])
+const healthAlerts = ref([])
+
+const fetchRecentActivities = async () => {
+  try {
+    const res = await api.get('/records/recent', { params: { limit: 6 } })
+    const data = res.data?.data || {}
+    const list = []
+    const add = (arr, type) => {
+      (arr || []).forEach(r => {
+        let t = ''
+        if (type === 'feeding') t = r.feeding_time
+        else if (type === 'health') t = r.record_date
+        else if (type === 'cleaning') t = r.cleaning_time
+        else t = r.created_at
+        const time = t ? new Date(t).toLocaleString('zh-CN') : ''
+        const title = type === 'feeding' ? '喂食' : type === 'cleaning' ? '清洁' : type === 'health' ? '健康' : '繁殖'
+        list.push({
+          key: `${type}-${r.id}`,
+          type,
+          title: `${title}${r.parrot?.name ? ' · ' + r.parrot.name : ''}`,
+          time
+        })
+      })
+    }
+    add(data.feeding, 'feeding')
+    add(data.health, 'health')
+    add(data.cleaning, 'cleaning')
+    add(data.breeding, 'breeding')
+    list.sort((a, b) => (new Date(b.time).getTime() || 0) - (new Date(a.time).getTime() || 0))
+    recentActivities.value = list.slice(0, 8)
+  } catch (_) {
+    recentActivities.value = []
+  }
+}
+
+const fetchHealthAlerts = async () => {
+  try {
+    const res = await api.get('/statistics/health-anomalies', { params: { days: 30 } })
+    const results = res.data?.data?.results || []
+    const items = []
+    results.forEach(p => {
+      (p.anomalies || []).forEach(an => {
+        items.push({
+          key: `${p.parrot_id}-${an.type}-${an.severity}`,
+          parrot_name: p.parrot_name,
+          severity: an.severity || 'medium',
+          message: an.message || ''
+        })
+      })
+    })
+    healthAlerts.value = items.slice(0, 8)
+  } catch (_) {
+    healthAlerts.value = []
+  }
+}
 
 const toggleParrotDropdown = () => { showParrotDropdown.value = !showParrotDropdown.value }
 const selectParrot = (id, name) => {
@@ -643,6 +741,8 @@ onMounted(async () => {
       buildColorMap()
       await computeAvgAndDraw()
     }
+    await fetchRecentActivities()
+    await fetchHealthAlerts()
   } catch (e) {
     console.error(e)
   } finally {
@@ -821,8 +921,8 @@ const onWeightMouseLeave = () => {}
 /* Chart Cards */
 .chart-card {
   background: #fff;
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 16px;
   border: 1px solid rgba(0,0,0,0.03);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   height: 100%;
@@ -832,13 +932,13 @@ const onWeightMouseLeave = () => {}
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .header-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: #1f2937;
 }
@@ -910,4 +1010,29 @@ const onWeightMouseLeave = () => {}
 .today-val { font-size: 20px; font-weight: 700; color: #111827; }
 
 .mt-6 { margin-top: 24px; }
+.mt-8 { margin-top: 32px; }
+.mt-12 { margin-top: 48px; }
+
+.recent-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+.recent-items { display: flex; flex-direction: column; gap: 6px; }
+.recent-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }
+.recent-item:last-child { border-bottom: none; }
+.recent-icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #f5f7fa; }
+.recent-content { display: flex; flex-direction: column; }
+.recent-title { font-size: 13px; color: #1f2937; font-weight: 600; }
+.recent-meta { font-size: 12px; color: #6b7280; }
+
+.alert-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+.alert-items { display: flex; flex-direction: column; gap: 6px; }
+.alert-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }
+.alert-item:last-child { border-bottom: none; }
+.alert-badge { display:inline-block; padding: 2px 6px; border-radius: 999px; font-size: 12px; color: #fff; }
+.alert-badge.high { background: #ef4444; }
+.alert-badge.medium { background: #f59e0b; }
+.alert-text { font-size: 13px; color: #1f2937; }
+.empty-tip { font-size: 13px; color: #6b7280; }
+
+/* thin scrollbars inside lists */
+.recent-list::-webkit-scrollbar, .alert-list::-webkit-scrollbar { width: 6px; }
+.recent-list::-webkit-scrollbar-thumb, .alert-list::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 8px; }
 </style>

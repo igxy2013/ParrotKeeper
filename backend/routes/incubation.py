@@ -147,7 +147,9 @@ def _generate_advice(egg: Egg, log_date: date, t: float = None, h: float = None)
         'tips': tips,
         'user_tips': user_tips,
         'turning_required': turning_required,
-        'candling_required': candling_required
+        'candling_required': candling_required,
+        'should_turn': should_turn,
+        'should_candle': should_candle
     }
 
 @incubation_bp.route('/eggs', methods=['POST'])
@@ -295,9 +297,34 @@ def add_log(egg_id):
         data = request.get_json() or {}
         # 解析日志日期，支持 'YYYY-MM-DD' 或 ISO 格式，未提供则为今日
         log_date = _parse_date(data.get('log_date')) or date.today()
+        
         temperature_c = data.get('temperature_c')
+        if temperature_c == '':
+            temperature_c = None
+        elif temperature_c is not None:
+            try:
+                temperature_c = float(temperature_c)
+            except ValueError:
+                return error_response('温度必须是有效数字')
+        
         humidity_pct = data.get('humidity_pct')
+        if humidity_pct == '':
+            humidity_pct = None
+        elif humidity_pct is not None:
+            try:
+                humidity_pct = float(humidity_pct)
+            except ValueError:
+                return error_response('湿度必须是有效数字')
+        
         weight_g = data.get('weight_g')
+        if weight_g == '':
+            weight_g = None
+        elif weight_g is not None:
+            try:
+                weight_g = float(weight_g)
+            except ValueError:
+                return error_response('重量必须是有效数字')
+
         advice_obj = _generate_advice(egg, log_date, temperature_c, humidity_pct)
         advice_text = '\n'.join(advice_obj.get('tips') or [])
         team_id = _resolve_team_id(user)
@@ -310,6 +337,7 @@ def add_log(egg_id):
             advice=advice_text,
             notes=data.get('notes'),
             image_urls=data.get('image_urls'),
+            is_candling=data.get('is_candling', False),
             created_by_user_id=user.id,
             team_id=team_id
         )
@@ -339,9 +367,25 @@ def update_log(log_id):
             val = _parse_date(data.get('log_date'))
             if val:
                 log.log_date = val
-        for f in ['temperature_c', 'humidity_pct', 'weight_g', 'notes', 'image_urls']:
+        
+        # Numeric fields validation and conversion
+        for f in ['temperature_c', 'humidity_pct', 'weight_g']:
+            if f in data:
+                val = data.get(f)
+                if val == '':
+                    val = None
+                elif val is not None:
+                    try:
+                        val = float(val)
+                    except ValueError:
+                        return error_response(f'{f}必须是有效数字')
+                setattr(log, f, val)
+
+        # Other fields
+        for f in ['notes', 'image_urls', 'is_candling']:
             if f in data:
                 setattr(log, f, data.get(f))
+
         db.session.commit()
         from schemas import incubation_log_schema
         payload = incubation_log_schema.dump(log)

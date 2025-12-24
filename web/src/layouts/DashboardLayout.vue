@@ -126,9 +126,11 @@ const onHeaderAvatarError = () => {}
 .collapse-btn {
   margin-right: 12px;
   color: white !important;
+  transition: all 0.3s ease;
 }
 .collapse-btn:hover {
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255,255,255,0.2) !important;
+  transform: scale(1.1);
 }
 
 .user-area { display: flex; align-items: center; gap: 10px; }

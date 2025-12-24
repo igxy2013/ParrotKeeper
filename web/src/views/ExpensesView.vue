@@ -116,56 +116,11 @@
       @current-change="onPageChange"
     />
 
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="480px"
-    >
-      <el-form :model="form" label-width="96px">
-        <el-form-item label="记录类型">
-          <el-radio-group v-model="form.type" @change="onFormTypeChange">
-            <el-radio-button label="支出" />
-            <el-radio-button label="收入" />
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="类别">
-          <el-select v-model="form.category" style="width: 100%">
-            <el-option
-              v-for="opt in formCategoryOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="金额">
-          <el-input v-model="form.amount" placeholder="请输入金额">
-            <template #prepend>¥</template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="日期">
-          <el-date-picker
-            v-model="form.date"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="选择日期"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            rows="3"
-            placeholder="可填写用途、来源等说明"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submitForm">保存</el-button>
-      </template>
-    </el-dialog>
+    <ExpenseModal 
+      v-model="dialogVisible" 
+      :record="editingRecord"
+      @success="onModalSuccess"
+    />
   </div>
 </template>
 
@@ -174,6 +129,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import api from '@/api/axios'
+import ExpenseModal from '../components/ExpenseModal.vue'
 
 const loading = ref(false)
 const records = ref([])
@@ -221,41 +177,7 @@ const displayTotalCount = ref(0)
 const searchKeyword = ref('')
 
 const dialogVisible = ref(false)
-const saving = ref(false)
-const isEditing = ref(false)
-
-const form = ref({
-  id: '',
-  type: '支出',
-  category: '',
-  amount: '',
-  date: '',
-  description: ''
-})
-
-const expenseCategoryOptionsForDialog = [
-  { value: 'food', label: '食物' },
-  { value: 'medical', label: '医疗' },
-  { value: 'toys', label: '玩具' },
-  { value: 'cage', label: '笼具' },
-  { value: 'baby_bird', label: '幼鸟' },
-  { value: 'breeding_bird', label: '种鸟' },
-  { value: 'other', label: '其他' }
-]
-
-const incomeCategoryOptionsForDialog = [
-  { value: 'breeding_sale', label: '繁殖销售' },
-  { value: 'bird_sale', label: '鸟类销售' },
-  { value: 'service', label: '服务收入' },
-  { value: 'competition', label: '比赛奖金' },
-  { value: 'other', label: '其他收入' }
-]
-
-const formCategoryOptions = computed(() => {
-  return form.value.type === '收入' ? incomeCategoryOptionsForDialog : expenseCategoryOptionsForDialog
-})
-
-const dialogTitle = computed(() => (isEditing.value ? '编辑收支记录' : '添加收支记录'))
+const editingRecord = ref(null)
 
 const getToday = () => {
   const d = new Date()
@@ -478,100 +400,18 @@ const refresh = () => {
 }
 
 const openDialog = () => {
-  isEditing.value = false
-  form.value = {
-    id: '',
-    type: '支出',
-    category: 'food',
-    amount: '',
-    date: getToday(),
-    description: ''
-  }
+  editingRecord.value = null
   dialogVisible.value = true
 }
 
 const openEdit = (row) => {
-  isEditing.value = true
-  form.value = {
-    id: row.id,
-    type: row.type,
-    category: row.category,
-    amount: String(row.amount || ''),
-    date: row.date,
-    description: row.description || ''
-  }
+  editingRecord.value = row
   dialogVisible.value = true
 }
 
-const onFormTypeChange = () => {
-  if (form.value.type === '收入') {
-    form.value.category = 'breeding_sale'
-  } else {
-    form.value.category = 'food'
-  }
-}
-
-const submitForm = async () => {
-  if (!form.value.amount || !form.value.category || !form.value.date) {
-    ElMessage.error('请填写完整的记录信息')
-    return
-  }
-
-  let amountNumber
-  try {
-    amountNumber = parseFloat(form.value.amount)
-  } catch (e) {
-    ElMessage.error('金额格式不正确')
-    return
-  }
-  if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
-    ElMessage.error('金额必须大于0')
-    return
-  }
-
-  const isIncome = form.value.type === '收入'
-  const payload = {
-    category: form.value.category,
-    amount: amountNumber,
-    description: form.value.description || ''
-  }
-  if (isIncome) {
-    payload.income_date = form.value.date
-  } else {
-    payload.expense_date = form.value.date
-  }
-
-  saving.value = true
-  try {
-    if (isEditing.value && form.value.id) {
-      const actualId = String(form.value.id).replace(/^(expense_|income_)/, '')
-      const url = isIncome ? `/expenses/incomes/${actualId}` : `/expenses/${actualId}`
-      const res = await api.put(url, payload)
-      if (res.data && res.data.success) {
-        ElMessage.success('更新成功')
-        dialogVisible.value = false
-        loadExpenses()
-        loadStats()
-      } else {
-        ElMessage.error(res.data?.message || '更新失败')
-      }
-    } else {
-      const url = isIncome ? '/expenses/incomes' : '/expenses'
-      const res = await api.post(url, payload)
-      if (res.data && res.data.success) {
-        ElMessage.success('添加成功')
-        dialogVisible.value = false
-        loadExpenses()
-        loadStats()
-      } else {
-        ElMessage.error(res.data?.message || '添加失败')
-      }
-    }
-  } catch (e) {
-    ElMessage.error('保存失败')
-  } finally {
-    saving.value = false
-  }
+const onModalSuccess = () => {
+  loadExpenses()
+  loadStats()
 }
 
 const remove = async (row) => {
@@ -617,7 +457,6 @@ const formatAmount = (val) => {
 
 onMounted(() => {
   updateCategoryOptions()
-  form.value.date = getToday()
   loadExpenses()
   loadStats()
 })

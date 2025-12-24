@@ -246,6 +246,7 @@ class IncubationLog(db.Model):
     advice = db.Column(db.Text)
     notes = db.Column(db.Text)
     image_urls = db.Column(db.Text)
+    is_candling = db.Column(db.Boolean, default=False)
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     team_id = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

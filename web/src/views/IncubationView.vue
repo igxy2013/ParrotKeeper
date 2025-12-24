@@ -85,7 +85,7 @@
     <el-drawer
       v-model="showDetailDrawer"
       title="孵化详情"
-      size="80%"
+      size="50%"
       direction="rtl"
       destroy-on-close
     >
@@ -93,6 +93,7 @@
         <!-- Top Info -->
         <div class="detail-header">
           <el-descriptions border>
+            <el-descriptions-item label="标签">{{ currentDetailEgg.label || ('蛋 ' + currentDetailEgg.id) }}</el-descriptions-item>
             <el-descriptions-item label="品种">{{ currentDetailEgg.species_name }}</el-descriptions-item>
             <el-descriptions-item label="状态">
                <el-tag :type="getStatusType(currentDetailEgg.status)">{{ getStatusText(currentDetailEgg.status) }}</el-tag>
@@ -107,6 +108,16 @@
           <el-col :span="14">
             <el-card header="孵化日历" class="calendar-card">
               <el-calendar v-model="calendarDate">
+                <template #header>
+                  <div class="calendar-nav">
+                    <div class="calendar-nav-left">
+                      <el-button text type="primary" size="small" @click="handleCalendarMonthChange(-1)">上月</el-button>
+                      <span class="calendar-month-text">{{ formatMonth(calendarDate) }}</span>
+                      <el-button text type="primary" size="small" @click="handleCalendarMonthChange(1)">下月</el-button>
+                    </div>
+                    <el-button text size="small" @click="goToday">回到今天</el-button>
+                  </div>
+                </template>
                 <template #date-cell="{ data }">
                   <div
                     class="calendar-cell"
@@ -121,6 +132,32 @@
                   </div>
                 </template>
               </el-calendar>
+              <div class="calendar-legend">
+                <div class="legend-item">
+                  <span class="legend-swatch swatch-incubating"></span>
+                  <span>孵化期</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-swatch swatch-today"></span>
+                  <span>今天</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot dot-log"></span>
+                  <span>有日志</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot dot-turning"></span>
+                  <span>翻蛋日</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot dot-candling"></span>
+                  <span>照蛋日</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-swatch swatch-hatch"></span>
+                  <span>出壳日</span>
+                </div>
+              </div>
             </el-card>
           </el-col>
           <el-col :span="10">
@@ -167,29 +204,44 @@
               </div>
             </el-card>
             <el-card class="mt-4" header="孵化记录">
-               <el-form :model="logForm" label-width="80px">
-                 <el-form-item label="记录日期">
-                   <el-date-picker
-                     v-model="logForm.log_date"
-                     type="date"
-                     placeholder="选择日期"
-                     value-format="YYYY-MM-DD"
-                   />
-                 </el-form-item>
-                 <el-form-item label="温度">
-                   <el-input v-model="logForm.temperature" placeholder="温度℃" />
-                 </el-form-item>
-                 <el-form-item label="湿度">
-                   <el-input v-model="logForm.humidity" placeholder="湿度%" />
-                 </el-form-item>
-                 <el-form-item label="是否照蛋">
-                   <el-switch v-model="logForm.candling" />
-                 </el-form-item>
+               <el-form :model="logForm" label-width="70px" size="small">
+                 <el-row :gutter="10">
+                   <el-col :span="12">
+                     <el-form-item label="记录日期">
+                       <el-date-picker
+                         v-model="logForm.log_date"
+                         type="date"
+                         placeholder="日期"
+                         value-format="YYYY-MM-DD"
+                         style="width: 100%"
+                       />
+                     </el-form-item>
+                   </el-col>
+                   <el-col :span="6">
+                     <el-form-item label="照蛋" label-width="40px">
+                       <el-switch v-model="logForm.candling" />
+                     </el-form-item>
+                   </el-col>
+                   <el-col :span="6">
+                     <el-form-item label="出雏" label-width="40px">
+                       <el-switch v-model="logForm.hatchToday" />
+                     </el-form-item>
+                   </el-col>
+                 </el-row>
+                 <el-row :gutter="10">
+                   <el-col :span="12">
+                     <el-form-item label="温度">
+                       <el-input v-model="logForm.temperature" placeholder="℃" />
+                     </el-form-item>
+                   </el-col>
+                   <el-col :span="12">
+                     <el-form-item label="湿度">
+                       <el-input v-model="logForm.humidity" placeholder="%" />
+                     </el-form-item>
+                   </el-col>
+                 </el-row>
                  <el-form-item label="备注">
-                   <el-input v-model="logForm.notes" type="textarea" :rows="2" />
-                 </el-form-item>
-                 <el-form-item label="今日出雏">
-                   <el-switch v-model="logForm.hatchToday" />
+                   <el-input v-model="logForm.notes" type="textarea" :rows="1" />
                  </el-form-item>
                  <div class="text-right">
                    <el-button type="primary" size="small" @click="saveLog">保存</el-button>
@@ -328,6 +380,15 @@ const formatDateTimeText = (dateStr) => {
   return `${y}-${m}-${dd} ${hh}:${mm}`
 }
 
+const formatMonth = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  return `${y}年${m}月`
+}
+
 const computeDaysHoursText = (dStr) => {
   if (!dStr) return '--'
   const s = String(dStr)
@@ -340,6 +401,17 @@ const computeDaysHoursText = (dStr) => {
   const days = Math.floor(ms / 86400000) + 1
   const hours = Math.floor((ms % 86400000) / 3600000)
   return `${days}天${hours}小时`
+}
+
+const handleCalendarMonthChange = (delta) => {
+  const current = new Date(calendarDate.value)
+  if (isNaN(current.getTime())) return
+  current.setMonth(current.getMonth() + delta)
+  calendarDate.value = current
+}
+
+const goToday = () => {
+  calendarDate.value = new Date()
 }
 
 const getStatusText = (status) => {
@@ -465,18 +537,20 @@ const fetchDetailData = async (id) => {
   try {
     // 1. Get Detail & Logs
     const res = await api.get(`/incubation/eggs/${id}`)
-    if (res.data && res.data.egg) {
+    const data = (res.data && res.data.data) ? res.data.data : {}
+    if (data.egg) {
       currentDetailEgg.value = { 
-        ...res.data.egg, 
-        species_name: res.data.egg.species ? res.data.egg.species.name : res.data.egg.species_name,
-        incubator_start_datetime_text: formatDateTimeText(res.data.egg.incubator_start_date)
+        ...data.egg, 
+        species_name: data.egg.species ? data.egg.species.name : data.egg.species_name,
+        incubator_start_datetime_text: formatDateTimeText(data.egg.incubator_start_date)
       }
     }
-    logs.value = res.data.logs || []
+    logs.value = data.logs || []
     
     // 2. Get Calendar Data
     const calRes = await api.get(`/incubation/eggs/${id}/calendar`)
-    calendarData.value = calRes.data.calendar || {}
+    const calData = (calRes.data && calRes.data.data) ? calRes.data.data : {}
+    calendarData.value = calData || {}
     
     // 3. Fetch initial advice
     fetchAdvice()
@@ -506,7 +580,27 @@ const fetchAdvice = async () => {
         after_hatch: afterHatch
       }
     })
-    advice.value = res.data || {}
+    const raw = (res.data && res.data.data) || {}
+    
+    // Transform for display
+    const ranges = raw.ranges || {}
+    const t = ranges.temperature_c || {}
+    const h = ranges.humidity_pct || {}
+    
+    let tempText = '—'
+    if (t.low && t.high) tempText = `${t.low} ~ ${t.high}°C`
+    else if (t.target) tempText = `${t.target}°C`
+    
+    let humText = '—'
+    if (h.low && h.high) humText = `${h.low} ~ ${h.high}%`
+    
+    advice.value = {
+      temp_range: tempText,
+      hum_range: humText,
+      turning: raw.should_turn ? '需要翻蛋' : '无需翻蛋',
+      candling: raw.should_candle ? '建议照蛋' : '无需照蛋',
+      tips: raw.tips || []
+    }
 
     const log = logs.value.find(l => formatDate(l.log_date) === dateStr)
     if (log) {
@@ -614,14 +708,14 @@ const saveLog = async () => {
   
   const payload = {
     log_date: dateStr,
-    temperature_c: logForm.temperature,
-    humidity_pct: logForm.humidity,
-    notes: logForm.notes
+    temperature_c: logForm.temperature === '' ? null : logForm.temperature,
+    humidity_pct: logForm.humidity === '' ? null : logForm.humidity,
+    notes: logForm.notes,
+    is_candling: logForm.candling || false
   }
 
   if (logForm.candling) {
     payload.candling = true
-    payload.is_candling = true
   }
   
   try {
@@ -644,7 +738,9 @@ const saveLog = async () => {
 
     await fetchDetailData(currentDetailEgg.value.id)
   } catch (e) {
-    ElMessage.error('操作失败')
+    console.error(e)
+    const msg = e.response?.data?.message || '操作失败'
+    ElMessage.error(msg)
   }
 }
 
@@ -743,18 +839,48 @@ onMounted(() => {
   padding: 0 10px;
 }
 .detail-header {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 .calendar-card {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
+:deep(.el-calendar__body) {
+  padding: 12px 20px 16px;
+}
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.calendar-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.calendar-nav-left :deep(.el-button.is-text) {
+  color: #ffffff !important;
+}
+.calendar-nav-left :deep(.el-button.is-text:hover) {
+  color: #ffffff !important;
+}
+.calendar-month-text {
+  font-weight: 600;
+}
+/* Compact Calendar Styles */
+:deep(.el-calendar-table .el-calendar-day) {
+  height: 60px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
 .calendar-cell {
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: center;
-  padding: 5px;
+  align-items: flex-start;
+  padding: 2px;
   position: relative;
 }
 .calendar-cell.incubating {
@@ -778,16 +904,19 @@ onMounted(() => {
 }
 .calendar-cell.selected {
   box-shadow: 0 0 0 2px #10b981 inset;
+  z-index: 2;
 }
 .date-num {
   font-weight: bold;
+  font-size: 14px;
+  line-height: 1.2;
 }
 .indicators {
-  margin-top: 5px;
+  margin-top: 2px;
   display: flex;
   gap: 2px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
 }
 .dot {
   width: 6px;
@@ -811,11 +940,54 @@ onMounted(() => {
   background-color: #67C23A;
 }
 
+.calendar-legend {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+  color: #4b5563;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.legend-swatch {
+  width: 16px;
+  height: 10px;
+  border-radius: 4px;
+}
+.swatch-incubating {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+.swatch-today {
+  background: #10b981;
+}
+.swatch-hatch {
+  background: #8b5cf6;
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+.legend-dot.dot-log {
+  background-color: #409EFF;
+}
+.legend-dot.dot-turning {
+  background-color: #67C23A;
+}
+.legend-dot.dot-candling {
+  background-color: #E6A23C;
+}
+
 .advice-content {
   font-size: 14px;
 }
 .advice-item {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   display: flex;
   justify-content: space-between;
   border-bottom: 1px dashed #eee;
