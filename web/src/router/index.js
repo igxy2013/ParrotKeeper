@@ -3,11 +3,11 @@ import LoginView from '../views/LoginView.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import DashboardView from '../views/DashboardView.vue'
 import ParrotsView from '../views/ParrotsView.vue'
+import ParrotDetailView from '../views/ParrotDetailView.vue'
 import RecordsView from '../views/RecordsView.vue'
 import ExpensesView from '../views/ExpensesView.vue'
 import IncubationView from '../views/IncubationView.vue'
 import PairingView from '../views/PairingView.vue'
-import SettingsView from '../views/SettingsView.vue'
 import CareGuideView from '../views/CareGuideView.vue'
 import AnnouncementsCenterView from '../views/AnnouncementsCenterView.vue'
 import ReportExportView from '../views/ReportExportView.vue'
@@ -24,7 +24,6 @@ import AdminInvitationCodesView from '../views/admin/AdminInvitationCodesView.vu
 import SettingsNotificationView from '../views/settings/SettingsNotificationView.vue'
 import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
 import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
-import SettingsAccountView from '../views/settings/SettingsAccountView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -47,6 +46,11 @@ const router = createRouter({
           path: 'parrots',
           name: 'parrots',
           component: ParrotsView
+        },
+        {
+          path: 'parrots/:id',
+          name: 'parrot-detail',
+          component: ParrotDetailView
         },
         {
           path: 'records',
@@ -84,11 +88,6 @@ const router = createRouter({
           component: CareGuideView
         },
         {
-          path: 'settings',
-          name: 'settings',
-          component: SettingsView
-        },
-        {
           path: 'settings/notification',
           name: 'settings-notification',
           component: SettingsNotificationView
@@ -102,11 +101,6 @@ const router = createRouter({
           path: 'settings/feed-types',
           name: 'settings-feed-types',
           component: SettingsFeedTypeView
-        },
-        {
-          path: 'settings/account',
-          name: 'settings-account',
-          component: SettingsAccountView
         },
         {
           path: 'admin',

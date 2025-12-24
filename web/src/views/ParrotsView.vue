@@ -69,7 +69,7 @@
     </div>
 
     <div v-else class="parrot-list" :class="`view-${viewMode}`">
-      <div v-for="parrot in parrots" :key="parrot.id" class="parrot-item" @click="handleEdit(parrot)">
+      <div v-for="parrot in parrots" :key="parrot.id" class="parrot-item" @click="openDetailModal(parrot)">
         <div class="parrot-avatar-container">
           <img :src="getParrotImage(parrot)" class="parrot-avatar" @error="onAvatarError($event, parrot)" />
         </div>
@@ -115,6 +115,7 @@
       :parrot="selectedParrot"
       @success="fetchParrots" 
     />
+    <ParrotDetailModal v-model="showDetailModal" :parrot-id="detailParrotId" />
   </div>
 </template>
 
@@ -123,6 +124,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { Plus, Male, Female, ArrowRight, Search, Grid, Tickets } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import ParrotModal from '../components/ParrotModal.vue'
+import ParrotDetailModal from '../components/ParrotDetailModal.vue'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -210,9 +212,13 @@ const handleAdd = () => {
 	showModal.value = true
 }
 
-const handleEdit = (parrot) => {
-  selectedParrot.value = parrot
-  showModal.value = true
+const showDetailModal = ref(false)
+const detailParrotId = ref('')
+
+const openDetailModal = (parrot) => {
+  if (!parrot || !parrot.id) return
+  detailParrotId.value = String(parrot.id)
+  showDetailModal.value = true
 }
 
 const handlePageChange = (page) => {

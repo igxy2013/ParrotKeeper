@@ -101,6 +101,7 @@
       </div>
     </div>
   </div>
+  <SettingsAccountModal v-model="showAccountModal" />
 </template>
 
 <script setup>
@@ -108,6 +109,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import api from '../api/axios'
+import SettingsAccountModal from '@/components/SettingsAccountModal.vue'
 import { 
   Odometer, 
   Files, 
@@ -186,9 +188,8 @@ const userAvatar = computed(() => {
   return '/uploads/' + s.replace(/^\/?uploads\/?/, '')
 }) 
 
-const goAccount = () => {
-  router.push('/settings/account')
-}
+const showAccountModal = ref(false)
+const goAccount = () => { showAccountModal.value = true }
 
 const isChildActive = (item) => {
   if (!item.children) return false
@@ -215,7 +216,7 @@ const menuItems = computed(() => [
     label: '报表导出',
     icon: Download
   },
-  { 
+  {
     path: '/settings', 
     label: '设置', 
     icon: Setting,
@@ -223,7 +224,7 @@ const menuItems = computed(() => [
       { path: '/settings/notification', label: '通知设置', icon: Notification },
       { path: '/settings/categories', label: '收支类别', icon: TrendCharts },
       { path: '/settings/feed-types', label: '食物类型', icon: Files },
-      { path: '/settings/account', label: '账号管理', icon: User }
+      
     ]
   },
   { 
