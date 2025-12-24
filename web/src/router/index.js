@@ -19,6 +19,7 @@ import AdminParrotSpeciesView from '../views/admin/AdminParrotSpeciesView.vue'
 import AdminUserRoleView from '../views/admin/AdminUserRoleView.vue'
 import AdminAnnouncementsView from '../views/admin/AdminAnnouncementsView.vue'
 import AdminApiConfigsView from '../views/admin/AdminApiConfigsView.vue'
+import AdminInvitationCodesView from '../views/admin/AdminInvitationCodesView.vue'
 import SettingsNotificationView from '../views/settings/SettingsNotificationView.vue'
 import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
 import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
@@ -113,7 +114,8 @@ const router = createRouter({
         { path: 'admin/parrot-species', name: 'admin-parrot-species', component: AdminParrotSpeciesView },
         { path: 'admin/user-role', name: 'admin-user-role', component: AdminUserRoleView },
         { path: 'admin/announcements', name: 'admin-announcements', component: AdminAnnouncementsView },
-        { path: 'admin/api-configs', name: 'admin-api-configs', component: AdminApiConfigsView }
+        { path: 'admin/api-configs', name: 'admin-api-configs', component: AdminApiConfigsView },
+        { path: 'admin/invitation-codes', name: 'admin-invitation-codes', component: AdminInvitationCodesView }
       ]
     }
   ]

@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from sqlalchemy import func
-from models import db, User, Announcement, Parrot, Expense, SystemSetting
+from models import db, User, Announcement, Parrot, Expense, SystemSetting, InvitationCode
 from utils import login_required, success_response, error_response, paginate_query
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -353,6 +353,104 @@ def get_api_configs():
         return success_response({'configs': items, 'lists': {'remove_bg_list': remove_list, 'aliyun_list': aliyun_list}})
     except Exception as e:
         return error_response(f'获取API配置失败: {str(e)}')
+
+
+@admin_bp.route('/invitation-codes', methods=['GET'])
+@login_required
+def list_invitation_codes():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        query = InvitationCode.query.order_by(InvitationCode.created_at.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        items = []
+        for row in pagination.items:
+            items.append({
+                'id': row.id,
+                'code': row.code,
+                'max_uses': row.max_uses,
+                'used_count': row.used_count,
+                'is_active': row.is_active,
+                'created_at': row.created_at.isoformat() if row.created_at else None,
+            })
+        return success_response({
+            'items': items,
+            'page': pagination.page,
+            'per_page': pagination.per_page,
+            'total': pagination.total
+        })
+    except Exception as e:
+        return error_response(f'获取邀请码列表失败: {str(e)}')
+
+
+@admin_bp.route('/invitation-codes', methods=['POST'])
+@login_required
+def create_invitation_code():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        data = request.get_json() or {}
+        max_uses = data.get('max_uses') or 30
+        try:
+            max_uses = int(max_uses)
+        except Exception:
+            max_uses = 30
+        if max_uses <= 0:
+            max_uses = 30
+
+        import secrets
+        code = secrets.token_urlsafe(8)
+
+        row = InvitationCode(
+            code=code,
+            max_uses=max_uses,
+            used_count=0,
+            is_active=True,
+            created_by_user_id=user.id
+        )
+        db.session.add(row)
+        db.session.commit()
+
+        return success_response({
+            'id': row.id,
+            'code': row.code,
+            'max_uses': row.max_uses,
+            'used_count': row.used_count,
+            'is_active': row.is_active,
+            'created_at': row.created_at.isoformat() if row.created_at else None,
+        }, '邀请码已生成')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'创建邀请码失败: {str(e)}')
+
+
+@admin_bp.route('/invitation-codes/<int:code_id>', methods=['PUT'])
+@login_required
+def update_invitation_code(code_id):
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        row = InvitationCode.query.get(code_id)
+        if not row:
+            return error_response('邀请码不存在', 404)
+
+        data = request.get_json() or {}
+        if 'is_active' in data:
+            row.is_active = bool(data.get('is_active'))
+        db.session.commit()
+
+        return success_response({'updated': True}, '已更新')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新邀请码失败: {str(e)}')
 
 
 @admin_bp.route('/api-configs', methods=['PUT'])

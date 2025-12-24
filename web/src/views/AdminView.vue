@@ -87,6 +87,14 @@
             </div>
             <el-icon class="arrow-icon"><ArrowRight /></el-icon>
           </div>
+          <div class="menu-item" @click="go('/admin/invitation-codes')">
+            <div class="menu-item-icon bg-green"><el-icon><Setting /></el-icon></div>
+            <div class="menu-item-content">
+              <div class="menu-item-title">邀请码管理</div>
+              <div class="menu-item-desc">生成并管理注册邀请码</div>
+            </div>
+            <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+          </div>
         </div>
       </el-card>
     </div>

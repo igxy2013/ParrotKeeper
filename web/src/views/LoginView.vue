@@ -27,10 +27,16 @@
             <el-form-item>
               <el-input v-model="registerForm.password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
             </el-form-item>
+            <el-form-item>
+              <el-input v-model="registerForm.confirm_password" type="password" placeholder="确认密码" :prefix-icon="Lock" show-password />
+            </el-form-item>
              <el-form-item>
               <el-input v-model="registerForm.nickname" placeholder="昵称" :prefix-icon="UserFilled" />
             </el-form-item>
-            <el-button type="success" :loading="loading" class="w-100" @click="handleRegister">注册</el-button>
+            <el-form-item>
+              <el-input v-model="registerForm.invitation_code" placeholder="邀请码（必填）" />
+            </el-form-item>
+            <el-button type="primary" :loading="loading" class="w-100" @click="handleRegister">注册</el-button>
           </el-form>
         </el-tab-pane>
       </el-tabs>
@@ -59,7 +65,9 @@ const loginForm = reactive({
 const registerForm = reactive({
   username: '',
   password: '',
-  nickname: ''
+  nickname: '',
+  confirm_password: '',
+  invitation_code: ''
 })
 
 const handleLogin = async () => {
@@ -82,6 +90,18 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   if (!registerForm.username || !registerForm.password) {
     ElMessage.warning('请输入用户名和密码')
+    return
+  }
+  if (!registerForm.confirm_password) {
+    ElMessage.warning('请再次输入密码')
+    return
+  }
+  if (registerForm.password !== registerForm.confirm_password) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  if (!registerForm.invitation_code) {
+    ElMessage.warning('请输入邀请码')
     return
   }
   loading.value = true

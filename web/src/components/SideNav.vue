@@ -234,6 +234,7 @@ const menuItems = computed(() => [
        { path: '/admin/user-role', label: '用户角色', icon: User },
        { path: '/admin/announcements', label: '系统公告', icon: Notification },
        { path: '/admin/api-configs', label: 'API配置', icon: Setting },
+       { path: '/admin/invitation-codes', label: '邀请码管理', icon: Setting },
     ]
   },
 ])

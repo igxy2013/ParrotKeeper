@@ -415,6 +415,20 @@ class UserPointsRecord(db.Model):
     # 关系
     user = db.relationship('User', backref='points_records', lazy=True)
 
+
+class InvitationCode(db.Model):
+    __tablename__ = 'invitation_codes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(64), unique=True, nullable=False)
+    max_uses = db.Column(db.Integer, default=30, nullable=False)
+    used_count = db.Column(db.Integer, default=0, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    created_by = db.relationship('User', backref='created_invitation_codes', lazy=True)
+
 class Feedback(db.Model):
     __tablename__ = 'feedbacks'
     

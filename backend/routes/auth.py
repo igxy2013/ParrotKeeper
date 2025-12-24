@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User
+from models import db, User, InvitationCode
 from schemas import user_schema
 from utils import get_wechat_session, success_response, error_response, login_required
 from datetime import date, datetime
@@ -231,6 +231,7 @@ def register():
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
         nickname = data.get('nickname', '').strip()
+        invitation_code = (data.get('invitation_code') or '').strip()
         
         # 验证输入
         if not username:
@@ -238,6 +239,9 @@ def register():
         
         if not password:
             return error_response('请输入密码')
+
+        if not invitation_code:
+            return error_response('请输入邀请码')
         
         # 验证用户名格式（3-20位字母数字下划线）
         if not re.match(r'^[a-zA-Z0-9_]{3,20}$', username):
@@ -251,6 +255,13 @@ def register():
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
             return error_response('用户名已存在')
+
+        # 校验邀请码
+        code_row = InvitationCode.query.filter_by(code=invitation_code).first()
+        if (not code_row or
+            not code_row.is_active or
+            code_row.used_count >= code_row.max_uses):
+            return error_response('邀请码无效或已被使用完')
         
         # 创建新用户
         user = User(
@@ -260,6 +271,13 @@ def register():
             login_type='account'
         )
         db.session.add(user)
+
+        # 更新邀请码使用次数
+        code_row.used_count = (code_row.used_count or 0) + 1
+        # 如果达到上限，自动失效
+        if code_row.used_count >= code_row.max_uses:
+            code_row.is_active = False
+
         db.session.commit()
         
         return success_response({
