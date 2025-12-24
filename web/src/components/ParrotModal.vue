@@ -30,10 +30,17 @@
             >
               过户码认领
             </div>
+            <div 
+              class="mode-btn" 
+              :class="{ active: createMode === 'batch' }"
+              @click="createMode = 'batch'"
+            >
+              批量添加
+            </div>
           </div>
 
-          <!-- Form Mode -->
-          <div v-if="createMode === 'form'" class="form-section">
+          <!-- Form / Batch Mode -->
+          <div v-if="isEdit || createMode !== 'claim'" class="form-section">
             <div class="form-layout">
               <!-- Left Side: Photo -->
               <div class="form-left">
@@ -51,15 +58,23 @@
 
               <!-- Right Side: Fields -->
               <div class="form-right">
-                <!-- Row 1: Name & Species -->
                 <div class="form-row">
-                  <div class="form-item half">
+                  <div v-if="createMode !== 'batch'" class="form-item half">
                     <label class="form-label">鹦鹉名称 *</label>
                     <input 
                       v-model="form.name" 
                       class="text-input" 
                       placeholder="给您的鹦鹉起个可爱的名字" 
                     />
+                  </div>
+                  <div v-else class="form-item half">
+                    <label class="form-label">昵称前缀名 *</label>
+                    <el-input 
+                      v-model="batchPrefix" 
+                      placeholder="如：小绿-"
+                      clearable
+                    />
+                    <p class="tip-text">其他字段将应用到全部鹦鹉</p>
                   </div>
                   <div class="form-item half">
                     <label class="form-label">鹦鹉品种 *</label>
@@ -69,6 +84,7 @@
                       filterable 
                       clearable
                       class="full-width-select"
+                      popper-class="rounded-12-popper"
                     >
                       <el-option
                         v-for="item in speciesList"
@@ -77,6 +93,35 @@
                         :value="item.id"
                       />
                     </el-select>
+                  </div>
+                </div>
+                <div v-if="createMode === 'batch'" class="form-row">
+                  <div class="form-item half">
+                    <label class="form-label">数量 *</label>
+                    <el-input-number 
+                      v-model="batchCount" 
+                      :min="1" 
+                      :max="200"
+                      :step="1"
+                      controls-position="right"
+                      class="full-width-number"
+                    />
+                  </div>
+                  <div class="form-item half">
+                    <label class="form-label">起始序号 *</label>
+                    <el-input-number 
+                      v-model="batchStart" 
+                      :min="1" 
+                      :max="99999"
+                      :step="1"
+                      controls-position="right"
+                      class="full-width-number"
+                    />
+                  </div>
+                </div>
+                <div v-if="createMode === 'batch'" class="form-row">
+                  <div class="form-item" style="flex: 1">
+                    <p class="tip-text">将生成：{{ namePreview.join('，') }}<span v-if="namePreview.length && batchCount > namePreview.length"> 等共 {{ batchCount }} 只</span></p>
                   </div>
                 </div>
 
@@ -114,11 +159,12 @@
                       v-model="form.health_status" 
                       placeholder="请选择状态"
                       class="full-width-select"
+                      popper-class="rounded-12-popper"
                     >
                       <el-option label="健康" value="healthy" />
                       <el-option label="生病" value="sick" />
                       <el-option label="康复中" value="recovering" />
-                      <el-option label="观察中" value="observation" />
+                      <el-option label="观察中" value="observing" />
                     </el-select>
                   </div>
                 </div>
@@ -137,6 +183,7 @@
                       :editable="false"
                       :clearable="false"
                       style="width: 100%"
+                      popper-class="rounded-12-popper"
                     />
                   </div>
                   <div class="form-item half">
@@ -151,6 +198,7 @@
                       :editable="false"
                       :clearable="false"
                       style="width: 100%"
+                      popper-class="rounded-12-popper"
                     />
                   </div>
                 </div>
@@ -176,6 +224,7 @@
                       allow-create
                       default-first-option
                       clearable
+                      popper-class="rounded-12-popper"
                     >
                       <el-option
                         v-for="c in plumageColors"
@@ -263,16 +312,31 @@ const props = defineProps({
   parrot: {
     type: Object,
     default: null
+  },
+  initialMode: {
+    type: String,
+    default: 'form'
   }
 })
 
 const emit = defineEmits(['update:modelValue', 'success'])
 
-const createMode = ref('form') // 'form' or 'claim'
+const createMode = ref('form')
 const claimCode = ref('')
 const loading = ref(false)
 const speciesList = ref([])
 const plumageColors = ref([])
+const batchPrefix = ref('')
+const batchCount = ref(1)
+const batchStart = ref(1)
+const namePreview = computed(() => {
+  const cnt = Number(batchCount.value) || 0
+  const start = Number(batchStart.value) || 1
+  const prefix = (batchPrefix.value || '').trim()
+  if (!prefix || cnt < 1 || start < 1) return []
+  const show = Math.min(5, cnt)
+  return Array.from({ length: show }, (_, i) => `${prefix}${start + i}`)
+})
 
 const isEdit = computed(() => !!props.parrot)
 
@@ -339,6 +403,7 @@ watch(() => form.value.species_id, (newVal) => {
 
 watch(() => props.modelValue, (val) => {
   if (val) {
+    // 重置表单后再应用初始模式，避免被resetForm覆盖
     if (props.parrot) {
       // Try to find species_id
       let sId = props.parrot.species_id
@@ -371,13 +436,16 @@ watch(() => props.modelValue, (val) => {
       }
     } else {
       resetForm()
+      createMode.value = props.initialMode || 'form'
     }
   }
 })
 
 const resetForm = () => {
-  createMode.value = 'form'
   claimCode.value = ''
+  batchPrefix.value = ''
+  batchCount.value = 1
+  batchStart.value = 1
 	form.value = {
     name: '',
     species_id: '',
@@ -500,9 +568,25 @@ const handleSubmit = async () => {
     return
   }
 
-  if (!form.value.name) {
+  if (createMode.value !== 'batch' && !form.value.name) {
     ElMessage.warning('请输入鹦鹉名称')
     return
+  }
+  if (createMode.value === 'batch') {
+    if (!batchPrefix.value) {
+      ElMessage.warning('请输入昵称前缀名')
+      return
+    }
+    const cnt = Number(batchCount.value)
+    if (!cnt || cnt < 1) {
+      ElMessage.warning('请输入有效数量')
+      return
+    }
+    const start = Number(batchStart.value)
+    if (!start || start < 1) {
+      ElMessage.warning('请输入有效起始序号')
+      return
+    }
   }
 
   loading.value = true
@@ -516,6 +600,20 @@ const handleSubmit = async () => {
     if (isEdit.value) {
       await api.put(`/parrots/${props.parrot.id}`, payload)
       ElMessage.success('修改成功')
+    } else if (createMode.value === 'batch') {
+      const total = Number(batchCount.value)
+      const start = Number(batchStart.value) || 1
+      let success = 0
+      for (let j = 0; j < total; j++) {
+        const idx = start + j
+        const name = `${batchPrefix.value}${idx}`
+        const item = { ...payload, name }
+        try {
+          await api.post('/parrots', item)
+          success++
+        } catch (e) {}
+      }
+      ElMessage.success(`成功添加 ${success} 只鹦鹉`)
     } else {
       await api.post('/parrots', payload)
       ElMessage.success('添加成功')
@@ -532,13 +630,18 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
+.custom-height-input {
+  --el-input-height: 32px;
+  height: 32px;
+}
+
 /* Modal Overlay */
 .modal-overlay {
   position: fixed;
   left: 0; right: 0; top: 0; bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 4000;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -551,7 +654,7 @@ const handleSubmit = async () => {
   max-width: 90vw;
   max-height: 85vh;
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   display: flex;
@@ -611,9 +714,12 @@ const handleSubmit = async () => {
 }
 .mode-btn {
   flex: 1;
-  text-align: center;
-  padding: 8px;
-  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 12px;
   font-size: 13px;
   background: #e5e7eb;
   color: #374151;
@@ -684,9 +790,9 @@ const handleSubmit = async () => {
   width: 100%;
   box-sizing: border-box;
   padding: 0 12px;
-  height: 36px;
+  height: 32px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   color: #1f2937;
   transition: all 0.2s;
@@ -703,7 +809,7 @@ const handleSubmit = async () => {
   padding: 12px;
   height: 80px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   color: #1f2937;
   resize: none;
@@ -719,11 +825,73 @@ const handleSubmit = async () => {
 /* Full Width Select */
 .full-width-select {
   width: 100%;
+  --el-border-radius-base: 12px;
+  --el-component-size: 30px;
+  --el-input-height: 30px;
+}
+:deep(.el-input) {
+  --el-input-height: 32px;
+  line-height: 32px;
+}
+:deep(.el-input-number) {
+  width: 100%;
+}
+.full-width-number {
+  width: 100%;
+  --el-input-height: 30px;
+  --el-component-size: 30px;
+  height: 30px;
+  line-height: 30px;
 }
 :deep(.el-input__wrapper) {
   box-shadow: 0 0 0 1px #d1d5db !important;
-  border-radius: 8px;
-  height: 36px;
+  border-radius: 12px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 30px !important;
+  box-sizing: border-box !important;
+}
+:deep(.el-input__inner) {
+  height: 30px !important;
+  line-height: 30px !important;
+  display: flex;
+  align-items: center;
+}
+:deep(.el-select .el-input__wrapper),
+:deep(.el-date-editor .el-input__wrapper),
+:deep(.el-input-number .el-input__wrapper) {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  line-height: 32px !important;
+}
+.full-width-select :deep(.el-input__wrapper) {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+}
+:deep(.el-select__popper),
+:deep(.el-select-dropdown),
+:deep(.el-picker__popper) {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+:global(.rounded-12-popper) {
+  border-radius: 12px;
+  overflow: hidden;
+  --el-border-radius-base: 12px;
+}
+:global(.rounded-12-popper .el-select-dropdown),
+:global(.rounded-12-popper .el-picker-panel) {
+  border-radius: 12px;
+}
+.btn-primary,
+.btn-secondary {
+  border-radius: 12px;
 }
 :deep(.el-input__wrapper.is-focus) {
   box-shadow: 0 0 0 1px #26A69A, 0 0 0 4px rgba(38, 166, 154, 0.1) !important;
@@ -734,15 +902,19 @@ const handleSubmit = async () => {
   display: flex;
   background: #f3f4f6;
   padding: 4px;
-  border-radius: 8px;
+  border-radius: 12px;
+  height: 32px;
+  box-sizing: border-box;
 }
 .gender-btn {
   flex: 1;
-  text-align: center;
-  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   font-size: 13px;
   color: #6b7280;
-  border-radius: 6px;
+  border-radius: 8px; /* Inner radius slightly smaller */
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -762,7 +934,7 @@ const handleSubmit = async () => {
   aspect-ratio: 1;
   background: #f3f4f6;
   border: 2px dashed #d1d5db;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   position: relative;
@@ -809,8 +981,12 @@ const handleSubmit = async () => {
   background: #ffffff;
 }
 .btn-secondary {
-  padding: 8px 20px;
-  border-radius: 8px;
+  height: 32px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
   border: 1px solid #d1d5db;
   background: #ffffff;
   color: #374151;
@@ -823,8 +999,12 @@ const handleSubmit = async () => {
   border-color: #9ca3af;
 }
 .btn-primary {
-  padding: 8px 24px;
-  border-radius: 8px;
+  height: 32px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, #4CAF50, #26A69A);
   color: #ffffff;

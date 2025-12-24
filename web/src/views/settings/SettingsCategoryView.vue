@@ -10,8 +10,8 @@
     <el-card class="section-card" shadow="never">
       <div class="tabs">
         <el-radio-group v-model="activeTab" @change="handleTabChange">
-          <el-radio-button label="expense">支出类别</el-radio-button>
-          <el-radio-button label="income">收入类别</el-radio-button>
+          <el-radio-button value="expense">支出类别</el-radio-button>
+          <el-radio-button value="income">收入类别</el-radio-button>
         </el-radio-group>
       </div>
 

@@ -600,57 +600,36 @@ def claim_parrot_by_code():
 @parrots_bp.route('/<int:parrot_id>', methods=['DELETE'])
 @login_required
 def delete_parrot(parrot_id):
-    """删除鹦鹉（硬删除）"""
+    """删除鹦鹉（软删除：仅标记，不物理删除）"""
     try:
-        from models import Expense, BreedingRecord, ParrotTransferCode
         from team_models import TeamMember
-        from team_models import TeamParrot
-        
         user = request.current_user
-        
-        # 在团队模式下，检查用户是否为管理员
+
+        # 团队模式下权限校验
         if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
             member = TeamMember.query.filter_by(
                 team_id=user.current_team_id,
                 user_id=user.id,
                 is_active=True
             ).first()
-            
             if not member or member.role not in ['owner', 'admin', 'member']:
                 return error_response('只有团队成员才能删除鹦鹉', 403)
-        
-        # 使用团队模式过滤逻辑检查访问权限
+
+        # 访问权限校验
         accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
         if parrot_id not in accessible_parrot_ids:
             return error_response('鹦鹉不存在或无权限访问', 404)
-        
+
         parrot = Parrot.query.filter_by(id=parrot_id).first()
-        
         if not parrot:
             return error_response('鹦鹉不存在', 404)
-        
-        # 手动删除没有级联删除的相关记录
-        # 删除支出记录
-        Expense.query.filter_by(parrot_id=parrot_id).delete(synchronize_session=False)
-        
-        # 删除繁殖记录（作为雄性或雌性参与的记录）
-        BreedingRecord.query.filter(
-            (BreedingRecord.male_parrot_id == parrot_id) | 
-            (BreedingRecord.female_parrot_id == parrot_id)
-        ).delete(synchronize_session=False)
 
-        # 删除团队分享记录，避免外键约束阻塞删除
-        TeamParrot.query.filter_by(parrot_id=parrot_id).delete(synchronize_session=False)
-
-        # 删除与该鹦鹉相关的过户码，避免外键被置空导致约束错误
-        ParrotTransferCode.query.filter_by(parrot_id=parrot_id).delete(synchronize_session=False)
-        
-        # 硬删除鹦鹉（会自动级联删除相关的喂食、健康、清洁记录和提醒）
-        db.session.delete(parrot)
+        # 软删除：仅将 is_active 置为 False
+        parrot.is_active = False
         db.session.commit()
-        
-        return success_response(message='删除成功')
-        
+
+        return success_response({'id': parrot_id}, '已标记删除')
+
     except Exception as e:
         db.session.rollback()
         return error_response(f'删除鹦鹉失败: {str(e)}')

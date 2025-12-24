@@ -30,6 +30,7 @@
         <div class="header-buttons">
           <el-button @click="openTransfer">鹦鹉过户</el-button>
           <el-button type="primary" @click="openEdit">编辑鹦鹉</el-button>
+          <el-button type="danger" @click="removeParrot">删除鹦鹉</el-button>
         </div>
       </div>
 
@@ -87,11 +88,7 @@
         </el-tab-pane>
       </el-tabs>
 
-      <ParrotModal 
-        v-model="showEdit"
-        :parrot="parrot"
-        @success="reload"
-      />
+      
 
       <el-dialog v-model="showTransferDialog" title="鹦鹉过户" width="560px">
         <div class="transfer-section">
@@ -135,9 +132,8 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { Male, Female } from '@element-plus/icons-vue'
-import ParrotModal from './ParrotModal.vue'
 import api from '../api/axios'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -153,7 +149,6 @@ const loading = ref(false)
 const recordsLoading = ref(false)
 const parrot = ref({})
 const activeTab = ref('基本信息')
-const showEdit = ref(false)
 const feedingRecords = ref([])
 const healthRecords = ref([])
 const breedingRecords = ref([])
@@ -174,8 +169,24 @@ const genderText = computed(() => {
 
 const init = async () => { await reload() }
 const close = () => { visible.value = false }
-const openEdit = () => { showEdit.value = true }
+const openEdit = () => { emit('edit', parrot.value); visible.value = false }
 const openTransfer = () => { showTransferDialog.value = true }
+
+const removeParrot = async () => {
+  const id = props.parrotId
+  if (!id) return
+  try {
+    await ElMessageBox.confirm('确认删除该鹦鹉？该操作不可恢复', '提示', { type: 'warning' })
+    const r = await api.delete(`/parrots/${id}`)
+    if (r && r.data && (r.data.success || r.status === 200)) {
+      ElMessage.success('已删除')
+      visible.value = false
+      emit('deleted', id)
+    } else {
+      ElMessage.error((r && r.data && r.data.message) || '删除失败')
+    }
+  } catch (_) {}
+}
 
 const reload = async () => { await fetchParrot(); await fetchTabRecords() }
 

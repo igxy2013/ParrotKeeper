@@ -3,6 +3,7 @@
     <div class="header-actions">
       <h2>我的鹦鹉</h2>
       <el-button type="primary" :icon="Plus" class="add-btn" @click="handleAdd">添加新鹦鹉</el-button>
+      
     </div>
     <div class="toolbar">
       <el-input 
@@ -14,8 +15,8 @@
       />
       <div class="toolbar-right">
         <el-radio-group v-model="viewMode" class="view-toggle">
-          <el-radio-button label="card"><el-icon><Grid /></el-icon></el-radio-button>
-          <el-radio-button label="list"><el-icon><Tickets /></el-icon></el-radio-button>
+          <el-radio-button value="card"><el-icon><Grid /></el-icon></el-radio-button>
+          <el-radio-button value="list"><el-icon><Tickets /></el-icon></el-radio-button>
         </el-radio-group>
         <el-select v-model="selectedSpeciesId" placeholder="全部品种" clearable filterable class="filter-item">
           <el-option v-for="s in speciesList" :key="s.id" :label="s.name" :value="s.id" />
@@ -113,9 +114,15 @@
     <ParrotModal 
       v-model="showModal" 
       :parrot="selectedParrot"
+      :initial-mode="initialModalMode"
       @success="fetchParrots" 
     />
-    <ParrotDetailModal v-model="showDetailModal" :parrot-id="detailParrotId" />
+    <ParrotDetailModal 
+      v-model="showDetailModal" 
+      :parrot-id="detailParrotId" 
+      @deleted="handleDeleted"
+      @edit="handleEditFromDetail"
+    />
   </div>
 </template>
 
@@ -132,6 +139,7 @@ const parrots = ref([])
 const loading = ref(false)
 const showModal = ref(false)
 const selectedParrot = ref(null)
+const initialModalMode = ref('form')
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -209,8 +217,11 @@ const fetchParrots = async () => {
 
 const handleAdd = () => {
 	selectedParrot.value = null
+	initialModalMode.value = 'form'
 	showModal.value = true
 }
+
+
 
 const showDetailModal = ref(false)
 const detailParrotId = ref('')
@@ -219,6 +230,17 @@ const openDetailModal = (parrot) => {
   if (!parrot || !parrot.id) return
   detailParrotId.value = String(parrot.id)
   showDetailModal.value = true
+}
+
+const handleDeleted = async () => {
+  showDetailModal.value = false
+  await fetchParrots()
+}
+
+const handleEditFromDetail = (p) => {
+  selectedParrot.value = p || null
+  showDetailModal.value = false
+  showModal.value = true
 }
 
 const handlePageChange = (page) => {

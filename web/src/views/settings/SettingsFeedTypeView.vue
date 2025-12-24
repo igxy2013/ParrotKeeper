@@ -38,8 +38,8 @@
         </el-form-item>
         <el-form-item label="计量单位">
           <el-radio-group v-model="form.unit">
-            <el-radio-button label="g">克(g)</el-radio-button>
-            <el-radio-button label="ml">毫升(ml)</el-radio-button>
+            <el-radio-button value="g">克(g)</el-radio-button>
+            <el-radio-button value="ml">毫升(ml)</el-radio-button>
           </el-radio-group>
         </el-form-item>
       </el-form>

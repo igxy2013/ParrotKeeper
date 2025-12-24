@@ -135,10 +135,10 @@
       <el-form :model="addForm" label-width="96px">
         <el-form-item label="记录类型">
           <el-radio-group v-model="addFormType" @change="onAddTypeChange">
-            <el-radio-button label="feeding">喂食</el-radio-button>
-            <el-radio-button label="cleaning">清洁</el-radio-button>
-            <el-radio-button label="health">健康</el-radio-button>
-            <el-radio-button label="breeding">繁殖</el-radio-button>
+            <el-radio-button value="feeding">喂食</el-radio-button>
+            <el-radio-button value="cleaning">清洁</el-radio-button>
+            <el-radio-button value="health">健康</el-radio-button>
+            <el-radio-button value="breeding">繁殖</el-radio-button>
           </el-radio-group>
         </el-form-item>
 
