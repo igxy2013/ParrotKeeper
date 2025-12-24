@@ -115,7 +115,6 @@ class FeedType(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    brand = db.Column(db.String(100))
     type = db.Column(db.Enum('seed', 'pellet', 'fruit', 'vegetable', 'supplement', 'milk_powder'))
     nutrition_info = db.Column(db.Text)
     price = db.Column(db.Numeric(8, 2))

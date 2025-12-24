@@ -18,6 +18,10 @@ import AdminParrotSpeciesView from '../views/admin/AdminParrotSpeciesView.vue'
 import AdminUserRoleView from '../views/admin/AdminUserRoleView.vue'
 import AdminAnnouncementsView from '../views/admin/AdminAnnouncementsView.vue'
 import AdminApiConfigsView from '../views/admin/AdminApiConfigsView.vue'
+import SettingsNotificationView from '../views/settings/SettingsNotificationView.vue'
+import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
+import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
+import SettingsAccountView from '../views/settings/SettingsAccountView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -70,8 +74,27 @@ const router = createRouter({
           path: 'settings',
           name: 'settings',
           component: SettingsView
-        }
-        ,
+        },
+        {
+          path: 'settings/notification',
+          name: 'settings-notification',
+          component: SettingsNotificationView
+        },
+        {
+          path: 'settings/categories',
+          name: 'settings-categories',
+          component: SettingsCategoryView
+        },
+        {
+          path: 'settings/feed-types',
+          name: 'settings-feed-types',
+          component: SettingsFeedTypeView
+        },
+        {
+          path: 'settings/account',
+          name: 'settings-account',
+          component: SettingsAccountView
+        },
         {
           path: 'admin',
           name: 'admin',

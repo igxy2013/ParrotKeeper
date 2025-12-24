@@ -195,7 +195,17 @@ const menuItems = computed(() => [
     badge: messageCount.value > 0 ? (messageCount.value > 99 ? '99+' : messageCount.value) : null, 
     badgeColor: 'green' 
   },
-  { path: '/settings', label: '设置', icon: Setting },
+  { 
+    path: '/settings', 
+    label: '设置', 
+    icon: Setting,
+    children: [
+      { path: '/settings/notification', label: '通知设置', icon: Notification },
+      { path: '/settings/categories', label: '收支类别', icon: TrendCharts },
+      { path: '/settings/feed-types', label: '食物类型', icon: Files },
+      { path: '/settings/account', label: '账号管理', icon: User }
+    ]
+  },
   { 
     path: '/admin', 
     label: '后台管理', 
@@ -297,7 +307,7 @@ onMounted(async () => {
 }
 
 .switcher-item.active {
-  background-color: #26A69A; /* Theme Green */
+  background-color: #10b981; /* Theme Green */
   color: white;
   box-shadow: 0 2px 8px rgba(38, 166, 154, 0.3);
   font-weight: 500;
@@ -330,7 +340,7 @@ onMounted(async () => {
 }
 
 .nav-item.active {
-  background-color: #26A69A;
+  background-color: #10b981;
   color: white;
 }
 

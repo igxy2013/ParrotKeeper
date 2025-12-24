@@ -135,11 +135,15 @@ Page({
       let food_types = [];
       if (rec.feed_type) {
         const type = rec.feed_type.type;
-        let name = rec.feed_type.name || rec.feed_type_name || '食物';
-        if (type === 'fruit') {
-          name = rec.feed_type.brand || '新鲜水果';
-        } else if (type === 'vegetable') {
-          name = rec.feed_type.brand || '新鲜蔬菜';
+        let name = rec.feed_type.name || rec.feed_type_name;
+        if (!name) {
+          if (type === 'fruit') {
+            name = '新鲜水果';
+          } else if (type === 'vegetable') {
+            name = '新鲜蔬菜';
+          } else {
+            name = '食物';
+          }
         }
         const unit = rec.feed_type.unit || 'g';
         food_types = [{ id: rec.feed_type.id, name, amount: rec.amount, unit, type }];

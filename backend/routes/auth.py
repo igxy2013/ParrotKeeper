@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User
 from schemas import user_schema
-from utils import get_wechat_session, success_response, error_response
+from utils import get_wechat_session, success_response, error_response, login_required
 from datetime import date, datetime
 import re
 
@@ -447,3 +447,35 @@ def setup_credentials():
     except Exception as e:
         db.session.rollback()
         return error_response(f'账号设置失败: {str(e)}')
+
+
+@auth_bp.route('/change-password', methods=['PUT'])
+@login_required
+def change_password():
+    try:
+        user = request.current_user
+        if not user:
+            return error_response('未登录', 401)
+
+        data = request.get_json() or {}
+        old_password = (data.get('old_password') or '').strip()
+        new_password = (data.get('new_password') or '').strip()
+
+        if not new_password:
+            return error_response('请输入新密码')
+        if len(new_password) < 6:
+            return error_response('新密码长度至少6位')
+
+        if user.password_hash:
+            if not old_password:
+                return error_response('请输入当前密码')
+            if not check_password_hash(user.password_hash, old_password):
+                return error_response('当前密码错误')
+
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        return success_response({'updated': True}, '密码已更新')
+
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'修改密码失败: {str(e)}')

@@ -451,8 +451,8 @@ const clearAll = () => {
 }
 
 .switch-bar { display: flex; align-items: center; position: relative; background: #fff; border-radius: 999px; padding: 6px; width: 280px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); margin-bottom: 16px; }
-.switch-thumb { position: absolute; top: 6px; left: 6px; width: 130px; height: 32px; border-radius: 16px; background: #26A69A; transition: all .25s; }
-.switch-thumb.right { left: 144px; background: #26A69A; }
+.switch-thumb { position: absolute; top: 6px; left: 6px; width: 130px; height: 32px; border-radius: 16px; background: #10b981; transition: all .25s; }
+.switch-thumb.right { left: 144px; background: #10b981; }
 .switch-item { z-index: 1; width: 50%; text-align: center; cursor: pointer; height: 32px; line-height: 32px; }
 .switch-item.active .switch-text { font-weight: 600; color: white; }
 .switch-text { color: #606266; transition: color 0.2s; }

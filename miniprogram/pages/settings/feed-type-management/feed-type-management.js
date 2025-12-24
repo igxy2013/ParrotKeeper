@@ -8,7 +8,6 @@ Page({
     editingId: null,
     newFeed: {
       name: '',
-      brand: '',
       type: '',
       unit: 'g'
     },
@@ -58,7 +57,7 @@ Page({
       showModal: true,
       isEditing: false,
       editingId: null,
-      newFeed: { name: '', brand: '', type: '', unit: 'g' },
+      newFeed: { name: '', type: '', unit: 'g' },
       selectedTypeLabel: '',
       unitIsGram: true,
       unitSelected: 'g'
@@ -91,14 +90,13 @@ Page({
   },
 
   saveFeedType() {
-    const { name, brand, type } = this.data.newFeed
+    const { name, type } = this.data.newFeed
     if (!name.trim()) {
       wx.showToast({ title: '请输入名称', icon: 'none' })
       return
     }
     const payload = {
       name,
-      brand,
       type,
       unit: this.data.newFeed.unit || (this.data.unitIsGram ? 'g' : 'ml')
     }
@@ -145,7 +143,6 @@ Page({
       editingId: id,
       newFeed: {
         name: item.name || '',
-        brand: item.brand || '',
         type: item.type || '',
         unit
       },

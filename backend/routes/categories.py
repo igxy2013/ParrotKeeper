@@ -108,7 +108,6 @@ def get_feed_types():
             result.append({
                 'id': ft.id,
                 'name': ft.name,
-                'brand': ft.brand,
                 'type': ft.type,
                 'price': float(ft.price) if ft.price else None,
                 'unit': getattr(ft, 'unit', 'g') or 'g',
@@ -117,18 +116,16 @@ def get_feed_types():
         return success_response(result)
     except Exception as e:
         try:
-            rows = db.session.execute(text("SELECT id, name, brand, type, price, user_id FROM feed_types")).fetchall()
+            rows = db.session.execute(text("SELECT id, name, type, price, user_id, unit FROM feed_types")).fetchall()
             result = []
             for r in rows:
-                # SQLAlchemy Row supports index and key access; use index for compatibility
-                rid, name, brand, ftype, price, user_id = r[0], r[1], r[2], r[3], r[4], r[5]
+                rid, name, ftype, price, user_id, unit = r[0], r[1], r[2], r[3], r[4], r[5]
                 result.append({
                     'id': rid,
                     'name': name,
-                    'brand': brand,
                     'type': ftype,
                     'price': float(price) if price is not None else None,
-                    'unit': 'g',
+                    'unit': unit or 'g',
                     'is_custom': user_id is not None
                 })
             return success_response(result)
@@ -143,7 +140,6 @@ def add_feed_type():
     
     name = data.get('name')
     feed_type_enum = data.get('type') # seed, pellet, etc.
-    brand = data.get('brand')
     price = data.get('price')
     unit = data.get('unit') or 'g'
     if unit not in ['g', 'ml']:
@@ -157,7 +153,6 @@ def add_feed_type():
             user_id=user.id,
             name=name,
             type=feed_type_enum,
-            brand=brand,
             price=price,
             unit=unit
         )
@@ -168,8 +163,8 @@ def add_feed_type():
         db.session.rollback()
         try:
             db.session.execute(
-                text("INSERT INTO feed_types (user_id, name, type, brand, price) VALUES (:uid, :name, :type, :brand, :price)"),
-                { 'uid': user.id, 'name': name, 'type': feed_type_enum, 'brand': brand, 'price': price }
+                text("INSERT INTO feed_types (user_id, name, type, price, unit) VALUES (:uid, :name, :type, :price, :unit)"),
+                { 'uid': user.id, 'name': name, 'type': feed_type_enum, 'price': price, 'unit': unit }
             )
             new_id = db.session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
             db.session.commit()
@@ -186,14 +181,11 @@ def update_feed_type(id):
         return error_response('Feed type not found or not authorized')
     data = request.get_json() or {}
     name = data.get('name')
-    brand = data.get('brand')
     feed_type_enum = data.get('type')
     price = data.get('price')
     unit = data.get('unit')
     if name is not None:
         ft.name = name
-    if brand is not None:
-        ft.brand = brand
     if feed_type_enum is not None:
         ft.type = feed_type_enum
     if price is not None:
@@ -209,8 +201,6 @@ def update_feed_type(id):
             fields = {}
             if name is not None:
                 fields['name'] = name
-            if brand is not None:
-                fields['brand'] = brand
             if feed_type_enum is not None:
                 fields['type'] = feed_type_enum
             if price is not None:
