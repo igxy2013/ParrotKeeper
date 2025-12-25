@@ -314,6 +314,54 @@ App({
     } catch (_) {}
   },
 
+  _buildDataCacheKey(url, method, data) {
+    try {
+      const m = String(method || 'GET').toUpperCase()
+      const u = String(url || '')
+      const d = data && typeof data === 'object' ? data : {}
+      const entries = Object.keys(d).sort().map(k => `${k}=${encodeURIComponent(String(d[k]))}`)
+      return this.hashString(`${m}:${u}?${entries.join('&')}`)
+    } catch (_) {
+      return this.hashString(String(url || '') + String(method || 'GET'))
+    }
+  },
+
+  _getDataCacheIndex() {
+    try { return wx.getStorageSync('data_cache_index') || {} } catch (_) { return {} }
+  },
+
+  _setDataCacheIndex(idx) {
+    try { wx.setStorageSync('data_cache_index', idx || {}) } catch (_) {}
+  },
+
+  _getCachedData(url, method, data, allowStale) {
+    try {
+      const key = this._buildDataCacheKey(url, method, data)
+      const idx = this._getDataCacheIndex()
+      const rec = idx[key]
+      if (!rec) return null
+      const ttl = 3600000
+      const valid = allowStale ? true : (typeof rec.ts === 'number' && (Date.now() - rec.ts) < ttl)
+      if (!valid) return null
+      return rec.payload || null
+    } catch (_) { return null }
+  },
+
+  _setCachedData(url, method, data, payload) {
+    try {
+      const key = this._buildDataCacheKey(url, method, data)
+      const idx = this._getDataCacheIndex()
+      idx[key] = { ts: Date.now(), payload }
+      const keys = Object.keys(idx)
+      if (keys.length > 100) {
+        keys.sort((a, b) => (idx[a].ts || 0) - (idx[b].ts || 0))
+        const remove = keys.slice(0, Math.max(0, keys.length - 100))
+        for (let i = 0; i < remove.length; i++) delete idx[remove[i]]
+      }
+      this._setDataCacheIndex(idx)
+    } catch (_) {}
+  },
+
   // 未读反馈状态更新（同步到底部导航红点）
   setFeedbackUnread(flag) {
     try {
@@ -524,6 +572,13 @@ App({
       }
       
       const apiBase = this.globalData.baseUrl || ''
+      if (!this.globalData.networkConnected && String(method).toUpperCase() === 'GET') {
+        const cached = this._getCachedData(url, method, data, true)
+        if (cached) {
+          resolve({ ...cached, fromCache: true })
+          return
+        }
+      }
       wx.request({
         url: apiBase + url,
         method,
@@ -534,6 +589,11 @@ App({
         },
         success: (res) => {
           if (res.statusCode === 200) {
+            try {
+              if (String(method).toUpperCase() === 'GET') {
+                this._setCachedData(url, method, data, res.data)
+              }
+            } catch (_) {}
             resolve(res.data)
           } else if (res.statusCode === 401) {
             // 未登录，跳转到登录页面
@@ -555,6 +615,15 @@ App({
             this.enqueueRequest({ url, method, data, header })
             wx.showToast({ title: '已缓存，网络恢复后自动重试', icon: 'none' })
             resolve({ success: false, offlineQueued: true, message: '已加入离线重试队列' })
+          } else if (isNetworkErr && String(method).toUpperCase() === 'GET') {
+            const cached = this._getCachedData(url, method, data, true)
+            if (cached) {
+              wx.showToast({ title: '离线模式，显示缓存数据', icon: 'none' })
+              resolve({ ...cached, fromCache: true })
+              return
+            }
+            wx.showToast({ title: '网络错误', icon: 'none' })
+            reject(err)
           } else {
             wx.showToast({ title: '网络错误', icon: 'none' })
             reject(err)
