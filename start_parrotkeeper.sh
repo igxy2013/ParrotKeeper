@@ -41,6 +41,6 @@ WEB_PID=$!
 # 4. 启动后端（前台运行，保持脚本不退出）
 cd "$BACKEND_DIR"
 . venv/bin/activate
-echo "ParrotKeeper started. Backend: http://0.0.0.0:5075  Web: http://0.0.0.0:4173"
+echo "ParrotKeeper started. Backend: http://0.0.0.0:5075  Web: http://0.0.0.0:5173"
 exec "$BACKEND_DIR/venv/bin/waitress-serve" \
   --listen=0.0.0.0:5075 --call 'app:create_app'
