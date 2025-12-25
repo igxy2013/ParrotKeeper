@@ -164,7 +164,7 @@ import { Download, Printer } from '@element-plus/icons-vue'
 import api from '@/api/axios'
 
 const reportTypes = {
-  parrots: { title: '鹦鹉档案', desc: '导出所有鹦鹉的基本信息、环号、品种等数据。' },
+  parrots: { title: '鹦鹉档案', desc: '导出所有鹦鹉的基本信息、脚环号、品种等数据。' },
   expenses: { title: '收支记录', desc: '导出所有收入和支出记录明细。' },
   feeding: { title: '喂食记录', desc: '导出所有喂食操作记录。' },
   health: { title: '健康记录', desc: '导出所有健康检查和医疗记录。' },

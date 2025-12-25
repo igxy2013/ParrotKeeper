@@ -56,7 +56,7 @@ def _get_parrots_data(user, filters=None):
     accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
     if not accessible_parrot_ids:
         return (
-            ['名称', '品种', '性别', '环号', '出生日期', '入住日期', '颜色', '体重(g)', '健康状态', '备注'],
+            ['名称', '品种', '性别', '脚环号', '出生日期', '入住日期', '羽色', '体重(g)', '健康状态', '备注'],
             [],
             {1: 256 * 20, 2: 256 * 8, 3: 256 * 20, 4: 256 * 15, 5: 256 * 15}
         )
@@ -88,7 +88,7 @@ def _get_parrots_data(user, filters=None):
 
     parrots = query.order_by(Parrot.created_at.desc()).all()
 
-    header = ['名称', '品种', '性别', '环号', '出生日期', '入住日期', '颜色', '体重(g)', '健康状态', '备注']
+    header = ['名称', '品种', '性别', '脚环号', '出生日期', '入住日期', '羽色', '体重(g)', '健康状态', '备注']
     
     # Index: 0:Name, 1:Species, 2:Gender, 3:Ring, 4:Birth, 5:Acquisition, 6:Color, 7:Weight, 8:Health, 9:Notes
     col_widths = {
