@@ -371,6 +371,7 @@ const form = ref({
   health_status: 'healthy',
   color: '',
   notes: '',
+  photo_url: '',
   avatar_url: ''
 })
 
@@ -427,6 +428,7 @@ watch(() => props.modelValue, (val) => {
         health_status: props.parrot.health_status || 'healthy',
         color: props.parrot.color || '',
         notes: props.parrot.notes || '',
+        photo_url: props.parrot.photo_url || props.parrot.avatar_url || '',
         avatar_url: props.parrot.avatar_url || props.parrot.photo_url || ''
       }
       
@@ -458,7 +460,8 @@ const resetForm = () => {
     health_status: 'healthy',
     color: '',
     notes: '',
-		avatar_url: ''
+    photo_url: '',
+    avatar_url: ''
 	}
 	plumageColors.value = []
 }
@@ -512,6 +515,7 @@ const ensureFileInput = () => {
       })
       if (res.data && res.data.success && res.data.data && res.data.data.url) {
         const url = res.data.data.url
+        form.value.photo_url = url
         form.value.avatar_url = url
         ElMessage.success('上传成功')
       } else {

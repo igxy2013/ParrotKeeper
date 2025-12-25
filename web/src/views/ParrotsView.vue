@@ -343,7 +343,7 @@ const formatDate = (d) => {
 }
 
 const getParrotImage = (parrot) => {
-  const raw = parrot.avatar_url || parrot.photo_url || ''
+  const raw = parrot.photo_url || parrot.avatar_url || ''
   if (!raw) return getRandomAvatar(parrot.id)
   let url = String(raw).replace(/\\/g, '/').trim()
   if (!url) return getRandomAvatar(parrot.id)

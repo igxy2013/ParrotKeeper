@@ -218,7 +218,7 @@ const fetchTabRecords = async () => {
       healthRecords.value = (data.items || data.records || [])
     } else if (activeTab.value === '繁殖记录') {
       const r = await api.get('/records/breeding', { params: { male_parrot_id: id } })
-      const data = r.data && (data = r.data.data || r.data)
+      const data = r.data && (r.data.data || r.data)
       breedingRecords.value = (data.items || data.records || [])
     }
   } catch (e) {} finally { recordsLoading.value = false }
@@ -267,7 +267,7 @@ const formatDate = (d) => {
 }
 
 const getParrotImage = (p) => {
-  const raw = p && (p.avatar_url || p.photo_url) || ''
+  const raw = p && (p.photo_url || p.avatar_url) || ''
   if (!raw) return getRandomAvatar(p && p.id)
   let url = String(raw).replace(/\\/g, '/').trim()
   if (!url) return getRandomAvatar(p && p.id)
