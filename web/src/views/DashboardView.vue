@@ -364,6 +364,20 @@ const fetchWeightTrends = async () => {
   const wt = await api.get('/statistics/weight-trends', { params: { days: trendDays.value } })
   if (wt.data && wt.data.success && Array.isArray(wt.data.data?.series)) {
     weightSeries.value = wt.data.data.series || []
+    if (!selectedParrotId.value) {
+      const list = weightSeries.value || []
+      let best = null
+      for (let i = 0; i < list.length; i++) {
+        const pts = Array.isArray(list[i].points) ? list[i].points : []
+        if (!best || pts.length > best.count) {
+          best = { id: list[i].parrot_id, name: list[i].parrot_name, count: pts.length }
+        }
+      }
+      if (best && best.id) {
+        selectedParrotId.value = best.id
+        selectedParrotName.value = best.name || ''
+      }
+    }
     buildColorMap()
     await computeAvgAndDraw()
   }
