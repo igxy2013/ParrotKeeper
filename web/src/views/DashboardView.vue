@@ -1,14 +1,27 @@
 <template>
   <div class="dashboard-container">
     <div class="page-header">
-       <h2>仪表盘</h2>
+      <div class="page-header-left">
+      <h2>仪表盘</h2>
        <div class="header-date">{{ currentDate }}</div>
+      </div>
+      <div class="time-range-tabs">
+        <div
+          v-for="item in timeRanges"
+          :key="item.value"
+          class="time-range-tab"
+          :class="{ active: activeRange === item.value }"
+          @click="setActiveRange(item.value)"
+        >
+          {{ item.label }}
+        </div>
+      </div>
     </div>
 
     <!-- Top Stats Row -->
     <el-row :gutter="24" v-loading="loading">
       <el-col :span="6">
-        <div class="stat-card primary-card">
+        <div class="stat-card primary-card" @click="goTo('/parrots')" style="cursor: pointer">
           <div class="stat-icon-wrapper">
              <el-icon><User /></el-icon>
           </div>
@@ -19,30 +32,30 @@
         </div>
       </el-col>
       <el-col :span="6">
-        <div class="stat-card danger-card">
-           <div class="stat-icon-wrapper">
+        <div class="stat-card danger-card" @click="goTo('/expenses')" style="cursor: pointer">
+          <div class="stat-icon-wrapper">
              <el-icon><Wallet /></el-icon>
           </div>
           <div class="stat-content">
-             <div class="stat-label">本月支出</div>
+             <div class="stat-label">{{ rangeText }}支出</div>
              <div class="stat-value">¥{{ stats.monthly_expense || 0 }}</div>
           </div>
         </div>
       </el-col>
       <el-col :span="6">
-        <div class="stat-card success-card">
-           <div class="stat-icon-wrapper">
+        <div class="stat-card success-card" @click="goTo('/expenses')" style="cursor: pointer">
+          <div class="stat-icon-wrapper">
              <el-icon><Money /></el-icon>
           </div>
           <div class="stat-content">
-             <div class="stat-label">本月收入</div>
+             <div class="stat-label">{{ rangeText }}收入</div>
              <div class="stat-value">¥{{ stats.monthly_income || 0 }}</div>
           </div>
         </div>
       </el-col>
       <el-col :span="6">
-        <div class="stat-card info-card">
-           <div class="stat-icon-wrapper">
+        <div class="stat-card info-card" @click="goTo('/records?tab=health')" style="cursor: pointer">
+          <div class="stat-icon-wrapper">
              <el-icon><FirstAidKit /></el-icon>
           </div>
           <div class="stat-content">
@@ -90,7 +103,7 @@
         <div class="mini-stat-card">
            <div class="mini-icon bg-green-light"><el-icon class="text-green"><Calendar /></el-icon></div>
            <div class="mini-info">
-              <div class="mini-label">本月喂食</div>
+              <div class="mini-label">{{ rangeText }}喂食</div>
               <div class="mini-num">{{ stats.monthly_feeding || 0 }}</div>
            </div>
         </div>
@@ -99,7 +112,7 @@
         <div class="mini-stat-card">
            <div class="mini-icon bg-orange-light"><el-icon class="text-orange"><Timer /></el-icon></div>
            <div class="mini-info">
-              <div class="mini-label">本月检查</div>
+              <div class="mini-label">{{ rangeText }}检查</div>
               <div class="mini-num">{{ stats.monthly_health_checks || 0 }}</div>
            </div>
         </div>
@@ -130,16 +143,8 @@
               </div>
           </div>
           <div class="trend-card">
-            <div class="chart-wrapper">
-              <canvas 
-                ref="weightCanvas" 
-                class="weight-canvas"
-                @click="onWeightCanvasClick"
-                @mousedown="onWeightMouseDown"
-                @mousemove="onWeightMouseMove"
-                @mouseup="onWeightMouseUp"
-                @mouseleave="onWeightMouseLeave"
-              ></canvas>
+            <div class="weight-chart-wrapper">
+              <canvas ref="weightCanvas" class="weight-canvas" @mousemove="onChartMouseMove" @mouseleave="onChartMouseLeave"></canvas>
             </div>
             <div class="legend" v-if="displaySeries.length">
               <div class="legend-item" v-for="item in displaySeries" :key="item.parrot_id">
@@ -230,18 +235,41 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { User, Wallet, Money, FirstAidKit, Dish, Calendar, Timer, TrendCharts, List, Brush, Warning } from '@element-plus/icons-vue'
 import api from '../api/axios'
+
+const router = useRouter()
+const goTo = (path) => { router.push(path) }
 
 const currentDate = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 const stats = ref({})
 const loading = ref(true)
-const trendDays = ref(30)
+
+const timeRanges = [
+  { label: '本周', value: 'week' },
+  { label: '本月', value: 'month' },
+  { label: '本年', value: 'year' },
+  { label: '全部', value: 'all' }
+]
+
+const activeRange = ref('month')
+
+const getDaysByRange = (range) => {
+  if (range === 'week') return 7
+  if (range === 'month') return 30
+  if (range === 'year') return 365
+  if (range === 'all') return 36500
+  return 30
+}
+
+const trendDays = ref(getDaysByRange(activeRange.value))
 
 const weightSeries = ref([])
 const selectedParrotId = ref('')
 const selectedParrotName = ref('')
 const showParrotDropdown = ref(false)
+const hoverIndex = ref(-1)
 const weightAvgChart = ref('')
 const weightCanvas = ref(null)
 const weightColorMap = ref({})
@@ -258,6 +286,13 @@ const displaySeries = computed(() => {
   const sid = selectedParrotId.value
   if (sid) return list.filter(s => String(s.parrot_id) === String(sid))
   return list.slice(0, 12)
+})
+
+const rangeText = computed(() => {
+  if (activeRange.value === 'week') return '本周'
+  if (activeRange.value === 'year') return '本年'
+  if (activeRange.value === 'all') return '累计'
+  return '本月'
 })
 
 const recentActivities = ref([])
@@ -296,9 +331,10 @@ const fetchRecentActivities = async () => {
   }
 }
 
-const fetchHealthAlerts = async () => {
+const fetchHealthAlerts = async (days) => {
   try {
-    const res = await api.get('/statistics/health-anomalies', { params: { days: 30 } })
+    const d = typeof days === 'number' ? days : trendDays.value || 30
+    const res = await api.get('/statistics/health-anomalies', { params: { days: d } })
     const results = res.data?.data?.results || []
     const items = []
     results.forEach(p => {
@@ -314,6 +350,22 @@ const fetchHealthAlerts = async () => {
     healthAlerts.value = items.slice(0, 8)
   } catch (_) {
     healthAlerts.value = []
+  }
+}
+
+const fetchOverview = async () => {
+  const res = await api.get('/statistics/overview', { params: { days: trendDays.value } })
+  if (res.data && res.data.success) {
+    stats.value = res.data.data
+  }
+}
+
+const fetchWeightTrends = async () => {
+  const wt = await api.get('/statistics/weight-trends', { params: { days: trendDays.value } })
+  if (wt.data && wt.data.success && Array.isArray(wt.data.data?.series)) {
+    weightSeries.value = wt.data.data.series || []
+    buildColorMap()
+    await computeAvgAndDraw()
   }
 }
 
@@ -583,20 +635,16 @@ const drawWeightChart = () => {
   }
   weightTapAreas = tapAreas
 
-  if (typeof activeGuideX.value === 'number') {
-    let gx = activeGuideX.value
-    if (gx < paddingLeft) gx = paddingLeft
-    if (gx > paddingLeft + chartW) gx = paddingLeft + chartW
-    let guideIdx = 0
-    let guideXPos
-    if (dates.length === 1) {
-      guideIdx = 0
-      guideXPos = paddingLeft + chartW / 2
-    } else {
-      const ratio = (gx - paddingLeft) / chartW
-      guideIdx = Math.round(ratio * (dates.length - 1))
-      guideXPos = paddingLeft + (guideIdx / (dates.length - 1)) * chartW
-    }
+  // Hover effect logic
+  if (hoverIndex.value !== -1 && dates.length > 0) {
+    let hoverDateIdx = hoverIndex.value
+    if (hoverDateIdx < 0) hoverDateIdx = 0
+    if (hoverDateIdx >= dates.length) hoverDateIdx = dates.length - 1
+    
+    const dateSel = dates[hoverDateIdx]
+    const guideXPos = (dates.length === 1) ? (paddingLeft + chartW / 2) : (paddingLeft + (hoverDateIdx / (dates.length - 1)) * chartW)
+
+    // Draw guide line
     ctx.save()
     ctx.strokeStyle = '#9CA3AF'
     ctx.lineWidth = 1
@@ -608,16 +656,19 @@ const drawWeightChart = () => {
     if (typeof ctx.setLineDash === 'function') ctx.setLineDash([])
     ctx.restore()
 
-    const dateSel = dates[guideIdx]
+    // Collect items for the tooltip
     const items = []
     for (let si = 0; si < series.length; si++) {
       const s = series[si]
       const p = (s.points || []).find(pt => pt && pt.date === dateSel && typeof pt.weight === 'number' && !isNaN(pt.weight) && pt.weight > 0)
       if (!p) continue
+      
       const norm = (p.weight - minW) / (maxW - minW)
       if (!isFinite(norm) || isNaN(norm)) continue
       const y = paddingTop + (1 - norm) * chartH
       const color = weightColorMap.value[String(s.parrot_id)] || palette[si % palette.length]
+
+      // Draw point circle
       ctx.save()
       ctx.fillStyle = '#ffffff'
       ctx.beginPath()
@@ -627,32 +678,51 @@ const drawWeightChart = () => {
       ctx.lineWidth = 2
       ctx.stroke()
       ctx.restore()
+      
       items.push({ text: (s.parrot_name || '') + ' ' + p.weight.toFixed(1) + 'g', color })
     }
+    
+    // Draw aggregated tooltip box
     if (items.length > 0) {
       const headerText = dateSel || ''
-      ctx.font = '12px sans-serif'
+      ctx.font = 'bold 12px sans-serif'
       const headerW = ctx.measureText(headerText).width
       ctx.font = '11px sans-serif'
       let maxItemW = 0
       for (let i = 0; i < items.length; i++) { maxItemW = Math.max(maxItemW, ctx.measureText(items[i].text).width) }
+      
       const dotW = 10
       const paddingX = 8
       const paddingY = 6
       const lineGap = 4
       const headerH = 16
       const itemH = 14
+      
       const contentW = Math.max(headerW, dotW + maxItemW)
       const boxW = contentW + paddingX * 2
       const boxH = headerH + lineGap + items.length * itemH + paddingY * 2
+      
       const margin = 8
       let boxX
-      if (guideXPos < width / 2) { boxX = guideXPos + margin; if (boxX + boxW > width - 8) boxX = width - 8 - boxW }
-      else { boxX = guideXPos - margin - boxW; if (boxX < 8) boxX = 8 }
+      // Intelligent positioning
+      if (guideXPos < width / 2) { 
+        boxX = guideXPos + margin
+        if (boxX + boxW > width - 8) boxX = width - 8 - boxW 
+      } else { 
+        boxX = guideXPos - margin - boxW
+        if (boxX < 8) boxX = 8 
+      }
+      
       let boxY = paddingTop + 8
       if (boxY + boxH > height - paddingBottom - 8) boxY = height - paddingBottom - 8 - boxH
+      
+      // Draw Box Background
       ctx.save()
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)'
+      ctx.shadowBlur = 6
+      ctx.shadowOffsetY = 2
+      
       const r = 6
       ctx.beginPath()
       ctx.moveTo(boxX + r, boxY)
@@ -666,83 +736,97 @@ const drawWeightChart = () => {
       ctx.arc(boxX + r, boxY + r, r, Math.PI, Math.PI * 3 / 2)
       ctx.fill()
       ctx.restore()
+      
+      // Draw Header
       ctx.save()
       ctx.fillStyle = '#111827'
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      ctx.font = '12px sans-serif'
+      ctx.font = 'bold 12px sans-serif'
       ctx.fillText(headerText, boxX + paddingX, boxY + paddingY)
       ctx.restore()
+      
+      // Draw Items
       let curY = boxY + paddingY + headerH + lineGap
       for (let i = 0; i < items.length; i++) {
         const it = items[i]
         ctx.save()
+        
+        // Color Dot
         ctx.fillStyle = it.color
         ctx.beginPath()
         ctx.arc(boxX + paddingX + 3, curY + itemH / 2, 3, 0, Math.PI * 2)
         ctx.fill()
-        ctx.fillStyle = '#111827'
+        
+        // Text
+        ctx.fillStyle = '#374151'
         ctx.textAlign = 'left'
         ctx.textBaseline = 'middle'
         ctx.font = '11px sans-serif'
         ctx.fillText(it.text, boxX + paddingX + dotW, curY + itemH / 2)
+        
         ctx.restore()
         curY += itemH
       }
     }
-  } else {
-    const active = activeWeightPoint.value
-    if (active && typeof active.x === 'number' && typeof active.y === 'number') {
-      const weightText = (typeof active.weight === 'number' && !isNaN(active.weight)) ? (active.weight.toFixed(1) + 'g') : '--'
-      const nameText = active.parrot_name || ''
-      const label = nameText ? (nameText + ' ' + weightText) : weightText
-      ctx.font = '12px sans-serif'
-      const textW = ctx.measureText(label).width
-      const paddingX = 6
-      const boxW = textW + paddingX * 2
-      const boxH = 20
-      let boxX = active.x - boxW / 2
-      let boxY = active.y - 10 - boxH
-      if (boxX < 8) boxX = 8
-      if (boxX + boxW > width - 8) boxX = width - 8 - boxW
-      if (boxY < paddingTop + 4) boxY = active.y + 10
-      ctx.save()
-      ctx.fillStyle = 'rgba(17, 24, 39, 0.85)'
-      const r2 = 6
-      ctx.beginPath()
-      ctx.moveTo(boxX + r2, boxY)
-      ctx.lineTo(boxX + boxW - r2, boxY)
-      ctx.arc(boxX + boxW - r2, boxY + r2, r2, -Math.PI / 2, 0)
-      ctx.lineTo(boxX + boxW, boxY + boxH - r2)
-      ctx.arc(boxX + boxW - r2, boxY + boxH - r2, r2, 0, Math.PI / 2)
-      ctx.lineTo(boxX + r2, boxY + boxH)
-      ctx.arc(boxX + r2, boxY + boxH - r2, r2, Math.PI / 2, Math.PI)
-      ctx.lineTo(boxX, boxY + r2)
-      ctx.arc(boxX + r2, boxY + r2, r2, Math.PI, Math.PI * 3 / 2)
-      ctx.fill()
-      ctx.restore()
-      ctx.save()
-      ctx.fillStyle = '#fff'
-      ctx.textBaseline = 'middle'
-      ctx.textAlign = 'center'
-      ctx.fillText(label, boxX + boxW / 2, boxY + boxH / 2)
-      ctx.restore()
+  }
+}
+
+const onChartMouseMove = (e) => {
+  const el = weightCanvas.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const mouseX = e.clientX - rect.left
+  
+  const width = rect.width
+  const paddingLeft = 48
+  const paddingRight = 18
+  const innerWidth = width - paddingLeft - paddingRight
+  
+  const series = displaySeries.value || []
+  if (!series.length) return
+
+  const dateSet = new Set()
+  for (let i = 0; i < series.length; i++) {
+    const pts = Array.isArray(series[i].points) ? series[i].points : []
+    for (let j = 0; j < pts.length; j++) {
+      if (pts[j].date) dateSet.add(pts[j].date)
     }
+  }
+  const dates = Array.from(dateSet).sort()
+  if (dates.length < 1) return
+
+  let idx
+  if (dates.length === 1) {
+    idx = 0
+  } else {
+    const xStep = innerWidth / (dates.length - 1)
+    idx = Math.round((mouseX - paddingLeft) / xStep)
+  }
+
+  if (idx < 0) idx = 0
+  if (idx >= dates.length) idx = dates.length - 1
+  
+  if (hoverIndex.value !== idx) {
+    hoverIndex.value = idx
+    activeGuideX.value = null // Disable click-based guide
+    drawWeightChart()
+  }
+}
+
+const onChartMouseLeave = () => {
+  if (hoverIndex.value !== -1) {
+    hoverIndex.value = -1
+    drawWeightChart()
   }
 }
 
 onMounted(async () => {
   try {
-    const res = await api.get('/statistics/overview')
-    if (res.data.success) { stats.value = res.data.data }
-    const wt = await api.get('/statistics/weight-trends', { params: { days: trendDays.value } })
-    if (wt.data && wt.data.success && Array.isArray(wt.data.data?.series)) {
-      weightSeries.value = wt.data.data.series || []
-      buildColorMap()
-      await computeAvgAndDraw()
-    }
+    await fetchOverview()
+    await fetchWeightTrends()
     await fetchRecentActivities()
-    await fetchHealthAlerts()
+    await fetchHealthAlerts(trendDays.value)
   } catch (e) {
     console.error(e)
   } finally {
@@ -752,6 +836,22 @@ onMounted(async () => {
   window.addEventListener('resize', onResize)
   resizeHandler = onResize
 })
+
+const setActiveRange = async (range) => {
+  if (activeRange.value === range) return
+  activeRange.value = range
+  trendDays.value = getDaysByRange(range)
+  loading.value = true
+  try {
+    await fetchOverview()
+    await fetchWeightTrends()
+    await fetchHealthAlerts(trendDays.value)
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+}
 
 let resizeHandler = null
 onBeforeUnmount(() => { if (resizeHandler) window.removeEventListener('resize', resizeHandler) })
@@ -792,6 +892,12 @@ const onWeightMouseLeave = () => {}
   justify-content: space-between;
   margin-bottom: 24px;
 }
+.page-header-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
 .page-header h2 {
   font-size: 24px;
   font-weight: 700;
@@ -802,6 +908,37 @@ const onWeightMouseLeave = () => {}
   font-size: 14px;
   color: #6b7280;
   font-weight: 500;
+}
+
+.time-range-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(243, 244, 246, 0.9);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.time-range-tab {
+  min-width: 56px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #4b5563;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.time-range-tab.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.time-range-tab:not(.active):hover {
+  background: #e5e7eb;
 }
 
 /* Main Stats Cards */

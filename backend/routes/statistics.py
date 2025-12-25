@@ -77,8 +77,15 @@ def get_overview():
         missing_count = max(0, total_parrots - latest_count_sum)
         health_status['healthy'] += missing_count
         
-        # 本月支出（包括用户个人支出和团队共享鹦鹉的支出）
-        current_month = date.today().replace(day=1)
+        # 统计时间范围：支持按天数动态传入，默认为本月
+        today = date.today()
+        days = request.args.get('days', type=int)
+        if days and days > 0:
+            current_month = today - timedelta(days=max(1, days) - 1)
+        else:
+            current_month = today.replace(day=1)
+
+        # 本月/指定区间支出（包括用户个人支出和团队共享鹦鹉的支出）
         # 根据用户模式获取可访问的支出ID
         expense_ids = get_accessible_expense_ids_by_mode(user)
         monthly_expense = db.session.query(func.sum(Expense.amount)).filter(
@@ -88,7 +95,7 @@ def get_overview():
             )
         ).scalar() or 0
 
-        # 本月收入（包括用户个人收入和团队共享鹦鹉的收入）
+        # 本月/指定区间收入（包括用户个人收入和团队共享鹦鹉的收入）
         income_ids = get_accessible_income_ids_by_mode(user)
         monthly_income = db.session.query(func.sum(Income.amount)).filter(
             and_(
@@ -119,7 +126,6 @@ def get_overview():
         ).scalar() or 0
 
         # 今日记录数
-        today = date.today()
         today_feeding = db.session.query(
             FeedingRecord.feeding_time,
             FeedingRecord.notes,

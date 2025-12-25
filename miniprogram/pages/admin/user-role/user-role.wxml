@@ -28,7 +28,9 @@
         </view>
       </view>
       <view class="search-bar">
-        <input class="search-input" placeholder="按昵称/用户名/手机号 搜索" placeholder-class="search-placeholder" value="{{q}}" bindinput="onSearchInput" />
+
+
+        <input class="search-input" placeholder="按昵称/用户名 搜索" placeholder-class="search-placeholder" value="{{q}}" bindinput="onSearchInput" />
         <view class="search-actions">
           <button class="btn btn-primary" size="mini" bindtap="doSearch">搜索</button>
           <button class="btn btn-secondary" size="mini" bindtap="clearSearch">清空</button>
@@ -63,7 +65,6 @@
             <view class="info">
               <text class="name">{{item.nickname || item.username || ('用户' + item.id)}}</text>
               <text class="meta">积分: {{item.points || 0}}</text>
-              <text class="meta">{{item.phone || ''}}</text>
               <text class="meta">鹦鹉数量: {{item.parrot_count || 0}}</text>
               <text class="meta">总支出: ¥{{item.total_expense || 0}}</text>
             </view>
