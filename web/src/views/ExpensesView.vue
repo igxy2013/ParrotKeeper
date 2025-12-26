@@ -3,17 +3,28 @@
     <div class="header">
       <h2>收支管理</h2>
       <div class="header-actions">
+        <div class="time-range-tabs">
+          <div
+            v-for="p in periods"
+            :key="p"
+            class="time-range-tab"
+            :class="{ active: selectedPeriod === p }"
+            @click="setSelectedPeriod(p)"
+          >
+            {{ p }}
+          </div>
+        </div>
         <el-button type="primary" :icon="Plus" @click="openDialog">添加收支记录</el-button>
       </div>
     </div>
 
     <el-card class="stats-card" shadow="never">
       <div class="stats-grid">
-        <div class="stat-item">
+        <div class="stat-item clickable" @click="filterByStat('支出')">
           <div class="stat-label">总支出</div>
           <div class="stat-value expense">¥{{ formatAmount(stats.totalExpense) }}</div>
         </div>
-        <div class="stat-item">
+        <div class="stat-item clickable" @click="filterByStat('收入')">
           <div class="stat-label">总收入</div>
           <div class="stat-value income">¥{{ formatAmount(stats.totalIncome) }}</div>
         </div>
@@ -31,46 +42,33 @@
     </el-card>
 
     <div class="toolbar">
-      <div class="period-selector">
-        <el-button
-          v-for="p in periods"
-          :key="p"
-          size="small"
-          :type="selectedPeriod === p ? 'primary' : 'default'"
-          @click="setSelectedPeriod(p)"
-        >
-          {{ p }}
-        </el-button>
+      <div class="filter-group">
+        <el-radio-group v-model="recordType" size="default" @change="onRecordTypeChange">
+          <el-radio-button v-for="t in recordTypeOptions" :key="t" :label="t">{{ t }}</el-radio-button>
+        </el-radio-group>
+        
+        <div class="category-tags" v-if="categoryOptions.length > 1">
+          <span 
+            v-for="c in categoryOptions" 
+            :key="c" 
+            class="category-tag" 
+            :class="{ active: selectedCategory === c }"
+            @click="onCategoryTagClick(c)"
+          >
+            {{ c }}
+          </span>
+        </div>
       </div>
-      <el-select
-        v-model="recordType"
-        class="filter-item"
-        style="width: 120px"
-        @change="onRecordTypeChange"
-      >
-        <el-option v-for="t in recordTypeOptions" :key="t" :label="t" :value="t" />
-      </el-select>
-      <el-select
-        v-model="selectedCategory"
-        class="filter-item"
-        style="width: 160px"
-        @change="onCategoryChange"
-      >
-        <el-option
-          v-for="c in categoryOptions"
-          :key="c"
-          :label="c"
-          :value="c"
-        />
-      </el-select>
-      <el-input
-        v-model="searchKeyword"
-        class="search-input"
-        placeholder="搜索类型、类别、描述或鹦鹉名称"
-        @input="onSearch"
-        clearable
-      />
+
       <div class="toolbar-right">
+        <el-input
+          v-model="searchKeyword"
+          class="search-input"
+          placeholder="搜索类型、类别、描述或鹦鹉名称"
+          @input="onSearch"
+          clearable
+          style="width: 260px"
+        />
         <el-button @click="refresh" :loading="loading">刷新</el-button>
       </div>
     </div>
@@ -372,7 +370,22 @@ const onRecordTypeChange = () => {
   loadStats()
 }
 
+const onCategoryTagClick = (category) => {
+  selectedCategory.value = category
+  onCategoryChange()
+}
+
 const onCategoryChange = () => {
+  page.value = 1
+  loadExpenses()
+  loadStats()
+}
+
+const filterByStat = (type) => {
+  if (recordType.value === type) return
+  recordType.value = type
+  updateCategoryOptions()
+  selectedCategory.value = '全部'
   page.value = 1
   loadExpenses()
   loadStats()
@@ -474,6 +487,12 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .header h2 {
   margin: 0;
   color: var(--text-primary);
@@ -490,9 +509,23 @@ onMounted(() => {
 }
 
 .stat-item {
+  display: flex;
+  flex-direction: column;
   padding: 12px 16px;
   border-radius: 12px;
   background: #f9fafb;
+}
+
+.stat-item.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+.stat-item.clickable:hover {
+  background: #f3f4f6;
+}
+.stat-item.clickable:active {
+  background: #e5e7eb;
+  transform: translateY(1px);
 }
 
 .stat-label {
@@ -521,28 +554,53 @@ onMounted(() => {
 .toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
-.period-selector {
+.filter-group {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.filter-item {
-  flex-shrink: 0;
+.category-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.category-tag {
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background: #f3f4f6;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.category-tag:hover {
+  background: #e5e7eb;
+}
+.category-tag.active {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+  font-weight: 500;
 }
 
 .search-input {
-  flex: 1 1 260px;
+  width: 260px;
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 
 .pagination {
@@ -557,5 +615,37 @@ onMounted(() => {
 
 .amount-expense {
   color: #dc2626;
+}
+
+/* 时间范围标签样式，参考仪表盘 */
+.time-range-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(243, 244, 246, 0.9);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.time-range-tab {
+  min-width: 56px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #4b5563;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.time-range-tab.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.time-range-tab:not(.active):hover {
+  background: #e5e7eb;
 }
 </style>

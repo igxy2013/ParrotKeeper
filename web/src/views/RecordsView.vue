@@ -359,10 +359,12 @@
 
 <script setup>
 import { ref, onMounted, watch, computed, reactive } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import api from '../api/axios'
 
+const route = useRoute()
 const activeTab = ref('feeding')
 const loading = ref(false)
 const feedingRecords = ref([])
@@ -680,7 +682,8 @@ const getHealthLabel = (status) => {
   const map = {
     healthy: '健康',
     sick: '生病',
-    recovering: '康复中'
+    recovering: '康复中',
+    observation: '观察中'
   }
   return map[status] || status
 }
@@ -954,7 +957,11 @@ const loadParrots = async () => {
 
 onMounted(() => {
   loadParrots()
-  fetchRecords()
+  if (route.query.tab && route.query.tab !== activeTab.value) {
+    activeTab.value = route.query.tab
+  } else {
+    fetchRecords()
+  }
 })
 </script>
 

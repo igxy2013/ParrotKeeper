@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from utils import success_response, error_response, login_required, cache_get_json, cache_set_json
 from team_mode_utils import get_accessible_parrot_ids_by_mode
-from models import Parrot, ParrotSpecies
+from models import Parrot, ParrotSpecies, SystemSetting, db
 import os
 import json
 from datetime import datetime
@@ -10,22 +10,8 @@ from datetime import datetime
 care_guide_bp = Blueprint('care_guide', __name__, url_prefix='/api/care-guide')
 
 
-def _get_config_path():
-    # 优先使用配置或环境变量指定的路径
-    cfg = current_app.config if current_app else {}
-    path = (cfg.get('CARE_GUIDE_CONFIG_PATH')
-            or os.environ.get('CARE_GUIDE_CONFIG_PATH'))
-    if not path:
-        # 默认放在 backend/care_guide_config.json
-        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        path = os.path.join(backend_dir, 'care_guide_config.json')
-    return path
-
-
-def _ensure_dir(path):
-    d = os.path.dirname(path)
-    if d and not os.path.exists(d):
-        os.makedirs(d, exist_ok=True)
+def _get_setting_key():
+    return 'CARE_GUIDE_CONFIG'
 
 
 def _default_config():
@@ -85,29 +71,39 @@ def _default_config():
 
 
 def _load_config():
-    key = 'care_guide_config_v1'
-    cached = cache_get_json(key)
+    cache_key = 'care_guide_config_v1'
+    cached = cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
-    path = _get_config_path()
-    if not os.path.exists(path):
-        cfg = _default_config()
-        _ensure_dir(path)
-        try:
-            with open(path, 'w', encoding='utf-8') as f:
-                json.dump(cfg, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
-        cache_set_json(key, cfg, 3600)
-        return cfg
     try:
-        with open(path, 'r', encoding='utf-8') as f:
-            cfg = json.load(f)
-            cache_set_json(key, cfg, 3600)
-            return cfg
+        row = SystemSetting.query.filter_by(key=_get_setting_key()).first()
+        if row and row.value:
+            try:
+                data = json.loads(row.value)
+            except Exception:
+                data = None
+            if isinstance(data, dict):
+                cache_set_json(cache_key, data, 3600)
+                return data
+        cfg = _default_config()
+        try:
+            val = json.dumps(cfg, ensure_ascii=False)
+            if not row:
+                row = SystemSetting(key=_get_setting_key(), value=val)
+                db.session.add(row)
+            else:
+                row.value = val
+            db.session.commit()
+        except Exception:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+        cache_set_json(cache_key, cfg, 3600)
+        return cfg
     except Exception:
         cfg = _default_config()
-        cache_set_json(key, cfg, 3600)
+        cache_set_json(cache_key, cfg, 3600)
         return cfg
 
 
@@ -161,13 +157,17 @@ def update_care_guide():
     if 'schema_version' not in data:
         data['schema_version'] = '1.0'
 
-    # 写入文件
-    path = _get_config_path()
-    _ensure_dir(path)
     try:
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        val = json.dumps(data, ensure_ascii=False)
+        row = SystemSetting.query.filter_by(key=_get_setting_key()).first()
+        if not row:
+            row = SystemSetting(key=_get_setting_key(), value=val)
+            db.session.add(row)
+        else:
+            row.value = val
+        db.session.commit()
     except Exception as e:
+        db.session.rollback()
         return error_response(f'保存失败：{str(e)}')
     try:
         cache_set_json('care_guide_config_v1', data, 3600)

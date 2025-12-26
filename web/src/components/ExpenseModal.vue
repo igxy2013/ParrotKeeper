@@ -314,17 +314,19 @@ onMounted(() => {
   width: 100%;
   box-sizing: border-box;
   padding: 0 12px;
-  height: 36px;
+  height: 32px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   color: #1f2937;
 }
 .text-input:focus { outline: none; border-color: #26A69A; box-shadow: 0 0 0 2px rgba(38, 166, 154, 0.1); }
 
 .full-width-select { width: 100%; }
-:deep(.el-input__wrapper) { box-shadow: 0 0 0 1px #d1d5db !important; border-radius: 8px; height: 36px; }
+:deep(.el-input__wrapper) { box-shadow: 0 0 0 1px #d1d5db !important; border-radius: 12px; height: 32px; }
 :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px #26A69A, 0 0 0 4px rgba(38, 166, 154, 0.1) !important; }
+:deep(.el-select .el-input__wrapper),
+:deep(.el-date-editor .el-input__wrapper) { border-radius: 12px; height: 32px; }
 
 .type-row { display: flex; background: #f3f4f6; padding: 4px; border-radius: 8px; }
 .type-btn { flex: 1; text-align: center; padding: 6px 0; font-size: 13px; color: #6b7280; border-radius: 6px; cursor: pointer; }

@@ -19,19 +19,78 @@ def list_users():
         per_page = request.args.get('per_page', 20, type=int)
         q = (request.args.get('q') or '').strip()
 
-        query = User.query.order_by(User.created_at.desc())
+        sort_by = (request.args.get('sort_by') or '').strip()
+        sort_order = (request.args.get('sort_order') or 'desc').strip().lower()
+
+        # 允许排序的字段映射
+        sort_field_map = {
+            'id': User.id,
+            'nickname': User.nickname,
+            'username': User.username,
+            'role': User.role,
+            'points': User.points,
+            'created_at': User.created_at
+        }
+
+        base_query = User.query
+        
+        if sort_by == 'parrot_count':
+             # 按鹦鹉数量排序
+             subquery = db.session.query(
+                 Parrot.user_id, func.count(Parrot.id).label('cnt')
+             ).filter(Parrot.is_active == True).group_by(Parrot.user_id).subquery()
+             
+             base_query = base_query.outerjoin(subquery, User.id == subquery.c.user_id)
+             if sort_order == 'asc':
+                 base_query = base_query.order_by(subquery.c.cnt.asc())
+             else:
+                 base_query = base_query.order_by(subquery.c.cnt.desc())
+        
+        elif sort_by == 'total_expense':
+             # 按总支出排序
+             subquery = db.session.query(
+                 Expense.user_id, func.sum(Expense.amount).label('total')
+             ).filter(Expense.team_id.is_(None)).group_by(Expense.user_id).subquery()
+             
+             base_query = base_query.outerjoin(subquery, User.id == subquery.c.user_id)
+             if sort_order == 'asc':
+                 base_query = base_query.order_by(subquery.c.total.asc())
+             else:
+                 base_query = base_query.order_by(subquery.c.total.desc())
+
+        elif sort_by in sort_field_map:
+            col = sort_field_map[sort_by]
+            base_query = base_query.order_by(col.asc() if sort_order == 'asc' else col.desc())
+        else:
+            base_query = base_query.order_by(User.created_at.desc())
+
+        query = base_query
         if q:
-            # 支持按昵称、用户名、手机号、openid搜索
+            # 支持按昵称、用户名、openid搜索（手机号不再参与搜索）
             query = query.filter(
                 db.or_(
                     User.nickname.contains(q),
                     User.username.contains(q),
-                    User.phone.contains(q),
                     User.openid.contains(q)
                 )
             )
 
         result = paginate_query(query, page, per_page)
+
+        # 角色与模式统计（与小程序端用户与角色管理页面对齐）
+        stats_query = User.query
+        if q:
+            stats_query = stats_query.filter(
+                db.or_(
+                    User.nickname.contains(q),
+                    User.username.contains(q),
+                    User.openid.contains(q)
+                )
+            )
+        total_users = result['total']
+        admin_count = stats_query.filter(User.role == 'admin').count()
+        user_count = stats_query.filter(User.role == 'user').count()
+        team_user_count = stats_query.filter(User.user_mode == 'team').count()
 
         # 批量统计：每个用户的鹦鹉数量与总支出
         user_ids = [u.id for u in result['items']]
@@ -45,9 +104,9 @@ def list_users():
             for uid, cnt in pc_rows:
                 parrot_counts[uid] = int(cnt or 0)
 
-            # 统计总支出（个人与团队均按创建者聚合）
+            # 统计总支出（仅统计个人支出，不含团队）
             te_rows = db.session.query(Expense.user_id, func.coalesce(func.sum(Expense.amount), 0))\
-                .filter(Expense.user_id.in_(user_ids))\
+                .filter(Expense.user_id.in_(user_ids), Expense.team_id.is_(None))\
                 .group_by(Expense.user_id).all()
             for uid, total in te_rows:
                 # 转为 float 以便前端显示
@@ -62,7 +121,6 @@ def list_users():
                 'username': u.username,
                 'nickname': u.nickname,
                 'avatar_url': u.avatar_url,
-                'phone': u.phone,
                 'role': u.role,
                 'login_type': u.login_type,
                 'user_mode': u.user_mode,
@@ -79,7 +137,13 @@ def list_users():
             'current_page': result['current_page'],
             'per_page': result['per_page'],
             'has_next': result['has_next'],
-            'has_prev': result['has_prev']
+            'has_prev': result['has_prev'],
+            'role_stats': {
+                'total_count': int(total_users or 0),
+                'admin_count': int(admin_count or 0),
+                'user_count': int(user_count or 0),
+                'team_user_count': int(team_user_count or 0)
+            }
         })
     except Exception as e:
         return error_response(f'获取用户列表失败: {str(e)}')
@@ -114,6 +178,32 @@ def update_user_role(user_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'角色更新失败: {str(e)}')
+
+
+@admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    """仅超级管理员可删除用户"""
+    try:
+        current = request.current_user
+        if not current or current.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        target = User.query.get(user_id)
+        if not target:
+            return error_response('用户不存在', 404)
+        
+        if target.id == current.id:
+             return error_response('不能删除自己', 400)
+
+        db.session.delete(target)
+        db.session.commit()
+
+        return success_response({'id': user_id}, '用户已删除')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'删除用户失败: {str(e)}')
+
 
 
 @admin_bp.route('/announcements', methods=['GET'])

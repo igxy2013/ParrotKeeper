@@ -319,13 +319,8 @@ def _season_for_date(d: date | None = None) -> str:
     return 'winter'
 
 
-def _get_care_guide_path() -> str:
-    cfg = current_app.config if current_app else {}
-    path = (cfg.get('CARE_GUIDE_CONFIG_PATH') or os.environ.get('CARE_GUIDE_CONFIG_PATH'))
-    if not path:
-        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        path = os.path.join(backend_dir, 'care_guide_config.json')
-    return path
+def _get_setting_key() -> str:
+    return 'CARE_GUIDE_CONFIG'
 
 
 def _default_care_guide_config():
@@ -376,23 +371,39 @@ def _default_care_guide_config():
 
 
 def _load_care_guide_config() -> dict:
-    key = 'care_guide_config_v1'
-    cached = cache_get_json(key)
+    cache_key = 'care_guide_config_v1'
+    cached = cache_get_json(cache_key)
     if isinstance(cached, dict):
         return cached
-    path = _get_care_guide_path()
     try:
-        if not os.path.exists(path):
-            cfg = _default_care_guide_config()
-            cache_set_json(key, cfg, 3600)
-            return cfg
-        with open(path, 'r', encoding='utf-8') as f:
-            cfg = json.load(f)
-            cache_set_json(key, cfg, 3600)
-            return cfg
+        row = SystemSetting.query.filter_by(key=_get_setting_key()).first()
+        if row and row.value:
+            try:
+                data = json.loads(row.value)
+            except Exception:
+                data = None
+            if isinstance(data, dict):
+                cache_set_json(cache_key, data, 3600)
+                return data
+        cfg = _default_care_guide_config()
+        try:
+            val = json.dumps(cfg, ensure_ascii=False)
+            if not row:
+                row = SystemSetting(key=_get_setting_key(), value=val)
+                db.session.add(row)
+            else:
+                row.value = val
+            db.session.commit()
+        except Exception:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+        cache_set_json(cache_key, cfg, 3600)
+        return cfg
     except Exception:
         cfg = _default_care_guide_config()
-        cache_set_json(key, cfg, 3600)
+        cache_set_json(cache_key, cfg, 3600)
         return cfg
 
 
