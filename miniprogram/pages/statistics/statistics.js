@@ -1094,6 +1094,55 @@ const app = getApp()
           avg = Math.round(sum / allPoints.length) + 'g'
         }
         this.setData({ avgWeight: avg || '--' })
+
+        // 默认选中：最近有数据且数据最多的鹦鹉；若最近无数据则回退到总体数据最多
+        if (!this.data.selectedParrotId) {
+          const cutoff = Date.now() - (this.data.weightDays || 30) * 86400000
+          let autoId = null
+          let autoName = ''
+          let maxCount = -1
+          for (let i = 0; i < seriesArr.length; i++) {
+            const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
+            let count = 0
+            for (let j = 0; j < pts.length; j++) {
+              const p = pts[j]
+              const d = p && p.date ? new Date(p.date) : null
+              const ts = d && !isNaN(d) ? d.getTime() : NaN
+              if (!isNaN(ts) && ts >= cutoff && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) count++
+            }
+            if (count > maxCount) {
+              maxCount = count
+              autoId = String(seriesArr[i].parrot_id)
+              autoName = seriesArr[i].parrot_name || ''
+            }
+          }
+          if (maxCount <= 0) {
+            maxCount = -1
+            for (let i = 0; i < seriesArr.length; i++) {
+              const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
+              let allCount = 0
+              for (let j = 0; j < pts.length; j++) {
+                const p = pts[j]
+                if (p && p.date && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) allCount++
+              }
+              if (allCount > maxCount) {
+                maxCount = allCount
+                autoId = String(seriesArr[i].parrot_id)
+                autoName = seriesArr[i].parrot_name || ''
+              }
+            }
+          }
+          if (autoId) {
+            this.setData({ selectedParrotId: autoId, selectedParrotName: autoName })
+          }
+        }
+
+        this.updateWeightLegend()
+        if (this.data.selectedParrotId) {
+          this._loadParrotRefWeight && this._loadParrotRefWeight(this.data.selectedParrotId)
+        } else {
+          this.setData({ weightRefValue: null, weightRefChart: '' })
+        }
         this.drawWeightChart()
       }
     } catch (err) {

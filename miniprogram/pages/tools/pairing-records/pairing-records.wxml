@@ -9,7 +9,7 @@
 
     <view wx:if="{{!records || records.length === 0}}" class="empty">暂无配对记录</view>
     <view wx:else class="list">
-      <view class="item" wx:for="{{records}}" wx:key="createdAt">
+      <view class="item" wx:for="{{records}}" wx:key="id">
         <view class="item-header">
           <text class="species">{{item.species}}</text>
           <text class="date">{{formatTime(item.createdAt)}}</text>
@@ -37,7 +37,7 @@
           </view>
         </view>
         <view class="item-actions">
-          <view class="action-btn delete" catchtap="deleteRecord" data-index="{{index}}"><text>删除</text></view>
+          <view class="action-btn delete" catchtap="deleteRecord" data-id="{{item.id}}"><text>删除</text></view>
         </view>
       </view>
       <view class="clear-btn" bindtap="clearAll"><text class="clear-text">清空所有</text></view>

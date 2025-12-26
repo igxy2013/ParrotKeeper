@@ -277,6 +277,24 @@ class IncubationSuggestion(db.Model):
     species = db.relationship('ParrotSpecies', lazy=True)
     created_by = db.relationship('User', backref='created_incubation_suggestions', lazy=True)
 
+class PairingRecord(db.Model):
+    __tablename__ = 'pairing_records'
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    species = db.Column(db.String(100), nullable=False)
+    mother_color = db.Column(db.String(120), nullable=False)
+    father_color = db.Column(db.String(120), nullable=False)
+    mother_splits_json = db.Column(db.Text)  # JSON数组：母鸟携带基因标签
+    father_splits_json = db.Column(db.Text)  # JSON数组：公鸟携带基因标签
+    results_json = db.Column(db.Text)        # JSON数组：[{label, prob}]
+    expected_average_price = db.Column(db.Numeric(10, 2))
+    team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL个人；非空团队
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_by = db.relationship('User', backref='created_pairing_records', lazy=True)
+
 class Expense(db.Model):
     __tablename__ = 'expenses'
     

@@ -37,16 +37,56 @@ Component({
   prepareDisplaySeries() {
       const src = Array.isArray(this.data.series) ? this.data.series : []
       const selectedId = this.data.selectedParrotId
-      let filtered = selectedId ? src.filter(s => String(s.parrot_id) === String(selectedId)) : src
-      // 默认最多显示12只鹦鹉
-      if (!selectedId && Array.isArray(filtered)) filtered = filtered.slice(0, 12)
+      let autoId = null
+      let autoName = ''
+      if (!selectedId && Array.isArray(src) && src.length > 0) {
+        const cutoff = Date.now() - 30 * 86400000
+        let maxCount = -1
+        for (let i = 0; i < src.length; i++) {
+          const pts = Array.isArray(src[i].points) ? src[i].points : []
+          let count = 0
+          for (let j = 0; j < pts.length; j++) {
+            const p = pts[j]
+            const d = p && p.date ? new Date(p.date) : null
+            const ts = d && !isNaN(d) ? d.getTime() : NaN
+            if (!isNaN(ts) && ts >= cutoff && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) count++
+          }
+          if (count > maxCount) {
+            maxCount = count
+            autoId = String(src[i].parrot_id)
+            autoName = src[i].parrot_name || ''
+          }
+        }
+        if (maxCount <= 0) {
+          maxCount = -1
+          for (let i = 0; i < src.length; i++) {
+            const pts = Array.isArray(src[i].points) ? src[i].points : []
+            let allCount = 0
+            for (let j = 0; j < pts.length; j++) {
+              const p = pts[j]
+              if (p && p.date && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) allCount++
+            }
+            if (allCount > maxCount) {
+              maxCount = allCount
+              autoId = String(src[i].parrot_id)
+              autoName = src[i].parrot_name || ''
+            }
+          }
+        }
+      }
+
+      const chosenId = selectedId || autoId
+      const chosenName = selectedId ? (this.data.selectedParrotName || '') : (autoName || '')
+      let filtered = chosenId ? src.filter(s => String(s.parrot_id) === String(chosenId)) : src
+      if (!chosenId && Array.isArray(filtered)) filtered = filtered.slice(0, 12)
+
       const display = filtered.map((s, i) => ({
         parrot_id: s.parrot_id,
         parrot_name: s.parrot_name,
         color: this.palette(i),
         points: (Array.isArray(s.points) ? s.points : []).slice().sort((a,b) => (a.date > b.date ? 1 : -1))
       }))
-      // 计算平均体重（当前选择下所有点）
+
       let weights = []
       for (let i = 0; i < display.length; i++) {
         const pts = Array.isArray(display[i].points) ? display[i].points : []
@@ -61,7 +101,13 @@ Component({
         for (let k = 0; k < weights.length; k++) sum += weights[k]
         avgStr = Number(sum / weights.length).toFixed(1) + 'g'
       }
-      this.setData({ displaySeries: display, weightAvgChart: avgStr })
+
+      this.setData({ 
+        displaySeries: display, 
+        weightAvgChart: avgStr,
+        selectedParrotId: chosenId || null,
+        selectedParrotName: chosenName || ''
+      })
     },
     toggleParrotDropdown(e) {
       // 防止冒泡到卡片

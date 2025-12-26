@@ -329,8 +329,8 @@ Page({
   },
 
   addCleaningRecord() {
-    if (!this.data.hasOperationPermission) {
-      app.showError('您没有操作权限')
+    if (!this.data.isLogin) {
+      app.showError('请先登录后再添加记录')
       return
     }
     wx.navigateTo({ url: '/pages/records/add-record/add-record?type=cleaning' })

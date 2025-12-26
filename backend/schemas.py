@@ -2,6 +2,7 @@ from marshmallow import Schema, fields, validate
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from models import User, Parrot, ParrotSpecies, FeedType, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord, Expense, Reminder, Egg, IncubationLog
 from models import IncubationSuggestion
+from models import PairingRecord
 
 class UserSchema(SQLAlchemyAutoSchema):
     class Meta:
@@ -355,6 +356,71 @@ class IncubationSuggestionSchema(SQLAlchemyAutoSchema):
     species = fields.Nested(ParrotSpeciesSchema, dump_only=True, only=('id','name'))
     created_by = fields.Nested(UserSchema, dump_only=True, only=('id','username'))
 
+class PairingRecordSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = PairingRecord
+        load_instance = True
+        exclude = ('updated_at',)
+    created_by = fields.Nested(UserSchema, dump_only=True, only=('id', 'username'))
+    motherSplits = fields.Method('get_mother_splits', dump_only=True)
+    fatherSplits = fields.Method('get_father_splits', dump_only=True)
+    results = fields.Method('get_results', dump_only=True)
+    expectedAveragePrice = fields.Method('get_expected_avg_price', dump_only=True)
+    createdAt = fields.Method('get_created_at_ts', dump_only=True)
+    motherColor = fields.Method('get_mother_color', dump_only=True)
+    fatherColor = fields.Method('get_father_color', dump_only=True)
+
+    def get_mother_splits(self, obj):
+        try:
+            import json
+            raw = obj.mother_splits_json or '[]'
+            data = json.loads(raw)
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
+
+    def get_father_splits(self, obj):
+        try:
+            import json
+            raw = obj.father_splits_json or '[]'
+            data = json.loads(raw)
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
+
+    def get_results(self, obj):
+        try:
+            import json
+            raw = obj.results_json or '[]'
+            data = json.loads(raw)
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
+
+    def get_expected_avg_price(self, obj):
+        try:
+            v = obj.expected_average_price
+            if v is None:
+                return None
+            return float(v)
+        except Exception:
+            return None
+
+    def get_created_at_ts(self, obj):
+        try:
+            dt = obj.created_at
+            if not dt:
+                return None
+            return int(dt.timestamp() * 1000)
+        except Exception:
+            return None
+
+    def get_mother_color(self, obj):
+        return obj.mother_color
+
+    def get_father_color(self, obj):
+        return obj.father_color
+
 # 创建schema实例
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
@@ -393,3 +459,5 @@ incubation_log_schema = IncubationLogSchema()
 incubation_logs_schema = IncubationLogSchema(many=True)
 incubation_suggestion_schema = IncubationSuggestionSchema()
 incubation_suggestions_schema = IncubationSuggestionSchema(many=True)
+pairing_record_schema = PairingRecordSchema()
+pairing_records_schema = PairingRecordSchema(many=True)

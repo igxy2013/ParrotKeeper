@@ -29,9 +29,10 @@ Page({
     this.loadRecords()
   },
 
-  loadRecords() {
+  async loadRecords() {
     try {
-      const list = wx.getStorageSync('pairingRecords') || []
+      const res = await app.request({ url: '/api/pairings', method: 'GET' })
+      const list = (res && res.success && Array.isArray(res.data)) ? res.data : []
       this.setData({ records: list })
     } catch (_) {
       this.setData({ records: [] })
@@ -52,15 +53,16 @@ Page({
     }
   },
 
-  deleteRecord(e) {
-    const idx = Number(e.currentTarget.dataset.index || 0)
+  async deleteRecord(e) {
+    const id = Number(e.currentTarget.dataset.id || 0)
+    if (!id) return
     try {
-      const list = wx.getStorageSync('pairingRecords') || []
-      if (idx >= 0 && idx < list.length) {
-        list.splice(idx, 1)
-        wx.setStorageSync('pairingRecords', list)
-        this.setData({ records: list })
+      const res = await app.request({ url: `/api/pairings/${id}`, method: 'DELETE' })
+      if (res && res.success) {
         wx.showToast({ title: '已删除' })
+        await this.loadRecords()
+      } else {
+        wx.showToast({ title: (res && res.message) || '删除失败', icon: 'none' })
       }
     } catch (_) {
       wx.showToast({ title: '删除失败', icon: 'none' })
@@ -71,12 +73,16 @@ Page({
     wx.showModal({
       title: '清空确认',
       content: '确定清空所有配对记录？',
-      success: (r) => {
+      success: async (r) => {
         if (r.confirm) {
           try {
-            wx.removeStorageSync('pairingRecords')
-            this.setData({ records: [] })
-            wx.showToast({ title: '已清空' })
+            const res = await app.request({ url: '/api/pairings', method: 'DELETE' })
+            if (res && res.success) {
+              this.setData({ records: [] })
+              wx.showToast({ title: '已清空' })
+            } else {
+              wx.showToast({ title: (res && res.message) || '清空失败', icon: 'none' })
+            }
           } catch (_) {
             wx.showToast({ title: '清空失败', icon: 'none' })
           }

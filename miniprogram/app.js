@@ -216,7 +216,7 @@ App({
       const DEFAULT_RELEASE = 'https://bimai.xyz'
       const DEFAULT_TRIAL = DEFAULT_RELEASE
       // 开发环境建议填写你本机在局域网的 IP 与端口
-      const DEFAULT_DEVELOP = 'http://192.168.0.80:5075'
+      const DEFAULT_DEVELOP = 'http://127.0.0.1:5075'
 
       if (envVersion === 'release') {
         this.globalData.baseUrl = DEFAULT_RELEASE

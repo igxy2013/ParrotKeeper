@@ -104,7 +104,7 @@
                     {{item.health_status_text || '健康'}}
                   </view>
                   <!-- 编辑和删除按钮 -->
-                  <view class="action-buttons" wx:if="{{hasOperationPermission}}">
+                  <view class="action-buttons">
                   <view class="action-btn edit-btn" catchtap="editRecord" data-id="{{item.id}}">
                     <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" lazy-load="true" />
                   </view>

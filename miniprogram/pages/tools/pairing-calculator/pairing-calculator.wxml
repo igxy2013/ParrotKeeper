@@ -124,7 +124,7 @@
     <block wx:if="{{activeTab === 'records'}}">
       <view wx:if="{{!records || records.length === 0}}" class="empty">暂无配对记录</view>
       <block wx:else>
-        <block wx:for="{{records}}" wx:key="createdAt">
+        <block wx:for="{{records}}" wx:key="id">
           <view class="card">
             <view class="section-title"><text>{{item.species}} · {{formatTime(item.createdAt)}}</text></view>
             <view class="form-row">
@@ -148,7 +148,7 @@
               </block>
             </view>
             <view class="save-pair-section">
-              <view class="save-pair-btn" catchtap="deleteRecord" data-index="{{index}}">
+              <view class="save-pair-btn" catchtap="deleteRecord" data-id="{{item.id}}">
                 <view class="save-pair-btn-text">删除该记录</view>
               </view>
             </view>
