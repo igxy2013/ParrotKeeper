@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="header-actions">
-      <h2>记录</h2>
+      <h2>饲养记录</h2>
       <el-button type="primary" :icon="Plus" @click="openAddDialog">添加记录</el-button>
     </div>
     <div class="toolbar">
@@ -54,6 +54,12 @@
             <template #default="scope">{{ scope.row.amount ? scope.row.amount + (scope.row.feed_type?.unit || 'g') : '-' }}</template>
           </el-table-column>
           <el-table-column prop="notes" label="备注" />
+          <el-table-column label="操作" width="160">
+            <template #default="scope">
+              <el-button link type="primary" size="small" @click="openEditDialog(scope.row, 'feeding')">编辑</el-button>
+              <el-button link type="danger" size="small" @click="handleDelete(scope.row, 'feeding')">删除</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
 
@@ -76,6 +82,12 @@
              </template>
           </el-table-column>
           <el-table-column prop="description" label="描述" />
+          <el-table-column label="操作" width="160">
+            <template #default="scope">
+              <el-button link type="primary" size="small" @click="openEditDialog(scope.row, 'health')">编辑</el-button>
+              <el-button link type="danger" size="small" @click="handleDelete(scope.row, 'health')">删除</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
 
@@ -93,6 +105,12 @@
             <template #default="scope">{{ scope.row.cleaning_type_text || scope.row.cleaning_type || '-' }}</template>
           </el-table-column>
           <el-table-column prop="description" label="描述" />
+          <el-table-column label="操作" width="160">
+            <template #default="scope">
+              <el-button link type="primary" size="small" @click="openEditDialog(scope.row, 'cleaning')">编辑</el-button>
+              <el-button link type="danger" size="small" @click="handleDelete(scope.row, 'cleaning')">删除</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
       
@@ -113,6 +131,12 @@
             <template #default="scope">{{ scope.row.success_rate ?? '-' }}</template>
           </el-table-column>
           <el-table-column prop="notes" label="备注" />
+          <el-table-column label="操作" width="160">
+            <template #default="scope">
+              <el-button link type="primary" size="small" @click="openEditDialog(scope.row, 'breeding')">编辑</el-button>
+              <el-button link type="danger" size="small" @click="handleDelete(scope.row, 'breeding')">删除</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
     </el-tabs>
@@ -335,7 +359,7 @@
 
 <script setup>
 import { ref, onMounted, watch, computed, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import api from '../api/axios'
 
@@ -356,6 +380,7 @@ const addDialogVisible = ref(false)
 const addSubmitting = ref(false)
 const addFormType = ref('feeding')
 const addFormDateTime = ref('')
+const editingRecordId = ref(null)
 const addForm = reactive({
   parrot_ids: [],
   notes: '',
@@ -398,9 +423,10 @@ const typeLabelMap = {
   cleaning: '清洁',
   breeding: '繁殖'
 }
+const isEditMode = computed(() => !!editingRecordId.value)
 const addDialogTitle = computed(() => {
   const text = typeLabelMap[addFormType.value] || ''
-  return `添加${text}记录`
+  return `${isEditMode.value ? '编辑' : '添加'}${text}记录`
 })
 const recordTypeLabel = computed(() => typeLabelMap[addFormType.value] || '')
 const isMultiParrot = computed(() => addFormType.value === 'feeding' || addFormType.value === 'cleaning')
@@ -414,6 +440,20 @@ const singleFeedUnit = computed(() => {
 
 const getNowDateTimeString = () => {
   const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  const y = d.getFullYear()
+  const m = pad(d.getMonth() + 1)
+  const day = pad(d.getDate())
+  const h = pad(d.getHours())
+  const mi = pad(d.getMinutes())
+  const s = pad(d.getSeconds())
+  return `${y}-${m}-${day} ${h}:${mi}:${s}`
+}
+
+const normalizeToDateTimeString = (value) => {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
   const pad = (n) => String(n).padStart(2, '0')
   const y = d.getFullYear()
   const m = pad(d.getMonth() + 1)
@@ -537,12 +577,84 @@ const getFeedTypeUnit = (id) => {
 }
 
 const openAddDialog = async () => {
+  editingRecordId.value = null
   addFormType.value = activeTab.value || 'feeding'
   resetAddForm()
   if (addFormType.value === 'feeding' && feedTypes.value.length === 0) {
     await loadFeedTypes()
   }
   if (showRecordTimePicker.value) {
+    addFormDateTime.value = getNowDateTimeString()
+  }
+  addDialogVisible.value = true
+}
+
+const openEditDialog = async (row, type) => {
+  if (!row || !row.id) return
+  editingRecordId.value = row.id
+  addFormType.value = type || 'feeding'
+  resetAddForm()
+  if (addFormType.value === 'feeding' && feedTypes.value.length === 0) {
+    await loadFeedTypes()
+  }
+  if (type === 'feeding') {
+    if (row.parrot_id) {
+      addForm.parrot_ids = [row.parrot_id]
+    }
+    const feedTypeId = row.feed_type_id || (row.feed_type && row.feed_type.id)
+    const amountVal = row.amount !== undefined && row.amount !== null ? String(row.amount) : ''
+    if (feedTypeId) {
+      addForm.food_types = [feedTypeId]
+      addForm.food_amounts = { [feedTypeId]: amountVal }
+    }
+    addForm.amount = amountVal
+    if (row.notes) {
+      addForm.notes = row.notes
+    }
+    addFormDateTime.value = normalizeToDateTimeString(row.feeding_time)
+  } else if (type === 'cleaning') {
+    if (row.parrot_id) {
+      addForm.parrot_ids = [row.parrot_id]
+    }
+    if (row.cleaning_types && Array.isArray(row.cleaning_types) && row.cleaning_types.length > 0) {
+      addForm.cleaning_types = row.cleaning_types.slice()
+    } else if (row.cleaning_type) {
+      addForm.cleaning_types = [row.cleaning_type]
+    }
+    if (row.description) {
+      addForm.description = row.description
+    }
+    addFormDateTime.value = normalizeToDateTimeString(row.cleaning_time)
+  } else if (type === 'health') {
+    if (row.parrot_id) {
+      addForm.parrot_ids = [row.parrot_id]
+    }
+    addForm.health_status = row.health_status || 'healthy'
+    if (row.weight !== undefined && row.weight !== null) {
+      addForm.weight = String(row.weight)
+    }
+    if (row.description) {
+      addForm.description = row.description
+    }
+    if (row.notes) {
+      addForm.notes = row.notes
+    }
+    addFormDateTime.value = normalizeToDateTimeString(row.record_date || row.record_time)
+  } else if (type === 'breeding') {
+    addForm.male_parrot_id = row.male_parrot_id || null
+    addForm.female_parrot_id = row.female_parrot_id || null
+    addForm.mating_date = row.mating_date || ''
+    addForm.egg_laying_date = row.egg_laying_date || ''
+    addForm.egg_count = row.egg_count !== undefined && row.egg_count !== null ? String(row.egg_count) : ''
+    addForm.hatching_date = row.hatching_date || ''
+    addForm.chick_count = row.chick_count !== undefined && row.chick_count !== null ? String(row.chick_count) : ''
+    addForm.success_rate = row.success_rate !== undefined && row.success_rate !== null ? String(row.success_rate) : ''
+    if (row.notes) {
+      addForm.notes = row.notes
+    }
+    addFormDateTime.value = normalizeToDateTimeString(row.record_time)
+  }
+  if (showRecordTimePicker.value && !addFormDateTime.value) {
     addFormDateTime.value = getNowDateTimeString()
   }
   addDialogVisible.value = true
@@ -647,6 +759,39 @@ const applyClientFilter = () => {
   }
 }
 
+const handleDelete = async (row, type) => {
+  if (!row || !row.id) return
+  try {
+    await ElMessageBox.confirm('确认删除该记录？', '提示', {
+      type: 'warning'
+    })
+  } catch (_) {
+    return
+  }
+  try {
+    let url = ''
+    if (type === 'feeding') {
+      url = `/records/feeding/${row.id}`
+    } else if (type === 'health') {
+      url = `/records/health/${row.id}`
+    } else if (type === 'cleaning') {
+      url = `/records/cleaning/${row.id}`
+    } else if (type === 'breeding') {
+      url = `/records/breeding/${row.id}`
+    }
+    if (!url) return
+    const res = await api.delete(url)
+    if (res.data && res.data.success) {
+      ElMessage.success('删除成功')
+      refresh()
+    } else {
+      ElMessage.error((res.data && res.data.message) || '删除失败')
+    }
+  } catch (_) {
+    ElMessage.error('删除失败')
+  }
+}
+
 const submitAdd = async () => {
   const type = addFormType.value
   if (type !== 'breeding') {
@@ -667,6 +812,7 @@ const submitAdd = async () => {
   }
 
   const payload = { type }
+  const isEdit = !!editingRecordId.value
 
   if (type === 'feeding') {
     if (!addForm.food_types || addForm.food_types.length === 0) {
@@ -754,9 +900,16 @@ const submitAdd = async () => {
 
   addSubmitting.value = true
   try {
-    const res = await api.post('/records', payload)
+    let url = '/records'
+    let method = 'post'
+    if (isEdit && editingRecordId.value) {
+      url = `/records/${editingRecordId.value}`
+      method = 'put'
+    }
+    const res = await api[method](url, payload)
     if (res.data && res.data.success) {
       ElMessage.success('保存成功')
+      editingRecordId.value = null
       addDialogVisible.value = false
       refresh()
     } else {
