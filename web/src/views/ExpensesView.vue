@@ -44,7 +44,7 @@
     <el-card class="analysis-card" shadow="never">
       <div class="card-header-row">
         <div class="card-title-row">
-          <span class="card-icon">💼</span>
+          <span class="card-icon"><el-icon><Wallet /></el-icon></span>
           <span class="card-title-text">支出分析</span>
         </div>
       </div>
@@ -152,7 +152,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Wallet } from '@element-plus/icons-vue'
 import api from '@/api/axios'
 import ExpenseModal from '../components/ExpenseModal.vue'
 
@@ -720,7 +720,8 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 .card-title-row { display: flex; align-items: center; gap: 8px; }
-.card-icon { font-size: 18px; }
+.card-icon { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; background: #ede9fe; border-radius: 50%; flex-shrink: 0; }
+.card-icon :deep(.el-icon) { font-size: 16px; color: #8b5cf6; }
 .card-title-text { font-size: 16px; font-weight: 600; color: var(--text-primary); }
 
 .analysis-content { padding: 4px 0; }
