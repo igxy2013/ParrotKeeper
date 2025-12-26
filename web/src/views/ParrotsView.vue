@@ -70,35 +70,79 @@
     </div>
 
     <div v-else class="parrot-list" :class="`view-${viewMode}`">
-      <div v-for="parrot in parrots" :key="parrot.id" class="parrot-item" @click="openDetailModal(parrot)">
-        <div class="parrot-avatar-container">
-          <img :src="getParrotImage(parrot)" class="parrot-avatar" @error="onAvatarError($event, parrot)" />
-        </div>
-        <div class="parrot-content">
-          <div class="parrot-main-info">
-            <span class="parrot-name">{{ parrot.name }}</span>
-            <el-icon v-if="parrot.gender === 'male'" class="gender-icon male"><Male /></el-icon>
-            <el-icon v-else-if="parrot.gender === 'female'" class="gender-icon female"><Female /></el-icon>
-            <span class="parrot-status-tag" :class="parrot.health_status">
-              {{ getHealthLabel(parrot.health_status) }}
-            </span>
+      <template v-if="viewMode === 'list'">
+        <el-table :data="parrots" border stripe size="small" class="parrots-table">
+          <el-table-column label="名称" min-width="160">
+            <template #default="{ row }">
+              <span class="parrot-name">{{ row.name }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="性别" min-width="140">
+            <template #default="{ row }">
+              <span>{{ getGenderLabel(row.gender) }}</span>
+              <el-icon v-if="row.gender === 'male'" class="gender-icon male"><Male /></el-icon>
+              <el-icon v-else-if="row.gender === 'female'" class="gender-icon female"><Female /></el-icon>
+            </template>
+          </el-table-column>
+          <el-table-column label="品种" min-width="140">
+            <template #default="{ row }">{{ row.species?.name || '未知品种' }}</template>
+          </el-table-column>
+          <el-table-column label="年龄" min-width="120">
+            <template #default="{ row }">{{ calculateAge(row.birth_date) }}</template>
+          </el-table-column>
+          <el-table-column label="体重" min-width="100">
+            <template #default="{ row }">{{ formatWeight(row.weight) || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="编号" min-width="120">
+            <template #default="{ row }">{{ row.parrot_number || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="脚环号" min-width="120">
+            <template #default="{ row }">{{ row.ring_number || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="状态" min-width="120">
+            <template #default="{ row }">{{ getHealthLabel(row.health_status) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" min-width="120" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" size="small" class="view-btn" @click.stop="openDetailModal(row)">
+                查看
+                <el-icon style="margin-left:4px"><ArrowRight /></el-icon>
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </template>
+      <template v-else>
+        <div v-for="parrot in parrots" :key="parrot.id" class="parrot-item" @click="openDetailModal(parrot)">
+          <div class="parrot-avatar-container">
+            <img :src="getParrotImage(parrot)" class="parrot-avatar" @error="onAvatarError($event, parrot)" />
           </div>
-<div class="parrot-sub-info">
-            <span class="info-item">{{ parrot.species?.name || '未知品种' }}</span>
-            <span class="divider">|</span>
-            <span class="info-item">{{ calculateAge(parrot.birth_date) }}</span>
+          <div class="parrot-content">
+            <div class="parrot-main-info">
+              <span class="parrot-name">{{ parrot.name }}</span>
+              <el-icon v-if="parrot.gender === 'male'" class="gender-icon male"><Male /></el-icon>
+              <el-icon v-else-if="parrot.gender === 'female'" class="gender-icon female"><Female /></el-icon>
+              <span class="parrot-status-tag" :class="parrot.health_status">
+                {{ getHealthLabel(parrot.health_status) }}
+              </span>
+            </div>
+            <div class="parrot-sub-info">
+              <span class="info-item">{{ parrot.species?.name || '未知品种' }}</span>
+              <span class="divider">|</span>
+              <span class="info-item">{{ calculateAge(parrot.birth_date) }}</span>
+            </div>
+            <div class="parrot-extra-info">
+              <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
+              <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
+              <span v-if="parrot.ring_number" class="info-item">脚环：{{ parrot.ring_number }}</span>
+              <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
+            </div>
           </div>
-          <div class="parrot-extra-info">
-            <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
-            <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
-            <span v-if="parrot.ring_number" class="info-item">脚环：{{ parrot.ring_number }}</span>
-            <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
+          <div class="parrot-action">
+            <el-icon><ArrowRight /></el-icon>
           </div>
         </div>
-        <div class="parrot-action">
-          <el-icon><ArrowRight /></el-icon>
-        </div>
-      </div>
+      </template>
     </div>
 
     <el-pagination
@@ -294,6 +338,15 @@ const getHealthLabel = (status) => {
   return map[status] || status
 }
 
+const getGenderLabel = (g) => {
+  const map = {
+    male: '雄性',
+    female: '雌性',
+    unknown: '未知'
+  }
+  return map[g] || '未知'
+}
+
 const getRandomAvatar = (id) => {
   const avatars = [
     '/parrot-avatar-blue.svg',
@@ -421,6 +474,12 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
   border: none;
 }
 
+.view-btn {
+  background: var(--primary-gradient);
+  border: none;
+  color: #ffffff;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -539,7 +598,7 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
 
 .parrot-name {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-primary);
 }
 
@@ -670,6 +729,8 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+.parrots-table { width: 100%; }
+
 .parrot-list.view-list .parrot-item {
   border-radius: 0;
   box-shadow: none;
@@ -692,27 +753,13 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
   display: none;
 }
 
-.parrot-list.view-list .parrot-content {
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
+.parrot-list.view-list .parrot-content { display: none; }
 
-.parrot-list.view-list .parrot-main-info {
-  flex: 0 0 auto;
-  min-width: 180px;
-}
+.parrot-list.view-list .parrot-main-info { display: none; }
 
-.parrot-list.view-list .parrot-sub-info {
-  flex: 0 0 auto;
-}
+.parrot-list.view-list .parrot-sub-info { display: none; }
 
-.parrot-list.view-list .parrot-extra-info {
-  flex: 1;
-  justify-content: flex-end;
-  margin-top: 0;
-}
+.parrot-list.view-list .parrot-extra-info { display: none; }
 
 .parrot-list.view-list .parrot-action {
   margin-left: 12px;
