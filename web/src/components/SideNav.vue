@@ -85,11 +85,6 @@
 
     <!-- Bottom Actions -->
     <div class="bottom-actions">
-      <!-- Mode Switcher -->
-      <div class="mode-switcher-collapsed" v-show="isCollapse">
-         <el-switch v-model="isDarkMode" size="small" />
-      </div>
-
       <!-- User Profile -->
       <div class="user-profile" @click="goAccount">
         <img :src="userAvatar" class="avatar" alt="User" />
@@ -140,7 +135,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const currentMode = ref(localStorage.getItem('user_mode') || 'personal')
-const isDarkMode = ref(false)
 const messageCount = ref(0)
 const expandedMenus = ref([]) // Default empty
 
@@ -431,11 +425,6 @@ onMounted(async () => {
   color: #666;
   font-size: 14px;
   padding: 0 8px;
-}
-.mode-switcher-collapsed {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
 }
 
 .user-profile {

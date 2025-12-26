@@ -207,9 +207,9 @@
               </div>
             </el-card>
             <el-card class="mt-4" header="孵化记录">
-               <el-form :model="logForm" label-width="70px" size="small">
+               <el-form :model="logForm" label-width="60px" label-position="left" size="small">
                  <el-row :gutter="10">
-                   <el-col :span="12">
+                   <el-col :xs="24" :sm="24">
                      <el-form-item label="记录日期">
                        <el-date-picker
                          v-model="logForm.log_date"
@@ -220,26 +220,28 @@
                        />
                      </el-form-item>
                    </el-col>
-                   <el-col :span="6">
-                     <el-form-item label="照蛋" label-width="40px">
+                 </el-row>
+                 <el-row :gutter="10">
+                   <el-col :xs="12" :sm="12">
+                     <el-form-item label="照蛋">
                        <el-switch v-model="logForm.candling" />
                      </el-form-item>
                    </el-col>
-                   <el-col :span="6">
-                     <el-form-item label="出雏" label-width="40px">
+                   <el-col :xs="12" :sm="12">
+                     <el-form-item label="出雏">
                        <el-switch v-model="logForm.hatchToday" />
                      </el-form-item>
                    </el-col>
                  </el-row>
                  <el-row :gutter="10">
-                   <el-col :span="12">
+                   <el-col :xs="24" :sm="12">
                      <el-form-item label="温度">
-                       <el-input v-model="logForm.temperature" placeholder="℃" />
+                       <el-input v-model="logForm.temperature" placeholder="℃" style="width: 100%" />
                      </el-form-item>
                    </el-col>
-                   <el-col :span="12">
+                   <el-col :xs="24" :sm="12">
                      <el-form-item label="湿度">
-                       <el-input v-model="logForm.humidity" placeholder="%" />
+                       <el-input v-model="logForm.humidity" placeholder="%" style="width: 100%" />
                      </el-form-item>
                    </el-col>
                  </el-row>
@@ -787,11 +789,12 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 .status-with-icon {
   display: flex;
   align-items: center;
-  gap:220px;
+  gap: 8px;
 }
 .egg-status-icon {
   width: 36px;
@@ -1041,5 +1044,21 @@ onMounted(() => {
 .text-right {
   text-align: right;
   margin-top: 10px;
+}
+
+@media (max-width: 640px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .status-with-icon {
+    align-self: flex-start;
+  }
+  .card-title {
+    flex-direction: row;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
 }
 </style>
