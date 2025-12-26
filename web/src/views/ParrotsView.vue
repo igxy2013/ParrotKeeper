@@ -426,7 +426,8 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 .search-input { flex: 1 1 360px; min-width: 260px; }
 .toolbar-right { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; }
