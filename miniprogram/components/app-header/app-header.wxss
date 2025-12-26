@@ -70,6 +70,12 @@
   flex-direction: column;
 }
 
+.ah-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .ah-app-title {
   color: #ffffff;
   font-size: 36rpx;

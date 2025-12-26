@@ -18,7 +18,10 @@
                 <img :src="avatarSrc" class="avatar" @error="onAvatarError" />
               </div>
               <div class="profile-main">
-                <div class="profile-name">{{ displayNickname }}</div>
+                <div class="profile-name">
+                  {{ displayNickname }}
+                  <span class="role-badge" :class="userRoleClass">{{ userRoleText }}</span>
+                </div>
                 <div class="profile-meta">
                   <span class="meta-label">用户名：</span>
                   <span class="meta-value">{{ username || '未设置' }}</span>
@@ -124,6 +127,15 @@ const avatarSrc = computed(() => {
 const displayNickname = computed(() => {
   const u = authStore.user || {}
   return u.nickname || '未命名用户'
+})
+
+const userRoleText = computed(() => {
+  const role = (authStore.user || {}).role || 'user'
+  return role === 'super_admin' ? '超级管理员' : (role === 'admin' ? '管理员' : '普通用户')
+})
+const userRoleClass = computed(() => {
+  const role = (authStore.user || {}).role || 'user'
+  return role === 'super_admin' ? 'role-super' : (role === 'admin' ? 'role-admin' : 'role-user')
 })
 
 const fetchProfile = async () => {
@@ -299,6 +311,10 @@ onMounted(() => { fetchProfile() })
 .avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: #e9eef3; }
 .profile-main { flex: 1; }
 .profile-name { font-size: 16px; font-weight: 600; }
+.role-badge { display: inline-block; margin-left: 8px; padding: 2px 8px; font-size: 12px; border-radius: 999px; color: #ffffff; vertical-align: middle; }
+.role-super { background: linear-gradient(135deg, #4CAF50, #26A69A); }
+.role-admin { background: #f59e0b; }
+.role-user { background: #9ca3af; }
 .profile-meta { margin-top: 4px; font-size: 13px; color: #666; }
 .meta-label { color: #999; }
 .meta-value { color: #333; }

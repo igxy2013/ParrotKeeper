@@ -1,5 +1,7 @@
 <view class="page-container">
-  <app-header title="鹦鹉配对计算器" subtitle="专业版基因预测" showBack="true" />
+  <app-header title="鹦鹉配对计算器" subtitle="专业版基因预测" showBack="true">
+    <view slot="title-extra" class="badge-free">限时免费</view>
+  </app-header>
   <view class="page-content">
     <view class="switch-bar">
       <view class="switch-thumb {{activeTab === 'calculator' ? 'left' : 'right'}}"></view>

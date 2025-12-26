@@ -13,7 +13,6 @@ Page({
     }
   },
   goAdminFeedbacks() { wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' }) },
-  goAdminCareGuideEditor() { wx.navigateTo({ url: '/pages/admin/care-guide-editor/care-guide-editor' }) },
   goAdminUserRole() { wx.navigateTo({ url: '/pages/admin/user-role/user-role' }) },
   goAdminAnnouncements() { wx.navigateTo({ url: '/pages/admin/announcements/announcements' }) },
   goAdminApiConfigs() {

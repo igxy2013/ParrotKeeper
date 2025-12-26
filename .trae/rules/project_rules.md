@@ -1,11 +1,3 @@
-
-# 数据库配置
-DB_HOST=192.168.0.60
-DB_PORT=3306
-DB_USER=mysql
-DB_PASSWORD=12345678
-
-
 本项目小程序端的顶部导航采用通用导航组件，组件路径为：`/components/app-header/app-header`
 本项目小程序端的底部导航采用通用导航组件，组件路径为：`/components/bottom-nav/bottom-nav`
 本项目小程序端的数字键盘采用通用数字键盘组件，组件路径为：`/components/numeric-keyboard/numeric-keyboard`

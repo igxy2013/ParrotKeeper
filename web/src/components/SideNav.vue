@@ -234,7 +234,6 @@ const menuItems = computed(() => [
     adminOnly: true,
     children: [
        { path: '/admin/feedbacks', label: '反馈管理', icon: ChatLineSquare },
-       { path: '/admin/care-guide-editor', label: '护理指南', icon: Edit },
        { path: '/admin/incubation-suggestions', label: '孵化建议', icon: Sunny },
        { path: '/admin/market-prices', label: '参考价格', icon: TrendCharts },
        { path: '/admin/parrot-species', label: '品种管理', icon: Files },

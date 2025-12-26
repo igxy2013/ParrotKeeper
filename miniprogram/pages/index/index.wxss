@@ -641,8 +641,8 @@
 .action-item.training {
   background: linear-gradient(135deg, #E6F6FF, #D6EEFF);
 }
-.action-item.photo {
-  background: linear-gradient(135deg, #E6F6FF, #D6EEFF);
+.action-item.pairing {
+  background: linear-gradient(135deg, #F3E8FF, #E9D5FF);
 }
 .action-item.add,
 .action-item.add-expense {

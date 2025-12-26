@@ -5,7 +5,10 @@
         <image class="ah-back-icon-img" src="/images/remix/arrow-left-line.png" mode="widthFix" />
       </view>
       <view class="ah-app-info">
-        <text class="ah-app-title">{{title}}</text>
+        <view class="ah-title-row">
+          <text class="ah-app-title">{{title}}</text>
+          <slot name="title-extra"></slot>
+        </view>
         <text wx:if="{{subtitle}}" class="ah-app-subtitle">{{subtitle}}</text>
       </view>
     </view>

@@ -237,11 +237,11 @@
           </view>
           <text class="action-label">收支管理</text>
         </view>
-        <view class="action-item Careguide {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToCareguide">
+        <view class="action-item pairing {{!isLogin ? 'disabled' : ''}}" bindtap="navigateToPairingCalculator">
           <view class="action-icon-wrapper">
-        <image class="action-icon-img" src="{{iconPaths.actions.Careguide}}" mode="widthFix" binderror="handleIconError" data-key="actions.Careguide"/>
+        <image class="action-icon-img" src="{{iconPaths.actions.pairingCalculator}}" mode="widthFix" binderror="handleIconError" data-key="actions.pairingCalculator"/>
           </view>
-          <text class="action-label">护理指南</text>
+          <text class="action-label">配对计算</text>
         </view>
       </view>
     </view>

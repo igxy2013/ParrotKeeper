@@ -120,7 +120,7 @@ Page({
         addParrot: '/images/remix/ri-add-fill-emerald.png',
         quickExpense: '/images/remix/ri-money-dollar-circle-fill-blue.png',
         expenseMgmt: '/images/remix/ri-book-fill-orange.png',
-        Careguide: '/images/remix/ri-nurse-line-purple.png'
+        pairingCalculator: '/images/remix/group-3-fill.png'
       },
       // 性别 PNG 图标
       genderMale: '/images/remix/men-line.png',
@@ -131,19 +131,6 @@ Page({
       alertInfoLow: '/images/remix/ri-information-fill-green.png',
       alertInfoMedium: '/images/remix/ri-information-fill-amber.png',
       alertInfoHigh: '/images/remix/ri-information-fill-red.png',
-      closeWhite: '/images/icons/close-white.png',
-      labelHeart: '/images/icons/heart.png',
-      labelLeaf: '/images/icons/leaf.png',
-      labelHash: '/images/icons/hash.png',
-      labelCoin: '/images/icons/coin.png',
-      labelScale: '/images/icons/scale.png',
-      labelUser: '/images/icons/user.png',
-      labelPalette: '/images/icons/palette.png',
-      labelCalendar: '/images/icons/calendar.png',
-      labelHome: '/images/icons/home.png',
-      labelCamera: '/images/icons/camera.png',
-      labelNote: '/images/icons/note.png',
-      trashWhite: '/images/icons/trash-white.png'
     }
   },
 
@@ -1698,10 +1685,9 @@ Page({
   },
 
   // 导航到记录页面
-  navigateToCareguide() {
-    // 与底部导航一致使用 reLaunch，避免非TabBar页面 switchTab 无效
+  navigateToPairingCalculator() {
     wx.navigateTo({
-      url: '/pages/care-guide/care-guide'
+      url: '/pages/tools/pairing-calculator/pairing-calculator'
     })
   },
 

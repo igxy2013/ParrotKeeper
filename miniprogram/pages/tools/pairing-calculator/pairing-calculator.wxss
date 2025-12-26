@@ -119,3 +119,16 @@
 .switch-bar .switch-thumb.right {
   left: 50%;
 }
+
+.badge-free {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 18rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 8rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  vertical-align: middle;
+  box-shadow: 0 2rpx 4rpx rgba(245, 158, 11, 0.3);
+}

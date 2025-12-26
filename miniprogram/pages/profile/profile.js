@@ -81,7 +81,7 @@ Page({
       editLine: '/images/remix/edit-line.png',
       editLine_white: '/images/remix/edit-line-white.png',
       loginAvatar: '/images/parrot-avatar-green.png',
-      sectionSettings: '/images/remix/settings-3-line-white.png',
+      sectionSettings: '/images/remix/settings-3-line.png',
       closeLine: '/images/remix/close-line.png',
       statHeartRed: '/images/remix/ri-heart-fill-red.png',
       statFeedingOrange: '/images/remix/ri-restaurant-fill-orange.png',
@@ -99,9 +99,6 @@ Page({
   // —— 后台管理导航 ——
   goAdminFeedbacks() {
     wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' })
-  },
-  goAdminCareGuideEditor() {
-    wx.navigateTo({ url: '/pages/admin/care-guide-editor/care-guide-editor' })
   },
   goAdminUserRole() {
     wx.navigateTo({ url: '/pages/admin/user-role/user-role' })

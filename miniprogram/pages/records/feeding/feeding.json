@@ -1,7 +1,6 @@
 {
   "usingComponents": {
-    "app-header": "/components/app-header/app-header",
-    "record-modal": "/components/record-modal/record-modal"
+    "app-header": "/components/app-header/app-header"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "喂食记录",

@@ -13,7 +13,6 @@ import AnnouncementsCenterView from '../views/AnnouncementsCenterView.vue'
 import ReportExportView from '../views/ReportExportView.vue'
 import AdminView from '../views/AdminView.vue'
 import AdminFeedbacksView from '../views/admin/AdminFeedbacksView.vue'
-import AdminCareGuideEditorView from '../views/admin/AdminCareGuideEditorView.vue'
 import AdminIncubationSuggestionsView from '../views/admin/AdminIncubationSuggestionsView.vue'
 import AdminMarketPricesView from '../views/admin/AdminMarketPricesView.vue'
 import AdminParrotSpeciesView from '../views/admin/AdminParrotSpeciesView.vue'
@@ -108,7 +107,6 @@ const router = createRouter({
           component: AdminView
         },
         { path: 'admin/feedbacks', name: 'admin-feedbacks', component: AdminFeedbacksView },
-        { path: 'admin/care-guide-editor', name: 'admin-care-guide-editor', component: AdminCareGuideEditorView },
         { path: 'admin/incubation-suggestions', name: 'admin-incubation-suggestions', component: AdminIncubationSuggestionsView },
         { path: 'admin/market-prices', name: 'admin-market-prices', component: AdminMarketPricesView },
         { path: 'admin/parrot-species', name: 'admin-parrot-species', component: AdminParrotSpeciesView },
