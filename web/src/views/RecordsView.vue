@@ -56,8 +56,8 @@
           <el-table-column prop="notes" label="备注" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="openEditDialog(scope.row, 'feeding')">编辑</el-button>
-              <el-button link type="danger" size="small" @click="handleDelete(scope.row, 'feeding')">删除</el-button>
+              <el-button link type="success" @click="openEditDialog(scope.row, 'feeding')">编辑</el-button>
+              <el-button link type="danger" @click="handleDelete(scope.row, 'feeding')">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -84,8 +84,8 @@
           <el-table-column prop="description" label="描述" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="openEditDialog(scope.row, 'health')">编辑</el-button>
-              <el-button link type="danger" size="small" @click="handleDelete(scope.row, 'health')">删除</el-button>
+              <el-button link type="success" @click="openEditDialog(scope.row, 'health')">编辑</el-button>
+              <el-button link type="danger" @click="handleDelete(scope.row, 'health')">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -107,8 +107,8 @@
           <el-table-column prop="description" label="描述" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="openEditDialog(scope.row, 'cleaning')">编辑</el-button>
-              <el-button link type="danger" size="small" @click="handleDelete(scope.row, 'cleaning')">删除</el-button>
+              <el-button link type="success" @click="openEditDialog(scope.row, 'cleaning')">编辑</el-button>
+              <el-button link type="danger" @click="handleDelete(scope.row, 'cleaning')">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -133,8 +133,8 @@
           <el-table-column prop="notes" label="备注" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="openEditDialog(scope.row, 'breeding')">编辑</el-button>
-              <el-button link type="danger" size="small" @click="handleDelete(scope.row, 'breeding')">删除</el-button>
+              <el-button link type="success" @click="openEditDialog(scope.row, 'breeding')">编辑</el-button>
+              <el-button link type="danger" @click="handleDelete(scope.row, 'breeding')">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -173,7 +173,7 @@
             placeholder="选择公鸟"
             style="width: 100%"
           >
-            <el-option v-for="p in parrots" :key="p.id" :label="p.name" :value="p.id" />
+            <el-option v-for="p in maleParrots" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
 
@@ -184,7 +184,7 @@
             placeholder="选择母鸟"
             style="width: 100%"
           >
-            <el-option v-for="p in parrots" :key="p.id" :label="p.name" :value="p.id" />
+            <el-option v-for="p in femaleParrots" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
 
@@ -360,7 +360,7 @@
 <script setup>
 import { ref, onMounted, watch, computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import api from '../api/axios'
 
@@ -383,6 +383,8 @@ const addSubmitting = ref(false)
 const addFormType = ref('feeding')
 const addFormDateTime = ref('')
 const editingRecordId = ref(null)
+const recordsCache = reactive({})
+const cacheTTL = 30000
 const addForm = reactive({
   parrot_ids: [],
   notes: '',
@@ -419,6 +421,8 @@ const cleaningTypeOptions = [
   { value: 'water_bowl_clean', label: '水碗清洁' },
   { value: 'bath', label: '鹦鹉洗澡' }
 ]
+const maleParrots = computed(() => (Array.isArray(parrots.value) ? parrots.value.filter(p => p.gender === 'male') : []))
+const femaleParrots = computed(() => (Array.isArray(parrots.value) ? parrots.value.filter(p => p.gender === 'female') : []))
 const typeLabelMap = {
   feeding: '喂食',
   health: '健康',
@@ -466,7 +470,31 @@ const normalizeToDateTimeString = (value) => {
   return `${y}-${m}-${day} ${h}:${mi}:${s}`
 }
 
+const buildRecordsCacheKey = () => {
+  const range = Array.isArray(dateRange.value) ? dateRange.value.join(',') : ''
+  const parrot = selectedParrotId.value || ''
+  return `${activeTab.value}|${currentPage.value}|${pageSize.value}|${parrot}|${range}`
+}
+
 const fetchRecords = async () => {
+  const cacheKey = buildRecordsCacheKey()
+  const now = Date.now()
+  const cached = recordsCache[cacheKey]
+  if (cached && now - cached.timestamp < cacheTTL) {
+    const d = cached.data
+    if (activeTab.value === 'feeding') {
+      feedingRecords.value = d.items || d.records || []
+    } else if (activeTab.value === 'health') {
+      healthRecords.value = d.items || d.records || []
+    } else if (activeTab.value === 'cleaning') {
+      cleaningRecords.value = d.items || d.records || []
+    } else if (activeTab.value === 'breeding') {
+      breedingRecords.value = d.items || d.records || []
+    }
+    total.value = d.total || 0
+    return
+  }
+
   loading.value = true
   try {
     let url = `/records/${activeTab.value}`
@@ -488,6 +516,7 @@ const fetchRecords = async () => {
     
     if (res.data.success) {
       const d = res.data.data
+      recordsCache[cacheKey] = { data: d, timestamp: now }
       if (activeTab.value === 'feeding') {
         feedingRecords.value = d.items || d.records || []
       } else if (activeTab.value === 'health') {
@@ -517,6 +546,7 @@ const handlePageChange = (page) => {
 
 const handleFilterChange = () => {
   currentPage.value = 1
+  Object.keys(recordsCache).forEach(k => { delete recordsCache[k] })
   fetchRecords()
 }
 
@@ -547,10 +577,24 @@ const resetAddForm = () => {
 
 const loadFeedTypes = async () => {
   try {
+    const cacheKey = 'feed_types_cache'
+    const now = Date.now()
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null')
+      if (cached && Array.isArray(cached.items) && now - cached.timestamp < 3600000) {
+        feedTypes.value = cached.items
+        return
+      }
+    } catch (_) {}
+
     const res = await api.get('/records/feed-types')
     if (res.data && res.data.success) {
       const data = res.data.data || res.data
-      feedTypes.value = Array.isArray(data) ? data : []
+      const arr = Array.isArray(data) ? data : []
+      feedTypes.value = arr
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ items: arr, timestamp: now }))
+      } catch (_) {}
     }
   } catch (e) {
     console.error(e)
@@ -599,9 +643,10 @@ const openEditDialog = async (row, type) => {
   if (addFormType.value === 'feeding' && feedTypes.value.length === 0) {
     await loadFeedTypes()
   }
+  const parrotId = row.parrot_id || (row.parrot && row.parrot.id)
   if (type === 'feeding') {
-    if (row.parrot_id) {
-      addForm.parrot_ids = [row.parrot_id]
+    if (parrotId) {
+      addForm.parrot_ids = [parrotId]
     }
     const feedTypeId = row.feed_type_id || (row.feed_type && row.feed_type.id)
     const amountVal = row.amount !== undefined && row.amount !== null ? String(row.amount) : ''
@@ -615,8 +660,8 @@ const openEditDialog = async (row, type) => {
     }
     addFormDateTime.value = normalizeToDateTimeString(row.feeding_time)
   } else if (type === 'cleaning') {
-    if (row.parrot_id) {
-      addForm.parrot_ids = [row.parrot_id]
+    if (parrotId) {
+      addForm.parrot_ids = [parrotId]
     }
     if (row.cleaning_types && Array.isArray(row.cleaning_types) && row.cleaning_types.length > 0) {
       addForm.cleaning_types = row.cleaning_types.slice()
@@ -628,8 +673,8 @@ const openEditDialog = async (row, type) => {
     }
     addFormDateTime.value = normalizeToDateTimeString(row.cleaning_time)
   } else if (type === 'health') {
-    if (row.parrot_id) {
-      addForm.parrot_ids = [row.parrot_id]
+    if (parrotId) {
+      addForm.parrot_ids = [parrotId]
     }
     addForm.health_status = row.health_status || 'healthy'
     if (row.weight !== undefined && row.weight !== null) {
@@ -643,8 +688,10 @@ const openEditDialog = async (row, type) => {
     }
     addFormDateTime.value = normalizeToDateTimeString(row.record_date || row.record_time)
   } else if (type === 'breeding') {
-    addForm.male_parrot_id = row.male_parrot_id || null
-    addForm.female_parrot_id = row.female_parrot_id || null
+    const maleId = row.male_parrot_id || (row.male_parrot && row.male_parrot.id) || null
+    const femaleId = row.female_parrot_id || (row.female_parrot && row.female_parrot.id) || null
+    addForm.male_parrot_id = maleId
+    addForm.female_parrot_id = femaleId
     addForm.mating_date = row.mating_date || ''
     addForm.egg_laying_date = row.egg_laying_date || ''
     addForm.egg_count = row.egg_count !== undefined && row.egg_count !== null ? String(row.egg_count) : ''
@@ -786,6 +833,7 @@ const handleDelete = async (row, type) => {
     const res = await api.delete(url)
     if (res.data && res.data.success) {
       ElMessage.success('删除成功')
+      Object.keys(recordsCache).forEach(k => { delete recordsCache[k] })
       refresh()
     } else {
       ElMessage.error((res.data && res.data.message) || '删除失败')
@@ -914,6 +962,7 @@ const submitAdd = async () => {
       ElMessage.success('保存成功')
       editingRecordId.value = null
       addDialogVisible.value = false
+      Object.keys(recordsCache).forEach(k => { delete recordsCache[k] })
       refresh()
     } else {
       ElMessage.error((res.data && res.data.message) || '保存失败')
@@ -939,6 +988,16 @@ watch(activeTab, () => {
 
 const loadParrots = async () => {
   try {
+    const cacheKey = 'parrots_cache'
+    const now = Date.now()
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null')
+      if (cached && Array.isArray(cached.items) && now - cached.timestamp < 3600000) {
+        parrots.value = cached.items
+        return
+      }
+    } catch (_) {}
+
     const r = await api.get('/parrots')
     if (r.data && r.data.success) {
       const data = r.data.data || {}
@@ -951,6 +1010,9 @@ const loadParrots = async () => {
         arr = data.items
       }
       parrots.value = arr
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ items: arr, timestamp: now }))
+      } catch (_) {}
     }
   } catch (_) {}
 }
