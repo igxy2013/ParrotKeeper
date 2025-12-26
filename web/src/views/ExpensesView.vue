@@ -41,6 +41,33 @@
       </div>
     </el-card>
 
+    <el-card class="analysis-card" shadow="never">
+      <div class="card-header-row">
+        <div class="card-title-row">
+          <span class="card-icon">💼</span>
+          <span class="card-title-text">支出分析</span>
+        </div>
+      </div>
+      <div class="analysis-content" v-loading="analysisLoading">
+        <div v-if="expenseAnalysis.length" class="analysis-grid">
+          <div class="legend-col">
+          <div class="legend-item clickable" v-for="item in expenseAnalysis" :key="item.category" @click="onAnalysisLegendClick(item)">
+            <span class="legend-dot" :style="{ backgroundColor: item.color }"></span>
+            <span class="legend-name">{{ item.categoryLabel }}</span>
+            <div class="legend-amount">
+              <span class="amount">¥{{ formatAmount(item.amount) }}</span>
+              <span class="percent">{{ item.percentage.toFixed(1) }}%</span>
+            </div>
+          </div>
+          </div>
+          <div class="chart-col">
+            <canvas ref="expensePieCanvas" class="pie-canvas" @click="handleExpensePieClick"></canvas>
+          </div>
+        </div>
+        <div class="empty-tip" v-else>暂无支出数据</div>
+      </div>
+    </el-card>
+
     <div class="toolbar">
       <div class="filter-group">
         <el-radio-group v-model="recordType" size="default" @change="onRecordTypeChange">
@@ -123,7 +150,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import api from '@/api/axios'
@@ -173,6 +200,13 @@ const stats = ref({
 
 const displayTotalCount = ref(0)
 const searchKeyword = ref('')
+
+// 支出分析
+const analysisLoading = ref(false)
+const expenseAnalysis = ref([])
+const selectedExpenseIndex = ref(-1)
+const expensePieCanvas = ref(null)
+const pieColors = ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#22AA99', '#FF66CC']
 
 const dialogVisible = ref(false)
 const editingRecord = ref(null)
@@ -468,10 +502,183 @@ const formatAmount = (val) => {
   return num.toFixed(2)
 }
 
+const loadExpenseAnalysis = async () => {
+  analysisLoading.value = true
+  try {
+    const res = await api.get('/statistics/expense-analysis', { params: { months: 6 } })
+    const data = res.data?.data || {}
+    const list = Array.isArray(data.category_expenses) ? data.category_expenses : []
+    const total = list.reduce((sum, it) => sum + (Number(it.total_amount) || 0), 0)
+    const mapped = list
+      .map((it, idx) => {
+        const amount = Number(it.total_amount) || 0
+        const categoryKey = it.category || 'other'
+        const label = categoryMap[categoryKey] || '其他'
+        const pct = total > 0 ? (amount / total) * 100 : 0
+        return {
+          category: categoryKey,
+          categoryLabel: label,
+          amount,
+          percentage: pct,
+          color: pieColors[idx % pieColors.length]
+        }
+      })
+      .sort((a, b) => b.amount - a.amount)
+    expenseAnalysis.value = mapped
+    selectedExpenseIndex.value = -1
+    await nextTick()
+    drawExpensePieChart()
+  } catch (e) {
+    expenseAnalysis.value = []
+    selectedExpenseIndex.value = -1
+  } finally {
+    analysisLoading.value = false
+  }
+}
+
+const drawExpensePieChart = () => {
+  const el = expensePieCanvas.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const rectW = Math.max(240, Math.floor(rect.width))
+  const rectH = Math.max(180, Math.floor(rect.height))
+  const dpr = window.devicePixelRatio || 1
+  el.width = Math.floor(rectW * dpr)
+  el.height = Math.floor(rectH * dpr)
+  const ctx = el.getContext('2d')
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, rectW, rectH)
+
+  const data = expenseAnalysis.value || []
+  if (!data.length) {
+    ctx.fillStyle = '#999'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.font = '14px sans-serif'
+    ctx.fillText('暂无支出数据', rectW / 2, rectH / 2)
+    return
+  }
+
+  const cx = rectW / 2
+  const cy = rectH / 2
+  const baseR = Math.min(rectW, rectH) / 2 - 16
+  const innerR = baseR * 0.55
+  let start = -Math.PI / 2
+  for (let i = 0; i < data.length; i++) {
+    const item = data[i]
+    const angle = (item.percentage / 100) * Math.PI * 2
+    const end = start + angle
+    const isSelected = i === selectedExpenseIndex.value
+    const outerR = isSelected ? baseR + 6 : baseR
+    if (angle > 0) {
+      ctx.beginPath()
+      ctx.arc(cx, cy, outerR, start, end)
+      ctx.arc(cx, cy, innerR, end, start, true)
+      ctx.closePath()
+      ctx.fillStyle = item.color
+      if (selectedExpenseIndex.value !== -1 && !isSelected) ctx.globalAlpha = 0.3
+      else ctx.globalAlpha = 1.0
+      ctx.fill()
+      if (isSelected) {
+        ctx.lineWidth = 2
+        ctx.strokeStyle = '#ffffff'
+        ctx.stroke()
+      }
+    }
+    start = end
+  }
+  ctx.globalAlpha = 1.0
+
+  const totalAmount = data.reduce((s, it) => s + (it.amount || 0), 0)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  if (selectedExpenseIndex.value !== -1) {
+    const sel = data[selectedExpenseIndex.value]
+    ctx.fillStyle = sel.color
+    ctx.font = 'bold 14px sans-serif'
+    ctx.fillText(sel.categoryLabel, cx, cy - 16)
+    ctx.fillStyle = '#1f2937'
+    ctx.font = 'bold 18px sans-serif'
+    ctx.fillText('¥' + formatAmount(sel.amount), cx, cy + 6)
+    ctx.fillStyle = '#6b7280'
+    ctx.font = '12px sans-serif'
+    ctx.fillText(sel.percentage.toFixed(1) + '%', cx, cy + 24)
+  } else {
+    ctx.fillStyle = '#6b7280'
+    ctx.font = '12px sans-serif'
+    ctx.fillText('总支出', cx, cy - 16)
+    ctx.fillStyle = '#1f2937'
+    ctx.font = 'bold 18px sans-serif'
+    ctx.fillText('¥' + formatAmount(totalAmount), cx, cy + 6)
+  }
+}
+
+const applyExpenseAnalysisFilter = (label) => {
+  recordType.value = '支出'
+  updateCategoryOptions()
+  selectedCategory.value = label
+  page.value = 1
+  loadExpenses()
+  loadStats()
+}
+
+const onAnalysisLegendClick = (item) => {
+  const idx = (expenseAnalysis.value || []).findIndex(it => it.categoryLabel === item.categoryLabel)
+  selectedExpenseIndex.value = (selectedExpenseIndex.value === idx) ? -1 : idx
+  drawExpensePieChart()
+  if (selectedExpenseIndex.value !== -1) applyExpenseAnalysisFilter(item.categoryLabel)
+  else clearExpenseAnalysisFilter()
+}
+
+const handleExpensePieClick = (e) => {
+  const el = expensePieCanvas.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+  const w = rect.width
+  const h = rect.height
+  const cx = w / 2
+  const cy = h / 2
+  const r = Math.min(w, h) / 2 - 16
+  const innerR = r * 0.55
+  const dx = x - cx
+  const dy = y - cy
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  if (dist < innerR || dist > r) return
+  let ang = Math.atan2(dy, dx)
+  if (ang < -Math.PI / 2) ang += Math.PI * 2
+  const data = expenseAnalysis.value || []
+  let start = -Math.PI / 2
+  for (let i = 0; i < data.length; i++) {
+    const angle = (data[i].percentage / 100) * Math.PI * 2
+    const end = start + angle
+    if (ang >= start && ang <= end) {
+      const newIdx = (selectedExpenseIndex.value === i) ? -1 : i
+      selectedExpenseIndex.value = newIdx
+      drawExpensePieChart()
+      if (newIdx !== -1) applyExpenseAnalysisFilter(data[i].categoryLabel)
+      else clearExpenseAnalysisFilter()
+      break
+    }
+    start = end
+  }
+}
+
+const clearExpenseAnalysisFilter = () => {
+  recordType.value = '支出'
+  updateCategoryOptions()
+  selectedCategory.value = '全部'
+  page.value = 1
+  loadExpenses()
+  loadStats()
+}
+
 onMounted(() => {
   updateCategoryOptions()
   loadExpenses()
   loadStats()
+  loadExpenseAnalysis()
 })
 </script>
 
@@ -501,6 +708,35 @@ onMounted(() => {
 .stats-card {
   margin-bottom: 16px;
 }
+
+.analysis-card {
+  margin-bottom: 16px;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.card-title-row { display: flex; align-items: center; gap: 8px; }
+.card-icon { font-size: 18px; }
+.card-title-text { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+
+.analysis-content { padding: 4px 0; }
+.analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; }
+.legend-col { display: flex; flex-direction: column; gap: 6px; }
+.legend-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: #f9fafb; }
+.legend-item.clickable { cursor: pointer; transition: background-color 0.2s; }
+.legend-item.clickable:hover { background: #f3f4f6; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.legend-name { flex: 1; font-size: 13px; color: #374151; }
+.legend-amount { display: inline-flex; align-items: baseline; gap: 6px; }
+.legend-amount .amount { font-size: 14px; font-weight: 600; color: #111827; }
+.legend-amount .percent { font-size: 12px; color: #6b7280; }
+.chart-col { display: flex; align-items: center; justify-content: center; }
+.pie-canvas { width: 100%; height: 200px; }
+.empty-tip { padding: 12px; text-align: center; color: #6b7280; }
 
 .stats-grid {
   display: grid;

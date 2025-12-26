@@ -121,7 +121,7 @@
 
     <!-- Chart Row -->
     <el-row :gutter="24" class="mt-6" v-loading="loading">
-      <el-col :span="16">
+      <el-col :span="12">
         <div class="chart-card">
           <div class="chart-header">
              <div class="header-title">
@@ -130,6 +130,7 @@
               </div>
               <div class="header-actions">
                  <div class="avg-meta"><span class="meta-label">平均体重</span><span class="meta-value">{{ weightAvgChart || '--' }}</span></div>
+                 <div class="avg-meta"><span class="meta-label">参考体重</span><span class="meta-value">{{ refWeightChart }}</span></div>
                   <div class="parrot-selector" @click.stop="toggleParrotDropdown">
                     <div class="selector-wrapper">
                       <span class="selector-text">{{ selectedParrotName || '全部鹦鹉' }}</span>
@@ -155,32 +156,29 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="8">
-        <div class="chart-card h-full">
-           <div class="chart-header">
-              <div class="header-title">
-                 <el-icon><List /></el-icon>
-                 <span>今日记录</span>
+      <el-col :span="12">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="header-title">
+              <el-icon><List /></el-icon>
+              <span>品种分布</span>
+            </div>
+          </div>
+          <div class="species-card">
+            <div class="species-legend" v-if="speciesDistribution.length">
+              <div class="species-legend-item" v-for="(it, idx) in speciesDistribution" :key="it.species">
+                <span class="legend-dot" :style="{ backgroundColor: it.color }"></span>
+                <span class="legend-name">{{ it.species }}</span>
+                <span class="legend-count">{{ it.count }}</span>
+                <span class="legend-percent">{{ it.percentage.toFixed(1) }}%</span>
               </div>
-           </div>
-           <div class="today-stats-container">
-              <div class="today-stat-box success-box">
-                 <div class="today-icon"><el-icon><Dish /></el-icon></div>
-                 <div class="today-content">
-                    <div class="today-label">今日喂食</div>
-                    <div class="today-val">{{ stats.today_records?.feeding || 0 }}</div>
-                 </div>
-              </div>
-              <div class="today-stat-box info-box">
-                 <div class="today-icon"><el-icon><Brush /></el-icon></div>
-                 <div class="today-content">
-                    <div class="today-label">今日清洁</div>
-                    <div class="today-val">{{ stats.today_records?.cleaning || 0 }}</div>
-                 </div>
-              </div>
-           </div>
+            </div>
+            <div class="species-chart">
+              <canvas ref="speciesCanvas" class="species-canvas" @click="onSpeciesPieClick"></canvas>
+            </div>
+          </div>
         </div>
-     </el-col>
+      </el-col>
     </el-row>
     <el-row :gutter="24" class="mt-12" v-loading="loading">
       <el-col :span="12">
@@ -230,6 +228,7 @@
         </div>
       </el-col>
     </el-row>
+
   </div>
 </template>
 
@@ -279,6 +278,16 @@ let isDragging = false
 let weightTapAreas = []
 let weightCanvasRect = null
 
+const refWeightChart = computed(() => {
+  const sid = selectedParrotId.value
+  if (!sid) return '--'
+  const list = weightSeries.value || []
+  const s = list.find(x => String(x.parrot_id) === String(sid))
+  const v = s && s.species_ref_weight_g
+  if (typeof v === 'number' && isFinite(v) && v > 0) return v.toFixed(1) + 'g'
+  return '--'
+})
+
 const palette = ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#22AA99', '#FF66CC']
 
 const displaySeries = computed(() => {
@@ -297,6 +306,12 @@ const rangeText = computed(() => {
 
 const recentActivities = ref([])
 const healthAlerts = ref([])
+
+// Species Distribution
+const speciesDistribution = ref([])
+const speciesCanvas = ref(null)
+const selectedSpeciesIndex = ref(-1)
+const speciesColors = ['#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#ef4444', '#8b5cf6', '#06b6d4']
 
 const fetchRecentActivities = async () => {
   try {
@@ -841,6 +856,7 @@ onMounted(async () => {
     await fetchWeightTrends()
     await fetchRecentActivities()
     await fetchHealthAlerts(trendDays.value)
+    await loadSpeciesDistribution()
   } catch (e) {
     console.error(e)
   } finally {
@@ -893,6 +909,134 @@ const onWeightMouseDown = (e) => { isDragging = true; updateGuideFromEvent(e) }
 const onWeightMouseMove = (e) => { if (isDragging) updateGuideFromEvent(e) }
 const onWeightMouseUp = () => { isDragging = false }
 const onWeightMouseLeave = () => {}
+
+const loadSpeciesDistribution = async () => {
+  try {
+    const res = await api.get('/parrots', { params: { page: 1, per_page: 1000 } })
+    const arr = res.data?.data?.parrots || []
+    const counts = {}
+    for (let i = 0; i < arr.length; i++) {
+      const sp = (arr[i]?.species?.name || '未知品种')
+      counts[sp] = (counts[sp] || 0) + 1
+    }
+    const total = Object.values(counts).reduce((a, b) => a + b, 0)
+    const items = Object.keys(counts).map((name, idx) => ({
+      species: name,
+      count: counts[name],
+      percentage: total > 0 ? (counts[name] / total) * 100 : 0,
+      color: speciesColors[idx % speciesColors.length]
+    })).sort((a, b) => b.count - a.count)
+    speciesDistribution.value = items
+    await nextTick()
+    drawSpeciesPie()
+  } catch (e) {
+    speciesDistribution.value = []
+  }
+}
+
+const drawSpeciesPie = () => {
+  const el = speciesCanvas.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const w = Math.max(240, Math.floor(rect.width || 320))
+  const h = Math.max(180, Math.floor(rect.height || 200))
+  const dpr = window.devicePixelRatio || 1
+  el.width = Math.floor(w * dpr)
+  el.height = Math.floor(h * dpr)
+  const ctx = el.getContext('2d')
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, w, h)
+
+  const data = speciesDistribution.value || []
+  if (!data.length) {
+    ctx.fillStyle = '#999'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.font = '14px sans-serif'
+    ctx.fillText('暂无品种数据', w / 2, h / 2)
+    return
+  }
+  const cx = w / 2
+  const cy = h / 2
+  const baseR = Math.min(w, h) / 2 - 16
+  const innerR = baseR * 0.55
+  let start = -Math.PI / 2
+  for (let i = 0; i < data.length; i++) {
+    const it = data[i]
+    const angle = (it.percentage / 100) * Math.PI * 2
+    const end = start + angle
+    const isSel = i === selectedSpeciesIndex.value
+    const outerR = isSel ? baseR + 6 : baseR
+    if (angle > 0) {
+      ctx.beginPath()
+      ctx.arc(cx, cy, outerR, start, end)
+      ctx.arc(cx, cy, innerR, end, start, true)
+      ctx.closePath()
+      ctx.fillStyle = it.color
+      if (selectedSpeciesIndex.value !== -1 && !isSel) ctx.globalAlpha = 0.3
+      else ctx.globalAlpha = 1.0
+      ctx.fill()
+      if (isSel) { ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke() }
+    }
+    start = end
+  }
+  ctx.globalAlpha = 1.0
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  const total = data.reduce((s, it) => s + (it.count || 0), 0)
+  if (selectedSpeciesIndex.value !== -1) {
+    const sel = data[selectedSpeciesIndex.value]
+    ctx.fillStyle = sel.color
+    ctx.font = 'bold 14px sans-serif'
+    ctx.fillText(sel.species, cx, cy - 16)
+    ctx.fillStyle = '#1f2937'
+    ctx.font = 'bold 18px sans-serif'
+    ctx.fillText(String(sel.count), cx, cy + 6)
+    ctx.fillStyle = '#6b7280'
+    ctx.font = '12px sans-serif'
+    ctx.fillText(sel.percentage.toFixed(1) + '%', cx, cy + 24)
+  } else {
+    ctx.fillStyle = '#6b7280'
+    ctx.font = '12px sans-serif'
+    ctx.fillText('总数', cx, cy - 16)
+    ctx.fillStyle = '#1f2937'
+    ctx.font = 'bold 18px sans-serif'
+    ctx.fillText(String(total), cx, cy + 6)
+  }
+}
+
+const onSpeciesPieClick = (e) => {
+  const el = speciesCanvas.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+  const w = rect.width
+  const h = rect.height
+  const cx = w / 2
+  const cy = h / 2
+  const baseR = Math.min(w, h) / 2 - 16
+  const innerR = baseR * 0.55
+  const dx = x - cx
+  const dy = y - cy
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  if (dist < innerR || dist > baseR) return
+  let ang = Math.atan2(dy, dx)
+  if (ang < -Math.PI / 2) ang += Math.PI * 2
+  const data = speciesDistribution.value || []
+  let start = -Math.PI / 2
+  for (let i = 0; i < data.length; i++) {
+    const angle = (data[i].percentage / 100) * Math.PI * 2
+    const end = start + angle
+    if (ang >= start && ang <= end) {
+      const newIdx = (selectedSpeciesIndex.value === i) ? -1 : i
+      selectedSpeciesIndex.value = newIdx
+      drawSpeciesPie()
+      break
+    }
+    start = end
+  }
+}
 </script>
 
 <style scoped>
@@ -1047,6 +1191,17 @@ const onWeightMouseLeave = () => {}
   border-color: #e5e7eb;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
+
+/* Species Card */
+.species-card { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; }
+.species-legend { display: flex; flex-direction: column; gap: 6px; }
+.species-legend-item { display: grid; grid-template-columns: 14px 1fr auto auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: #f9fafb; }
+.species-legend .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.species-legend .legend-name { font-size: 13px; color: #374151; }
+.species-legend .legend-count { font-size: 13px; font-weight: 600; color: #111827; }
+.species-legend .legend-percent { font-size: 12px; color: #6b7280; }
+.species-chart { display: flex; align-items: center; justify-content: center; }
+.species-canvas { width: 100%; height: 200px; }
 .mini-icon {
   width: 40px;
   height: 40px;
