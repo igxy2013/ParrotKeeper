@@ -1,5 +1,6 @@
 // pages/parrots/parrots.js
 const app = getApp()
+const CACHE_TTL_MS = 60 * 1000
 
 Page({
   data: {
@@ -26,6 +27,9 @@ Page({
     // 性别统计
     maleCount: 0,
     femaleCount: 0,
+    totalParrots: 0,
+    lastParrotsLoadedAt: 0,
+    lastOverviewLoadedAt: 0,
     activeGenderFilter: '',
     viewMode: 'card',
     
@@ -88,6 +92,7 @@ Page({
     this.loadSpeciesList()
     
     if (isLogin) {
+      this.loadOverviewParrotsTotal(true)
       this.loadParrots()
     } else {
       // 游客模式：显示示例数据或空状态
@@ -116,11 +121,20 @@ Page({
     
     if (loginStatus) {
       console.log('用户已登录，开始加载鹦鹉数据');
-      // 加载当前用户模式
-      this.loadUserMode();
-      
+      const storedMode = wx.getStorageSync('userMode') || ''
+      const currentMode = app.globalData.userMode || storedMode || 'personal'
+      this.setData({ userMode: currentMode })
+
+      const now = Date.now()
+      const canUseListCache = Array.isArray(this.data.parrots) && this.data.parrots.length > 0 && (now - (this.data.lastParrotsLoadedAt || 0) < CACHE_TTL_MS)
+
+      if (!canUseListCache) {
+        this.loadOverviewParrotsTotal(true)
+      } else {
+        this.loadOverviewParrotsTotal(false)
+      }
+
       // 检查用户模式是否发生变化
-      const currentMode = this.data.userMode;
       if (this.data.lastUserMode && this.data.lastUserMode !== currentMode) {
         console.log('检测到用户模式变化:', this.data.lastUserMode, '->', currentMode);
         const viewMode = currentMode === 'team' ? 'list' : 'card';
@@ -143,8 +157,9 @@ Page({
         app.globalData.needRefresh = false; // 重置标志
         this.refreshData(); // 完全刷新数据
       } else {
-        // 从其他页面返回时刷新数据
-        this.refreshData() // 改为使用refreshData确保完全刷新
+        if (!canUseListCache) {
+          this.refreshData()
+        }
       }
     } else {
       console.log('游客模式，显示空状态');
@@ -161,6 +176,10 @@ Page({
     this.refreshData()
   },
 
+  onPageScroll(e) {
+    this._lastScrollTop = e && typeof e.scrollTop === 'number' ? e.scrollTop : 0
+  },
+
   onReachBottom() {
     if (this.data.hasMore && !this.data.loading) {
       this.loadMoreParrots()
@@ -175,9 +194,29 @@ Page({
     })
     
     try {
+      this.loadOverviewParrotsTotal(true)
       await this.loadParrots(true)
     } finally {
       wx.stopPullDownRefresh()
+    }
+  },
+
+  async loadOverviewParrotsTotal(force = false) {
+    if (!this.data.isLogin) return
+    if (!force) {
+      const now = Date.now()
+      if (this.data.totalParrots > 0 && now - (this.data.lastOverviewLoadedAt || 0) < CACHE_TTL_MS) return
+    }
+    try {
+      const res = await app.request({
+        url: '/api/statistics/overview',
+        method: 'GET'
+      })
+      if (res && res.success) {
+        const total = (res.data && res.data.total_parrots) ? Number(res.data.total_parrots) : 0
+        this.setData({ totalParrots: Number.isFinite(total) ? total : 0, lastOverviewLoadedAt: Date.now() })
+      }
+    } catch (e) {
     }
   },
 
@@ -262,6 +301,8 @@ Page({
   async loadParrots(refresh = false) {
     console.log('开始加载鹦鹉列表, refresh:', refresh);
     console.log('当前用户模式:', app.globalData.userMode);
+
+    const preserveScrollTop = refresh ? null : (this._lastScrollTop || 0)
     
     if (this.data.loading) {
       console.log('正在加载中，跳过本次请求');
@@ -294,6 +335,7 @@ Page({
       
       if (res.success) {
         const parrots = res.data.parrots || []
+        const totalParrots = (this.data.totalParrots || res.data.total || 0)
         console.log('获取到的鹦鹉数据:', parrots);
         console.log('数据数量:', parrots.length);
         
@@ -367,7 +409,13 @@ Page({
           page: refresh ? 2 : this.data.page + 1,
           hasMore: newParrots.length === 10,
           maleCount,
-          femaleCount
+          femaleCount,
+          totalParrots,
+          lastParrotsLoadedAt: Date.now()
+        }, () => {
+          if (!refresh && preserveScrollTop !== null) {
+            wx.pageScrollTo({ scrollTop: preserveScrollTop, duration: 0 })
+          }
         })
 
       this.applyGenderFilter()

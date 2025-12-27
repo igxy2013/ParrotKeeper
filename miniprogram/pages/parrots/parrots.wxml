@@ -19,7 +19,7 @@
       <text class="stats-title">鹦鹉总览</text>
       <view class="stats-grid-overview">
         <view class="stat-overview-item {{activeGenderFilter === 'all' ? 'active' : ''}}" bindtap="onOverviewFilterTap" data-filter="all">
-          <text class="stat-overview-value">{{parrots.length}}</text>
+          <text class="stat-overview-value">{{totalParrots}}</text>
           <text class="stat-overview-label">总数量</text>
         </view>
         <view class="stat-overview-item {{activeGenderFilter === 'male' ? 'active' : ''}}" bindtap="onOverviewFilterTap" data-filter="male">
@@ -33,28 +33,7 @@
       </view>
     </view>
 
-<!-- 通过过户码添加弹窗 -->
-<view class="modal-overlay" wx:if="{{showClaimByCodeModal}}" bindtap="closeClaimByCodeModal"></view>
-<view class="modal-content claim-modal" wx:if="{{showClaimByCodeModal}}" catchtap="stopPropagation">
-  <view class="modal-header">
-    <text class="modal-title">通过过户码添加鹦鹉</text>
-    <view class="modal-close" bindtap="closeClaimByCodeModal">×</view>
   </view>
-  <view class="modal-body">
-    <view class="input-group">
-      <text class="input-label">过户码</text>
-      <input class="input" placeholder="请输入过户码" value="{{claimCode}}" bindinput="onInputClaimCode"/>
-    </view>
-    <view class="tip-text">每个过户码仅可使用一次，请在有效期内使用。</view>
-  </view>
-  <view class="modal-actions">
-    <button class="modal-btn cancel-btn" bindtap="closeClaimByCodeModal" disabled="{{claimingByCode}}">取消</button>
-    <button class="modal-btn submit-btn" bindtap="submitClaimByCode" loading="{{claimingByCode}}" disabled="{{claimingByCode}}">确认添加</button>
-  </view>
-</view>
-<!-- 自定义底部导航 -->
-<bottom-nav active="parrots" />
-    </view>
 
   <!-- 搜索和筛选 -->
   <view class="search-filter-card">
