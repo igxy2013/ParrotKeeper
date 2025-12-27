@@ -88,7 +88,7 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn-secondary" @click="handleClose">取消</button>
+          <button class="btn-primary" @click="handleClose">取消</button>
           <button 
             class="btn-primary" 
             :class="{ 'is-disabled': saving }" 

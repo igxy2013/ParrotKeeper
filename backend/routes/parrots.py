@@ -20,6 +20,28 @@ def get_species():
     except Exception as e:
         return error_response(f'获取品种列表失败: {str(e)}')
 
+@parrots_bp.route('/species/owned', methods=['GET'])
+@login_required
+def get_owned_species():
+    """获取当前用户可访问鹦鹉所涉及的品种列表（基于团队模式过滤）"""
+    try:
+        user = request.current_user
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        if not accessible_parrot_ids:
+            return success_response([])
+
+        species = (
+            db.session.query(ParrotSpecies)
+            .join(Parrot, Parrot.species_id == ParrotSpecies.id)
+            .filter(Parrot.id.in_(accessible_parrot_ids))
+            .distinct()
+            .order_by(ParrotSpecies.name.asc())
+            .all()
+        )
+        return success_response(parrot_species_list_schema.dump(species))
+    except Exception as e:
+        return error_response(f'获取用户品种列表失败: {str(e)}')
+
 @parrots_bp.route('/species', methods=['POST'])
 @login_required
 def create_species():
