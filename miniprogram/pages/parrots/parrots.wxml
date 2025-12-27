@@ -173,7 +173,7 @@
               <text class="gender-text-female" wx:elif="{{item.gender === 'female'}}">母</text>
               <text class="gender-text-unknown" wx:else>未知</text>
             </view>
-            <text class="parrot-table-col col-species">{{item.species_name_short || '未知'}}</text>
+            <text class="parrot-table-col col-species">{{item.species_name_short || item.species_name || '未知'}}</text>
             <text class="parrot-table-col col-age">{{item.age_display || '未知'}}</text>
             <text class="parrot-table-col col-weight">{{item.weight_display || '-'}}</text>
             <text class="parrot-table-col col-ring">{{item.ring_number || '-'}}</text>

@@ -246,7 +246,8 @@ Page({
   // 格式化品种名称，移除“鹦鹉”后缀
   formatSpeciesName(name) {
     if (!name) return '未知品种';
-    return name.replace(/鹦鹉$/, '');
+    const shortName = name.replace(/鹦鹉$/, '');
+    return shortName || name; // 防止替换后为空字符串
   },
 
   // 加载鹦鹉列表
