@@ -1,7 +1,6 @@
 <view class="page-container">
   <app-header title="账号管理" subtitle="绑定或设置登录账号" showBack="true"></app-header>
   <view class="page-content">
-    <!-- Current Status -->
     <view class="status-card">
       <view class="status-header">
         <text class="status-title">当前状态</text>
@@ -9,40 +8,30 @@
           {{username ? '已设置账号' : '未设置账号'}}
         </view>
       </view>
-      <view class="status-info">
+       <view class="status-info">
          <view class="info-row">
-            <text class="label">用户名：</text>
-            <text class="value">{{username || '未设置'}}</text>
+            <text class="label">登录账号</text>
+            <text class="value">{{username || '未绑定'}}</text>
          </view>
          <view class="info-row">
-            <text class="label">微信绑定：</text>
+            <text class="label">微信账号</text>
             <text class="value highlight">已绑定</text>
          </view>
       </view>
     </view>
 
-    <!-- Actions -->
-    <view class="action-list">
-      <view class="action-card" bindtap="showBindModal">
-        <view class="action-icon-bg bind-bg">
-          <text class="action-icon">🔗</text>
-        </view>
-        <view class="action-text">
-          <view class="action-title">绑定已有账号</view>
-          <view class="action-desc">将当前微信关联到已有账号（合并数据）</view>
-        </view>
-        <view class="action-arrow">></view>
+    <view class="section-card">
+      <view class="section-header">
+        <text class="section-title">账号绑定</text>
       </view>
-
-      <view class="action-card" bindtap="showSetupModal">
-        <view class="action-icon-bg setup-bg">
-          <text class="action-icon">📝</text>
+      <view class="cell-list">
+        <view class="cell-item" bindtap="onAccountTap">
+          <view class="cell-label">登录账号</view>
+          <view class="cell-value {{username ? '' : 'placeholder'}}">
+            {{username || '未绑定'}}
+          </view>
+          <view class="cell-arrow">></view>
         </view>
-        <view class="action-text">
-          <view class="action-title">建立新账号</view>
-          <view class="action-desc">设置用户名和密码，用于账号登录</view>
-        </view>
-        <view class="action-arrow">></view>
       </view>
     </view>
   </view>
@@ -57,11 +46,11 @@
        <view class="modal-body">
           <view class="input-group">
             <text class="input-label">用户名</text>
-            <input class="input" placeholder="请输入已有账号用户名" model:value="{{bindUsername}}" />
+            <input class="input" placeholder="请输入已有账号用户名" value="{{bindUsername}}" bindinput="onBindUsernameInput" />
           </view>
           <view class="input-group">
             <text class="input-label">密码</text>
-            <input class="input" password placeholder="请输入密码" model:value="{{bindPassword}}" />
+            <input class="input" password placeholder="请输入密码" value="{{bindPassword}}" bindinput="onBindPasswordInput" />
           </view>
           <view class="warning-text">注意：绑定后将切换至目标账号，当前临时数据可能丢失。</view>
        </view>

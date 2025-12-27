@@ -137,6 +137,55 @@
   font-size: 32rpx;
 }
 
+.section-card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 0 0 8rpx;
+  margin-top: 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+}
+
+.section-header {
+  padding: 24rpx 30rpx 12rpx;
+}
+
+.section-title {
+  font-size: 26rpx;
+  color: #9ca3af;
+}
+
+.cell-list {
+  border-top: 1rpx solid #f3f4f6;
+}
+
+.cell-item {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 30rpx;
+  border-top: 1rpx solid #f3f4f6;
+}
+
+.cell-label {
+  font-size: 30rpx;
+  color: #111827;
+}
+
+.cell-value {
+  margin-left: auto;
+  font-size: 28rpx;
+  color: #4b5563;
+}
+
+.cell-value.placeholder {
+  color: #9ca3af;
+}
+
+.cell-arrow {
+  margin-left: 16rpx;
+  font-size: 30rpx;
+  color: #d1d5db;
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;

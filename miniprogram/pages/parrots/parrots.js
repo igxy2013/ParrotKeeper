@@ -10,7 +10,7 @@ Page({
     loading: false,
     searchKeyword: '',
     selectedSpeciesId: '',
-    selectedSpeciesName: '',
+    selectedSpeciesName: '全部品种',
     selectedStatus: '',
     selectedStatusText: '',
     statusPickerRange: ['全部状态', '健康', '生病', '康复中', '观察中'],
@@ -423,9 +423,10 @@ Page({
   // 选择品种
   selectSpecies(e) {
     const { id, name } = e.currentTarget.dataset
+    const isAll = !id
     this.setData({
-      selectedSpeciesId: id || '',
-      selectedSpeciesName: name || '',
+      selectedSpeciesId: isAll ? '' : (id || ''),
+      selectedSpeciesName: isAll ? '全部品种' : (name || ''),
       showSpeciesModal: false
     })
     this.refreshData()
@@ -433,10 +434,11 @@ Page({
 
   // 原生品种选择器变更
   onSpeciesPickerChange(e) {
-    const idx = e.detail.value
+    const idx = Number(e.detail.value)
     if (idx == null) return
+    if (Number.isNaN(idx)) return
     if (idx === 0) {
-      this.setData({ selectedSpeciesId: '', selectedSpeciesName: '' })
+      this.setData({ selectedSpeciesId: '', selectedSpeciesName: '全部品种' })
     } else {
       const realIdx = idx - 1
       const item = (this.data.speciesList || [])[realIdx]

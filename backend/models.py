@@ -4,13 +4,26 @@ from enum import Enum
 
 db = SQLAlchemy()
 
+class UserAccount(db.Model):
+    __tablename__ = 'user_accounts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # 可以暂时没有关联用户（如解绑后）
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('account', uselist=False))
+
 class User(db.Model):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
     openid = db.Column(db.String(100), unique=True, nullable=True)  # 微信openid，可为空
-    username = db.Column(db.String(50), unique=True, nullable=True)  # 用户名，可为空
-    password_hash = db.Column(db.String(255), nullable=True)  # 密码哈希，可为空
+    # username 和 password_hash 将迁移到 user_accounts 表
+    # username = db.Column(db.String(50), unique=True, nullable=True)
+    # password_hash = db.Column(db.String(255), nullable=True)
     nickname = db.Column(db.String(100))
     avatar_url = db.Column(db.String(255))
     phone = db.Column(db.String(20))

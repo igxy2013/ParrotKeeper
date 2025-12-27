@@ -72,7 +72,7 @@
     <view class="filter-bar">
       <picker mode="selector" range="{{speciesPickerRange}}" bindchange="onSpeciesPickerChange">
         <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}">
-          <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
+          <text class="filter-text">{{selectedSpeciesName || '全部品种'}}</text>
           <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown" lazy-load="true"/>
         </view>
       </picker>

@@ -135,7 +135,13 @@ def get_parrots():
     try:
         user = request.current_user
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
+
+        # 兼容旧参数：前端有的地方使用 limit 表示每页数量
+        per_page = request.args.get('per_page', type=int)
+        if per_page is None:
+            per_page = request.args.get('limit', 20, type=int)
+        if not per_page:
+            per_page = 20
         
         print(f"[DEBUG] 用户 {user.id} 请求鹦鹉列表，页码: {page}, 每页: {per_page}, 模式: {getattr(user, 'user_mode', 'personal')}")
         
