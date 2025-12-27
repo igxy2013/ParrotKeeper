@@ -515,10 +515,31 @@ Page({
     try {
       const res = await app.request({ url: '/api/pairings', method: 'GET' })
       const list = (res && res.success && Array.isArray(res.data)) ? res.data : []
-      this.setData({ records: list })
+      const mapped = list.map((it) => {
+        const raw = it.createdAt !== undefined ? it.createdAt : (it.created_at !== undefined ? it.created_at : (it.createdAtTs !== undefined ? it.createdAtTs : it.created_at_ts))
+        const ts = this.normalizeTimestamp(raw)
+        return { ...it, createdAtText: ts ? this.formatTime(ts) : '' }
+      })
+      this.setData({ records: mapped })
     } catch (_) {
       this.setData({ records: [] })
     }
+  },
+
+  normalizeTimestamp(val) {
+    if (val === null || val === undefined || val === '') return 0
+    if (typeof val === 'number' && !isNaN(val)) {
+      const n = val
+      return n < 1000000000000 ? n * 1000 : n
+    }
+    const s = String(val)
+    if (/^\d+$/.test(s)) {
+      const n = Number(s)
+      if (!isFinite(n)) return 0
+      return n < 1000000000000 ? n * 1000 : n
+    }
+    const t = Date.parse(s)
+    return isNaN(t) ? 0 : t
   },
 
   formatTime(ts) {

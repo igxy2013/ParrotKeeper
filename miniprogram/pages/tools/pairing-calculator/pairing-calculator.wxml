@@ -131,7 +131,7 @@
             <view class="record-delete-btn" catchtap="deleteRecord" data-id="{{item.id}}">
               <image class="record-delete-icon" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
             </view>
-            <view class="section-title"><text>{{item.species}} · {{formatTime(item.createdAt)}}</text></view>
+            <view class="section-title"><text>{{item.species}} · {{item.createdAtText}}</text></view>
             <view class="form-row">
               <view class="form-label">母鸟</view>
               <view class="picker-value">{{item.motherColor}}{{item.motherSplits && item.motherSplits.length ? (' · ' + item.motherSplits.join('、')) : ''}}</view>

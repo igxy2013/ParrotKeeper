@@ -465,9 +465,14 @@ class PairingRecordSchema(SQLAlchemyAutoSchema):
 
     def get_created_at_ts(self, obj):
         try:
+            from datetime import timezone
             dt = obj.created_at
             if not dt:
                 return None
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
             return int(dt.timestamp() * 1000)
         except Exception:
             return None

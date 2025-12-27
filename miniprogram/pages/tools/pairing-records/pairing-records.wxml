@@ -15,7 +15,7 @@
         </view>
         <view class="item-header">
           <text class="species">{{item.species}}</text>
-          <text class="date">{{formatTime(item.createdAt)}}</text>
+          <text class="date">{{item.createdAtText}}</text>
         </view>
         <view class="item-body">
           <view class="pair-row">

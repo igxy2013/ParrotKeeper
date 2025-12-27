@@ -220,6 +220,7 @@
             <template #header>
               <div class="record-header">
                 <span>{{ item.species }} · {{ formatTime(item.createdAt) }}</span>
+                <el-button class="record-delete-btn" type="danger" plain circle size="small" :icon="Delete" @click="deleteRecord(idx)" />
               </div>
             </template>
             <div class="record-body">
@@ -236,9 +237,6 @@
                 </el-table>
               </div>
             </div>
-            <div class="record-actions">
-              <el-button type="danger" plain size="small" @click="deleteRecord(idx)">删除该记录</el-button>
-            </div>
           </el-card>
           <div class="save-pair-section">
             <el-button type="warning" plain @click="clearAll">清空所有</el-button>
@@ -254,6 +252,7 @@ import { ref, onMounted } from 'vue'
 import api from '@/api/axios'
 import { simulatePairing, simulatePairingDetailed, analyzeAllOffsprings } from '@/utils/genetics'
 import { ElMessage } from 'element-plus'
+import { Delete } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const speciesList = ref([])
@@ -699,6 +698,9 @@ const clearAll = async () => {
   margin: 0 auto;
 }
 
+.pairing-container :deep(.el-table th .cell) { font-size: 16px; }
+.pairing-container :deep(.el-table td .cell) { font-size: 16px; }
+
 .header {
   margin-bottom: 24px;
 }
@@ -749,7 +751,8 @@ const clearAll = async () => {
 .empty-sm { color: #909399; font-size: 13px; margin-top: 8px; }
 .save-pair-section { margin-top: 16px; }
 .record-card { margin-bottom: 16px; }
-.record-header { font-weight: 500; }
+.record-header { font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.record-delete-btn { flex: 0 0 auto; }
 .record-body .label { color: #909399; margin-right: 6px; }
 .record-results { margin-top: 10px; }
 
