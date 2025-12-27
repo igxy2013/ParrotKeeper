@@ -231,7 +231,6 @@ const menuItems = computed(() => [
        { path: '/admin/incubation-suggestions', label: '孵化建议', icon: Sunny },
        { path: '/admin/market-prices', label: '参考价格', icon: TrendCharts },
        { path: '/admin/parrot-species', label: '品种管理', icon: Files },
-       { path: '/admin/user-role', label: '用户角色', icon: User },
        { path: '/admin/announcements', label: '系统公告', icon: Notification },
        { path: '/admin/api-configs', label: 'API配置', icon: Setting },
        { path: '/admin/invitation-codes', label: '邀请码管理', icon: Setting },

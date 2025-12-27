@@ -62,14 +62,6 @@
             <el-icon class="arrow-icon"><ArrowRight /></el-icon>
           </div>
 
-          <div class="menu-item" @click="go('/admin/user-role')">
-            <div class="menu-item-icon bg-gray"><el-icon><User /></el-icon></div>
-            <div class="menu-item-content">
-              <div class="menu-item-title">用户与角色管理</div>
-              <div class="menu-item-desc">查看用户、分配或调整角色</div>
-            </div>
-            <el-icon class="arrow-icon"><ArrowRight /></el-icon>
-          </div>
 
           <div class="menu-item" @click="go('/admin/announcements')">
             <div class="menu-item-icon bg-indigo"><el-icon><Notification /></el-icon></div>
@@ -106,7 +98,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
-import { Setting, ChatLineSquare, Edit, ArrowRight, User, Notification } from '@element-plus/icons-vue'
+import { Setting, ChatLineSquare, Edit, ArrowRight, Notification } from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
 const router = useRouter()

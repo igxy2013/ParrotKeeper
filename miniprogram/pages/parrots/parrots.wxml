@@ -166,7 +166,8 @@
           </view>
           <view class="parrot-table-row"
                 wx:for="{{displayParrots}}" wx:key="id" wx:for-index="idx"
-                bindtap="viewParrotDetail" data-id="{{item.id}}">
+                bindtap="viewParrotDetail" data-id="{{item.id}}"
+                bindlongpress="onParrotLongPress" data-index="{{idx}}">
             <text class="parrot-table-col col-name">{{item.name}}</text>
             <view class="parrot-table-col col-gender">
               <text class="gender-text-male" wx:if="{{item.gender === 'male'}}">公</text>
@@ -212,6 +213,29 @@
     <view class="loading-spinner"></view>
     <text class="loading-text">加载中...</text>
   </view>
+
+  <!-- 通过过户码添加弹窗 -->
+  <view class="modal-overlay" wx:if="{{showClaimByCodeModal}}" bindtap="closeClaimByCodeModal"></view>
+  <view class="modal-content claim-modal" wx:if="{{showClaimByCodeModal}}" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">通过过户码添加鹦鹉</text>
+      <view class="modal-close" bindtap="closeClaimByCodeModal">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="input-group">
+        <text class="input-label">过户码</text>
+        <input class="input" placeholder="请输入过户码" value="{{claimCode}}" bindinput="onInputClaimCode"/>
+      </view>
+      <view class="tip-text">每个过户码仅可使用一次，请在有效期内使用。</view>
+    </view>
+    <view class="modal-actions">
+      <button class="modal-btn cancel-btn" bindtap="closeClaimByCodeModal" disabled="{{claimingByCode}}">取消</button>
+      <button class="modal-btn submit-btn" bindtap="submitClaimByCode" loading="{{claimingByCode}}" disabled="{{claimingByCode}}">确认添加</button>
+    </view>
+  </view>
+
+  <!-- 自定义底部导航 -->
+  <bottom-nav active="parrots" />
 </view>
 
 <!-- 品种筛选弹窗 -->

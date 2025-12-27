@@ -120,13 +120,21 @@ Page({
       this.loadUserMode();
       
       // 检查用户模式是否发生变化
-      const currentMode = app.globalData.userMode || 'personal';
+      const currentMode = this.data.userMode;
       if (this.data.lastUserMode && this.data.lastUserMode !== currentMode) {
         console.log('检测到用户模式变化:', this.data.lastUserMode, '->', currentMode);
-        this.setData({ lastUserMode: currentMode });
+        const viewMode = currentMode === 'team' ? 'list' : 'card';
+        this.setData({ lastUserMode: currentMode, viewMode });
         this.refreshData();
         return;
       }
+      
+      // 首次加载设置默认视图模式
+      if (!this.data.lastUserMode) {
+        const viewMode = currentMode === 'team' ? 'list' : 'card';
+        this.setData({ viewMode });
+      }
+
       this.setData({ lastUserMode: currentMode });
       
       // 检查是否需要刷新数据（模式切换后）
@@ -948,10 +956,8 @@ Page({
   loadUserMode() {
     const storedMode = wx.getStorageSync('userMode') || ''
     const userMode = app.globalData.userMode || storedMode || 'personal'
-    const viewMode = userMode === 'team' ? 'list' : 'card'
     this.setData({
-      userMode,
-      viewMode
+      userMode
     })
   },
 

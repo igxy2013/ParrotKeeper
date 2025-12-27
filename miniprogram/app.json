@@ -11,7 +11,6 @@
       "pages": [
         "index/index",
         "feedbacks/feedbacks",
-      "user-role/user-role",
       "announcements/announcements",
       "incubation-suggestions/incubation-suggestions",
       "parrot-species/parrot-species",

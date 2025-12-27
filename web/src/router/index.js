@@ -16,7 +16,6 @@ import AdminFeedbacksView from '../views/admin/AdminFeedbacksView.vue'
 import AdminIncubationSuggestionsView from '../views/admin/AdminIncubationSuggestionsView.vue'
 import AdminMarketPricesView from '../views/admin/AdminMarketPricesView.vue'
 import AdminParrotSpeciesView from '../views/admin/AdminParrotSpeciesView.vue'
-import AdminUserRoleView from '../views/admin/AdminUserRoleView.vue'
 import AdminAnnouncementsView from '../views/admin/AdminAnnouncementsView.vue'
 import AdminApiConfigsView from '../views/admin/AdminApiConfigsView.vue'
 import AdminInvitationCodesView from '../views/admin/AdminInvitationCodesView.vue'
@@ -110,7 +109,6 @@ const router = createRouter({
         { path: 'admin/incubation-suggestions', name: 'admin-incubation-suggestions', component: AdminIncubationSuggestionsView },
         { path: 'admin/market-prices', name: 'admin-market-prices', component: AdminMarketPricesView },
         { path: 'admin/parrot-species', name: 'admin-parrot-species', component: AdminParrotSpeciesView },
-        { path: 'admin/user-role', name: 'admin-user-role', component: AdminUserRoleView },
         { path: 'admin/announcements', name: 'admin-announcements', component: AdminAnnouncementsView },
         { path: 'admin/api-configs', name: 'admin-api-configs', component: AdminApiConfigsView },
         { path: 'admin/invitation-codes', name: 'admin-invitation-codes', component: AdminInvitationCodesView }

@@ -1,6 +1,6 @@
 from flask import Blueprint, request
-from sqlalchemy import func
-from models import db, User, Announcement, Parrot, Expense, SystemSetting, InvitationCode
+from sqlalchemy import func, case, text
+from models import db, User, Announcement, Parrot, Expense, SystemSetting, InvitationCode, UserAccount
 from utils import login_required, success_response, error_response, paginate_query
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -15,6 +15,12 @@ def list_users():
         if not user or user.role != 'super_admin':
             return error_response('无权限', 403)
 
+        db.session.execute(text("UPDATE users SET login_type='wechat' WHERE login_type='微信'"))
+        db.session.execute(text("UPDATE users SET login_type='account' WHERE login_type='账号'"))
+        db.session.execute(text("UPDATE users SET user_mode='personal' WHERE user_mode='个人模式'"))
+        db.session.execute(text("UPDATE users SET user_mode='team' WHERE user_mode='团队模式'"))
+        db.session.commit()
+
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         q = (request.args.get('q') or '').strip()
@@ -26,7 +32,6 @@ def list_users():
         sort_field_map = {
             'id': User.id,
             'nickname': User.nickname,
-            'username': User.username,
             'role': User.role,
             'points': User.points,
             'created_at': User.created_at
@@ -66,11 +71,10 @@ def list_users():
 
         query = base_query
         if q:
-            # 支持按昵称、用户名、openid搜索（手机号不再参与搜索）
+            # 支持按昵称、openid搜索（手机号不再参与搜索，用户名暂时不支持搜索）
             query = query.filter(
                 db.or_(
                     User.nickname.contains(q),
-                    User.username.contains(q),
                     User.openid.contains(q)
                 )
             )
@@ -78,19 +82,28 @@ def list_users():
         result = paginate_query(query, page, per_page)
 
         # 角色与模式统计（与小程序端用户与角色管理页面对齐）
-        stats_query = User.query
+        # 优化：使用一次聚合查询获取所有统计数据，避免多次 count 查询
+        stats_query = db.session.query(
+            func.count(User.id).label('total'),
+            func.sum(case((User.role == 'admin', 1), else_=0)).label('admin_count'),
+            func.sum(case((User.role == 'user', 1), else_=0)).label('user_count'),
+            func.sum(case((User.user_mode == 'team', 1), else_=0)).label('team_user_count')
+        )
+
         if q:
             stats_query = stats_query.filter(
                 db.or_(
                     User.nickname.contains(q),
-                    User.username.contains(q),
                     User.openid.contains(q)
                 )
             )
-        total_users = result['total']
-        admin_count = stats_query.filter(User.role == 'admin').count()
-        user_count = stats_query.filter(User.role == 'user').count()
-        team_user_count = stats_query.filter(User.user_mode == 'team').count()
+        
+        stat_res = stats_query.first()
+        
+        total_users = stat_res.total if stat_res else 0
+        admin_count = stat_res.admin_count if stat_res else 0
+        user_count = stat_res.user_count if stat_res else 0
+        team_user_count = stat_res.team_user_count if stat_res else 0
 
         # 批量统计：每个用户的鹦鹉数量与总支出
         user_ids = [u.id for u in result['items']]
@@ -118,7 +131,7 @@ def list_users():
             items.append({
                 'id': u.id,
                 'openid': u.openid,
-                'username': u.username,
+                'username': u.account.username if u.account else '', # 从 UserAccount 获取用户名
                 'nickname': u.nickname,
                 'avatar_url': u.avatar_url,
                 'role': u.role,
@@ -146,6 +159,12 @@ def list_users():
             }
         })
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
         return error_response(f'获取用户列表失败: {str(e)}')
 
 

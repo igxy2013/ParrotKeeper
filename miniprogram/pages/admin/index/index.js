@@ -13,7 +13,6 @@ Page({
     }
   },
   goAdminFeedbacks() { wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' }) },
-  goAdminUserRole() { wx.navigateTo({ url: '/pages/admin/user-role/user-role' }) },
   goAdminAnnouncements() { wx.navigateTo({ url: '/pages/admin/announcements/announcements' }) },
   goAdminApiConfigs() {
     const userInfo = (app.globalData && app.globalData.userInfo) || {}
