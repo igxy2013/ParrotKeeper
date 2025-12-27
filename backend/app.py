@@ -26,7 +26,6 @@ from routes.incubation import incubation_bp
 from routes.market import market_bp
 from routes.categories import categories_bp
 from routes.reports import reports_bp
-from routes.user_reports import user_reports_bp
 import os
 from utils import login_required, success_response, error_response
 from team_mode_utils import (
@@ -73,7 +72,6 @@ def create_app(config_name=None):
     app.register_blueprint(market_bp)
     app.register_blueprint(categories_bp)
     app.register_blueprint(reports_bp)
-    app.register_blueprint(user_reports_bp)
     from routes.pairings import pairings_bp
     app.register_blueprint(pairings_bp)
     
