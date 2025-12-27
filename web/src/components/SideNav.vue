@@ -113,7 +113,6 @@ import {
   Sunny, 
   Connection, 
   Bell, 
-  User, 
   Setting,
   MoreFilled,
   ChatLineSquare,
