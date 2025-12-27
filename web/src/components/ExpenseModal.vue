@@ -32,14 +32,21 @@
             <div class="form-row">
               <div class="form-item half">
                 <label class="form-label">类别 *</label>
-                <el-select v-model="form.category" placeholder="请选择类别" class="full-width-select">
-                  <el-option
+                <div class="category-grid">
+                  <div
                     v-for="opt in formCategoryOptions"
                     :key="opt.value"
-                    :label="opt.label"
-                    :value="opt.value"
-                  />
-                </el-select>
+                    class="category-item"
+                    :class="{ active: form.category === opt.value }"
+                    @click="form.category = opt.value"
+                  >
+                    <div class="category-icon-wrapper">
+                      <img v-if="opt.icon" :src="opt.icon" alt="" class="category-icon" />
+                      <span v-else class="category-icon-text">{{ opt.iconText }}</span>
+                    </div>
+                    <div class="category-label">{{ opt.label }}</div>
+                  </div>
+                </div>
               </div>
               <div class="form-item half">
                 <label class="form-label">金额 (¥) *</label>
@@ -119,21 +126,21 @@ const form = ref({
 })
 
 const expenseCategoryOptionsForDialog = [
-  { value: 'food', label: '食物' },
-  { value: 'medical', label: '医疗' },
-  { value: 'toys', label: '玩具' },
-  { value: 'cage', label: '笼具' },
-  { value: 'baby_bird', label: '幼鸟' },
-  { value: 'breeding_bird', label: '种鸟' },
-  { value: 'other', label: '其他' }
+	{ label: '食物', value: 'food', icon: '/ri-restaurant-fill-orange.png' },
+	{ label: '医疗', value: 'medical', icon: '/ri-nurse-line-purple.png' },
+	{ label: '玩具', value: 'toys', icon: '/ri-heart-fill-red.png' },
+	{ label: '笼具', value: 'cage', icon: '/ri-home-5-fill-green.png' },
+	{ label: '幼鸟', value: 'baby_bird', icon: '/parrot-avatar-yellow.svg' },
+	{ label: '种鸟', value: 'breeding_bird', icon: '/parrot-avatar-green.svg' },
+	{ label: '其他', value: 'other', icon: '/ri-information-fill-amber.png' }
 ]
 
 const incomeCategoryOptionsForDialog = [
-  { value: 'breeding_sale', label: '繁殖销售' },
-  { value: 'bird_sale', label: '鸟类销售' },
-  { value: 'service', label: '服务收入' },
-  { value: 'competition', label: '比赛奖金' },
-  { value: 'other', label: '其他收入' }
+	{ label: '繁殖销售', value: 'breeding_sale', icon: '/ri-shopping-bag-fill-blue.png' },
+	{ label: '鸟类销售', value: 'bird_sale', icon: '/parrot-avatar-yellow.svg' },
+	{ label: '服务收入', value: 'service', icon: '/service-line.png' },
+	{ label: '比赛奖金', value: 'competition', icon: '/trophy-line-orange.png' },
+	{ label: '其他收入', value: 'other', icon: '/ri-information-fill-green.png' }
 ]
 
 const formCategoryOptions = computed(() => {
@@ -333,6 +340,70 @@ onMounted(() => {
 .type-btn.active { background: #ffffff; color: #1f2937; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .type-income.active { color: #16a34a; }
 .type-expense.active { color: #dc2626; }
+
+.category-grid {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0 -6px;
+}
+
+.category-item {
+	width: 25%;
+	box-sizing: border-box;
+	padding: 4px 6px 12px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	opacity: 0.6;
+	transition: all 0.2s ease;
+}
+
+.category-item.active {
+	opacity: 1;
+	transform: scale(1.04);
+}
+
+.category-icon-wrapper {
+	width: 44px;
+	height: 44px;
+	border-radius: 999px;
+	background-color: #f3f4f6;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 6px;
+	border: 2px solid transparent;
+	transition: all 0.2s ease;
+}
+
+.category-item.active .category-icon-wrapper {
+	background-color: #e0f2fe;
+	border-color: #38bdf8;
+}
+
+.category-icon {
+	width: 24px;
+	height: 24px;
+	display: block;
+}
+
+.category-icon-text {
+	font-size: 14px;
+	color: #4b5563;
+}
+
+.category-label {
+	font-size: 12px;
+	color: #6b7280;
+	text-align: center;
+	line-height: 1.2;
+}
+
+.category-item.active .category-label {
+	color: #2563eb;
+	font-weight: 500;
+}
 
 .modal-footer {
   padding: 16px 24px;

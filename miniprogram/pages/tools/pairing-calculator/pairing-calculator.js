@@ -479,7 +479,9 @@ Page({
       if (res && res.success) {
         wx.showToast({ title: '已保存' })
         await this.loadRecords()
-        this.setData({ activeTab: 'records' })
+        this.setData({ activeTab: 'records' }, () => {
+          wx.pageScrollTo({ scrollTop: 0, duration: 0 })
+        })
       } else {
         wx.showToast({ title: (res && res.message) || '保存失败', icon: 'none' })
       }
@@ -489,7 +491,9 @@ Page({
   },
 
   goPairingRecords() {
-    this.setData({ activeTab: 'records' })
+    this.setData({ activeTab: 'records' }, () => {
+      wx.pageScrollTo({ scrollTop: 0, duration: 0 })
+    })
     this.loadRecords()
   },
 
@@ -498,7 +502,9 @@ Page({
   switchTab(e) {
     const tab = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.tab) || ''
     if (tab === 'records') {
-      this.setData({ activeTab: 'records' })
+      this.setData({ activeTab: 'records' }, () => {
+        wx.pageScrollTo({ scrollTop: 0, duration: 0 })
+      })
       this.loadRecords()
     } else {
       this.setData({ activeTab: 'calculator' })

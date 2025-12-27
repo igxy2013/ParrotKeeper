@@ -26,6 +26,7 @@ Page({
       }, 300)
       return
     }
+    wx.pageScrollTo({ scrollTop: 0, duration: 0 })
     this.loadRecords()
   },
 
