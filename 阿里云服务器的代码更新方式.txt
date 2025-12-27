@@ -4,3 +4,11 @@
 '停止: sudo systemctl stop parrotkeeper';
 '重启: sudo systemctl restart parrotkeeper';
 '状态: sudo systemctl status parrotkeeper';
+
+确保启动脚本具有可执行权限
+chmod +x /opt/ParrotKeeper/start_parrotkeeper.sh
+
+重新加载并启动：
+systemctl daemon-reload
+systemctl start parrotkeeper.service
+systemctl status parrotkeeper.service
