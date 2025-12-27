@@ -337,7 +337,7 @@
   align-items: center;
   padding: 24rpx 20rpx;
   background: rgba(243, 244, 246, 0.8);
-  border-bottom: 2rpx solid #e5e7eb;
+  border-bottom: 2rpx solid #d1d5db; /* 加深表头下边框 */
 }
 
 .parrot-table-header .parrot-table-col {
@@ -352,7 +352,7 @@
   align-items: center;
   padding: 28rpx 20rpx;
   background: transparent;
-  border-bottom: 1rpx solid #f3f4f6;
+  border-bottom: 1rpx solid #e5e7eb; /* 加深行间分割线 */
   transition: all 0.2s ease;
 }
 
