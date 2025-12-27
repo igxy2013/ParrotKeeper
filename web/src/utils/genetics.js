@@ -56,6 +56,23 @@ export function simulatePairingDetailed(speciesName, config, mIdx, fIdx, mSplits
   return { sexBreakdown: { male: agg(male), female: agg(female) } }
 }
 
+export function analyzeAllOffsprings(speciesName, config, mIdx, fIdx, mSplits, fSplits) {
+  if (!config) return []
+  const mColorConfig = config.colors[mIdx]
+  const fColorConfig = config.colors[fIdx]
+  const motherGenotype = buildGenotype(config, mColorConfig.genes, mSplits, 'female')
+  const fatherGenotype = buildGenotype(config, fColorConfig.genes, fSplits, 'male')
+  const mGametes = generateGametes(config, motherGenotype)
+  const fGametes = generateGametes(config, fatherGenotype)
+  const offsprings = []
+  for (const mg of mGametes) {
+    for (const fg of fGametes) {
+      offsprings.push(combineGametes(config, mg, fg))
+    }
+  }
+  return offsprings.map(o => analyzeOffspring(speciesName, config, o))
+}
+
 function buildGenotype(config, visualGenes, splitList, sex) {
   const genotype = {}
   for (const [key, gene] of Object.entries(config.loci)) {

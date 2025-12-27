@@ -128,6 +128,9 @@
       <block wx:else>
         <block wx:for="{{records}}" wx:key="id">
           <view class="card">
+            <view class="record-delete-btn" catchtap="deleteRecord" data-id="{{item.id}}">
+              <image class="record-delete-icon" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
+            </view>
             <view class="section-title"><text>{{item.species}} · {{formatTime(item.createdAt)}}</text></view>
             <view class="form-row">
               <view class="form-label">母鸟</view>
@@ -149,11 +152,7 @@
                 </view>
               </block>
             </view>
-            <view class="save-pair-section">
-              <view class="save-pair-btn" catchtap="deleteRecord" data-id="{{item.id}}">
-                <view class="save-pair-btn-text">删除该记录</view>
-              </view>
-            </view>
+            
           </view>
         </block>
         <view class="save-pair-section">

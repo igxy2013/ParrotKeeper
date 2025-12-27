@@ -6,7 +6,7 @@
       <view class="card-content info-overview">
         <view class="info-left">
           <!-- 添加团队头像显示 -->
-          <image class="team-avatar" src="{{teamInfo.avatar_url || '/images/remix/user-line.png'}}" mode="aspectFill" />
+          <image class="team-avatar" src="{{teamInfo.avatar_url || '/images/remix/group-line-gray.png'}}" mode="aspectFill" />
           <view class="info-text">
             <text class="info-name">{{teamInfo.name || '未命名团队'}}</text>
             <text class="info-desc">{{teamInfo.description || '暂无描述'}}</text>

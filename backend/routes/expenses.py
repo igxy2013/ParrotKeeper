@@ -169,6 +169,89 @@ def get_transactions():
         traceback.print_exc()
         return error_response(f'获取聚合收支记录失败: {str(e)}')
 
+@expenses_bp.route('/trend', methods=['GET'])
+@login_required
+def get_expenses_trend():
+    """获取收支趋势数据"""
+    try:
+        user = request.current_user
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
+        period = request.args.get('period', 'day') # day, month, year
+
+        # 1. 获取可访问的记录ID
+        accessible_expense_ids = get_accessible_expense_ids_by_mode(user)
+        accessible_income_ids = get_accessible_income_ids_by_mode(user)
+
+        # 2. 构建基础查询
+        expense_query = Expense.query.filter(Expense.id.in_(accessible_expense_ids))
+        income_query = Income.query.filter(Income.id.in_(accessible_income_ids))
+
+        # 3. 日期过滤
+        start_dt = None
+        end_dt = None
+        if start_date:
+            try:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
+                expense_query = expense_query.filter(Expense.expense_date >= start_dt)
+                income_query = income_query.filter(Income.income_date >= start_dt)
+            except ValueError:
+                pass
+        
+        if end_date:
+            try:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
+                expense_query = expense_query.filter(Expense.expense_date <= end_dt)
+                income_query = income_query.filter(Income.income_date <= end_dt)
+            except ValueError:
+                pass
+
+        # 4. 获取原始数据
+        expenses = expense_query.all()
+        incomes = income_query.all()
+
+        # 5. 聚合数据
+        trend_data = {}
+
+        def get_key(date_obj):
+            if period == 'year':
+                return date_obj.strftime('%Y')
+            elif period == 'month':
+                return date_obj.strftime('%Y-%m')
+            else: # day
+                return date_obj.strftime('%Y-%m-%d')
+
+        for exp in expenses:
+            key = get_key(exp.expense_date)
+            if key not in trend_data:
+                trend_data[key] = {'income': 0.0, 'expense': 0.0}
+            trend_data[key]['expense'] += float(exp.amount)
+
+        for inc in incomes:
+            key = get_key(inc.income_date)
+            if key not in trend_data:
+                trend_data[key] = {'income': 0.0, 'expense': 0.0}
+            trend_data[key]['income'] += float(inc.amount)
+
+        # 6. 排序并格式化输出
+        sorted_keys = sorted(trend_data.keys())
+        result = []
+        for key in sorted_keys:
+            item = trend_data[key]
+            result.append({
+                'date': key,
+                'income': round(item['income'], 2),
+                'expense': round(item['expense'], 2),
+                'net': round(item['income'] - item['expense'], 2)
+            })
+
+        return success_response(result)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return error_response(f'获取收支趋势失败: {str(e)}')
+
 @expenses_bp.route('', methods=['GET'])
 @login_required
 def get_expenses():

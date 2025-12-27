@@ -1,0 +1,18 @@
+<view class="chart-container">
+  <view class="chart-header">收支趋势</view>
+  <canvas type="2d" id="trendChartCanvas" class="chart-canvas"></canvas>
+  <view class="chart-legend">
+    <view class="legend-item">
+      <view class="dot income"></view>
+      <text>收入</text>
+    </view>
+    <view class="legend-item">
+      <view class="dot expense"></view>
+      <text>支出</text>
+    </view>
+    <view class="legend-item">
+      <view class="dot net"></view>
+      <text>净收益</text>
+    </view>
+  </view>
+</view>

@@ -478,11 +478,8 @@ Page({
       const res = await app.request({ url: '/api/pairings', method: 'POST', data: record })
       if (res && res.success) {
         wx.showToast({ title: '已保存' })
-        if (this.data.activeTab === 'records') {
-          await this.loadRecords()
-        } else {
-          this.setData({ activeTab: 'records' })
-        }
+        await this.loadRecords()
+        this.setData({ activeTab: 'records' })
       } else {
         wx.showToast({ title: (res && res.message) || '保存失败', icon: 'none' })
       }

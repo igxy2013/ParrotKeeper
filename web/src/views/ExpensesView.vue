@@ -44,6 +44,24 @@
     <el-card class="analysis-card" shadow="never">
       <div class="card-header-row">
         <div class="card-title-row">
+          <span class="card-icon"><el-icon><TrendCharts /></el-icon></span>
+          <span class="card-title-text">收支趋势</span>
+        </div>
+      </div>
+      <div class="analysis-content">
+        <VChart
+          v-if="trendData.length"
+          :option="chartOption"
+          autoresize
+          class="trend-chart"
+        />
+        <div v-else class="empty-tip">暂无趋势数据</div>
+      </div>
+    </el-card>
+
+    <el-card class="analysis-card" shadow="never">
+      <div class="card-header-row">
+        <div class="card-title-row">
           <span class="card-icon"><el-icon><Wallet /></el-icon></span>
           <span class="card-title-text">支出分析</span>
         </div>
@@ -150,11 +168,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Wallet } from '@element-plus/icons-vue'
+import { Plus, Wallet, TrendCharts } from '@element-plus/icons-vue'
+import { use } from 'echarts/core'
+import { BarChart, LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import VChart from 'vue-echarts'
 import api from '@/api/axios'
 import ExpenseModal from '../components/ExpenseModal.vue'
+
+use([BarChart, LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
 const loading = ref(false)
 const records = ref([])
@@ -197,6 +222,9 @@ const stats = ref({
   totalIncome: 0,
   netIncome: 0
 })
+
+const trendData = ref([])
+const chartOption = ref({})
 
 const displayTotalCount = ref(0)
 const searchKeyword = ref('')
@@ -350,6 +378,69 @@ const loadExpenses = async () => {
   }
 }
 
+const loadTrend = async () => {
+  try {
+    const dateParams = getDateRange()
+    const params = {
+      ...dateParams,
+      period: ['本年', '全部'].includes(selectedPeriod.value) ? 'month' : 'day'
+    }
+    const res = await api.get('/expenses/trend', { params })
+    const payload = res.data || {}
+    const data = Array.isArray(payload.data) ? payload.data : []
+
+    trendData.value = data
+
+    chartOption.value = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' }
+      },
+      legend: {
+        data: ['收入', '支出', '净收益']
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: data.map(item => item.date)
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          name: '收入',
+          type: 'bar',
+          data: data.map(item => item.income),
+          itemStyle: { color: '#67C23A' }
+        },
+        {
+          name: '支出',
+          type: 'bar',
+          data: data.map(item => item.expense),
+          itemStyle: { color: '#F56C6C' }
+        },
+        {
+          name: '净收益',
+          type: 'line',
+          smooth: true,
+          data: data.map(item => item.net),
+          itemStyle: { color: '#409EFF' },
+          lineStyle: { width: 3 }
+        }
+      ]
+    }
+  } catch (error) {
+    trendData.value = []
+    console.error('Fetch trend error:', error)
+  }
+}
+
 const loadStats = async () => {
   try {
     const dateParams = getDateRange()
@@ -439,11 +530,13 @@ const setSelectedPeriod = (p) => {
   page.value = 1
   loadExpenses()
   loadStats()
+  loadTrend()
 }
 
 const refresh = () => {
   loadExpenses()
   loadStats()
+  loadTrend()
 }
 
 const openDialog = () => {
@@ -679,6 +772,7 @@ onMounted(() => {
   loadExpenses()
   loadStats()
   loadExpenseAnalysis()
+  loadTrend()
 })
 </script>
 
@@ -738,6 +832,11 @@ onMounted(() => {
 .chart-col { display: flex; align-items: center; justify-content: center; }
 .pie-canvas { width: 100%; height: 200px; }
 .empty-tip { padding: 12px; text-align: center; color: #6b7280; }
+
+.trend-chart {
+  width: 100%;
+  height: 260px;
+}
 
 .stats-grid {
   display: grid;

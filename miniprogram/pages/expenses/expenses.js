@@ -91,13 +91,16 @@ Page({
     modalTopOffsetPx: 24,
     modalBottomOffsetPx: 24,
     // 搜索关键字
-    searchKeyword: ''
+    searchKeyword: '',
+    // 趋势图数据
+    trendData: []
   },
 
   onLoad() {
     this.loadParrots()
     this.loadExpenses()
     this.loadStats()
+    this.loadTrendData()
     // 初始化类别选项与默认选择
     this.updateCategoryOptions()
   },
@@ -108,6 +111,7 @@ Page({
       app.globalData.needRefresh = false
       this.loadExpenses()
       this.loadStats()
+      this.loadTrendData()
     }
   },
 
@@ -125,6 +129,7 @@ Page({
       wx.stopPullDownRefresh()
     })
     this.loadStats()
+    this.loadTrendData()
   },
 
   // 上拉加载更多
@@ -168,6 +173,7 @@ Page({
       // 在setData完成后再调用，确保selectedPeriod已更新
       this.loadExpenses()
       this.loadStats()
+      this.loadTrendData()
     })
   },
 
@@ -377,6 +383,36 @@ Page({
     }
   },
 
+  // 加载趋势数据
+  async loadTrendData() {
+    try {
+      const dateParams = this.getDateRange()
+      let period = 'day'
+      if (this.data.selectedPeriod === '本年' || this.data.selectedPeriod === '全部') {
+        period = 'month'
+      }
+      
+      const params = {
+        ...dateParams,
+        period: period
+      }
+
+      const res = await app.request({
+        url: '/api/expenses/trend',
+        method: 'GET',
+        data: params
+      })
+
+      if (res.success && Array.isArray(res.data)) {
+        this.setData({
+          trendData: res.data
+        })
+      }
+    } catch (error) {
+      console.error('加载趋势数据失败:', error)
+    }
+  },
+
   // 将当前选择的“类别”标签映射为后端存储值
   getSelectedCategoryValue() {
     const label = this.data.categoryOptions[this.data.selectedCategoryIndex]
@@ -448,6 +484,7 @@ Page({
     // 刷新页面数据（重新拉取第一页）
     this.loadExpenses();
     this.loadStats();
+    this.loadTrendData();
   },
 
   // 应用筛选

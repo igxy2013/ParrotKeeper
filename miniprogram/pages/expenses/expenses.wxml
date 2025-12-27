@@ -24,92 +24,96 @@
         <view class="stat-icon">
           <image class="stat-icon-img" src="/images/remix/ri-money-dollar-circle-fill-green.png" mode="widthFix" />
         </view>
-        <view class="stat-value">¥{{stats.localTotalIncome || 0}}</view>
-        <view class="stat-label">收入</view>
+        <view class="stat-content">
+          <view class="stat-label">总收入</view>
+          <view class="stat-value income">¥{{stats.totalIncome}}</view>
+        </view>
       </view>
       <view class="stat-card expense">
         <view class="stat-icon">
-          <image class="stat-icon-img" src="/images/remix/shopping-bag-fill-red.png" mode="widthFix" />
+          <image class="stat-icon-img" src="/images/remix/ri-money-dollar-circle-fill-purple.png" mode="widthFix" />
         </view>
-        <view class="stat-value">¥{{stats.localTotalExpense || 0}}</view>
-        <view class="stat-label">支出</view>
+        <view class="stat-content">
+          <view class="stat-label">总支出</view>
+          <view class="stat-value expense">¥{{stats.totalExpense}}</view>
+        </view>
       </view>
     </view>
+    
+    <!-- 趋势图表 -->
+    <expense-trend-chart data="{{trendData}}" />
 
-    <!-- 记录列表卡片上方搜索框 -->
-    <view class="search-bar">
-      <image class="search-icon-img" src="/images/remix/ri-search-line-gray.png" mode="widthFix" />
-      <input class="search-input" placeholder="搜索描述、类别、类型..." value="{{searchKeyword}}" confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
-      <view class="search-clear" wx:if="{{searchKeyword}}" bindtap="onSearchClear">清除</view>
-    </view>
-
-
-
-    <!-- 记录列表 -->
-    <view class="card">
+    <!-- 记录工具容器：搜索框、标题、过滤器 -->
+    <view class="records-toolbar card">
       <view class="card-header">
         <text class="card-title">记录列表</text>
         <text class="total-text">共 {{displayTotalCount}} 条</text>
       </view>
-      <!-- 记录列表上方筛选器 -->
-      <view class="filter-controls">
-        <picker mode="selector" range="{{recordTypeOptions}}" value="{{selectedRecordTypeIndex}}" bindchange="onRecordTypeChange">
-          <view class="filter-picker">
-            <text class="picker-label">记录类型</text>
-            <text class="picker-text">{{recordTypeOptions[selectedRecordTypeIndex]}}</text>
-            <text class="picker-arrow">▼</text>
-          </view>
-        </picker>
-        <picker mode="selector" range="{{categoryOptions}}" value="{{selectedCategoryIndex}}" bindchange="onCategoryChange">
-          <view class="filter-picker">
-            <text class="picker-label">类别</text>
-            <text class="picker-text">{{categoryOptions[selectedCategoryIndex]}}</text>
-            <text class="picker-arrow">▼</text>
-          </view>
-        </picker>
-      </view>
       <view class="card-content">
-        <view class="list-container">
-      <block wx:for="{{filteredRecords}}" wx:key="id">
-        <view class="list-item">
-          <view class="list-item-content">
-            <view class="list-item-main">
-              <view class="list-item-title">
-                <text class="type-tag {{item.type === '收入' ? 'income' : 'expense'}}">{{item.type}}</text>
-                <text class="category-tag">{{item.category_text || item.category}}</text>
-              </view>
-              <view class="list-item-desc">{{item.description || '无描述'}}</view>
-              <view class="list-item-meta">
-                <text class="date-tag">{{item.date}} {{item.time}}</text>
-              </view>
+        <view class="search-bar">
+          <image class="search-icon-img" src="/images/remix/ri-search-line-gray.png" mode="widthFix" />
+          <input class="search-input" placeholder="搜索描述、类别、类型..." value="{{searchKeyword}}" confirm-type="search" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
+          <view class="search-clear" wx:if="{{searchKeyword}}" bindtap="onSearchClear">清除</view>
+        </view>
+        <view class="filter-controls">
+          <picker mode="selector" range="{{recordTypeOptions}}" value="{{selectedRecordTypeIndex}}" bindchange="onRecordTypeChange">
+            <view class="filter-picker">
+              <text class="picker-label">记录类型</text>
+              <text class="picker-text">{{recordTypeOptions[selectedRecordTypeIndex]}}</text>
+              <text class="picker-arrow">▼</text>
             </view>
-            <view class="list-item-right">
-              <view class="list-item-value {{item.type === '收入' ? 'income' : 'expense'}}">¥{{item.amount}}</view>
-              <view class="list-item-actions">
-                <button class="action-btn edit-btn" bindtap="onEditRecord" data-id="{{item.id}}">
-                  <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="widthFix" />
-                </button>
-                <button class="action-btn delete-btn" bindtap="onDeleteRecord" data-id="{{item.id}}">
-                  <image class="action-icon-img" src="/images/remix/delete-bin-line-white.png" mode="widthFix" />
-                </button>
+          </picker>
+          <picker mode="selector" range="{{categoryOptions}}" value="{{selectedCategoryIndex}}" bindchange="onCategoryChange">
+            <view class="filter-picker">
+              <text class="picker-label">类别</text>
+              <text class="picker-text">{{categoryOptions[selectedCategoryIndex]}}</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
+
+    <!-- 记录列表（与上方卡片左右边距保持一致） -->
+    <view class="list-container">
+        <block wx:for="{{filteredRecords}}" wx:key="id">
+          <view class="list-item">
+            <view class="list-item-content">
+              <view class="list-item-main">
+                <view class="list-item-title">
+                  <text class="type-tag {{item.type === '收入' ? 'income' : 'expense'}}">{{item.type}}</text>
+                  <text class="category-tag">{{item.category_text || item.category}}</text>
+                </view>
+                <view class="list-item-desc">{{item.description || '无描述'}}</view>
+                <view class="list-item-meta">
+                  <text class="date-tag">{{item.date}} {{item.time}}</text>
+                </view>
+              </view>
+              <view class="list-item-right">
+                <view class="list-item-value {{item.type === '收入' ? 'income' : 'expense'}}">¥{{item.amount}}</view>
+                <view class="list-item-actions">
+                  <button class="action-btn edit-btn" bindtap="onEditRecord" data-id="{{item.id}}">
+                    <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="widthFix" />
+                  </button>
+                  <button class="action-btn delete-btn" bindtap="onDeleteRecord" data-id="{{item.id}}">
+                    <image class="action-icon-img" src="/images/remix/delete-bin-line-white.png" mode="widthFix" />
+                  </button>
+                </view>
               </view>
             </view>
           </view>
-        </view>
-      </block>
+        </block>
 
-      <!-- 加载状态 -->
-      <view class="loading-state" wx:if="{{loading}}"><text>加载中...</text></view>
+        <!-- 加载状态 -->
+        <view class="loading-state" wx:if="{{loading}}"><text>加载中...</text></view>
 
-      <!-- 空状态 -->
-      <view class="empty-state" wx:if="{{!loading && filteredRecords.length === 0}}">
-        <image class="empty-icon-img" src="/images/remix/wallet-fill-orange.png" mode="widthFix" />
-        <text class="empty-text">暂无收支记录</text>
-        <view class="empty-subtitle">开始记录您的收支情况</view>
-        <view class="btn-primary" bindtap="onShowAddRecord">添加收支记录</view>
-      </view>
+        <!-- 空状态 -->
+        <view class="empty-state" wx:if="{{!loading && filteredRecords.length === 0}}">
+          <image class="empty-icon-img" src="/images/remix/wallet-fill-orange.png" mode="widthFix" />
+          <text class="empty-text">暂无收支记录</text>
+          <view class="empty-subtitle">开始记录您的收支情况</view>
+          <view class="btn-primary" bindtap="onShowAddRecord">添加收支记录</view>
         </view>
-      </view>
     </view>
 
     <!-- 添加收支记录弹窗组件 -->
