@@ -109,6 +109,7 @@ import {
   Odometer, 
   Files, 
   TrendCharts, 
+  Notebook,
   Reading, 
   Sunny, 
   Connection, 
@@ -192,7 +193,7 @@ const isChildActive = (item) => {
 const menuItems = computed(() => [
   { path: '/', label: '概览', icon: Odometer },
   { path: '/parrots', label: '我的鹦鹉', icon: Files }, 
-  { path: '/records', label: '饲养记录', icon: TrendCharts },
+  { path: '/records', label: '饲养记录', icon: Notebook },
   { path: '/expenses', label: '收支管理', icon: TrendCharts },
   { path: '/care-guide', label: '护理指南', icon: Reading }, 
   { path: '/incubation', label: '人工孵化', icon: Sunny },
