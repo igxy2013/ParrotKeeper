@@ -63,7 +63,7 @@ Page({
   fetchSingleRecord(type, id) {
     this.setData({ loading: true, error: '' });
     app.request({
-      url: `/records/${type}/${id}`,
+      url: `/api/records/${type}/${id}`,
       method: 'GET'
     }).then(res => {
       if (!res.success) {
