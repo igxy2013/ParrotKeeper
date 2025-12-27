@@ -387,14 +387,10 @@ Page({
   async loadTrendData() {
     try {
       const dateParams = this.getDateRange()
-      let period = 'day'
-      if (this.data.selectedPeriod === '本年' || this.data.selectedPeriod === '全部') {
-        period = 'month'
-      }
-      
+      const periodType = ['本年', '全部'].includes(this.data.selectedPeriod) ? 'month' : 'day'
       const params = {
         ...dateParams,
-        period: period
+        period: periodType
       }
 
       const res = await app.request({
@@ -403,9 +399,57 @@ Page({
         data: params
       })
 
-      if (res.success && Array.isArray(res.data)) {
+      if (res.success) {
+        const raw = Array.isArray(res.data) ? res.data : []
+        let data = raw
+
+        if (this.data.selectedPeriod !== '全部') {
+          const map = {}
+          raw.forEach(item => {
+            if (item && item.date) {
+              map[item.date] = item
+            }
+          })
+
+          if (periodType === 'day' && dateParams.start_date && dateParams.end_date) {
+            const start = new Date(dateParams.start_date + 'T00:00:00')
+            const end = new Date(dateParams.end_date + 'T00:00:00')
+            const list = []
+            for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+              const y = d.getFullYear()
+              const m = String(d.getMonth() + 1).padStart(2, '0')
+              const day = String(d.getDate()).padStart(2, '0')
+              const key = `${y}-${m}-${day}`
+              const found = map[key] || {}
+              list.push({
+                date: key,
+                income: Number(found.income || 0),
+                expense: Number(found.expense || 0),
+                net: Number(found.net || 0)
+              })
+            }
+            data = list
+          } else if (periodType === 'month') {
+            const now = new Date()
+            const year = now.getFullYear()
+            const list = []
+            for (let m = 1; m <= 12; m++) {
+              const mm = String(m).padStart(2, '0')
+              const key = `${year}-${mm}`
+              const found = map[key] || {}
+              list.push({
+                date: key,
+                income: Number(found.income || 0),
+                expense: Number(found.expense || 0),
+                net: Number(found.net || 0)
+              })
+            }
+            data = list
+          }
+        }
+
         this.setData({
-          trendData: res.data
+          trendData: data
         })
       }
     } catch (error) {

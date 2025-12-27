@@ -39,16 +39,16 @@
 }
 
 .dot.income {
-  background-color: #67C23A;
+  background-color: #064e3b;
 }
 
 .dot.expense {
-  background-color: #F56C6C;
+  background-color: #a3e635;
 }
 
 .dot.net {
-  background-color: #409EFF;
-  border-radius: 50%;
+  background-color: #10b981;
+  border-radius: 999rpx;
   height: 4rpx;
   width: 24rpx;
 }

@@ -1,6 +1,12 @@
 <view class="chart-container">
   <view class="chart-header">收支趋势</view>
-  <canvas type="2d" id="trendChartCanvas" class="chart-canvas"></canvas>
+  <canvas
+    type="2d"
+    id="trendChartCanvas"
+    class="chart-canvas"
+    bindtouchstart="onTouchStart"
+    bindtouchmove="onTouchMove"
+  ></canvas>
   <view class="chart-legend">
     <view class="legend-item">
       <view class="dot income"></view>
