@@ -264,11 +264,134 @@
 /* 图片化的筛选箭头尺寸与透明度 */
 .filter-arrow-img { width: 20rpx; height: 20rpx; opacity: 0.7; }
 
+.view-toggle {
+  margin-top: 24rpx;
+  display: flex;
+  background: #f1f3f5;
+  border-radius: 18rpx;
+  padding: 6rpx;
+  width: fit-content;
+  margin-left: auto;
+}
+
+.view-mode-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 32rpx;
+  border-radius: 14rpx;
+  font-size: 26rpx;
+  color: #9ca3af;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 8rpx;
+  position: relative;
+}
+
+.view-mode-segment.active {
+  background: #ffffff;
+  color: #10b981;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+.view-mode-icon {
+  width: 32rpx;
+  height: 32rpx;
+  opacity: 0.6;
+  transition: all 0.3s;
+}
+
+.view-mode-segment.active .view-mode-icon {
+  opacity: 1;
+  filter: invert(36%) sepia(76%) saturate(1519%) hue-rotate(88deg) brightness(100%) contrast(92%);
+}
+
 /* 鹦鹉列表 */
 .parrot-list {
   padding: 0 32rpx;
   margin-bottom: 32rpx;
 }
+
+/* 列表模式容器优化 */
+.parrot-list-mode-list {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10rpx);
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  margin-top: 16rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
+}
+
+.parrot-table-scroll {
+  width: 100%;
+}
+
+.parrot-table {
+  width: 100%;
+  min-width: 100%;
+}
+
+.parrot-table-header {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 20rpx;
+  background: rgba(243, 244, 246, 0.8);
+  border-bottom: 2rpx solid #e5e7eb;
+}
+
+.parrot-table-header .parrot-table-col {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #6b7280;
+  letter-spacing: 0.5rpx;
+}
+
+.parrot-table-row {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 20rpx;
+  background: transparent;
+  border-bottom: 1rpx solid #f3f4f6;
+  transition: all 0.2s ease;
+}
+
+.parrot-table-row:last-child {
+  border-bottom: none;
+}
+
+.parrot-table-row:active {
+  background: rgba(249, 250, 251, 0.8);
+}
+
+/* 列表列通用样式 */
+.parrot-table-col {
+  padding: 0 12rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 26rpx; /* 默认字体大小 */
+}
+
+/* 列宽分配 */
+.col-name { width: 140rpx; font-weight: 500; font-size: 26rpx; }
+.col-gender { width: 80rpx; text-align: center; font-size: 26rpx; }
+.col-species { width: 160rpx; }
+.col-age { width: 100rpx; }
+.col-weight { width: 100rpx; }
+.col-ring { width: 140rpx; color: #6b7280; font-size: 22rpx; }
+
+/* 表头文字样式 */
+.parrot-table-header .parrot-table-col {
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 24rpx; /* 表头字体稍小 */
+}
+
+/* 性别文字样式 */
+.gender-text-male { color: #3b82f6; font-weight: 500; }
+.gender-text-female { color: #ec4899; font-weight: 500; }
+.gender-text-unknown { color: #9ca3af; font-size: 22rpx; }
 
 .parrot-card {
   background: rgba(255, 255, 255, 0.8);
@@ -292,6 +415,90 @@
 .parrot-card:active {
   transform: scale(0.98);
   box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.16); /* 中性阴影加强 */
+}
+
+.parrot-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 32rpx;
+  border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+  border: 1rpx solid rgba(229, 231, 235, 0.9);
+}
+
+.parrot-list-row-main {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.parrot-list-avatar {
+  flex-shrink: 0;
+}
+
+.parrot-list-image {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 24rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  background: #f5f5f5;
+}
+
+.parrot-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.parrot-list-main-info {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.parrot-list-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #111827;
+}
+
+.parrot-list-sub-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+  margin-bottom: 8rpx;
+}
+
+.parrot-list-sub-item {
+  max-width: 260rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parrot-list-sub-separator {
+  color: #d1d5db;
+}
+
+.parrot-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx 16rpx;
+  font-size: 22rpx;
+  color: #9ca3af;
+}
+
+.parrot-list-meta-item {
+  padding: 4rpx 10rpx;
+  border-radius: 9999rpx;
+  background: rgba(243, 244, 246, 0.9);
 }
 
 /* 主要内容区域 */

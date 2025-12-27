@@ -27,6 +27,7 @@ Page({
     maleCount: 0,
     femaleCount: 0,
     activeGenderFilter: '',
+    viewMode: 'card',
     
     // 筛选和排序相关
     showSpeciesModal: false,
@@ -55,7 +56,12 @@ Page({
       arrowRightGray: '/images/remix/ri-arrow-right-s-fill-gray.png',
       arrowRight: '/images/remix/arrow-right-s-line.png',
       addParrotEmerald: '/images/remix/add-circle-fill.png',
-      claimByCodeKey: '/images/remix/key-2-line.png'
+      claimByCodeKey: '/images/remix/key-2-line.png',
+      viewGrid: '/images/remix/layout-grid-fill.svg',
+      viewList: '/images/remix/list-check.svg',
+      genderMale: '/images/remix/men-line.png',
+      genderFemale: '/images/remix/women-line.png',
+      genderUnknown: '/images/remix/question-mark.png'
     },
     isSortMode: false,
     draggingParrotId: null,
@@ -230,22 +236,17 @@ Page({
   // 加载鹦鹉品种列表
   async loadSpeciesList() {
     try {
-      const res = await app.request({
-        url: '/api/parrots/species',
-        method: 'GET'
+      this.setData({
+        speciesList: [],
+        speciesPickerRange: ['全部品种']
       })
-      
-      if (res.success) {
-        const list = res.data || []
-        const names = ['全部品种', ...list.map(s => s.name)]
-        this.setData({
-          speciesList: list,
-          speciesPickerRange: names
-        })
-      }
-    } catch (error) {
-      console.error('加载品种列表失败:', error)
-    }
+    } catch (error) {}
+  },
+
+  // 格式化品种名称，移除“鹦鹉”后缀
+  formatSpeciesName(name) {
+    if (!name) return '未知品种';
+    return name.replace(/鹦鹉$/, '');
   },
 
   // 加载鹦鹉列表
@@ -321,7 +322,8 @@ Page({
             photo_url: photoUrl,
             avatar_url: avatarUrl,
             photo_thumb: photoThumb,
-            avatar_thumb: avatarThumb
+            avatar_thumb: avatarThumb,
+            species_name_short: this.formatSpeciesName(speciesName)
           }
         })
         
@@ -359,7 +361,10 @@ Page({
           femaleCount
         })
 
-        this.applyGenderFilter()
+      this.applyGenderFilter()
+
+        // 根据当前用户的鹦鹉列表生成品种筛选项（仅显示用户所养品种）
+        this.updateSpeciesOptionsFromParrots(updatedParrots)
 
         // 异步填充每只鹦鹉的“最近喂食时间”文本
         this.updateLastFeedForParrots(updatedParrots)
@@ -374,6 +379,31 @@ Page({
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  // 仅用当前用户的鹦鹉列表生成品种筛选项
+  updateSpeciesOptionsFromParrots(list) {
+    try {
+      const arr = Array.isArray(list) ? list : []
+      const mapById = {}
+      const fallbackNames = new Set()
+      arr.forEach(p => {
+        const s = p.species || {}
+        const id = s.id
+        const name = s.name || p.species_name || ''
+        if (id != null && id !== '') {
+          if (!mapById[id]) mapById[id] = { id, name }
+        } else if (name) {
+          fallbackNames.add(name)
+        }
+      })
+      let speciesList = Object.values(mapById)
+      if (speciesList.length === 0 && fallbackNames.size > 0) {
+        speciesList = Array.from(fallbackNames).map(n => ({ id: '', name: n }))
+      }
+      const names = ['全部品种', ...speciesList.map(s => s.name)]
+      this.setData({ speciesList, speciesPickerRange: names })
+    } catch (_) {}
   },
 
   // 加载更多鹦鹉
@@ -915,11 +945,19 @@ Page({
 
   // 加载当前团队信息
   loadUserMode() {
-    // 从全局数据获取用户模式
-    const userMode = app.globalData.userMode || 'personal';
+    const storedMode = wx.getStorageSync('userMode') || ''
+    const userMode = app.globalData.userMode || storedMode || 'personal'
+    const viewMode = userMode === 'team' ? 'list' : 'card'
     this.setData({
-      userMode: userMode
-    });
+      userMode,
+      viewMode
+    })
+  },
+
+  onViewModeTap(e) {
+    const mode = e.currentTarget.dataset.mode
+    if (!mode || mode === this.data.viewMode) return
+    this.setData({ viewMode: mode })
   },
 
   // 切换模式
