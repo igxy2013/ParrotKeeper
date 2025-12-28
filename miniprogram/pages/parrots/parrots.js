@@ -17,7 +17,7 @@ Page({
     sortBy: 'created_at',
     sortOrder: 'desc',
     sortText: '最新添加',
-    sortPickerRange: ['名称 A-Z', '名称 Z-A', '年龄从小到大', '年龄从大到小', '最新添加'],
+    sortPickerRange: ['名称 A-Z', '名称 Z-A', '年龄从小到大', '年龄从大到小', '最新添加', '自定义排序'],
     isLogin: false, // 添加登录状态
     userMode: null, // 当前用户模式
     lastUserMode: null, // 记录上次的用户模式，用于检测模式变化
@@ -66,7 +66,9 @@ Page({
     // 通过过户码添加弹窗
     showClaimByCodeModal: false,
     claimCode: '',
-    claimingByCode: false
+    claimingByCode: false,
+    pendingRefresh: false,
+    refreshTimer: null
   },
 
   onLoad() {
@@ -254,6 +256,9 @@ Page({
     console.log('当前用户模式:', app.globalData.userMode);
     
     if (this.data.loading) {
+      if (refresh) {
+        this.setData({ pendingRefresh: true })
+      }
       console.log('正在加载中，跳过本次请求');
       return;
     }
@@ -263,12 +268,12 @@ Page({
     try {
       const params = {
         page: refresh ? 1 : this.data.page,
-        limit: 10,
+        per_page: 10,
         search: this.data.searchKeyword,
         species_id: this.data.selectedSpeciesId,
         health_status: this.data.selectedStatus,
-        sort_by: this.data.sortBy,
-        sort_order: this.data.sortOrder
+        sort_by: this.data.sortBy === 'custom' ? 'created_at' : this.data.sortBy,
+        sort_order: this.data.sortBy === 'custom' ? 'desc' : this.data.sortOrder
       }
       
       console.log('请求参数:', params);
@@ -337,7 +342,8 @@ Page({
             const cached = wx.getStorageSync('parrotOrder')
             if (Array.isArray(cached)) orderIds = cached
           }
-          if (Array.isArray(orderIds) && orderIds.length > 0) {
+          const useCustomOrder = this.data.sortBy === 'custom'
+          if (useCustomOrder && Array.isArray(orderIds) && orderIds.length > 0) {
             const map = {}
             updatedParrots.forEach(p => { map[p.id] = p })
             const ordered = []
@@ -368,12 +374,16 @@ Page({
       } else {
         console.log('API返回失败:', res);
       }
-    } catch (error) {
-      console.error('加载鹦鹉列表失败:', error)
-      app.showError('加载失败，请重试')
-    } finally {
-      this.setData({ loading: false })
+  } catch (error) {
+    console.error('加载鹦鹉列表失败:', error)
+    app.showError('加载失败，请重试')
+  } finally {
+    const need = this.data.pendingRefresh
+    this.setData({ loading: false, pendingRefresh: false })
+    if (need) {
+      this.loadParrots(true)
     }
+  }
   },
 
   // 加载更多鹦鹉
@@ -506,7 +516,8 @@ Page({
       'name_desc': '名称 Z-A',
       'birth_date_desc': '年龄从小到大',
       'birth_date_asc': '年龄从大到小',
-      'created_at_desc': '最新添加'
+      'created_at_desc': '最新添加',
+      'custom_manual': '自定义排序'
     }
     const key = `${by}_${order}`
     
@@ -516,7 +527,9 @@ Page({
       sortText: sortLabelMap[key],
       showSortModal: false
     })
-    this.refreshData()
+    try { if (this.data.refreshTimer) clearTimeout(this.data.refreshTimer) } catch (_) {}
+    const t = setTimeout(() => this.refreshData(), 120)
+    this.setData({ refreshTimer: t })
   },
 
   // 原生排序选择器变更
@@ -528,11 +541,14 @@ Page({
       { by: 'name', order: 'desc', text: '名称 Z-A' },
       { by: 'birth_date', order: 'desc', text: '年龄从小到大' },
       { by: 'birth_date', order: 'asc', text: '年龄从大到小' },
-      { by: 'created_at', order: 'desc', text: '最新添加' }
+      { by: 'created_at', order: 'desc', text: '最新添加' },
+      { by: 'custom', order: 'manual', text: '自定义排序' }
     ]
     const sel = opts[idx] || opts[4]
     this.setData({ sortBy: sel.by, sortOrder: sel.order, sortText: sel.text })
-    this.refreshData()
+    try { if (this.data.refreshTimer) clearTimeout(this.data.refreshTimer) } catch (_) {}
+    const t = setTimeout(() => this.refreshData(), 120)
+    this.setData({ refreshTimer: t })
   },
 
   // 阻止事件冒泡
@@ -804,7 +820,7 @@ Page({
         ;(this.data.parrots || []).forEach(p => { map[p.id] = p })
         const newParrots = []
         newOrderIds.forEach(pid => { if (map[pid]) newParrots.push(map[pid]) })
-        this.setData({ parrots: newParrots })
+        this.setData({ parrots: newParrots, sortBy: 'custom', sortOrder: 'manual', sortText: '自定义排序' })
         this.applyGenderFilter()
         try {
           await this.saveParrotOrder(newOrderIds)
@@ -887,7 +903,7 @@ Page({
     ;(this.data.parrots || []).forEach(p => { map[p.id] = p })
     const newParrots = []
     newOrderIds.forEach(pid => { if (map[pid]) newParrots.push(map[pid]) })
-    this.setData({ parrots: newParrots })
+    this.setData({ parrots: newParrots, sortBy: 'custom', sortOrder: 'manual', sortText: '自定义排序' })
     this.applyGenderFilter()
     try {
       await this.saveParrotOrder(newOrderIds)

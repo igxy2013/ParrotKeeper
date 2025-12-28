@@ -260,6 +260,9 @@
       <view class="filter-option" bindtap="selectSort" data-by="created_at" data-order="desc">
         <text class="option-text">最新添加</text>
       </view>
+      <view class="filter-option" bindtap="selectSort" data-by="custom" data-order="manual">
+        <text class="option-text">自定义排序</text>
+      </view>
     </view>
   </view>
 </view>
