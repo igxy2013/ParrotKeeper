@@ -91,13 +91,16 @@ Page({
     modalTopOffsetPx: 24,
     modalBottomOffsetPx: 24,
     // 搜索关键字
-    searchKeyword: ''
+    searchKeyword: '',
+    // 趋势图数据
+    trendData: []
   },
 
   onLoad() {
     this.loadParrots()
     this.loadExpenses()
     this.loadStats()
+    this.loadTrendData()
     // 初始化类别选项与默认选择
     this.updateCategoryOptions()
   },
@@ -108,6 +111,7 @@ Page({
       app.globalData.needRefresh = false
       this.loadExpenses()
       this.loadStats()
+      this.loadTrendData()
     }
   },
 
@@ -125,6 +129,7 @@ Page({
       wx.stopPullDownRefresh()
     })
     this.loadStats()
+    this.loadTrendData()
   },
 
   // 上拉加载更多
@@ -168,6 +173,7 @@ Page({
       // 在setData完成后再调用，确保selectedPeriod已更新
       this.loadExpenses()
       this.loadStats()
+      this.loadTrendData()
     })
   },
 
@@ -377,6 +383,80 @@ Page({
     }
   },
 
+  // 加载趋势数据
+  async loadTrendData() {
+    try {
+      const dateParams = this.getDateRange()
+      const periodType = ['本年', '全部'].includes(this.data.selectedPeriod) ? 'month' : 'day'
+      const params = {
+        ...dateParams,
+        period: periodType
+      }
+
+      const res = await app.request({
+        url: '/api/expenses/trend',
+        method: 'GET',
+        data: params
+      })
+
+      if (res.success) {
+        const raw = Array.isArray(res.data) ? res.data : []
+        let data = raw
+
+        if (this.data.selectedPeriod !== '全部') {
+          const map = {}
+          raw.forEach(item => {
+            if (item && item.date) {
+              map[item.date] = item
+            }
+          })
+
+          if (periodType === 'day' && dateParams.start_date && dateParams.end_date) {
+            const start = new Date(dateParams.start_date + 'T00:00:00')
+            const end = new Date(dateParams.end_date + 'T00:00:00')
+            const list = []
+            for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+              const y = d.getFullYear()
+              const m = String(d.getMonth() + 1).padStart(2, '0')
+              const day = String(d.getDate()).padStart(2, '0')
+              const key = `${y}-${m}-${day}`
+              const found = map[key] || {}
+              list.push({
+                date: key,
+                income: Number(found.income || 0),
+                expense: Number(found.expense || 0),
+                net: Number(found.net || 0)
+              })
+            }
+            data = list
+          } else if (periodType === 'month') {
+            const now = new Date()
+            const year = now.getFullYear()
+            const list = []
+            for (let m = 1; m <= 12; m++) {
+              const mm = String(m).padStart(2, '0')
+              const key = `${year}-${mm}`
+              const found = map[key] || {}
+              list.push({
+                date: key,
+                income: Number(found.income || 0),
+                expense: Number(found.expense || 0),
+                net: Number(found.net || 0)
+              })
+            }
+            data = list
+          }
+        }
+
+        this.setData({
+          trendData: data
+        })
+      }
+    } catch (error) {
+      console.error('加载趋势数据失败:', error)
+    }
+  },
+
   // 将当前选择的“类别”标签映射为后端存储值
   getSelectedCategoryValue() {
     const label = this.data.categoryOptions[this.data.selectedCategoryIndex]
@@ -448,6 +528,7 @@ Page({
     // 刷新页面数据（重新拉取第一页）
     this.loadExpenses();
     this.loadStats();
+    this.loadTrendData();
   },
 
   // 应用筛选

@@ -20,6 +20,28 @@ def get_species():
     except Exception as e:
         return error_response(f'获取品种列表失败: {str(e)}')
 
+@parrots_bp.route('/species/owned', methods=['GET'])
+@login_required
+def get_owned_species():
+    """获取当前用户可访问鹦鹉所涉及的品种列表（基于团队模式过滤）"""
+    try:
+        user = request.current_user
+        accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
+        if not accessible_parrot_ids:
+            return success_response([])
+
+        species = (
+            db.session.query(ParrotSpecies)
+            .join(Parrot, Parrot.species_id == ParrotSpecies.id)
+            .filter(Parrot.id.in_(accessible_parrot_ids))
+            .distinct()
+            .order_by(ParrotSpecies.name.asc())
+            .all()
+        )
+        return success_response(parrot_species_list_schema.dump(species))
+    except Exception as e:
+        return error_response(f'获取用户品种列表失败: {str(e)}')
+
 @parrots_bp.route('/species', methods=['POST'])
 @login_required
 def create_species():
@@ -135,7 +157,13 @@ def get_parrots():
     try:
         user = request.current_user
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
+
+        # 兼容旧参数：前端有的地方使用 limit 表示每页数量
+        per_page = request.args.get('per_page', type=int)
+        if per_page is None:
+            per_page = request.args.get('limit', 20, type=int)
+        if not per_page:
+            per_page = 20
         
         print(f"[DEBUG] 用户 {user.id} 请求鹦鹉列表，页码: {page}, 每页: {per_page}, 模式: {getattr(user, 'user_mode', 'personal')}")
         

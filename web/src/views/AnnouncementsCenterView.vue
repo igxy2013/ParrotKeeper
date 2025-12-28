@@ -2,24 +2,17 @@
   <div class="ann-page">
     <div class="header">
       <h2>公告中心</h2>
-      <div class="header-actions">
-        <el-button @click="loadMore" :loading="loading" :disabled="!hasMore">加载更多</el-button>
-      </div>
     </div>
     <div class="content">
       <div v-if="loading" class="tips">加载中...</div>
       <div v-else>
-        <div v-if="items.length === 0" class="empty">暂无已发布公告</div>
+        <div v-if="items.length === 0" class="empty">暂无公告</div>
         <div v-else class="list">
           <el-card v-for="a in items" :key="a.id" class="ann-item" shadow="hover" @click="openDetail(a)">
             <div class="ann-title">{{ a.title }}</div>
             <div class="ann-meta">{{ formatTime(a.created_at) }}</div>
             <div class="ann-preview">{{ preview(a.content) }}</div>
           </el-card>
-          <div class="load-more" v-if="hasMore">
-            <el-button type="primary" @click="loadMore" :loading="loading">加载更多</el-button>
-          </div>
-          <div class="no-more" v-else>已全部加载</div>
         </div>
       </div>
     </div>
@@ -44,25 +37,16 @@ import api from '@/api/axios'
 const route = useRoute()
 const loading = ref(false)
 const items = ref([])
-const limit = ref(20)
-const hasMore = ref(true)
 const showDetail = ref(false)
 const current = ref(null)
 
 const fetchList = async () => {
   loading.value = true
   try {
-    const r = await api.get('/announcements', { params: { limit: limit.value } })
+    const r = await api.get('/announcements', { params: { limit: 50 } })
     const list = (r.data && r.data.data && r.data.data.announcements) || []
     items.value = list
-    hasMore.value = list.length >= limit.value
-  } catch (_) { hasMore.value = false } finally { loading.value = false }
-}
-
-const loadMore = async () => {
-  if (loading.value) return
-  limit.value += 20
-  await fetchList()
+  } catch (_) { items.value = [] } finally { loading.value = false }
 }
 
 const openDetail = (a) => {
@@ -98,13 +82,6 @@ onMounted(async () => {
   if (id && Array.isArray(items.value)) {
     const a = items.value.find(x => Number(x.id) === id)
     if (a) openDetail(a)
-    else {
-      // 若未在当前列表中，尝试单独拉取更多
-      limit.value = Math.max(limit.value, 50)
-      await fetchList()
-      const b = items.value.find(x => Number(x.id) === id)
-      if (b) openDetail(b)
-    }
   }
 })
 </script>

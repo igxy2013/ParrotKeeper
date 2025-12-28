@@ -248,14 +248,14 @@
 <!-- 团队协作模块（仅团队模式显示） -->
 <view class="team-card" wx:if="{{isLogin && userMode === 'team'}}">
   <view class="section-title">
-    <image class="section-icon-img" src="{{iconPaths.userLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="userLine" />
+    <image class="section-icon-img" src="{{iconPaths.groupLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="groupLine" />
     <text>团队协作</text>
   </view>
   <!-- 改为图片式卡片列表，像素级对齐设计 -->
   <view class="team-list">
     <view class="team-item theme-blue" bindtap="onTeamItemTap" data-action="current">
       <view class="team-item-icon">
-        <image class="team-item-icon-img" src="{{iconPaths.userLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="userLine" />
+        <image class="team-item-icon-img" src="{{iconPaths.groupLine}}" mode="aspectFit" binderror="onProfileIconError" data-key="groupLine" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">当前团队</view>
@@ -275,7 +275,7 @@
     </view>
     <view class="team-item theme-purple {{(teamInfo.id || currentTeamName) ? 'disabled' : ''}}" bindtap="onTeamItemTap" data-action="create">
       <view class="team-item-icon">
-        <image class="team-item-icon-img" src="{{iconPaths.userFill}}" mode="aspectFit" binderror="onProfileIconError" data-key="userFill" />
+        <image class="team-item-icon-img" src="{{iconPaths.groupFill}}" mode="aspectFit" binderror="onProfileIconError" data-key="groupFill" />
       </view>
       <view class="team-item-content">
         <view class="team-item-title">创建团队</view>
@@ -361,7 +361,7 @@
     <!-- 后台管理入口按钮（迁移卡片至后台管理页面后） -->
     <view class="admin-entry-card" wx:if="{{isSuperAdmin}}">
       <view class="admin-entry-btn" bindtap="goAdminHome">
-        <image class="admin-entry-icon" src="{{iconPaths.sectionSettings}}" mode="widthFix" binderror="onProfileIconError" data-key="sectionSettings" />
+        <image class="admin-entry-icon" src="{{iconPaths.sectionSettings1}}" mode="widthFix" binderror="onProfileIconError" data-key="sectionSettings1" />
         <text class="admin-entry-text">后台管理</text>
       </view>
     </view>

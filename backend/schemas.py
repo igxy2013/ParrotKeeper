@@ -10,6 +10,27 @@ class UserSchema(SQLAlchemyAutoSchema):
         load_instance = True
         exclude = ('updated_at',)
 
+    username = fields.Method('get_username', dump_only=True)
+    account_username = fields.Method('get_account_username', dump_only=True)
+
+    def get_username(self, obj):
+        try:
+            account = getattr(obj, 'account', None)
+            if account and getattr(account, 'username', None):
+                return account.username
+            return getattr(obj, 'nickname', None) or getattr(obj, 'openid', None)
+        except Exception:
+            return None
+
+    def get_account_username(self, obj):
+        try:
+            account = getattr(obj, 'account', None)
+            if account and getattr(account, 'username', None):
+                return account.username
+            return None
+        except Exception:
+            return None
+
 class ParrotSpeciesSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = ParrotSpecies
@@ -117,7 +138,16 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
         return obj.feed_type.name if obj.feed_type else None
     
     def get_created_by_username(self, obj):
-        return obj.created_by.username if obj.created_by else None
+        try:
+            user = obj.created_by
+            if not user:
+                return None
+            account = getattr(user, 'account', None)
+            if account and getattr(account, 'username', None):
+                return account.username
+            return getattr(user, 'nickname', None) or getattr(user, 'openid', None)
+        except Exception:
+            return None
     
     def get_created_by_nickname(self, obj):
         return obj.created_by.nickname if obj.created_by else None
@@ -158,7 +188,16 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
         return obj.parrot.name if obj.parrot else None
     
     def get_created_by_username(self, obj):
-        return obj.created_by.username if obj.created_by else None
+        try:
+            user = obj.created_by
+            if not user:
+                return None
+            account = getattr(user, 'account', None)
+            if account and getattr(account, 'username', None):
+                return account.username
+            return getattr(user, 'nickname', None) or getattr(user, 'openid', None)
+        except Exception:
+            return None
     
     def get_created_by_nickname(self, obj):
         return obj.created_by.nickname if obj.created_by else None
@@ -209,7 +248,16 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
         return obj.parrot.name if obj.parrot else None
     
     def get_created_by_username(self, obj):
-        return obj.created_by.username if obj.created_by else None
+        try:
+            user = obj.created_by
+            if not user:
+                return None
+            account = getattr(user, 'account', None)
+            if account and getattr(account, 'username', None):
+                return account.username
+            return getattr(user, 'nickname', None) or getattr(user, 'openid', None)
+        except Exception:
+            return None
     
     def get_created_by_nickname(self, obj):
         return obj.created_by.nickname if obj.created_by else None
@@ -266,7 +314,16 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
         return obj.female_parrot.name if obj.female_parrot else None
     
     def get_created_by_username(self, obj):
-        return obj.created_by.username if obj.created_by else None
+        try:
+            user = obj.created_by
+            if not user:
+                return None
+            account = getattr(user, 'account', None)
+            if account and getattr(account, 'username', None):
+                return account.username
+            return getattr(user, 'nickname', None) or getattr(user, 'openid', None)
+        except Exception:
+            return None
     
     def get_created_by_nickname(self, obj):
         return obj.created_by.nickname if obj.created_by else None
@@ -408,9 +465,14 @@ class PairingRecordSchema(SQLAlchemyAutoSchema):
 
     def get_created_at_ts(self, obj):
         try:
+            from datetime import timezone
             dt = obj.created_at
             if not dt:
                 return None
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
             return int(dt.timestamp() * 1000)
         except Exception:
             return None

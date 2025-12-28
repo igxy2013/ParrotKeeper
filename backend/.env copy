@@ -1,0 +1,34 @@
+# 数据库配置（来自工作区规则）
+DB_HOST = 127.0.0.1
+DB_PORT = 3306
+DB_USER = mysql
+DB_PASSWORD = 12345678
+DB_NAME = parrot_breeding
+
+# 微信小程序配置
+WECHAT_APP_ID = wx0bd7b0ea567e7bd0
+WECHAT_APP_SECRET = 51e11bcfcbd5b413bcbd0c08d47282a6
+
+# 文件上传配置
+UPLOAD_FOLDER = \uploads\images
+MAX_CONTENT_LENGTH = 16777216
+
+# 应用配置
+SECRET_KEY = V_AnAdsSDKN9DVy2YikMjFVz1MOzU07Ph1aLf3orqmMsNwvxinL9znvIb71f-U7uIhq_shnNxM71OfTCGCWXYA
+APP_VERSION = 4.1.10
+
+# 基础URL配置（部署时需要修改为实际域名）
+BASE_URL = https://bimai.xyz
+
+# 服务端网络配置
+HOST = 0.0.0.0
+PORT = 5075
+
+# Flask 环境
+FLASK_ENV = production
+
+# 移除背景API配置
+REMOVE_BG_API_KEY = J71BBQkSzZWAh2p7AcVzs6PF
+
+#阿里云AI大模型API配置
+ALIYUN_API_KEY = sk-bf40ef1dbf0e4794af91c8e62b9159ee

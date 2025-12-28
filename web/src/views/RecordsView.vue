@@ -350,7 +350,7 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="addDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="addDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="addSubmitting" @click="submitAdd">保存</el-button>
       </template>
     </el-dialog>

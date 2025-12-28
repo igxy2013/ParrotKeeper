@@ -19,7 +19,7 @@
       <text class="stats-title">鹦鹉总览</text>
       <view class="stats-grid-overview">
         <view class="stat-overview-item {{activeGenderFilter === 'all' ? 'active' : ''}}" bindtap="onOverviewFilterTap" data-filter="all">
-          <text class="stat-overview-value">{{parrots.length}}</text>
+          <text class="stat-overview-value">{{totalParrots}}</text>
           <text class="stat-overview-label">总数量</text>
         </view>
         <view class="stat-overview-item {{activeGenderFilter === 'male' ? 'active' : ''}}" bindtap="onOverviewFilterTap" data-filter="male">
@@ -33,28 +33,7 @@
       </view>
     </view>
 
-<!-- 通过过户码添加弹窗 -->
-<view class="modal-overlay" wx:if="{{showClaimByCodeModal}}" bindtap="closeClaimByCodeModal"></view>
-<view class="modal-content claim-modal" wx:if="{{showClaimByCodeModal}}" catchtap="stopPropagation">
-  <view class="modal-header">
-    <text class="modal-title">通过过户码添加鹦鹉</text>
-    <view class="modal-close" bindtap="closeClaimByCodeModal">×</view>
   </view>
-  <view class="modal-body">
-    <view class="input-group">
-      <text class="input-label">过户码</text>
-      <input class="input" placeholder="请输入过户码" value="{{claimCode}}" bindinput="onInputClaimCode"/>
-    </view>
-    <view class="tip-text">每个过户码仅可使用一次，请在有效期内使用。</view>
-  </view>
-  <view class="modal-actions">
-    <button class="modal-btn cancel-btn" bindtap="closeClaimByCodeModal" disabled="{{claimingByCode}}">取消</button>
-    <button class="modal-btn submit-btn" bindtap="submitClaimByCode" loading="{{claimingByCode}}" disabled="{{claimingByCode}}">确认添加</button>
-  </view>
-</view>
-<!-- 自定义底部导航 -->
-<bottom-nav active="parrots" />
-    </view>
 
   <!-- 搜索和筛选 -->
   <view class="search-filter-card">
@@ -72,7 +51,7 @@
     <view class="filter-bar">
       <picker mode="selector" range="{{speciesPickerRange}}" bindchange="onSpeciesPickerChange">
         <view class="filter-item {{selectedSpeciesId ? 'active' : ''}}">
-          <text class="filter-text">{{selectedSpeciesId ? selectedSpeciesName : '品种'}}</text>
+          <text class="filter-text">{{selectedSpeciesName || '全部品种'}}</text>
           <image class="filter-arrow-img" src="{{iconPaths.arrowDown}}" mode="widthFix" binderror="onListIconError" data-key="arrowDown" lazy-load="true"/>
         </view>
       </picker>
@@ -89,63 +68,98 @@
          </view>
       </picker>
     </view>
+    <view class="view-toggle">
+      <view class="view-mode-segment {{viewMode === 'card' ? 'active' : ''}}" data-mode="card" bindtap="onViewModeTap">
+        <image class="view-mode-icon" src="{{iconPaths.viewGrid}}" mode="aspectFit" />
+        <text>卡片</text>
+      </view>
+      <view class="view-mode-segment {{viewMode === 'list' ? 'active' : ''}}" data-mode="list" bindtap="onViewModeTap">
+        <image class="view-mode-icon" src="{{iconPaths.viewList}}" mode="aspectFit" />
+        <text>列表</text>
+      </view>
+    </view>
   </view>
 
   <!-- 排序提示 -->
   
 
-  <!-- 鹦鹉列表 -->
   <view class="parrot-list" wx:if="{{displayParrots.length > 0}}">
-    <view class="parrot-card {{isSortMode ? 'sort-mode' : ''}} {{dragTargetIndex === idx ? 'drop-target' : ''}}" 
-          wx:for="{{displayParrots}}" wx:key="id" wx:for-index="idx"
-          bindtap="viewParrotDetail" data-id="{{item.id}}"
-          bindlongpress="onParrotLongPress" data-index="{{idx}}">
-      <view class="parrot-main">
-        <!-- 鹦鹉头像 -->
-        <view class="parrot-avatar">
-          <image 
-            class="parrot-image" 
-            src="{{item.photo_thumb || item.avatar_thumb || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" 
-            mode="aspectFill"
-            binderror="handleImageError"
-            data-id="{{item.id}}"
-            lazy-load="true"
-          />
-        </view>
-        
-        <!-- 基本信息 -->
-        <view class="parrot-info">
-          <view class="parrot-header">
-          <view class="parrot-title">
-            <text class="parrot-name">{{item.name}}</text>
-            <view class="gender-badge gender-{{item.gender}}">
-              <image wx:if="{{item.gender === 'male'}}" class="gender-icon-img" src="/images/remix/men-line.png" mode="widthFix" lazy-load="true" />
-              <image wx:elif="{{item.gender === 'female'}}" class="gender-icon-img" src="/images/remix/women-line.png" mode="widthFix" lazy-load="true" />
-              <image wx:else class="gender-icon-img" src="/images/remix/question-mark.png" mode="widthFix" lazy-load="true" />
+    <view wx:if="{{viewMode === 'card'}}">
+      <view class="parrot-card {{isSortMode ? 'sort-mode' : ''}} {{dragTargetIndex === idx ? 'drop-target' : ''}}" 
+            wx:for="{{displayParrots}}" wx:key="id" wx:for-index="idx"
+            bindtap="viewParrotDetail" data-id="{{item.id}}"
+            bindlongpress="onParrotLongPress" data-index="{{idx}}">
+        <view class="parrot-main">
+          <view class="parrot-avatar">
+            <image 
+              class="parrot-image" 
+              src="{{item.photo_thumb || item.avatar_thumb || item.photo_url || item.avatar_url || '/images/parrot-avatar-green.svg'}}" 
+              mode="aspectFill"
+              binderror="handleImageError"
+              data-id="{{item.id}}"
+              lazy-load="true"
+            />
+          </view>
+          <view class="parrot-info">
+            <view class="parrot-header">
+              <view class="parrot-title">
+                <text class="parrot-name">{{item.name}}</text>
+                <view class="gender-badge gender-{{item.gender}}">
+                  <image wx:if="{{item.gender === 'male'}}" class="gender-icon-img" src="{{iconPaths.genderMale}}" mode="widthFix" lazy-load="true" />
+                  <image wx:elif="{{item.gender === 'female'}}" class="gender-icon-img" src="{{iconPaths.genderFemale}}" mode="widthFix" lazy-load="true" />
+                  <image wx:else class="gender-icon-img" src="{{iconPaths.genderUnknown}}" mode="widthFix" lazy-load="true" />
+                </view>
+              </view>
+              <view class="health-badge health-{{item.current_health_status || item.health_status}}">
+                <text wx:if="{{(item.current_health_status || item.health_status) === 'healthy'}}">健康</text>
+                <text wx:elif="{{(item.current_health_status || item.health_status) === 'sick'}}">生病</text>
+                <text wx:elif="{{(item.current_health_status || item.health_status) === 'recovering'}}">康复中</text>
+                <text wx:elif="{{(item.current_health_status || item.health_status) === 'observation'}}">观察中</text>
+                <text wx:else>健康</text>
+              </view>
+            </view>
+            <text class="parrot-species">{{item.species_name}} • {{item.age_display || '未知'}} • {{item.weight_display || '未记录'}}</text>
+            <view class="parrot-status">
+              <view class="status-item">
+                <image class="status-icon-img" src="{{iconPaths.statusRestaurantOrange}}" mode="widthFix" binderror="onListIconError" data-key="statusRestaurantOrange" lazy-load="true"/>
+                <text class="status-text">{{item.last_feed || ''}}</text>
+              </view>
             </view>
           </view>
-            <view class="health-badge health-{{item.current_health_status || item.health_status}}">
-              <text wx:if="{{(item.current_health_status || item.health_status) === 'healthy'}}">健康</text>
-              <text wx:elif="{{(item.current_health_status || item.health_status) === 'sick'}}">生病</text>
-              <text wx:elif="{{(item.current_health_status || item.health_status) === 'recovering'}}">康复中</text>
-              <text wx:elif="{{(item.current_health_status || item.health_status) === 'observation'}}">观察中</text>
-              <text wx:else>健康</text>
-            </view>
+          <view class="parrot-arrow">
+              <image class="arrow-icon-img" src="{{iconPaths.arrowRight}}" mode="widthFix" binderror="onListIconError" data-key="arrowRight" lazy-load="true"/>
           </view>
-          <text class="parrot-species">{{item.species_name}} • {{item.age_display || '未知'}} • {{item.weight_display || '未记录'}}</text>
-          <view class="parrot-status">
-            <view class="status-item">
-              <image class="status-icon-img" src="{{iconPaths.statusRestaurantOrange}}" mode="widthFix" binderror="onListIconError" data-key="statusRestaurantOrange" lazy-load="true"/>
-              <text class="status-text">{{item.last_feed || ''}}</text>
-            </view>
-          </view>
-        </view>
-        
-        <!-- 箭头图标 -->
-        <view class="parrot-arrow">
-            <image class="arrow-icon-img" src="{{iconPaths.arrowRight}}" mode="widthFix" binderror="onListIconError" data-key="arrowRight" lazy-load="true"/>
         </view>
       </view>
+    </view>
+    <view wx:elif="{{viewMode === 'list'}}" class="parrot-list-mode-list">
+      <scroll-view class="parrot-table-scroll" scroll-x="true" enable-flex="true">
+          <view class="parrot-table">
+          <view class="parrot-table-header">
+            <text class="parrot-table-col col-name">名称</text>
+            <text class="parrot-table-col col-gender">性别</text>
+            <text class="parrot-table-col col-species">品种</text>
+            <text class="parrot-table-col col-age">年龄</text>
+            <text class="parrot-table-col col-weight">体重</text>
+            <text class="parrot-table-col col-ring">脚环号</text>
+          </view>
+          <view class="parrot-table-row"
+                wx:for="{{displayParrots}}" wx:key="id" wx:for-index="idx"
+                bindtap="viewParrotDetail" data-id="{{item.id}}"
+                bindlongpress="onParrotLongPress" data-index="{{idx}}">
+            <text class="parrot-table-col col-name">{{item.name}}</text>
+            <view class="parrot-table-col col-gender">
+              <text class="gender-text-male" wx:if="{{item.gender === 'male'}}">公</text>
+              <text class="gender-text-female" wx:elif="{{item.gender === 'female'}}">母</text>
+              <text class="gender-text-unknown" wx:else>未知</text>
+            </view>
+            <text class="parrot-table-col col-species">{{item.species_name_short || item.species_name || '未知'}}</text>
+            <text class="parrot-table-col col-age">{{item.age_display || '未知'}}</text>
+            <text class="parrot-table-col col-weight">{{item.weight_display || '-'}}</text>
+            <text class="parrot-table-col col-ring">{{item.ring_number || '-'}}</text>
+          </view>
+        </view>
+      </scroll-view>
     </view>
   </view>
 
@@ -178,6 +192,29 @@
     <view class="loading-spinner"></view>
     <text class="loading-text">加载中...</text>
   </view>
+
+  <!-- 通过过户码添加弹窗 -->
+  <view class="modal-overlay" wx:if="{{showClaimByCodeModal}}" bindtap="closeClaimByCodeModal"></view>
+  <view class="modal-content claim-modal" wx:if="{{showClaimByCodeModal}}" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">通过过户码添加鹦鹉</text>
+      <view class="modal-close" bindtap="closeClaimByCodeModal">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="input-group">
+        <text class="input-label">过户码</text>
+        <input class="input" placeholder="请输入过户码" value="{{claimCode}}" bindinput="onInputClaimCode"/>
+      </view>
+      <view class="tip-text">每个过户码仅可使用一次，请在有效期内使用。</view>
+    </view>
+    <view class="modal-actions">
+      <button class="modal-btn cancel-btn" bindtap="closeClaimByCodeModal" disabled="{{claimingByCode}}">取消</button>
+      <button class="modal-btn submit-btn" bindtap="submitClaimByCode" loading="{{claimingByCode}}" disabled="{{claimingByCode}}">确认添加</button>
+    </view>
+  </view>
+
+  <!-- 自定义底部导航 -->
+  <bottom-nav active="parrots" />
 </view>
 
 <!-- 品种筛选弹窗 -->

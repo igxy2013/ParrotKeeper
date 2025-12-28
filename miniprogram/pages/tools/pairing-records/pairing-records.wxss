@@ -11,7 +11,7 @@
 .switch-bar .switch-thumb.right { left: calc(50% + 6rpx); }
 
 .list { display: flex; flex-direction: column; gap: 16rpx; padding: 12rpx; }
-.item { background: #fff; border: 2rpx solid #eef2f7; border-radius: 24rpx; padding: 24rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); }
+.item { background: #fff; border: 2rpx solid #eef2f7; border-radius: 24rpx; padding: 24rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); position: relative; }
 .item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12rpx; }
 .species { font-size: 30rpx; font-weight: 700; color: #111827; }
 .date { font-size: 24rpx; color: #6b7280; }
@@ -29,8 +29,11 @@
 .result-label { font-weight: 600; color: #334155; font-size: 26rpx; }
 .result-prob { font-weight: 700; color: #475569; font-size: 26rpx; }
 
-.item-actions { display: flex; justify-content: flex-end; margin-top: 12rpx; }
-.action-btn.delete { background: #ef4444; color: #fff; padding: 10rpx 18rpx; border-radius: 12rpx; font-size: 24rpx; }
+.item-actions { display: none; }
+
+/* 顶部右侧删除图标按钮 */
+.record-delete-btn { position: absolute; top: 18rpx; right: 18rpx; width: 64rpx; height: 64rpx; border-radius: 14rpx; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 6rpx 16rpx rgba(239,68,68,0.28); display: flex; align-items: center; justify-content: center; }
+.record-delete-icon { width: 32rpx; height: 32rpx; }
 
 .clear-btn { align-self: center; margin-top: 8rpx; background: #e5e7eb; color: #111827; padding: 12rpx 20rpx; border-radius: 12rpx; }
 .clear-text { font-size: 26rpx; }

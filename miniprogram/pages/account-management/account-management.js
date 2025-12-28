@@ -44,7 +44,7 @@ Page({
       })
 
       this.setData({
-        username: res.username || ''
+        username: res.account_username || ''
       })
     } catch (err) {
       console.error('Fetch profile failed', err)
@@ -121,9 +121,82 @@ Page({
     // 阻止点击冒泡
   },
 
+  onBindUsernameInput(e) {
+    const v = (e.detail.value || '').trim()
+    this.setData({ bindUsername: v })
+  },
+
+  onBindPasswordInput(e) {
+    const v = e.detail.value || ''
+    this.setData({ bindPassword: v })
+  },
+
+  onAccountTap() {
+    const { username } = this.data
+    if (username) {
+      wx.showModal({
+        title: '解除账号绑定',
+        content: `当前已绑定账号：${username}\n确定要解除绑定吗？`,
+        confirmText: '解除绑定',
+        cancelText: '取消',
+        confirmColor: '#ef4444',
+        success: (res) => {
+          if (res.confirm) {
+            this.unbindAccount()
+          }
+        }
+      })
+    } else {
+      wx.showActionSheet({
+        itemList: ['绑定已有账号', '建立新账号'],
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            this.showBindModal()
+          } else if (res.tapIndex === 1) {
+            this.showSetupModal()
+          }
+        }
+      })
+    }
+  },
+
+  async unbindAccount() {
+    wx.showLoading({ title: '解除中...' })
+    try {
+      await new Promise((resolve, reject) => {
+        wx.request({
+          url: `${app.globalData.baseUrl}/api/auth/unbind-credentials`,
+          method: 'POST',
+          header: {
+            'X-OpenID': app.globalData.openid
+          },
+          success: (res) => {
+            if (res.statusCode === 200 && res.data && res.data.success) {
+              resolve(res.data.data)
+            } else {
+              const msg = (res.data && res.data.message) || '解除失败'
+              reject(msg)
+            }
+          },
+          fail: (err) => reject(err)
+        })
+      })
+
+      wx.hideLoading()
+      wx.showToast({ title: '已解除绑定', icon: 'success' })
+      this.fetchProfile()
+    } catch (err) {
+      wx.hideLoading()
+      const msg = typeof err === 'string' ? err : '解除失败'
+      wx.showToast({ title: msg, icon: 'none' })
+    }
+  },
+
   async handleBind() {
     const { bindUsername, bindPassword } = this.data
-    if (!bindUsername || !bindPassword) {
+    const u = (bindUsername || '').trim()
+    const p = (bindPassword || '').trim()
+    if (!u || !p) {
       wx.showToast({ title: '请填写完整信息', icon: 'none' })
       return
     }
@@ -136,17 +209,19 @@ Page({
           url: `${app.globalData.baseUrl}/api/auth/bind-account`,
           method: 'POST',
           header: {
+            'Content-Type': 'application/json',
             'X-OpenID': app.globalData.openid
           },
           data: {
-            username: bindUsername,
-            password: bindPassword
+            username: u,
+            password: p
           },
           success: (res) => {
             if (res.statusCode === 200 && res.data.success) {
               resolve(res.data)
             } else {
-              reject(res.data.message || '绑定失败')
+              const msg = (res.data && res.data.message) || '绑定失败'
+              reject(msg)
             }
           },
           fail: (err) => reject(err)
@@ -197,6 +272,7 @@ Page({
           url: `${app.globalData.baseUrl}/api/auth/setup-credentials`,
           method: 'POST',
           header: {
+            'Content-Type': 'application/json',
             'X-OpenID': app.globalData.openid
           },
           data: {
@@ -204,10 +280,11 @@ Page({
             password: setupPassword
           },
           success: (res) => {
-            if (res.statusCode === 200 && res.data.code === 200) {
+            if (res.statusCode === 200 && res.data && res.data.success) {
               resolve(res.data)
             } else {
-              reject(res.data.message || '设置失败')
+              const msg = (res.data && res.data.message) || '设置失败'
+              reject(msg)
             }
           },
           fail: (err) => reject(err)

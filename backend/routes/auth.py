@@ -10,11 +10,33 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """微信小程序登录"""
+    """登录接口"""
     try:
         data = request.get_json()
         code = data.get('code')
+        username = data.get('username')
+        password = data.get('password')
         user_info = data.get('userInfo', {})
+
+        if username and password:
+            user = User.query.filter_by(username=username).first()
+            if not user or not user.password_hash or not check_password_hash(user.password_hash, password):
+                return error_response('用户名或密码错误')
+
+            today = date.today()
+            checkin_bonus = 0
+            if not user.last_checkin_date or user.last_checkin_date < today:
+                user.points = (user.points or 0) + 1
+                user.last_checkin_date = today
+                checkin_bonus = 1
+
+            db.session.commit()
+
+            message = '登录成功'
+            if checkin_bonus > 0:
+                message = f'登录成功，获得签到积分 {checkin_bonus} 分！'
+
+            return success_response({'user': user_schema.dump(user)}, message)
         
         if not code:
             return error_response('缺少code参数')
@@ -188,14 +210,25 @@ def account_login():
         if not password:
             return error_response('请输入密码')
         
-        # 查找用户
-        user = User.query.filter_by(username=username).first()
-        if not user:
+        # 查找账号
+        from models import UserAccount
+        account = UserAccount.query.filter_by(username=username).first()
+        if not account:
             return error_response('用户名或密码错误')
         
         # 验证密码
-        if not user.password_hash or not check_password_hash(user.password_hash, password):
+        if not check_password_hash(account.password_hash, password):
             return error_response('用户名或密码错误')
+        
+        # 验证账号是否关联用户
+        if not account.user_id:
+            # 孤立账号，暂时不允许登录？或者提示先绑定？
+            # 理论上应该允许登录，但是没有User对象，很多功能无法使用。
+            # 这里我们可以自动创建一个空User对象关联给它？
+            # 暂时返回错误提示
+            return error_response('该账号未关联任何用户数据，请先通过微信绑定', 404)
+
+        user = account.user
         
         # 更新用户模式
         user.user_mode = mode
@@ -225,68 +258,62 @@ def account_login():
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    """用户注册"""
     try:
         data = request.get_json()
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
         nickname = data.get('nickname', '').strip()
         invitation_code = (data.get('invitation_code') or '').strip()
-        
-        # 验证输入
+
         if not username:
             return error_response('请输入用户名')
-        
         if not password:
             return error_response('请输入密码')
 
-        if not invitation_code:
-            return error_response('请输入邀请码')
-        
-        # 验证用户名格式（3-20位字母数字下划线）
         if not re.match(r'^[a-zA-Z0-9_]{3,20}$', username):
             return error_response('用户名只能包含字母、数字、下划线，长度3-20位')
-        
-        # 验证密码长度
         if len(password) < 6:
             return error_response('密码长度至少6位')
-        
-        # 检查用户名是否已存在
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
+
+        from models import UserAccount
+        existing_account = UserAccount.query.filter_by(username=username).first()
+        if existing_account:
             return error_response('用户名已存在')
 
-        # 校验邀请码
-        code_row = InvitationCode.query.filter_by(code=invitation_code).first()
-        if (not code_row or
-            not code_row.is_active or
-            code_row.used_count >= code_row.max_uses):
-            return error_response('邀请码无效或已被使用完')
-        
-        # 创建新用户
+        # 1. 创建用户
         user = User(
-            username=username,
-            password_hash=generate_password_hash(password),
             nickname=nickname or username,
             login_type='account'
         )
         db.session.add(user)
+        db.session.flush() # 获取ID
 
-        # 更新邀请码使用次数
-        code_row.used_count = (code_row.used_count or 0) + 1
-        # 如果达到上限，自动失效
-        if code_row.used_count >= code_row.max_uses:
-            code_row.is_active = False
+        # 2. 创建账号关联
+        account = UserAccount(
+            user_id=user.id,
+            username=username,
+            password_hash=generate_password_hash(password)
+        )
+        db.session.add(account)
+
+        if invitation_code:
+            code_row = InvitationCode.query.filter_by(code=invitation_code).first()
+            if (not code_row or
+                not code_row.is_active or
+                code_row.used_count >= code_row.max_uses):
+                db.session.rollback()
+                return error_response('邀请码无效或已被使用完')
+            code_row.used_count = (code_row.used_count or 0) + 1
+            if code_row.used_count >= code_row.max_uses:
+                code_row.is_active = False
 
         db.session.commit()
-        
-        return success_response({
-            'user': user_schema.dump(user)
-        }, '注册成功')
-        
+        return success_response({'user': user_schema.dump(user)}, '注册成功')
+
     except Exception as e:
         db.session.rollback()
         return error_response(f'注册失败: {str(e)}')
+
 
 @auth_bp.route('/profile', methods=['GET'])
 def get_profile():
@@ -388,39 +415,46 @@ def bind_account():
             return error_response('当前用户不存在', 404)
 
         # 查找目标账号
-        target_user = User.query.filter_by(username=username).first()
-        if not target_user:
+        from models import UserAccount
+        target_account = UserAccount.query.filter_by(username=username).first()
+        if not target_account:
             return error_response('目标账号不存在')
 
         # 验证密码
-        if not target_user.password_hash or not check_password_hash(target_user.password_hash, password):
+        if not check_password_hash(target_account.password_hash, password):
             return error_response('用户名或密码错误')
 
-        # 检查目标账号是否已绑定微信
-        if target_user.openid:
-            if target_user.openid == openid:
+        # 检查账号是否已绑定到某个用户（包括自己）
+        # 如果 account.user_id 存在，且就是 current_user.id，则已绑定
+        if target_account.user_id:
+            if target_account.user_id == current_user.id:
                 return error_response('该账号已绑定当前微信')
             else:
-                return error_response('该账号已绑定其他微信号')
+                # 目标账号已关联其他用户（可能是纯账号用户，也可能是另一个微信用户）
+                # 这里我们执行"合并/切换"逻辑：
+                # 鉴于"绑定已有账号"通常意味着"登录这个账号"，我们采用切换身份的逻辑。
+                # 即：将当前微信的 openid 转移给目标账号所属的用户
+                
+                target_user = target_account.user
+                
+                # 检查目标用户是否已绑定其他微信
+                if target_user.openid and target_user.openid != openid:
+                     return error_response('该账号已绑定其他微信号')
 
-        # 执行绑定：将当前微信用户的openid转移给目标账号，并删除当前临时用户
-        # 注意：这里会丢失当前临时用户的数据（如鹦鹉、账单等），
-        # 假设用户意图是找回已有账号数据。如果需要合并数据，逻辑会复杂很多。
-        # 鉴于"绑定已有账号"通常意味着"登录这个账号"，我们采用切换身份的逻辑。
-        
-        target_user.openid = openid
-        
-        # 如果当前用户不是目标用户（理论上id不同），则删除当前临时用户
-        if current_user.id != target_user.id:
-            # 也可以选择不删除，而是清空其openid，变成无主数据或保留
-            # 但为了避免垃圾数据，且openid是唯一标识，最好删除
-            # 需要先处理外键关联，或者让数据库级联删除
-            # 这里简单起见，我们假设current_user是新注册的空号，或者用户接受覆盖
-            db.session.delete(current_user)
-        
-        db.session.commit()
-
-        return success_response(user_schema.dump(target_user), '绑定成功')
+                # 执行绑定：转移openid
+                target_user.openid = openid
+                
+                # 删除当前的临时用户（因为它没有账号关联，且openid被拿走了）
+                # 注意：数据会丢失。
+                db.session.delete(current_user)
+                
+                db.session.commit()
+                return success_response(user_schema.dump(target_user), '绑定成功')
+        else:
+            # 账号是孤立的（之前解绑过），直接关联到当前用户
+            target_account.user_id = current_user.id
+            db.session.commit()
+            return success_response(user_schema.dump(current_user), '绑定成功')
 
     except Exception as e:
         db.session.rollback()
@@ -446,17 +480,23 @@ def setup_credentials():
         if not current_user:
             return error_response('当前用户不存在', 404)
 
-        # 检查用户名是否已存在（排除自己）
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user and existing_user.id != current_user.id:
+        # 检查用户名是否已存在
+        from models import UserAccount
+        existing_account = UserAccount.query.filter_by(username=username).first()
+        if existing_account:
             return error_response('用户名已存在，请更换')
 
-        # 设置账号密码
-        current_user.username = username
-        current_user.password_hash = generate_password_hash(password)
-        # 确保login_type允许账号登录，或者保持原样（因为现在auth支持混合登录）
-        # 我们可以标记login_type为account，或者不改
-        # 为了保险，如果之前是wechat，现在有了账号密码，可以视为双重支持
+        # 检查当前用户是否已经绑定了账号
+        if current_user.account:
+             return error_response('当前用户已绑定账号，请先解绑')
+
+        # 创建新账号并关联
+        new_account = UserAccount(
+            user_id=current_user.id,
+            username=username,
+            password_hash=generate_password_hash(password)
+        )
+        db.session.add(new_account)
         
         db.session.commit()
 
@@ -484,16 +524,57 @@ def change_password():
         if len(new_password) < 6:
             return error_response('新密码长度至少6位')
 
-        if user.password_hash:
-            if not old_password:
-                return error_response('请输入当前密码')
-            if not check_password_hash(user.password_hash, old_password):
-                return error_response('当前密码错误')
+        account = user.account
+        if not account:
+            return error_response('当前用户未绑定账号，无法修改密码')
 
-        user.password_hash = generate_password_hash(new_password)
+        if not old_password:
+            return error_response('请输入当前密码')
+        
+        if not check_password_hash(account.password_hash, old_password):
+            return error_response('当前密码错误')
+
+        account.password_hash = generate_password_hash(new_password)
         db.session.commit()
         return success_response({'updated': True}, '密码已更新')
 
     except Exception as e:
         db.session.rollback()
         return error_response(f'修改密码失败: {str(e)}')
+
+
+@auth_bp.route('/unbind-credentials', methods=['POST'])
+def unbind_credentials():
+    try:
+        openid = request.headers.get('X-OpenID')
+        if not openid:
+            return error_response('未登录', 401)
+
+        user = User.query.filter_by(openid=openid).first()
+        if not user and openid.startswith('account_'):
+            try:
+                user_id = int(openid.replace('account_', ''))
+                user = User.query.filter_by(id=user_id, login_type='account').first()
+            except ValueError:
+                user = None
+
+        if not user:
+            return error_response('当前用户不存在', 404)
+
+        from models import UserAccount
+        account = UserAccount.query.filter_by(user_id=user.id).first()
+        if not account:
+            return error_response('当前没有绑定账号')
+
+        # 解除关联：仅将 account.user_id 设为 None
+        # 账号记录保留，但不再指向当前用户
+        account.user_id = None
+        db.session.commit()
+
+        # 注意：这里我们返回 success，用户仍然保留 WeChat 登录状态和数据
+        # 账号变成了"无主账号"（孤立账号），等待下次绑定
+        return success_response(user_schema.dump(user), '已解除账号绑定，账号已独立保留')
+
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'解除账号绑定失败: {str(e)}')

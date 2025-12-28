@@ -425,6 +425,93 @@ def get_expense_analysis():
     except Exception as e:
         return error_response(f'获取支出分析失败: {str(e)}')
 
+
+@statistics_bp.route('/income-analysis', methods=['GET'])
+@login_required
+def get_income_analysis():
+    try:
+        user = request.current_user
+        months = request.args.get('months', 6, type=int)
+
+        income_ids = get_accessible_income_ids_by_mode(user)
+        if not income_ids:
+            return success_response({
+                'monthly_incomes': [],
+                'category_incomes': [],
+                'parrot_incomes': []
+            })
+
+        parrot_ids = get_accessible_parrot_ids_by_mode(user)
+
+        end_date = date.today()
+        start_date = end_date.replace(day=1) - timedelta(days=months * 30)
+
+        monthly_incomes = db.session.query(
+            func.year(Income.income_date).label('year'),
+            func.month(Income.income_date).label('month'),
+            func.sum(Income.amount).label('total_amount')
+        ).filter(
+            and_(
+                Income.id.in_(income_ids),
+                Income.income_date >= start_date
+            )
+        ).group_by(
+            func.year(Income.income_date),
+            func.month(Income.income_date)
+        ).all()
+
+        category_incomes = db.session.query(
+            Income.category,
+            func.sum(Income.amount).label('total_amount')
+        ).filter(
+            and_(
+                Income.id.in_(income_ids),
+                Income.income_date >= start_date
+            )
+        ).group_by(Income.category).all()
+
+        parrot_incomes = []
+        if parrot_ids:
+            parrot_incomes = db.session.query(
+                Parrot.name,
+                func.sum(Income.amount).label('total_amount')
+            ).join(Income).filter(
+                and_(
+                    Income.id.in_(income_ids),
+                    Income.income_date >= start_date,
+                    Income.parrot_id.isnot(None),
+                    Parrot.id.in_(parrot_ids)
+                )
+            ).group_by(Parrot.name).all()
+
+        return success_response({
+            'monthly_incomes': [
+                {
+                    'year': r.year,
+                    'month': r.month,
+                    'total_amount': float(r.total_amount or 0)
+                }
+                for r in monthly_incomes
+            ],
+            'category_incomes': [
+                {
+                    'category': r.category,
+                    'total_amount': float(r.total_amount or 0)
+                }
+                for r in category_incomes
+            ],
+            'parrot_incomes': [
+                {
+                    'parrot_name': r.name,
+                    'total_amount': float(r.total_amount or 0)
+                }
+                for r in parrot_incomes
+            ]
+        })
+
+    except Exception as e:
+        return error_response(f'获取收入分析失败: {str(e)}')
+
 @statistics_bp.route('/care-frequency', methods=['GET'])
 @login_required
 def get_care_frequency():

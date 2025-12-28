@@ -696,6 +696,8 @@ const app = getApp()
         }
         
         const amountUnit = this.getAmountUnit(selectedFeedTypes)
+        // 确保表单中的清洁类型为数组，避免组件接收非数组值导致告警
+        formData.cleaning_types = Array.isArray(selectedCleaningTypes) ? selectedCleaningTypes.slice() : []
         this.setData({
           formData,
           selectedParrots,

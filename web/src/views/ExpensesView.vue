@@ -41,32 +41,64 @@
       </div>
     </el-card>
 
-    <el-card class="analysis-card" shadow="never">
-      <div class="card-header-row">
-        <div class="card-title-row">
-          <span class="card-icon"><el-icon><Wallet /></el-icon></span>
-          <span class="card-title-text">支出分析</span>
+    <div class="analysis-row">
+      <el-card class="analysis-card" shadow="never">
+        <div class="card-header-row">
+          <div class="card-title-row">
+            <span class="card-icon"><el-icon><TrendCharts /></el-icon></span>
+            <span class="card-title-text">收支趋势</span>
+          </div>
         </div>
-      </div>
-      <div class="analysis-content" v-loading="analysisLoading">
-        <div v-if="expenseAnalysis.length" class="analysis-grid">
-          <div class="legend-col">
-          <div class="legend-item clickable" v-for="item in expenseAnalysis" :key="item.category" @click="onAnalysisLegendClick(item)">
-            <span class="legend-dot" :style="{ backgroundColor: item.color }"></span>
-            <span class="legend-name">{{ item.categoryLabel }}</span>
-            <div class="legend-amount">
-              <span class="amount">¥{{ formatAmount(item.amount) }}</span>
-              <span class="percent">{{ item.percentage.toFixed(1) }}%</span>
+        <div class="analysis-content">
+          <VChart
+            v-if="trendData.length"
+            :option="chartOption"
+            autoresize
+            class="trend-chart"
+          />
+          <div v-else class="empty-tip">暂无趋势数据</div>
+        </div>
+      </el-card>
+
+      <el-card class="analysis-card" shadow="never">
+        <div class="card-header-row">
+          <div class="card-title-row">
+            <span class="card-icon"><el-icon><Wallet /></el-icon></span>
+            <span class="card-title-text">收支分布</span>
+          </div>
+          <div class="analysis-tabs">
+            <span
+              class="analysis-tab"
+              :class="{ active: analysisType === '支出' }"
+              @click="setAnalysisType('支出')"
+            >支出</span>
+            <span
+              class="analysis-tab"
+              :class="{ active: analysisType === '收入' }"
+              @click="setAnalysisType('收入')"
+            >收入</span>
+          </div>
+        </div>
+        <div class="analysis-content" v-loading="analysisLoading">
+          <div v-if="expenseAnalysis.length" class="analysis-grid">
+            <div class="legend-col">
+              <div class="legend-item clickable" v-for="item in expenseAnalysis" :key="item.category" @click="onAnalysisLegendClick(item)">
+                <span class="legend-dot" :style="{ backgroundColor: item.color }"></span>
+                <span class="legend-name">{{ item.categoryLabel }}</span>
+                <div class="legend-amount">
+                  <span class="amount">¥{{ formatAmount(item.amount) }}</span>
+                  <span class="percent">{{ item.percentage.toFixed(1) }}%</span>
+                </div>
+              </div>
+            </div>
+            <div class="chart-col">
+              <canvas ref="expensePieCanvas" class="pie-canvas" @click="handleExpensePieClick"></canvas>
             </div>
           </div>
-          </div>
-          <div class="chart-col">
-            <canvas ref="expensePieCanvas" class="pie-canvas" @click="handleExpensePieClick"></canvas>
-          </div>
+          <div class="empty-tip" v-else>暂无{{ analysisType }}数据</div>
         </div>
-        <div class="empty-tip" v-else>暂无支出数据</div>
-      </div>
-    </el-card>
+      </el-card>
+    </div>
 
     <div class="toolbar">
       <div class="filter-group">
@@ -150,11 +182,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Wallet } from '@element-plus/icons-vue'
+import { Plus, Wallet, TrendCharts } from '@element-plus/icons-vue'
+import { use } from 'echarts/core'
+import { BarChart, LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import VChart from 'vue-echarts'
 import api from '@/api/axios'
 import ExpenseModal from '../components/ExpenseModal.vue'
+
+use([BarChart, LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
 const loading = ref(false)
 const records = ref([])
@@ -198,15 +237,26 @@ const stats = ref({
   netIncome: 0
 })
 
+const trendData = ref([])
+const chartOption = ref({})
+
 const displayTotalCount = ref(0)
 const searchKeyword = ref('')
 
-// 支出分析
 const analysisLoading = ref(false)
 const expenseAnalysis = ref([])
 const selectedExpenseIndex = ref(-1)
 const expensePieCanvas = ref(null)
-const pieColors = ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395', '#22AA99', '#FF66CC']
+const analysisType = ref('支出')
+const pieColors = ['#f97373', '#fb923c', '#facc15', '#22c55e', '#2dd4bf', '#fb7185', '#fbbf24', '#4ade80', '#34d399', '#38bdf8', '#a855f7']
+
+const incomeCategoryLabelMap = {
+  breeding_sale: '繁殖销售',
+  bird_sale: '鸟类销售',
+  service: '服务收入',
+  competition: '比赛奖金',
+  other: '其他收入'
+}
 
 const dialogVisible = ref(false)
 const editingRecord = ref(null)
@@ -350,6 +400,161 @@ const loadExpenses = async () => {
   }
 }
 
+const loadTrend = async () => {
+  try {
+    const dateParams = getDateRange()
+    const periodType = ['本年', '全部'].includes(selectedPeriod.value) ? 'month' : 'day'
+    const params = {
+      ...dateParams,
+      period: periodType
+    }
+    const res = await api.get('/expenses/trend', { params })
+    const payload = res.data || {}
+    const raw = Array.isArray(payload.data) ? payload.data : []
+
+    let data = raw
+
+    if (selectedPeriod.value !== '全部') {
+      const map = {}
+      raw.forEach(item => {
+        if (item && item.date) {
+          map[item.date] = item
+        }
+      })
+
+      if (periodType === 'day' && dateParams.start_date && dateParams.end_date) {
+        const start = new Date(dateParams.start_date + 'T00:00:00')
+        const end = new Date(dateParams.end_date + 'T00:00:00')
+        const list = []
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+          const y = d.getFullYear()
+          const m = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          const key = `${y}-${m}-${day}`
+          const found = map[key] || {}
+          list.push({
+            date: key,
+            income: Number(found.income || 0),
+            expense: Number(found.expense || 0),
+            net: Number(found.net || 0)
+          })
+        }
+        data = list
+      } else if (periodType === 'month') {
+        const now = new Date()
+        const year = now.getFullYear()
+        const list = []
+        for (let m = 1; m <= 12; m++) {
+          const mm = String(m).padStart(2, '0')
+          const key = `${year}-${mm}`
+          const found = map[key] || {}
+          list.push({
+            date: key,
+            income: Number(found.income || 0),
+            expense: Number(found.expense || 0),
+            net: Number(found.net || 0)
+          })
+        }
+        data = list
+      }
+    }
+
+    trendData.value = data
+
+    const xAxisData = data.map(item => item.date)
+    const incomeSeries = data.map(item => Number(item.income || 0))
+    const expenseSeries = data.map(item => Number(item.expense || 0))
+    const netSeries = data.map(item => Number(item.net || 0))
+    const maxVal = Math.max(
+      incomeSeries.reduce((m, v) => Math.max(m, v || 0), 0),
+      expenseSeries.reduce((m, v) => Math.max(m, v || 0), 0),
+      0
+    ) || 1
+
+    chartOption.value = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' }
+      },
+      legend: {
+        top: 0,
+        left: 'center',
+        icon: 'circle',
+        itemWidth: 10,
+        itemHeight: 10,
+        textStyle: {
+          color: '#4b5563'
+        },
+        data: ['收入', '支出', '净收益']
+      },
+      grid: {
+        top: 40,
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: xAxisData,
+        axisLine: { lineStyle: { color: '#e5e7eb' } },
+        axisTick: { show: false },
+        axisLabel: { color: '#6b7280' }
+      },
+      yAxis: {
+        type: 'value',
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: '#6b7280' },
+        splitLine: { lineStyle: { color: '#e5e7eb' } }
+      },
+      series: [
+        {
+          name: '占位',
+          type: 'bar',
+          data: xAxisData.map(() => maxVal),
+          itemStyle: {
+            color: 'rgba(16, 185, 129, 0.12)',
+            borderRadius: [12, 12, 4, 4]
+          },
+          barGap: '-100%',
+          silent: true,
+          emphasis: { disabled: true }
+        },
+        {
+          name: '收入',
+          type: 'bar',
+          data: incomeSeries,
+          itemStyle: {
+            color: '#064e3b',
+            borderRadius: [12, 12, 4, 4]
+          }
+        },
+        {
+          name: '支出',
+          type: 'bar',
+          data: expenseSeries,
+          itemStyle: {
+            color: '#a3e635',
+            borderRadius: [12, 12, 4, 4]
+          }
+        },
+        {
+          name: '净收益',
+          type: 'line',
+          smooth: true,
+          data: netSeries,
+          itemStyle: { color: '#10b981' },
+          lineStyle: { width: 3, color: '#10b981' }
+        }
+      ]
+    }
+  } catch (error) {
+    trendData.value = []
+    console.error('Fetch trend error:', error)
+  }
+}
+
 const loadStats = async () => {
   try {
     const dateParams = getDateRange()
@@ -439,11 +644,13 @@ const setSelectedPeriod = (p) => {
   page.value = 1
   loadExpenses()
   loadStats()
+  loadTrend()
 }
 
 const refresh = () => {
   loadExpenses()
   loadStats()
+  loadTrend()
 }
 
 const openDialog = () => {
@@ -457,8 +664,10 @@ const openEdit = (row) => {
 }
 
 const onModalSuccess = () => {
-  loadExpenses()
-  loadStats()
+	loadExpenses()
+	loadStats()
+	loadTrend()
+	loadExpenseAnalysis()
 }
 
 const remove = async (row) => {
@@ -472,14 +681,16 @@ const remove = async (row) => {
 
   try {
     const actualId = String(row.id).replace(/^(expense_|income_)/, '')
-    const isIncome = row.type === '收入'
-    const url = isIncome ? `/expenses/incomes/${actualId}` : `/expenses/${actualId}`
-    const res = await api.delete(url)
-    if (res.data && res.data.success) {
-      ElMessage.success('删除成功')
-      loadExpenses()
-      loadStats()
-    } else {
+		const isIncome = row.type === '收入'
+		const url = isIncome ? `/expenses/incomes/${actualId}` : `/expenses/${actualId}`
+		const res = await api.delete(url)
+		if (res.data && res.data.success) {
+			ElMessage.success('删除成功')
+			loadExpenses()
+			loadStats()
+			loadTrend()
+			loadExpenseAnalysis()
+		} else {
       ElMessage.error(res.data?.message || '删除失败')
     }
   } catch (e) {
@@ -505,15 +716,21 @@ const formatAmount = (val) => {
 const loadExpenseAnalysis = async () => {
   analysisLoading.value = true
   try {
-    const res = await api.get('/statistics/expense-analysis', { params: { months: 6 } })
+    const isIncome = analysisType.value === '收入'
+    const url = isIncome ? '/statistics/income-analysis' : '/statistics/expense-analysis'
+    const res = await api.get(url, { params: { months: 6 } })
     const data = res.data?.data || {}
-    const list = Array.isArray(data.category_expenses) ? data.category_expenses : []
-    const total = list.reduce((sum, it) => sum + (Number(it.total_amount) || 0), 0)
-    const mapped = list
+    const rawList = isIncome
+      ? Array.isArray(data.category_incomes) ? data.category_incomes : []
+      : Array.isArray(data.category_expenses) ? data.category_expenses : []
+    const total = rawList.reduce((sum, it) => sum + (Number(it.total_amount) || 0), 0)
+    const mapped = rawList
       .map((it, idx) => {
         const amount = Number(it.total_amount) || 0
         const categoryKey = it.category || 'other'
-        const label = categoryMap[categoryKey] || '其他'
+        const label = isIncome
+          ? incomeCategoryLabelMap[categoryKey] || '其他收入'
+          : categoryMap[categoryKey] || '其他'
         const pct = total > 0 ? (amount / total) * 100 : 0
         return {
           category: categoryKey,
@@ -555,7 +772,8 @@ const drawExpensePieChart = () => {
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.font = '14px sans-serif'
-    ctx.fillText('暂无支出数据', rectW / 2, rectH / 2)
+    const emptyText = analysisType.value === '收入' ? '暂无收入数据' : '暂无支出数据'
+    ctx.fillText(emptyText, rectW / 2, rectH / 2)
     return
   }
 
@@ -606,7 +824,8 @@ const drawExpensePieChart = () => {
   } else {
     ctx.fillStyle = '#6b7280'
     ctx.font = '12px sans-serif'
-    ctx.fillText('总支出', cx, cy - 16)
+    const totalLabel = analysisType.value === '收入' ? '总收入' : '总支出'
+    ctx.fillText(totalLabel, cx, cy - 16)
     ctx.fillStyle = '#1f2937'
     ctx.font = 'bold 18px sans-serif'
     ctx.fillText('¥' + formatAmount(totalAmount), cx, cy + 6)
@@ -614,12 +833,12 @@ const drawExpensePieChart = () => {
 }
 
 const applyExpenseAnalysisFilter = (label) => {
-  recordType.value = '支出'
-  updateCategoryOptions()
-  selectedCategory.value = label
-  page.value = 1
-  loadExpenses()
-  loadStats()
+	recordType.value = analysisType.value
+	updateCategoryOptions()
+	selectedCategory.value = label
+	page.value = 1
+	loadExpenses()
+	loadStats()
 }
 
 const onAnalysisLegendClick = (item) => {
@@ -666,12 +885,19 @@ const handleExpensePieClick = (e) => {
 }
 
 const clearExpenseAnalysisFilter = () => {
-  recordType.value = '支出'
-  updateCategoryOptions()
-  selectedCategory.value = '全部'
-  page.value = 1
-  loadExpenses()
-  loadStats()
+	recordType.value = analysisType.value
+	updateCategoryOptions()
+	selectedCategory.value = '全部'
+	page.value = 1
+	loadExpenses()
+	loadStats()
+}
+
+const setAnalysisType = (type) => {
+	if (analysisType.value === type) return
+	analysisType.value = type
+	selectedExpenseIndex.value = -1
+	loadExpenseAnalysis()
 }
 
 onMounted(() => {
@@ -679,6 +905,7 @@ onMounted(() => {
   loadExpenses()
   loadStats()
   loadExpenseAnalysis()
+  loadTrend()
 })
 </script>
 
@@ -709,8 +936,16 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
+.analysis-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
 .analysis-card {
   margin-bottom: 16px;
+  flex: 1;
 }
 
 .card-header-row {
@@ -723,6 +958,32 @@ onMounted(() => {
 .card-icon { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; background: #ede9fe; border-radius: 50%; flex-shrink: 0; }
 .card-icon :deep(.el-icon) { font-size: 16px; color: #8b5cf6; }
 .card-title-text { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+
+.analysis-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #f3f4f6;
+}
+
+.analysis-tab {
+  min-width: 44px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: #4b5563;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.analysis-tab.active {
+  background: linear-gradient(135deg, #10b981 0%, #22c55e 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+}
 
 .analysis-content { padding: 4px 0; }
 .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; }
@@ -738,6 +999,11 @@ onMounted(() => {
 .chart-col { display: flex; align-items: center; justify-content: center; }
 .pie-canvas { width: 100%; height: 200px; }
 .empty-tip { padding: 12px; text-align: center; color: #6b7280; }
+
+.trend-chart {
+  width: 100%;
+  height: 260px;
+}
 
 .stats-grid {
   display: grid;

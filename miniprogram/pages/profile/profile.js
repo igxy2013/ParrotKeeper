@@ -67,7 +67,7 @@ Page({
       { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.png' },
       { icon: '🥚', title: '人工孵化', desc: '记录孵化过程', bgClass: 'bg-purple', iconSrc: '/images/remix/information-line.png' },
       { icon: '⭐', title: '积分计划', desc: '查看积分规则', bgClass: 'bg-blue', iconSrc: '/images/remix/information-line.png' },
-      { icon: '🧮', title: '鹦鹉配对计算器', desc: '按羽色计算后代概率', bgClass: 'bg-indigo', iconSrc: '/images/remix/ri-pie-chart-2-fill-blue.png', badge: '限时免费' },
+      { icon: '🧮', title: '鹦鹉配对计算器', desc: '按羽色计算后代概率', bgClass: 'bg-indigo', iconSrc: '/images/remix/calculator-line.png', badge: '限时免费' },
       { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.png', isContact: true },
       { icon: '❓', title: '帮助反馈', desc: '提交问题与建议', bgClass: 'bg-amber', iconSrc: '/images/remix/feedback-line.png' },
       { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.png' },
@@ -82,11 +82,15 @@ Page({
       editLine_white: '/images/remix/edit-line-white.png',
       loginAvatar: '/images/parrot-avatar-green.png',
       sectionSettings: '/images/remix/settings-3-line.png',
+      sectionSettings1: '/images/remix/settings-3-line-white.png',
       closeLine: '/images/remix/close-line.png',
       statHeartRed: '/images/remix/ri-heart-fill-red.png',
       statFeedingOrange: '/images/remix/ri-restaurant-fill-orange.png',
       statShieldBlue: '/images/remix/ri-shield-check-fill-green.png',
+      groupLine: '/images/remix/group-line.png',
       userLine: '/images/remix/user-line.png',
+      userLine_white: '/images/remix/user-line-white.png',
+      groupFill: '/images/remix/group-fill.png',
       userFill: '/images/remix/ri-user-fill.png',
       arrowRight: '/images/remix/arrow-right-s-line.png',
       addLine: '/images/remix/ri-add-line.png',
@@ -99,9 +103,6 @@ Page({
   // —— 后台管理导航 ——
   goAdminFeedbacks() {
     wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' })
-  },
-  goAdminUserRole() {
-    wx.navigateTo({ url: '/pages/admin/user-role/user-role' })
   },
   goAdminAnnouncements() {
     wx.navigateTo({ url: '/pages/admin/announcements/announcements' })

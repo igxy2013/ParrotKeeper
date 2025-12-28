@@ -530,6 +530,90 @@ const drawWeightChart = () => {
     ctx.fillText(displayValue, paddingLeft - 6, y)
   }
 
+  const avgMap = {}
+  const countMap = {}
+  for (let i = 0; i < allPoints.length; i++) {
+    const p = allPoints[i]
+    const d = p.date
+    if (!d) continue
+    const w = p.weight
+    if (typeof w !== 'number' || !isFinite(w) || isNaN(w)) continue
+    if (!avgMap[d]) {
+      avgMap[d] = w
+      countMap[d] = 1
+    } else {
+      avgMap[d] += w
+      countMap[d] += 1
+    }
+  }
+  const dateArray = dates.slice()
+  for (let i = 0; i < dateArray.length; i++) {
+    const d = dateArray[i]
+    if (countMap[d] && countMap[d] > 0) {
+      avgMap[d] = avgMap[d] / countMap[d]
+    }
+  }
+
+  if (dateArray.length > 0) {
+    const span = dateArray.length === 1 ? chartW : chartW / (dateArray.length - 1)
+    const barWidth = Math.max(6, Math.min(32, span * 0.6))
+    const barTopPadding = 4
+    const barBottomPadding = 2
+    let baseBarHex = '#10b981'
+    const sidForColor = selectedParrotId.value ? String(selectedParrotId.value) : ''
+    if (sidForColor && weightColorMap.value && weightColorMap.value[sidForColor]) {
+      baseBarHex = weightColorMap.value[sidForColor]
+    } else {
+      const ds = displaySeries.value || []
+      if (ds.length === 1) {
+        const s0 = ds[0]
+        const key = String(s0.parrot_id)
+        if (weightColorMap.value && weightColorMap.value[key]) {
+          baseBarHex = weightColorMap.value[key]
+        }
+      }
+    }
+    let barColor = 'rgba(16, 185, 129, 0.12)'
+    if (typeof baseBarHex === 'string') {
+      const m = baseBarHex.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i)
+      if (m) {
+        const r = parseInt(m[1], 16)
+        const g = parseInt(m[2], 16)
+        const b = parseInt(m[3], 16)
+        barColor = `rgba(${r}, ${g}, ${b}, 0.16)`
+      }
+    }
+    for (let i = 0; i < dateArray.length; i++) {
+      const d = dateArray[i]
+      const avgW = avgMap[d]
+      if (typeof avgW !== 'number' || !isFinite(avgW) || isNaN(avgW)) continue
+      const norm = (avgW - minW) / (maxW - minW)
+      if (!isFinite(norm) || isNaN(norm)) continue
+      const centerX = dateArray.length === 1
+        ? paddingLeft + chartW / 2
+        : paddingLeft + (i / (dateArray.length - 1)) * chartW
+      const barBottom = height - paddingBottom - barBottomPadding
+      const barTop = paddingTop + barTopPadding + (1 - norm) * chartH
+      if (barTop >= barBottom) continue
+      const halfW = barWidth / 2
+      const left = centerX - halfW
+      const right = centerX + halfW
+      const radius = Math.min(12, (barBottom - barTop) / 2, halfW)
+      ctx.beginPath()
+      ctx.moveTo(left + radius, barTop)
+      ctx.lineTo(right - radius, barTop)
+      ctx.quadraticCurveTo(right, barTop, right, barTop + radius)
+      ctx.lineTo(right, barBottom - radius)
+      ctx.quadraticCurveTo(right, barBottom, right - radius, barBottom)
+      ctx.lineTo(left + radius, barBottom)
+      ctx.quadraticCurveTo(left, barBottom, left, barBottom - radius)
+      ctx.lineTo(left, barTop + radius)
+      ctx.quadraticCurveTo(left, barTop, left + radius, barTop)
+      ctx.fillStyle = barColor
+      ctx.fill()
+    }
+  }
+
   const maxXTicks = Math.min(6, dates.length)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'

@@ -1,0 +1,54 @@
+.chart-container {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.chart-header {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.chart-canvas {
+  width: 100%;
+  height: 400rpx;
+}
+
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  margin-top: 16rpx;
+  gap: 32rpx;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 4rpx;
+  margin-right: 8rpx;
+}
+
+.dot.income {
+  background-color: #064e3b;
+}
+
+.dot.expense {
+  background-color: #a3e635;
+}
+
+.dot.net {
+  background-color: #10b981;
+  border-radius: 999rpx;
+  height: 4rpx;
+  width: 24rpx;
+}

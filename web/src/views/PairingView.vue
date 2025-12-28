@@ -81,6 +81,10 @@
                   </el-select>
                 </el-form-item>
               </el-form>
+              <div class="suggestion-card" v-if="bestFatherSuggestion">
+                <div class="suggestion-title">最佳公鸟配对建议</div>
+                <div class="suggestion-detail">{{ bestFatherSuggestion.colorName }} · 预计均价 ¥{{ bestFatherSuggestion.expectedValue }}</div>
+              </div>
             </el-card>
           </el-col>
 
@@ -126,11 +130,15 @@
                       :value="s.id" 
                     />
                   </el-select>
-                </el-form-item>
-              </el-form>
-            </el-card>
-          </el-col>
-        </el-row>
+              </el-form-item>
+            </el-form>
+            <div class="suggestion-card" v-if="bestMotherSuggestion">
+              <div class="suggestion-title">最佳母鸟配对建议</div>
+              <div class="suggestion-detail">{{ bestMotherSuggestion.colorName }} · 预计均价 ¥{{ bestMotherSuggestion.expectedValue }}</div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
 
         <!-- Results -->
         <div class="results-section">
@@ -189,6 +197,14 @@
           </el-row>
         </div>
 
+        <div class="results-section">
+          <div class="section-title"><h3>预计均价</h3></div>
+          <div class="avg-box">
+            <span class="avg-value">¥{{ expectedAveragePrice }}</span>
+            <span class="avg-hint">基于当前配对结果与参考价估算</span>
+          </div>
+        </div>
+
         <div class="save-pair-section">
           <el-button type="primary" @click="savePairing">保存配对</el-button>
         </div>
@@ -204,20 +220,22 @@
             <template #header>
               <div class="record-header">
                 <span>{{ item.species }} · {{ formatTime(item.createdAt) }}</span>
+                <el-button class="record-delete-btn" type="danger" plain circle size="small" :icon="Delete" @click="deleteRecord(idx)" />
               </div>
             </template>
             <div class="record-body">
               <p><span class="label">母鸟：</span>{{ item.motherColor }}<span v-if="item.motherSplits && item.motherSplits.length"> · {{ item.motherSplits.join('、') }}</span></p>
               <p><span class="label">公鸟：</span>{{ item.fatherColor }}<span v-if="item.fatherSplits && item.fatherSplits.length"> · {{ item.fatherSplits.join('、') }}</span></p>
+              <div class="avg-box">
+                <span class="avg-value">¥{{ item.expectedAveragePrice || 0 }}</span>
+                <span class="avg-hint">预计均价</span>
+              </div>
               <div v-if="item.results && item.results.length" class="record-results">
                 <el-table :data="item.results" size="small">
                   <el-table-column prop="label" label="表现型" />
                   <el-table-column prop="prob" label="概率(%)" width="120" />
                 </el-table>
               </div>
-            </div>
-            <div class="record-actions">
-              <el-button type="danger" plain size="small" @click="deleteRecord(idx)">删除该记录</el-button>
             </div>
           </el-card>
           <div class="save-pair-section">
@@ -232,8 +250,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api/axios'
-import { simulatePairing, simulatePairingDetailed } from '@/utils/genetics'
+import { simulatePairing, simulatePairingDetailed, analyzeAllOffsprings } from '@/utils/genetics'
 import { ElMessage } from 'element-plus'
+import { Delete } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const speciesList = ref([])
@@ -252,6 +271,12 @@ const fatherSplits = ref([])
 const results = ref([])
 const sexBreakdown = ref({ male: [], female: [] })
 const records = ref([])
+const priceMap = ref({})
+const priceMapMale = ref({})
+const priceMapFemale = ref({})
+const expectedAveragePrice = ref(0)
+const bestFatherSuggestion = ref(null)
+const bestMotherSuggestion = ref(null)
 
 onMounted(async () => {
   await fetchSpecies()
@@ -266,8 +291,10 @@ const fetchSpecies = async () => {
     speciesList.value = list.filter(s => !!s.plumage_json)
     
     if (speciesList.value.length > 0) {
-      selectedSpeciesIndex.value = 0
-      updateSpeciesData(0)
+      const idx = speciesList.value.findIndex(s => String(s.name || '').includes('和尚鹦鹉'))
+      const effective = idx >= 0 ? idx : 0
+      selectedSpeciesIndex.value = effective
+      updateSpeciesData(effective)
     }
   } catch (error) {
     console.error(error)
@@ -310,6 +337,7 @@ const updateSpeciesData = (idx) => {
     fatherSplits.value = []
     
     calculate()
+    fetchPrices(species.name)
   } catch (e) {
     console.error('Failed to parse plumage config', e)
     plumageConfig.value = null
@@ -340,6 +368,7 @@ const calculate = () => {
     fatherSplits.value
   )
   sexBreakdown.value = detail.sexBreakdown
+  computeSuggestions()
 }
 
 const getProbTagType = (prob) => {
@@ -359,47 +388,306 @@ const formatTime = (ts) => {
   return `${y}-${m}-${dd} ${hh}:${mm}`
 }
 
-const loadRecords = () => {
-  try {
-    const raw = localStorage.getItem('pairing_records')
-    const list = raw ? JSON.parse(raw) : []
-    records.value = Array.isArray(list) ? list : []
-  } catch (_) { records.value = [] }
+const canonicalizeColorName = (species, name) => {
+  const s = String(name || '').replace('（', '(').replace('）', ')').replace(/\s+/g, '')
+  if (species === '和尚鹦鹉') {
+    if (s.includes('蓝派特和尚')) return '派特蓝和尚'
+    if (s.includes('绿派特和尚')) return '派特绿和尚'
+    if (s.includes('派特和尚')) return '派特绿和尚'
+    if (s.includes('绿肉桂和尚')) return '肉桂绿和尚'
+    return s
+  } else if (species === '牡丹鹦鹉') {
+    if (s.includes('白面绿桃')) return '白面桃'
+    if (s === '绿桃' || s.includes('野生型')) return '野生型（绿桃）'
+    if (s === '白桃') return '白桃（白化）'
+    if (s === '黄桃') return '黄桃（黄化）'
+    if (s.includes('蓝派特')) return '派特桃'
+    return s
+  } else if (species === '小太阳鹦鹉') {
+    if (s.includes('派特')) return '派特小太阳'
+    return s
+  } else if (species === '虎皮鹦鹉' || species === 'Budgerigar') {
+    if (s.includes('白化虎皮')) return '白化虎皮'
+    if (s.includes('黄化虎皮')) return '黄化虎皮'
+    if (s.includes('蓝化虎皮')) return '蓝化虎皮'
+    return s
+  } else if (species === '玄凤鹦鹉' || species === 'Cockatiel') {
+    return s
+  }
+  return s
 }
 
-const savePairing = () => {
+const normalizePriceMap = (species, map) => {
+  const m = { ...(map || {}) }
+  const remapped = {}
+  Object.keys(m).forEach(k => {
+    const ck = canonicalizeColorName(species, k)
+    if (remapped[ck] == null) remapped[ck] = m[k]
+  })
+  Object.assign(m, remapped)
+  if (species === '和尚鹦鹉') {
+    const alias = {
+      '深绿和尚': ['深绿和尚(1Dark)'],
+      '橄榄绿和尚(双暗绿)': ['橄榄绿和尚(2Dark)'],
+      '钴蓝和尚': ['钴蓝和尚(蓝+1Dark)'],
+      '紫罗兰和尚(双暗蓝)': ['紫罗兰和尚(蓝+2Dark)'],
+      '派特绿和尚': ['派特和尚'],
+      '派特蓝和尚': ['蓝派特和尚'],
+      '肉桂绿和尚': ['绿肉桂和尚', '肉桂绿']
+    }
+    Object.keys(alias).forEach(canon => {
+      const syns = alias[canon]
+      syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+    })
+  } else if (species === '牡丹鹦鹉') {
+    const alias = {
+      '白面桃': ['白面绿桃'],
+      '野生型（绿桃）': ['野生型','绿桃'],
+      '白桃（白化）': ['白桃'],
+      '黄桃（黄化）': ['黄桃'],
+      '派特桃': ['蓝派特','派特']
+    }
+    Object.keys(alias).forEach(canon => {
+      const syns = alias[canon]
+      syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+    })
+  } else if (species === '小太阳鹦鹉') {
+    const alias = { '派特小太阳': ['小太阳派特'] }
+    Object.keys(alias).forEach(canon => {
+      const syns = alias[canon]
+      syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+    })
+  } else if (species === '虎皮鹦鹉' || species === 'Budgerigar') {
+    const alias = {
+      '白化虎皮': ['Albino虎皮','白化'],
+      '黄化虎皮': ['Lutino虎皮','黄化'],
+      '蓝化虎皮': ['蓝基虎皮']
+    }
+    Object.keys(alias).forEach(canon => {
+      const syns = alias[canon]
+      syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+    })
+  } else if (species === '玄凤鹦鹉' || species === 'Cockatiel') {
+    const alias = {
+      '黄化玄凤': ['乳黄玄凤','黄化'],
+      '白面黄化玄凤': ['白面乳黄玄凤']
+    }
+    Object.keys(alias).forEach(canon => {
+      const syns = alias[canon]
+      syns.forEach(s => { if (m[s] != null && m[canon] == null) m[canon] = m[s] })
+    })
+  }
+  return m
+}
+
+const getDefaultPriceMap = (species) => {
+  if (species === '和尚鹦鹉') {
+    return {
+      '绿和尚': 600,
+      '蓝和尚': 1000,
+      '深绿和尚': 800,
+      '橄榄绿和尚(双暗绿)': 900,
+      '钴蓝和尚': 1400,
+      '紫罗兰和尚(双暗蓝)': 2000,
+      '黄和尚(Lutino)': 1800,
+      '白和尚(Albino)': 2500,
+      '肉桂绿和尚': 1200,
+      '银丝和尚': 1500,
+      '蓝银丝和尚': 2000,
+      '派特绿和尚': 1800,
+      '派特蓝和尚': 2200
+    }
+  }
+  if (species === '小太阳鹦鹉') {
+    return {
+      '绿颊小太阳（原始）': 600,
+      '黄边小太阳': 1200,
+      '肉桂小太阳': 1200,
+      '凤梨小太阳': 1800,
+      '蓝化小太阳': 1500,
+      '蓝化黄边': 2200,
+      '蓝化肉桂': 2200,
+      '蓝化凤梨': 2800,
+      '香吉士(美国黄/稀释)': 2000,
+      '月亮(Mint/蓝化稀释)': 2600,
+      'Suncheek(阳曦/凤梨稀释)': 2800,
+      'Mooncheek(月光/蓝化凤梨稀释)': 3200,
+      '派特小太阳': 1800
+    }
+  }
+  if (species === '牡丹鹦鹉') {
+    return {
+      '野生型（绿桃）': 300,
+      '绿金顶': 500,
+      '蓝银顶': 800,
+      '黄桃（黄化）': 1000,
+      '白桃（白化）': 1200,
+      '白面桃': 900,
+      '肉桂桃': 700,
+      '肉桂蓝化': 1000,
+      '黄边桃': 800,
+      '蓝化黄边': 1200,
+      '银丝桃': 900,
+      '派特桃': 900,
+      '白化派特': 1500,
+      '白面澳桂': 1200,
+      '苹果绿澳桂(红面澳桂)': 1200,
+      '红面澳闪': 2000,
+      '蓝化澳闪': 2200
+    }
+  }
+  return {}
+}
+
+const fetchPrices = async (species) => {
+  try {
+    const res = await api.get('/market/prices', { params: { species } })
+    const list = res.data && res.data.data && Array.isArray(res.data.data.prices) ? res.data.data.prices : (res.data && Array.isArray(res.data.prices) ? res.data.prices : [])
+    const male = {}
+    const female = {}
+    const neutral = {}
+    list.forEach(it => {
+      const v = Number(it.reference_price || 0)
+      if (it.gender === 'male') male[it.color_name] = v
+      else if (it.gender === 'female') female[it.color_name] = v
+      else neutral[it.color_name] = v
+    })
+    const mNorm = normalizePriceMap(species, male)
+    const fNorm = normalizePriceMap(species, female)
+    const nNorm = normalizePriceMap(species, neutral)
+    Object.keys(nNorm).forEach(k => {
+      if (mNorm[k] == null) mNorm[k] = nNorm[k]
+      if (fNorm[k] == null) fNorm[k] = nNorm[k]
+    })
+    const hasAny = Object.keys(mNorm).length || Object.keys(fNorm).length || Object.keys(nNorm).length
+    if (!hasAny) {
+      const d = getDefaultPriceMap(species)
+      priceMap.value = d
+      priceMapMale.value = d
+      priceMapFemale.value = d
+    } else {
+      const base = Object.keys(nNorm).length ? nNorm : (Object.keys(mNorm).length ? mNorm : fNorm)
+      priceMap.value = base
+      priceMapMale.value = mNorm
+      priceMapFemale.value = fNorm
+    }
+    computeSuggestions()
+  } catch (_) {
+    const d = getDefaultPriceMap(species)
+    priceMap.value = d
+    priceMapMale.value = d
+    priceMapFemale.value = d
+    computeSuggestions()
+  }
+}
+
+const evaluateExpectedValue = (species, mIdx, fIdx, ms, fs) => {
+  if (!plumageConfig.value) return 0
+  const outcomes = analyzeAllOffsprings(species, plumageConfig.value, mIdx, fIdx, ms, fs)
+  const pm = priceMap.value || {}
+  const pmM = priceMapMale.value || {}
+  const pmF = priceMapFemale.value || {}
+  let sum = 0
+  let total = 0
+  outcomes.forEach(o => {
+    const cname = canonicalizeColorName(species, o.name)
+    const price = o.sex === 'male' ? Number((pmM[cname] != null ? pmM[cname] : pm[cname]) || 0) : Number((pmF[cname] != null ? pmF[cname] : pm[cname]) || 0)
+    sum += price
+    total += 1
+  })
+  if (!total) return 0
+  return Math.round(sum / total)
+}
+
+const computeSuggestions = () => {
+  if (selectedSpeciesIndex.value === null || !speciesList.value.length) return
+  const species = speciesList.value[selectedSpeciesIndex.value].name
+  const ms = motherSplits.value
+  const fs = fatherSplits.value
+  const mIdx = motherColorIndex.value
+  const fIdx = fatherColorIndex.value
+  const colors = colorOptions.value
+  let bestF = { idx: fIdx, name: colors[fIdx], value: evaluateExpectedValue(species, mIdx, fIdx, ms, fs) }
+  for (let i = 0; i < colors.length; i++) {
+    const v = evaluateExpectedValue(species, mIdx, i, ms, fs)
+    if (v > bestF.value) bestF = { idx: i, name: colors[i], value: v }
+  }
+  let bestM = { idx: mIdx, name: colors[mIdx], value: evaluateExpectedValue(species, mIdx, fIdx, ms, fs) }
+  for (let i = 0; i < colors.length; i++) {
+    const v = evaluateExpectedValue(species, i, fIdx, ms, fs)
+    if (v > bestM.value) bestM = { idx: i, name: colors[i], value: v }
+  }
+  const avg = evaluateExpectedValue(species, mIdx, fIdx, ms, fs)
+  bestFatherSuggestion.value = { colorName: bestF.name, expectedValue: bestF.value }
+  bestMotherSuggestion.value = { colorName: bestM.name, expectedValue: bestM.value }
+  expectedAveragePrice.value = avg
+}
+
+const loadRecords = async () => {
+  try {
+    const res = await api.get('/pairings')
+    const list = (res.data && res.data.success && Array.isArray(res.data.data)) ? res.data.data : (Array.isArray(res.data) ? res.data : [])
+    records.value = list
+  } catch (_) {
+    records.value = []
+  }
+}
+
+const savePairing = async () => {
   try {
     const species = speciesList.value[selectedSpeciesIndex.value]
     if (!species) { ElMessage.warning('请选择品种'); return }
-    const item = {
+    const payload = {
       species: species.name,
-      createdAt: Date.now(),
       motherColor: colorOptions.value[motherColorIndex.value],
       fatherColor: colorOptions.value[fatherColorIndex.value],
       motherSplits: motherSplits.value.map(id => (splitOptions.value.find(s => s.id === id)?.name || id)),
       fatherSplits: fatherSplits.value.map(id => (splitOptions.value.find(s => s.id === id)?.name || id)),
+      expectedAveragePrice: Number(expectedAveragePrice.value || 0),
       results: results.value.map(r => ({ label: r.splitNames ? `${r.name} (携带${r.splitNames})` : r.name, prob: r.prob }))
     }
-    const list = [...records.value, item]
-    localStorage.setItem('pairing_records', JSON.stringify(list))
-    records.value = list
+    const res = await api.post('/pairings', payload)
+    const ok = res.data && res.data.success
+    if (!ok) throw new Error((res.data && res.data.message) || '保存失败')
     ElMessage.success('已保存配对')
     activeTab.value = 'records'
+    await loadRecords()
   } catch (e) {
-    ElMessage.error('保存失败')
+    ElMessage.error(e.message || '保存失败')
   }
 }
 
-const deleteRecord = (idx) => {
-  const list = [...records.value]
-  list.splice(idx, 1)
-  localStorage.setItem('pairing_records', JSON.stringify(list))
-  records.value = list
+const deleteRecord = async (idx) => {
+  try {
+    const item = records.value[idx]
+    const id = item && item.id
+    if (!id) {
+      // 兼容旧本地记录：直接移除
+      const list = [...records.value]
+      list.splice(idx, 1)
+      records.value = list
+      return
+    }
+    const res = await api.delete(`/pairings/${id}`)
+    const ok = res.data && res.data.success
+    if (!ok) throw new Error((res.data && res.data.message) || '删除失败')
+    ElMessage.success('已删除')
+    await loadRecords()
+  } catch (e) {
+    ElMessage.error(e.message || '删除失败')
+  }
 }
 
-const clearAll = () => {
-  localStorage.removeItem('pairing_records')
-  records.value = []
+const clearAll = async () => {
+  try {
+    const res = await api.delete('/pairings')
+    const ok = res.data && res.data.success
+    if (!ok) throw new Error((res.data && res.data.message) || '清空失败')
+    records.value = []
+    ElMessage.success('已清空')
+  } catch (e) {
+    ElMessage.error(e.message || '清空失败')
+  }
 }
 </script>
 
@@ -409,6 +697,9 @@ const clearAll = () => {
   max-width: 1200px;
   margin: 0 auto;
 }
+
+.pairing-container :deep(.el-table th .cell) { font-size: 16px; }
+.pairing-container :deep(.el-table td .cell) { font-size: 16px; }
 
 .header {
   margin-bottom: 24px;
@@ -460,9 +751,24 @@ const clearAll = () => {
 .empty-sm { color: #909399; font-size: 13px; margin-top: 8px; }
 .save-pair-section { margin-top: 16px; }
 .record-card { margin-bottom: 16px; }
-.record-header { font-weight: 500; }
+.record-header { font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.record-delete-btn { flex: 0 0 auto; }
 .record-body .label { color: #909399; margin-right: 6px; }
 .record-results { margin-top: 10px; }
+
+.suggestion-card {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
+  border-radius: 8px;
+}
+.suggestion-title { font-weight: 600; margin-bottom: 6px; }
+.suggestion-detail { color: #4b5563; }
+
+.avg-box { display: flex; align-items: baseline; gap: 12px; padding: 12px 0; }
+.avg-value { font-size: 20px; font-weight: 700; color: #10b981; }
+.avg-hint { color: #6b7280; font-size: 13px; }
 
 .bird-card {
   margin-bottom: 20px;

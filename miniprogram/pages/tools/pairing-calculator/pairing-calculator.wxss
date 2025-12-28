@@ -1,6 +1,6 @@
 .page-container { background: #f8f9fa; min-height: 100vh; padding-bottom: 40rpx; }
 .page-content { padding: 16rpx; }
-.card { background: #fff; border: 2rpx solid #eef2f7; border-radius: 24rpx; padding: 24rpx; margin: 20rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); }
+.card { background: #fff; border: 2rpx solid #eef2f7; border-radius: 24rpx; padding: 24rpx; margin: 20rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); position: relative; }
 .section-title { font-weight: 700; font-size: 30rpx; color: #111827; margin-bottom: 16rpx; border-left: 8rpx solid #10b981; padding-left: 12rpx; }
 
 .form-row { display: flex; align-items: center; justify-content: space-between; padding: 16rpx 0; border-bottom: 2rpx solid #f1f5f9; }
@@ -58,6 +58,10 @@
 .save-pair-btn-text { color: #ffffff; font-size: 32rpx; font-weight: bold; text-align: center; }
 
 .save-pair-section { margin-bottom: 12rpx; }
+
+/* 顶部右侧删除图标按钮 */
+.record-delete-btn { position: absolute; top: 18rpx; right: 18rpx; width: 64rpx; height: 64rpx; border-radius: 14rpx; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 6rpx 16rpx rgba(239,68,68,0.28); display: flex; align-items: center; justify-content: center; }
+.record-delete-icon { width: 32rpx; height: 32rpx; }
 
 .header-switch { display: flex; gap: 12rpx; background: rgba(255,255,255,0.2); padding: 6rpx; border-radius: 9999rpx; backdrop-filter: blur(10rpx); }
 .switch-item { padding: 10rpx 22rpx; border-radius: 9999rpx; color: #ffffff; font-size: 26rpx; }

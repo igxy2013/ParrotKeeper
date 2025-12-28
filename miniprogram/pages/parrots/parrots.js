@@ -1,5 +1,6 @@
 // pages/parrots/parrots.js
 const app = getApp()
+const CACHE_TTL_MS = 60 * 1000
 
 Page({
   data: {
@@ -10,7 +11,7 @@ Page({
     loading: false,
     searchKeyword: '',
     selectedSpeciesId: '',
-    selectedSpeciesName: '',
+    selectedSpeciesName: '全部品种',
     selectedStatus: '',
     selectedStatusText: '',
     statusPickerRange: ['全部状态', '健康', '生病', '康复中', '观察中'],
@@ -26,7 +27,11 @@ Page({
     // 性别统计
     maleCount: 0,
     femaleCount: 0,
+    totalParrots: 0,
+    lastParrotsLoadedAt: 0,
+    lastOverviewLoadedAt: 0,
     activeGenderFilter: '',
+    viewMode: 'card',
     
     // 筛选和排序相关
     showSpeciesModal: false,
@@ -55,7 +60,12 @@ Page({
       arrowRightGray: '/images/remix/ri-arrow-right-s-fill-gray.png',
       arrowRight: '/images/remix/arrow-right-s-line.png',
       addParrotEmerald: '/images/remix/add-circle-fill.png',
-      claimByCodeKey: '/images/remix/key-2-line.png'
+      claimByCodeKey: '/images/remix/key-2-line.png',
+      viewGrid: '/images/remix/layout-grid-fill.svg',
+      viewList: '/images/remix/list-check.svg',
+      genderMale: '/images/remix/men-line.png',
+      genderFemale: '/images/remix/women-line.png',
+      genderUnknown: '/images/remix/question-mark.png'
     },
     isSortMode: false,
     draggingParrotId: null,
@@ -84,6 +94,7 @@ Page({
     this.loadSpeciesList()
     
     if (isLogin) {
+      this.loadOverviewParrotsTotal(true)
       this.loadParrots()
     } else {
       // 游客模式：显示示例数据或空状态
@@ -112,17 +123,34 @@ Page({
     
     if (loginStatus) {
       console.log('用户已登录，开始加载鹦鹉数据');
-      // 加载当前用户模式
-      this.loadUserMode();
-      
+      const storedMode = wx.getStorageSync('userMode') || ''
+      const currentMode = app.globalData.userMode || storedMode || 'personal'
+      this.setData({ userMode: currentMode })
+
+      const now = Date.now()
+      const canUseListCache = Array.isArray(this.data.parrots) && this.data.parrots.length > 0 && (now - (this.data.lastParrotsLoadedAt || 0) < CACHE_TTL_MS)
+
+      if (!canUseListCache) {
+        this.loadOverviewParrotsTotal(true)
+      } else {
+        this.loadOverviewParrotsTotal(false)
+      }
+
       // 检查用户模式是否发生变化
-      const currentMode = app.globalData.userMode || 'personal';
       if (this.data.lastUserMode && this.data.lastUserMode !== currentMode) {
         console.log('检测到用户模式变化:', this.data.lastUserMode, '->', currentMode);
-        this.setData({ lastUserMode: currentMode });
+        const viewMode = currentMode === 'team' ? 'list' : 'card';
+        this.setData({ lastUserMode: currentMode, viewMode });
         this.refreshData();
         return;
       }
+      
+      // 首次加载设置默认视图模式
+      if (!this.data.lastUserMode) {
+        const viewMode = currentMode === 'team' ? 'list' : 'card';
+        this.setData({ viewMode });
+      }
+
       this.setData({ lastUserMode: currentMode });
       
       // 检查是否需要刷新数据（模式切换后）
@@ -131,8 +159,9 @@ Page({
         app.globalData.needRefresh = false; // 重置标志
         this.refreshData(); // 完全刷新数据
       } else {
-        // 从其他页面返回时刷新数据
-        this.refreshData() // 改为使用refreshData确保完全刷新
+        if (!canUseListCache) {
+          this.refreshData()
+        }
       }
     } else {
       console.log('游客模式，显示空状态');
@@ -149,6 +178,10 @@ Page({
     this.refreshData()
   },
 
+  onPageScroll(e) {
+    this._lastScrollTop = e && typeof e.scrollTop === 'number' ? e.scrollTop : 0
+  },
+
   onReachBottom() {
     if (this.data.hasMore && !this.data.loading) {
       this.loadMoreParrots()
@@ -163,9 +196,29 @@ Page({
     })
     
     try {
+      this.loadOverviewParrotsTotal(true)
       await this.loadParrots(true)
     } finally {
       wx.stopPullDownRefresh()
+    }
+  },
+
+  async loadOverviewParrotsTotal(force = false) {
+    if (!this.data.isLogin) return
+    if (!force) {
+      const now = Date.now()
+      if (this.data.totalParrots > 0 && now - (this.data.lastOverviewLoadedAt || 0) < CACHE_TTL_MS) return
+    }
+    try {
+      const res = await app.request({
+        url: '/api/statistics/overview',
+        method: 'GET'
+      })
+      if (res && res.success) {
+        const total = (res.data && res.data.total_parrots) ? Number(res.data.total_parrots) : 0
+        this.setData({ totalParrots: Number.isFinite(total) ? total : 0, lastOverviewLoadedAt: Date.now() })
+      }
+    } catch (e) {
     }
   },
 
@@ -232,28 +285,26 @@ Page({
   // 加载鹦鹉品种列表
   async loadSpeciesList() {
     try {
-      const res = await app.request({
-        url: '/api/parrots/species',
-        method: 'GET'
+      this.setData({
+        speciesList: [],
+        speciesPickerRange: ['全部品种']
       })
-      
-      if (res.success) {
-        const list = res.data || []
-        const names = ['全部品种', ...list.map(s => s.name)]
-        this.setData({
-          speciesList: list,
-          speciesPickerRange: names
-        })
-      }
-    } catch (error) {
-      console.error('加载品种列表失败:', error)
-    }
+    } catch (error) {}
+  },
+
+  // 格式化品种名称，移除“鹦鹉”后缀
+  formatSpeciesName(name) {
+    if (!name) return '未知品种';
+    const shortName = name.replace(/鹦鹉$/, '');
+    return shortName || name; // 防止替换后为空字符串
   },
 
   // 加载鹦鹉列表
   async loadParrots(refresh = false) {
     console.log('开始加载鹦鹉列表, refresh:', refresh);
     console.log('当前用户模式:', app.globalData.userMode);
+
+    const preserveScrollTop = refresh ? null : (this._lastScrollTop || 0)
     
     if (this.data.loading) {
       if (refresh) {
@@ -289,6 +340,7 @@ Page({
       
       if (res.success) {
         const parrots = res.data.parrots || []
+        const totalParrots = (this.data.totalParrots || res.data.total || 0)
         console.log('获取到的鹦鹉数据:', parrots);
         console.log('数据数量:', parrots.length);
         
@@ -326,7 +378,8 @@ Page({
             photo_url: photoUrl,
             avatar_url: avatarUrl,
             photo_thumb: photoThumb,
-            avatar_thumb: avatarThumb
+            avatar_thumb: avatarThumb,
+            species_name_short: this.formatSpeciesName(speciesName)
           }
         })
         
@@ -362,10 +415,19 @@ Page({
           page: refresh ? 2 : this.data.page + 1,
           hasMore: newParrots.length === 10,
           maleCount,
-          femaleCount
+          femaleCount,
+          totalParrots,
+          lastParrotsLoadedAt: Date.now()
+        }, () => {
+          if (!refresh && preserveScrollTop !== null) {
+            wx.pageScrollTo({ scrollTop: preserveScrollTop, duration: 0 })
+          }
         })
 
-        this.applyGenderFilter()
+      this.applyGenderFilter()
+
+        // 根据当前用户的鹦鹉列表生成品种筛选项（仅显示用户所养品种）
+        this.updateSpeciesOptionsFromParrots(updatedParrots)
 
         // 异步填充每只鹦鹉的“最近喂食时间”文本
         this.updateLastFeedForParrots(updatedParrots)
@@ -384,6 +446,31 @@ Page({
       this.loadParrots(true)
     }
   }
+  },
+
+  // 仅用当前用户的鹦鹉列表生成品种筛选项
+  updateSpeciesOptionsFromParrots(list) {
+    try {
+      const arr = Array.isArray(list) ? list : []
+      const mapById = {}
+      const fallbackNames = new Set()
+      arr.forEach(p => {
+        const s = p.species || {}
+        const id = s.id
+        const name = s.name || p.species_name || ''
+        if (id != null && id !== '') {
+          if (!mapById[id]) mapById[id] = { id, name }
+        } else if (name) {
+          fallbackNames.add(name)
+        }
+      })
+      let speciesList = Object.values(mapById)
+      if (speciesList.length === 0 && fallbackNames.size > 0) {
+        speciesList = Array.from(fallbackNames).map(n => ({ id: '', name: n }))
+      }
+      const names = ['全部品种', ...speciesList.map(s => s.name)]
+      this.setData({ speciesList, speciesPickerRange: names })
+    } catch (_) {}
   },
 
   // 加载更多鹦鹉
@@ -433,9 +520,10 @@ Page({
   // 选择品种
   selectSpecies(e) {
     const { id, name } = e.currentTarget.dataset
+    const isAll = !id
     this.setData({
-      selectedSpeciesId: id || '',
-      selectedSpeciesName: name || '',
+      selectedSpeciesId: isAll ? '' : (id || ''),
+      selectedSpeciesName: isAll ? '全部品种' : (name || ''),
       showSpeciesModal: false
     })
     this.refreshData()
@@ -443,10 +531,11 @@ Page({
 
   // 原生品种选择器变更
   onSpeciesPickerChange(e) {
-    const idx = e.detail.value
+    const idx = Number(e.detail.value)
     if (idx == null) return
+    if (Number.isNaN(idx)) return
     if (idx === 0) {
-      this.setData({ selectedSpeciesId: '', selectedSpeciesName: '' })
+      this.setData({ selectedSpeciesId: '', selectedSpeciesName: '全部品种' })
     } else {
       const realIdx = idx - 1
       const item = (this.data.speciesList || [])[realIdx]
@@ -929,11 +1018,17 @@ Page({
 
   // 加载当前团队信息
   loadUserMode() {
-    // 从全局数据获取用户模式
-    const userMode = app.globalData.userMode || 'personal';
+    const storedMode = wx.getStorageSync('userMode') || ''
+    const userMode = app.globalData.userMode || storedMode || 'personal'
     this.setData({
-      userMode: userMode
-    });
+      userMode
+    })
+  },
+
+  onViewModeTap(e) {
+    const mode = e.currentTarget.dataset.mode
+    if (!mode || mode === this.data.viewMode) return
+    this.setData({ viewMode: mode })
   },
 
   // 切换模式

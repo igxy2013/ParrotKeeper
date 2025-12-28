@@ -159,7 +159,7 @@
       v-model="showModal" 
       :parrot="selectedParrot"
       :initial-mode="initialModalMode"
-      @success="fetchParrots" 
+      @success="handleParrotsChanged" 
     />
     <ParrotDetailModal 
       v-model="showDetailModal" 
@@ -278,7 +278,7 @@ const openDetailModal = (parrot) => {
 
 const handleDeleted = async () => {
   showDetailModal.value = false
-  await fetchParrots()
+  await handleParrotsChanged()
 }
 
 const handleEditFromDetail = (p) => {
@@ -434,11 +434,16 @@ onMounted(() => {
 
 const loadSpecies = async () => {
   try {
-    const res = await api.get('/parrots/species')
+    const res = await api.get('/parrots/species/owned')
     if (res.data && res.data.success) {
       speciesList.value = res.data.data || []
     }
   } catch (_) {}
+}
+
+const handleParrotsChanged = async () => {
+  await fetchParrots()
+  await loadSpecies()
 }
 
 watch(searchKeyword, () => {
@@ -518,8 +523,7 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
   color: rgba(255,255,255,0.9);
 }
 .stat-value {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 16px;
   color: var(--text-primary);
 }
 .stat-card.stat-primary .stat-value {
@@ -597,8 +601,7 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
 }
 
 .parrot-name {
-  font-size: 16px;
-  font-weight: 400;
+  font-size: 13px;
   color: var(--text-primary);
 }
 
