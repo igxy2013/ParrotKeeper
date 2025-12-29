@@ -8,6 +8,7 @@ class NotificationManager {
     this.STORAGE_KEY = 'notification_settings'
     this.LOCAL_NOTIFICATIONS_KEY = 'local_notifications'
     this.UNREAD_COUNT_KEY = 'unread_count'
+    this.DEDUP_WINDOW_MS = 5 * 60 * 1000
     
     // 从配置文件获取模板ID
     this.TEMPLATE_IDS = getConfiguredTemplateIds()
@@ -36,6 +37,7 @@ class NotificationManager {
         care_general_topic: true
       }
     }
+    this.DAILY_ONCE_ENABLED = true
   }
 
   // 获取通知设置
@@ -172,6 +174,35 @@ class NotificationManager {
   addLocalNotification(type, title, description, parrotName = '', time = '', extra = null) {
     try {
       const notifications = this.getLocalNotifications()
+      if (this.DAILY_ONCE_ENABLED) {
+        const todayKey = this.getTodayKey()
+        const DAILY_KEY = 'daily_notifications_seen'
+        let state = wx.getStorageSync(DAILY_KEY) || {}
+        if (state.date !== todayKey) {
+          state = { date: todayKey, map: {} }
+          wx.setStorageSync(DAILY_KEY, state)
+        }
+        const sub = type === 'system' ? (title || '') : type
+        const k = sub
+        if (state.map && state.map[k]) { return }
+        state.map[k] = true
+        wx.setStorageSync(DAILY_KEY, state)
+      }
+      const nowTs = Date.now()
+      let isDuplicate = false
+      for (let i = 0; i < notifications.length; i++) {
+        const n = notifications[i]
+        if (!n) continue
+        if (n.type !== type) continue
+        const idEqual = extra && extra.alertId != null && String(extra.alertId) === String(n.alertId)
+        const titleEqual = n.title === title
+        const parrotEqual = String(n.parrotName || '') === String(parrotName || '')
+        if ((idEqual || titleEqual) && parrotEqual) {
+          const ts = typeof n.createdAt === 'string' ? Date.parse(n.createdAt) : nowTs
+          if (isFinite(ts) && (nowTs - ts) < this.DEDUP_WINDOW_MS) { isDuplicate = true; break }
+        }
+      }
+      if (isDuplicate) return
       const newNotification = {
         id: Date.now(),
         type: type,
@@ -210,6 +241,11 @@ class NotificationManager {
     } catch (error) {
       console.error('添加本地通知失败:', error)
     }
+  }
+
+  getTodayKey() {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
   }
 
   // 获取本地通知列表

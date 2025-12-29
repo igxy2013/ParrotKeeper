@@ -142,6 +142,9 @@
             <text class="parrot-table-col col-age">年龄</text>
             <text class="parrot-table-col col-weight">体重</text>
             <text class="parrot-table-col col-ring">脚环号</text>
+            <text class="parrot-table-col col-number">编号</text>
+            <text class="parrot-table-col col-health">健康</text>
+            <text class="parrot-table-col col-lastfeed">最近喂食</text>
           </view>
           <view class="parrot-table-row"
                 wx:for="{{displayParrots}}" wx:key="id" wx:for-index="idx"
@@ -156,7 +159,16 @@
             <text class="parrot-table-col col-species">{{item.species_name_short || item.species_name || '未知'}}</text>
             <text class="parrot-table-col col-age">{{item.age_display || '未知'}}</text>
             <text class="parrot-table-col col-weight">{{item.weight_display || '-'}}</text>
-            <text class="parrot-table-col col-ring">{{item.ring_number || '-'}}</text>
+            <text class="parrot-table-col col-ring" selectable="true">{{item.ring_number || '-'}}</text>
+            <text class="parrot-table-col col-number">{{item.parrot_number || '-'}}</text>
+            <view class="parrot-table-col col-health">
+              <text wx:if="{{(item.current_health_status || item.health_status) === 'healthy'}}">健康</text>
+              <text wx:elif="{{(item.current_health_status || item.health_status) === 'sick'}}">生病</text>
+              <text wx:elif="{{(item.current_health_status || item.health_status) === 'recovering'}}">康复中</text>
+              <text wx:elif="{{(item.current_health_status || item.health_status) === 'observation'}}">观察中</text>
+              <text wx:else>未知</text>
+            </view>
+            <text class="parrot-table-col col-lastfeed">{{item.last_feed || '暂无'}}</text>
           </view>
         </view>
       </scroll-view>

@@ -330,7 +330,7 @@
 
 .parrot-table {
   width: 100%;
-  min-width: 100%;
+  min-width: 1200rpx;
 }
 
 .parrot-table-header {
@@ -380,7 +380,12 @@
 .col-species { width: 160rpx; }
 .col-age { width: 100rpx; }
 .col-weight { width: 100rpx; }
-.col-ring { width: 140rpx; color: #6b7280; font-size: 22rpx; }
+.col-ring { width: 200rpx; color: #6b7280; font-size: 26rpx; }
+
+/* 新增扩展字段列宽 */
+.col-number { width: 160rpx; }
+.col-health { width: 120rpx; }
+.col-lastfeed { width: 180rpx; }
 
 /* 表头文字样式 */
 .parrot-table-header .parrot-table-col {
