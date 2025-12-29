@@ -1,0 +1,63 @@
+<view class="page-container">
+  <app-header title="邀请码管理" subtitle="生成并管理注册邀请码" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">该页面仅限超级管理员访问</view>
+    </block>
+    <block wx:else>
+      <view class="card">
+        <view class="section-title">
+          <text>生成邀请码</text>
+        </view>
+        <view class="form-row">
+          <view class="label">单个邀请码可用次数</view>
+          <view class="controls">
+            <input class="number-input" type="number" value="{{newMaxUses}}" bindinput="onMaxUsesInput" />
+            <button class="btn-primary" bindtap="createCode" loading="{{creating}}" disabled="{{creating}}">生成</button>
+          </view>
+          <view class="hint">默认 30 次，可根据需要调整</view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="section-title">
+          <text>邀请码列表</text>
+        </view>
+        <view wx:if="{{loading}}" class="loading">加载中...</view>
+        <block wx:else>
+          <view wx:if="{{!items.length}}" class="empty">暂无邀请码</view>
+          <block wx:else>
+            <view class="code-list">
+              <block wx:for="{{items}}" wx:key="id">
+                <view class="code-item">
+                  <view class="code-main">
+                    <view class="code-line">
+                      <text class="code-text">{{item.code}}</text>
+                      <view class="status-tag {{item.is_active ? 'active' : 'inactive'}}">{{item.is_active ? '可用' : '已停用'}}</view>
+                    </view>
+                    <view class="meta-line">
+                      <text class="meta-text">已使用 {{item.used_count || 0}} / {{item.max_uses || 0}}</text>
+                      <text class="meta-time">{{formatTime(item.created_at)}}</text>
+                    </view>
+                  </view>
+                  <view class="actions">
+                    <button class="btn-secondary" size="mini" bindtap="copyCode" data-code="{{item.code}}">复制</button>
+                    <button
+                      class="btn-secondary"
+                      size="mini"
+                      bindtap="toggleActive"
+                      data-id="{{item.id}}"
+                      data-active="{{item.is_active}}"
+                      disabled="{{updatingId === item.id}}"
+                    >{{item.is_active ? '停用' : '启用'}}</button>
+                  </view>
+                </view>
+              </block>
+            </view>
+          </block>
+        </block>
+      </view>
+    </block>
+  </view>
+</view>
+

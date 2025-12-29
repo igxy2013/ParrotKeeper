@@ -1,0 +1,29 @@
+.page-container { min-height: 100vh; background: #f8f9fa; }
+.page-content { padding: 16rpx; }
+.no-access { color: #ef4444; padding: 24rpx; text-align: center; }
+.card { background: #fff; border: 2rpx solid #eef2f7; border-radius: 24rpx; padding: 24rpx; margin: 20rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06); }
+.section-title { font-weight: 700; font-size: 30rpx; color: #111827; margin-bottom: 16rpx; border-left: 8rpx solid #10b981; padding-left: 12rpx; }
+.form-row { display: flex; flex-direction: column; gap: 16rpx; }
+.label { font-size: 26rpx; color: #374151; }
+.controls { display: flex; align-items: center; gap: 16rpx; }
+.number-input { flex: 1; height: 72rpx; border-radius: 16rpx; border: 1rpx solid #e5e7eb; padding: 0 20rpx; font-size: 28rpx; background: #ffffff; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.03); }
+.hint { font-size: 24rpx; color: #6b7280; }
+.btn-primary { padding: 18rpx 32rpx; border-radius: 999rpx; background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; font-size: 26rpx; box-shadow: 0 10rpx 24rpx rgba(16, 185, 129, 0.35); }
+.btn-primary:active { opacity: 0.9; }
+.loading { color: #6b7280; font-size: 26rpx; }
+.empty { color: #9ca3af; font-size: 26rpx; text-align: center; padding: 20rpx 0; }
+.code-list { display: flex; flex-direction: column; gap: 16rpx; }
+.code-item { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 12rpx; border-radius: 20rpx; border: 1rpx solid #e5e7eb; background: #f9fafb; }
+.code-main { flex: 1; display: flex; flex-direction: column; gap: 8rpx; }
+.code-line { display: flex; align-items: center; gap: 12rpx; }
+.code-text { font-size: 30rpx; font-weight: 600; color: #111827; }
+.status-tag { padding: 4rpx 12rpx; border-radius: 999rpx; font-size: 22rpx; }
+.status-tag.active { background: #dcfce7; color: #16a34a; }
+.status-tag.inactive { background: #e5e7eb; color: #6b7280; }
+.meta-line { display: flex; align-items: center; gap: 16rpx; font-size: 24rpx; color: #6b7280; }
+.meta-text { }
+.meta-time { }
+.actions { display: flex; flex-direction: column; gap: 12rpx; margin-left: 16rpx; }
+.btn-secondary { padding: 10rpx 20rpx; border-radius: 999rpx; font-size: 24rpx; background: #e5e7eb; color: #111827; }
+.btn-secondary:active { opacity: 0.9; }
+

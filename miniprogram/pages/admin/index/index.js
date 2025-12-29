@@ -46,5 +46,8 @@ Page({
       return
     }
     wx.navigateTo({ url: '/pages/admin/market-prices/market-prices' })
+  },
+  goAdminInvitationCodes() {
+    wx.navigateTo({ url: '/pages/admin/invitation-codes/invitation-codes' })
   }
 })

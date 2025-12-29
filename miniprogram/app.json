@@ -11,11 +11,12 @@
       "pages": [
         "index/index",
         "feedbacks/feedbacks",
-      "announcements/announcements",
-      "incubation-suggestions/incubation-suggestions",
-      "parrot-species/parrot-species",
-      "api-configs/api-configs",
-      "market-prices/market-prices"
+        "announcements/announcements",
+        "incubation-suggestions/incubation-suggestions",
+        "parrot-species/parrot-species",
+        "api-configs/api-configs",
+        "market-prices/market-prices",
+        "invitation-codes/invitation-codes"
       ]
     },
     {
