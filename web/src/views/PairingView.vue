@@ -308,12 +308,120 @@ const onSpeciesChange = (val) => {
   updateSpeciesData(val)
 }
 
+const LOVE_BIRD_COMMON_COLOR_NAMES = [
+  '紫伊莎',
+  '白面澳闪',
+  '紫面伊',
+  '金头澳闪',
+  '黄金面',
+  '绿金面',
+  '金头黄化',
+  '松熏派',
+  '松石伊莎',
+  '紫闪派',
+  '蓝闪派',
+  '松闪派',
+  '松石熏',
+  '蓝伊莎',
+  '蓝熏',
+  '蓝闪',
+  '松伊莎',
+  '紫闪',
+  '松闪',
+  '紫薰',
+  '松熏',
+  '紫熏派',
+  '蓝熏派',
+  '紫伊莎派',
+  '蓝伊莎派',
+  '松伊莎派',
+  '苹果绿澳闪'
+]
+
+const uniq = (list) => {
+  const out = []
+  const s = new Set()
+  ;(list || []).forEach(v => {
+    const k = String(v || '')
+    if (!k || s.has(k)) return
+    s.add(k)
+    out.push(k)
+  })
+  return out
+}
+
+const parseLovebirdAliasToGenes = (name) => {
+  const raw = String(name || '').trim()
+  const n = raw.replace(/\s+/g, '')
+  const genes = {}
+  const has = (t) => n.includes(t)
+
+  if (has('白面')) genes.white_face = 2
+  if (has('金头')) genes.goldhead = 2
+  if (has('黄金面')) genes.goldface = 2
+  if (has('绿金面')) genes.greengoldface = 2
+  if (has('紫面')) genes.violet_face = 2
+  if (has('苹果绿')) genes.apple_green = 2
+
+  if (has('松石')) genes.turquoise = 2
+  if (n.startsWith('蓝')) genes.blue = 2
+  if (n.startsWith('紫')) {
+    genes.blue = 2
+    genes.violet = 1
+  }
+
+  if (has('伊莎') || /伊$/.test(n)) genes.pallid = 1
+  if (has('黄化')) genes.ino = 1
+  if (has('熏') || has('薰')) genes.smoke = 2
+  if (has('澳闪')) genes.fallow = 2
+  if (has('闪') && !has('澳闪')) genes.flash = 2
+  if (has('派')) genes.pied = 2
+
+  return genes
+}
+
+const enhanceLovebirdConfig = (rawConfig) => {
+  const config = rawConfig && typeof rawConfig === 'object' ? rawConfig : { colors: [], loci: {} }
+  if (!config.loci) config.loci = {}
+  if (!Array.isArray(config.colors)) config.colors = []
+
+  const lociAdd = {
+    turquoise: { label: '松石', type: 'autosomal' },
+    violet: { label: '紫', type: 'autosomal', incomplete: true },
+    pallid: { label: '伊莎', type: 'sex-linked' },
+    smoke: { label: '熏', type: 'autosomal' },
+    flash: { label: '闪', type: 'autosomal' },
+    goldhead: { label: '金头', type: 'autosomal' },
+    goldface: { label: '黄金面', type: 'autosomal' },
+    greengoldface: { label: '绿金面', type: 'autosomal' },
+    violet_face: { label: '紫面', type: 'autosomal' },
+    apple_green: { label: '苹果绿', type: 'autosomal' }
+  }
+
+  Object.keys(lociAdd).forEach(k => {
+    if (config.loci[k] == null) config.loci[k] = lociAdd[k]
+  })
+
+  if (config.loci.pied == null && config.loci.pied_dom == null) {
+    config.loci.pied = { label: '派', type: 'autosomal' }
+  }
+
+  const existing = new Set(config.colors.map(c => c && c.name).filter(Boolean))
+  uniq(LOVE_BIRD_COMMON_COLOR_NAMES).forEach(displayName => {
+    if (existing.has(displayName)) return
+    config.colors.push({ name: displayName, genes: parseLovebirdAliasToGenes(displayName) })
+  })
+
+  return config
+}
+
 const updateSpeciesData = (idx) => {
   const species = speciesList.value[idx]
   if (!species) return
 
   try {
-    const config = JSON.parse(species.plumage_json)
+    let config = JSON.parse(species.plumage_json)
+    if (species.name === '牡丹鹦鹉') config = enhanceLovebirdConfig(config)
     plumageConfig.value = config
     
     // Extract Colors

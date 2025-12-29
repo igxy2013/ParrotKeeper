@@ -1,6 +1,127 @@
 
 // Genetics simulation logic ported from miniprogram
 
+const LOVE_BIRD_COMMON_COLOR_NAMES = [
+  '紫伊莎',
+  '白面澳闪',
+  '紫面伊',
+  '金头澳闪',
+  '黄金面',
+  '绿金面',
+  '金头黄化',
+  '松熏派',
+  '松石伊莎',
+  '紫闪派',
+  '蓝闪派',
+  '松闪派',
+  '松石熏',
+  '蓝伊莎',
+  '蓝熏',
+  '蓝闪',
+  '松伊莎',
+  '紫闪',
+  '松闪',
+  '紫薰',
+  '松熏',
+  '紫熏派',
+  '蓝熏派',
+  '紫伊莎派',
+  '蓝伊莎派',
+  '松伊莎派',
+  '苹果绿澳闪'
+]
+
+function uniq(list) {
+  const out = []
+  const s = new Set()
+  ;(list || []).forEach(v => {
+    const k = String(v || '')
+    if (!k || s.has(k)) return
+    s.add(k)
+    out.push(k)
+  })
+  return out
+}
+
+function normalizeLovebirdNameForMatch(name) {
+  return String(name || '').replace(/\s+/g, '').replace(/薰/g, '熏')
+}
+
+function chooseLovebirdAliasFromGenes(genes, splitGenes) {
+  const g = genes || {}
+  const sg = splitGenes || {}
+
+  const isPied = !!(g.pied_dom || g.pied)
+  const isFallow = !!g.fallow
+  const isIno = !!g.ino
+  const isPallid = !!g.pallid
+  const isSmoke = !!g.smoke
+  const isFlash = !!g.flash
+  const isWhiteFace = !!g.white_face
+  const isGoldHead = !!g.goldhead
+  const isGoldFace = !!g.goldface
+  const isGreenGoldFace = !!g.greengoldface
+  const isVioletFace = !!g.violet_face
+  const isAppleGreen = !!g.apple_green
+  const isTurquoise = !!g.turquoise
+  const isBlue = !!g.blue
+  const violetCount = Number(g.violet || 0)
+
+  const hasAliasMarkers = (
+    isPallid ||
+    isSmoke ||
+    isFlash ||
+    isFallow ||
+    isGoldHead ||
+    isGoldFace ||
+    isGreenGoldFace ||
+    isVioletFace ||
+    isAppleGreen ||
+    isTurquoise
+  )
+
+  if (!hasAliasMarkers) return ''
+
+  const allowed = uniq(LOVE_BIRD_COMMON_COLOR_NAMES)
+  const allowedSet = new Set(allowed.map(normalizeLovebirdNameForMatch))
+
+  if (isGoldFace && allowedSet.has(normalizeLovebirdNameForMatch('黄金面'))) return '黄金面'
+  if (isGreenGoldFace && allowedSet.has(normalizeLovebirdNameForMatch('绿金面'))) return '绿金面'
+  if (isGoldHead && isIno && allowedSet.has(normalizeLovebirdNameForMatch('金头黄化'))) return '金头黄化'
+  if (isFallow && isWhiteFace && allowedSet.has(normalizeLovebirdNameForMatch('白面澳闪'))) return '白面澳闪'
+  if (isFallow && isGoldHead && allowedSet.has(normalizeLovebirdNameForMatch('金头澳闪'))) return '金头澳闪'
+  if (isFallow && isAppleGreen && allowedSet.has(normalizeLovebirdNameForMatch('苹果绿澳闪'))) return '苹果绿澳闪'
+  if (isVioletFace && isPallid && allowedSet.has(normalizeLovebirdNameForMatch('紫面伊'))) return '紫面伊'
+
+  let base = '松'
+  if (isTurquoise) base = '松石'
+  else if (isBlue && violetCount > 0) base = '紫'
+  else if (isBlue) base = '蓝'
+  else if (isAppleGreen) base = '苹果绿'
+
+  let mod = ''
+  if (isPallid) mod = '伊莎'
+  else if (isSmoke) mod = '熏'
+  else if (isFlash) mod = '闪'
+  else if (isFallow) mod = '澳闪'
+  else if (isIno) mod = '黄化'
+
+  let candidate = base + mod
+  if (isPied) {
+    if (candidate && (candidate.endsWith('伊莎') || candidate.endsWith('熏') || candidate.endsWith('闪') || candidate.endsWith('薰') || candidate.endsWith('澳闪'))) {
+      candidate = candidate + '派'
+    }
+  }
+
+  const normCandidate = normalizeLovebirdNameForMatch(candidate)
+  if (allowedSet.has(normCandidate)) {
+    const idx = allowed.findIndex(a => normalizeLovebirdNameForMatch(a) === normCandidate)
+    return idx >= 0 ? allowed[idx] : candidate
+  }
+
+  return ''
+}
+
 export function simulatePairing(speciesName, config, mIdx, fIdx, mSplits, fSplits) {
   if (!config) return []
   
@@ -284,6 +405,9 @@ function generateName(species, config, visuals, splits) {
   }
 
   else if (species === '牡丹鹦鹉') {
+    const n = chooseLovebirdAliasFromGenes(genes, splitGenes)
+    if (n) return n
+
     const isBlue = genes['blue']
     const isSplitBlue = splitGenes['blue']
     const isWhite = genes['white']
@@ -296,71 +420,61 @@ function generateName(species, config, visuals, splits) {
     const isPied = genes['pied_dom'] || genes['pied']
     const isFallow = genes['fallow']
 
-    // 0. Fallow (澳闪)
     if (isFallow) {
-       if (isWhiteFace) return '白面澳闪'
-       if (isBlue) return '蓝化澳闪'
-       return '红面澳闪'
+      if (isWhiteFace) return '白面澳闪'
+      if (isBlue) return '蓝化澳闪'
+      return '红面澳闪'
     }
 
-    // 1. White series
     if (isWhite) {
-       if (isPied) return '白化派特'
-       return '白桃（白化）'
+      if (isPied) return '白化派特'
+      return '白桃（白化）'
     }
 
-    // 2. Yellow series
     if (isIno) {
-       return '黄桃（黄化）'
+      return '黄桃（黄化）'
     }
 
     let color = ''
 
-    // 3. Base Color
     if (isBlue) {
-       color = '蓝银顶'
-       if (isWhiteFace) color = '白面桃' 
+      color = '蓝银顶'
+      if (isWhiteFace) color = '白面桃'
     } else {
-       if (isSplitBlue) {
-           color = '绿金顶'
-       } else {
-           color = '野生型（绿桃）'
-       }
-       
-       if (isWhiteFace) color = '白面绿桃' 
+      if (isSplitBlue) {
+        color = '绿金顶'
+      } else {
+        color = '野生型（绿桃）'
+      }
+      if (isWhiteFace) color = '白面绿桃'
     }
-    
-    // 4. Aussie Cinnamon (澳桂)
+
     if (isCinAus) {
-       if (isWhiteFace) return '白面澳桂'
-       if (color === '野生型（绿桃）' || color === '绿金顶') return '苹果绿澳桂(红面澳桂)'
-       if (color === '蓝银顶') return '蓝化澳桂'
-       return '澳桂(' + color + ')'
+      if (isWhiteFace) return '白面澳桂'
+      if (color === '野生型（绿桃）' || color === '绿金顶') return '苹果绿澳桂(红面澳桂)'
+      if (color === '蓝银顶') return '蓝化澳桂'
+      return '澳桂(' + color + ')'
     }
 
-    // 5. Edged
     if (isEdged) {
-       if (color.includes('蓝')) color = '蓝化黄边'
-       else color = '黄边桃'
+      if (color.includes('蓝')) color = '蓝化黄边'
+      else color = '黄边桃'
     }
 
-    // 6. Silver
     if (isSilver) {
-       color = '银丝桃'
+      color = '银丝桃'
     }
 
-    // 7. Cinnamon (American Cinnamon)
     if (isCin) {
-       if (color.includes('蓝') || color === '蓝银顶') return '肉桂蓝化'
-       return '肉桂桃'
+      if (color.includes('蓝') || color === '蓝银顶') return '肉桂蓝化'
+      return '肉桂桃'
     }
 
-    // 8. Pied
     if (isPied) {
-       if (color.includes('白') || color === '白桃（白化）') return '白化派特'
-       return '派特桃'
+      if (color.includes('白') || color === '白桃（白化）') return '白化派特'
+      return '派特桃'
     }
-    
+
     if (isPied && color.includes('蓝')) return '蓝派特'
 
     return color
