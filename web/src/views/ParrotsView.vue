@@ -87,6 +87,9 @@
           <el-table-column label="品种" min-width="140">
             <template #default="{ row }">{{ row.species?.name || '未知品种' }}</template>
           </el-table-column>
+          <el-table-column label="羽色" min-width="160">
+            <template #default="{ row }">{{ decorateColorForDisplay(row.species?.name || row.species_name, row.color) || '-' }}</template>
+          </el-table-column>
           <el-table-column label="年龄" min-width="120">
             <template #default="{ row }">{{ calculateAge(row.birth_date) }}</template>
           </el-table-column>
@@ -131,12 +134,13 @@
               <span class="divider">|</span>
               <span class="info-item">{{ calculateAge(parrot.birth_date) }}</span>
             </div>
-            <div class="parrot-extra-info">
-              <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
-              <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
-              <span v-if="parrot.ring_number" class="info-item">脚环号：{{ parrot.ring_number }}</span>
-              <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
-            </div>
+          <div class="parrot-extra-info">
+            <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
+            <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
+            <span v-if="parrot.ring_number" class="info-item">脚环号：{{ parrot.ring_number }}</span>
+            <span v-if="parrot.color" class="info-item">羽色：{{ decorateColorForDisplay(parrot.species?.name || parrot.species_name, parrot.color) }}</span>
+            <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
+          </div>
           </div>
           <div class="parrot-action">
             <el-icon><ArrowRight /></el-icon>
@@ -393,6 +397,15 @@ const formatDate = (d) => {
   const m = String(t.getMonth() + 1).padStart(2, '0')
   const dd = String(t.getDate()).padStart(2, '0')
   return `${y}-${m}-${dd}`
+}
+
+const decorateColorForDisplay = (speciesName, name) => {
+  const s = String(speciesName || '')
+  const n = String(name || '')
+  if (s === '牡丹鹦鹉') {
+    if (n === '黄边桃' || n.includes('蓝腰黄桃')) return '黄边桃(蓝腰黄桃)'
+  }
+  return n
 }
 
 const getParrotImage = (parrot) => {

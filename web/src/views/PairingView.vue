@@ -350,6 +350,15 @@ const uniq = (list) => {
   return out
 }
 
+const decorateColorForDisplay = (speciesName, name) => {
+  const s = String(speciesName || '')
+  const n = String(name || '')
+  if (s === '牡丹鹦鹉') {
+    if (n === '黄边桃' || n.includes('蓝腰黄桃')) return '黄边桃(蓝腰黄桃)'
+  }
+  return n
+}
+
 const parseLovebirdAliasToGenes = (name) => {
   const raw = String(name || '').trim()
   const n = raw.replace(/\s+/g, '')
@@ -425,7 +434,7 @@ const updateSpeciesData = (idx) => {
     plumageConfig.value = config
     
     // Extract Colors
-    colorOptions.value = config.colors.map(c => c.name)
+    colorOptions.value = config.colors.map(c => decorateColorForDisplay(species.name, c.name))
     
     // Extract Splits
     const splits = []
@@ -510,6 +519,7 @@ const canonicalizeColorName = (species, name) => {
     if (s === '白桃') return '白桃（白化）'
     if (s === '黄桃') return '黄桃（黄化）'
     if (s.includes('蓝派特')) return '派特桃'
+    if (s.includes('黄边桃') || s.includes('蓝腰黄桃')) return '黄边桃'
     return s
   } else if (species === '小太阳鹦鹉') {
     if (s.includes('派特')) return '派特小太阳'
@@ -553,7 +563,8 @@ const normalizePriceMap = (species, map) => {
       '野生型（绿桃）': ['野生型','绿桃'],
       '白桃（白化）': ['白桃'],
       '黄桃（黄化）': ['黄桃'],
-      '派特桃': ['蓝派特','派特']
+      '派特桃': ['蓝派特','派特'],
+      '黄边桃': ['黄边桃(蓝腰黄桃)','蓝腰黄桃']
     }
     Object.keys(alias).forEach(canon => {
       const syns = alias[canon]

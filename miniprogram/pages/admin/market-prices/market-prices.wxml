@@ -37,7 +37,7 @@
                 <view class="price-item">
                   <view class="price-info">
                     <text class="price-species">{{item.species}}</text>
-                    <text class="price-color">{{item.color_name}}</text>
+                    <text class="price-color">{{item.display_color_name || item.color_name}}</text>
                     <text class="price-gender">{{item.gender_text}}</text>
                   </view>
                   <view class="price-value">¥{{item.reference_price}}</view>

@@ -283,7 +283,8 @@ Page({
       this.setData({ colorOptions: [], availableSplits: [], motherColorIndex: 0, fatherColorIndex: 0, motherSplits: [], fatherSplits: [], priceMap: {}, bestFatherSuggestion: null, bestMotherSuggestion: null })
       return
     }
-    const colors = config.colors.map(c => c.name)
+    const rawColors = config.colors.map(c => c.name)
+    const colors = rawColors.map(n => (species === '牡丹鹦鹉' && (n === '黄边桃' || String(n).includes('蓝腰黄桃'))) ? '黄边桃(蓝腰黄桃)' : n)
     
     const splits = []
     for (const [key, gene] of Object.entries(config.loci)) {
@@ -426,6 +427,7 @@ Page({
       if (s === '绿桃' || s.includes('野生型')) return '野生型（绿桃）'
       if (s === '白桃') return '白桃（白化）'
       if (s === '黄桃') return '黄桃（黄化）'
+      if (s.includes('蓝腰黄桃')) return '黄边桃'
       if (s.includes('蓝派特')) return '派特桃'
       return s
     } else if (species === '小太阳鹦鹉') {
@@ -470,7 +472,8 @@ Page({
         '野生型（绿桃）': ['野生型','绿桃'],
         '白桃（白化）': ['白桃'],
         '黄桃（黄化）': ['黄桃'],
-        '派特桃': ['蓝派特','派特']
+        '派特桃': ['蓝派特','派特'],
+        '黄边桃': ['蓝腰黄桃']
       }
       Object.keys(alias).forEach(canon => {
         const syns = alias[canon]

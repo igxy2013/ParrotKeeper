@@ -79,7 +79,11 @@ Component({
     setRenderColors(colors) {
       const kw = String(this.data.searchKeyword || '').trim().toLowerCase();
       const src = Array.isArray(colors) ? colors : (this.data.colors || []);
-      const list = (src || []).map((name, index) => ({ name, index }));
+      const list = (src || []).map((name, index) => {
+        const raw = String(name || '')
+        const disp = (raw === '黄边桃' || raw.includes('蓝腰黄桃')) ? '黄边桃(蓝腰黄桃)' : raw
+        return { name: disp, index }
+      });
       const filtered = kw
         ? list.filter(it => String(it.name || '').toLowerCase().includes(kw))
         : list;

@@ -33,6 +33,7 @@
             <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
             <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
             <span v-if="parrot.ring_number" class="info-item">脚环号：{{ parrot.ring_number }}</span>
+            <span v-if="parrot.color" class="info-item">羽色：{{ decorateColorForDisplay(parrot.species_name || parrot.species?.name, parrot.color) }}</span>
             <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
           </div>
         </div>
@@ -185,6 +186,15 @@ const birthPlaceDisplay = computed(() => {
   if (!bp) return ''
   return String(bp).replace(/未选择|请选择/g, '').replace(/\s+/g, ' ').trim()
 })
+
+const decorateColorForDisplay = (speciesName, name) => {
+  const s = String(speciesName || '')
+  const n = String(name || '')
+  if (s === '牡丹鹦鹉') {
+    if (n === '黄边桃' || n.includes('蓝腰黄桃')) return '黄边桃(蓝腰黄桃)'
+  }
+  return n
+}
 
 const reload = async () => {
   await fetchParrot()

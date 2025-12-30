@@ -33,6 +33,24 @@ Page({
     this.loadSpecies()
   },
 
+  decorateColorForDisplay(species, name){
+    const s = String(species || '')
+    const n = String(name || '')
+    if (s === '牡丹鹦鹉') {
+      if (n === '黄边桃' || n.includes('蓝腰黄桃')) return '黄边桃(蓝腰黄桃)'
+    }
+    return n
+  },
+
+  canonicalizeColorForMarket(species, name){
+    const s = String(species || '')
+    const n = String(name || '')
+    if (s === '牡丹鹦鹉') {
+      if (n.includes('黄边桃') || n.includes('蓝腰黄桃')) return '黄边桃'
+    }
+    return n
+  },
+
   async loadSpecies() {
     try {
       const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
@@ -58,7 +76,8 @@ Page({
         const prices = (res && res.data && res.data.prices) || []
         const mapped = prices.map(p => ({
           ...p,
-          gender_text: p.gender === 'male' ? '雄性' : (p.gender === 'female' ? '雌性' : '不区分')
+          gender_text: p.gender === 'male' ? '雄性' : (p.gender === 'female' ? '雌性' : '不区分'),
+          display_color_name: this.decorateColorForDisplay(p.species, p.color_name)
         }))
         const keyword = String(this.data.searchColorKeyword || '').trim()
         const filtered = this.filterPriceList(mapped, keyword)
@@ -143,7 +162,7 @@ Page({
     const kw = String(keyword || '').trim().toLowerCase()
     if (!kw) return list || []
     const src = list || []
-    return src.filter(p => String(p.color_name || '').toLowerCase().indexOf(kw) !== -1)
+    return src.filter(p => String((p.display_color_name || p.color_name) || '').toLowerCase().indexOf(kw) !== -1)
   },
 
   onSearchColorInput(e) {
@@ -155,7 +174,8 @@ Page({
   submitForm() {
     const idx = this.data.editingIndex
     const form = this.data.addForm
-    const color_name = String(form.color_name || (this.data.colorNames || [])[this.data.formColorIndex] || '').trim()
+    const selectedDisplay = String(form.color_name || (this.data.colorNames || [])[this.data.formColorIndex] || '').trim()
+    const color_name = this.canonicalizeColorForMarket(form.species, selectedDisplay)
     const payload = {
       species: form.species || (this.data.formSpeciesIndex > 0 ? this.data.speciesNames[this.data.formSpeciesIndex] : ''),
       color_name,
@@ -213,7 +233,8 @@ Page({
     const names = this.data.speciesNames
     const fi = Math.max(0, names.indexOf(item.species))
     const colors = this.getColorsBySpeciesName(item.species, this.data.speciesRows)
-    const ci = Math.max(0, colors.indexOf(item.color_name))
+    const targetDisplay = this.decorateColorForDisplay(item.species, item.color_name)
+    const ci = Math.max(0, colors.indexOf(targetDisplay))
     const genderOptions = this.data.genderOptions
     const gi = item.gender === 'male' ? 1 : (item.gender === 'female' ? 2 : 0)
     this.setData({
@@ -254,7 +275,7 @@ Page({
       const r = (rows || []).find(x => x.name === name)
       if (r && r.plumage_json) {
         const cfg = JSON.parse(r.plumage_json)
-        return (cfg.colors || []).map(c => c.name)
+        return (cfg.colors || []).map(c => this.decorateColorForDisplay(name, c.name))
       }
     } catch (_){ }
     return []

@@ -479,22 +479,25 @@ Page({
       const speciesId = String((this.data.formData || {}).species_id || '')
       const list = this.data.speciesList || []
       const match = list.find(s => String(s.id) === speciesId)
-      const colors = []
+      const rawColors = []
       if (match && match.plumage_json) {
         try {
           const j = JSON.parse(match.plumage_json)
           if (j && Array.isArray(j.colors)) {
-            j.colors.forEach(c => { if (c && c.name) colors.push(c.name) })
+            j.colors.forEach(c => { if (c && c.name) rawColors.push(c.name) })
           }
         } catch (_) {}
       }
+      const speciesName = this.data.selectedSpeciesName || ''
+      const displayColors = rawColors.map(n => this.decorateColorForDisplay(speciesName, n))
       let colorIndex = 0
       const currentColor = (this.data.formData || {}).color || ''
       if (currentColor) {
-        const idx = colors.indexOf(currentColor)
+        const canon = this.canonicalizeColor(speciesName, currentColor)
+        const idx = rawColors.indexOf(canon)
         colorIndex = idx >= 0 ? idx : 0
       }
-      this.setData({ plumageColors: colors, plumageColorIndex: colorIndex })
+      this.setData({ plumageColors: displayColors, plumageColorIndex: colorIndex })
     } catch (_) {
       this.setData({ plumageColors: [], plumageColorIndex: 0 })
     }
@@ -505,9 +508,29 @@ Page({
     try {
       const { colorIndex } = e.detail || {}
       const colors = this.data.plumageColors || []
-      const name = colors[colorIndex] || ''
+      const displayName = colors[colorIndex] || ''
+      const speciesName = this.data.selectedSpeciesName || ''
+      const name = this.canonicalizeColor(speciesName, displayName)
       this.setData({ plumageColorIndex: colorIndex, 'formData.color': name })
     } catch (_) {}
+  },
+
+  decorateColorForDisplay(speciesName, name){
+    const s = String(speciesName || '')
+    const n = String(name || '')
+    if (s === '牡丹鹦鹉') {
+      if (n === '黄边桃' || n.includes('蓝腰黄桃')) return '黄边桃(蓝腰黄桃)'
+    }
+    return n
+  },
+
+  canonicalizeColor(speciesName, name){
+    const s = String(speciesName || '')
+    const n = String(name || '')
+    if (s === '牡丹鹦鹉') {
+      if (n.includes('黄边桃') || n.includes('蓝腰黄桃')) return '黄边桃'
+    }
+    return n
   },
 
   // 提交表单

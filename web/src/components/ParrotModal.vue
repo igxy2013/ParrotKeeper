@@ -216,7 +216,7 @@
                   </div>
                   <div class="form-item half">
                     <label class="form-label">羽色</label>
-                    <el-select
+                  <el-select
                       v-model="form.color"
                       placeholder="请选择羽色"
                       class="full-width-select"
@@ -227,10 +227,10 @@
                       popper-class="rounded-12-popper"
                     >
                       <el-option
-                        v-for="c in plumageColors"
-                        :key="c"
-                        :label="c"
-                        :value="c"
+                        v-for="o in plumageColors"
+                        :key="o.value"
+                        :label="o.label"
+                        :value="o.value"
                       />
                     </el-select>
                   </div>
@@ -387,11 +387,29 @@ const updatePlumageOptions = (speciesId) => {
 				? JSON.parse(species.plumage_json)
 				: species.plumage_json
 			
-			if (json && Array.isArray(json.colors)) {
-				plumageColors.value = json.colors
-					.map(c => c.name)
-					.filter(Boolean)
-			}
+      if (json && Array.isArray(json.colors)) {
+        const arr = json.colors
+          .map(c => ({
+            label: decorateColorForDisplay(species.name, c.name),
+            value: canonicalizeColor(species.name, c.name)
+          }))
+          .filter(o => !!o.value)
+        const seen = new Set()
+        const deduped = []
+        for (const o of arr) {
+          const k = o.value
+          if (!seen.has(k)) {
+            seen.add(k)
+            deduped.push(o)
+          }
+        }
+        if (species.name === '牡丹鹦鹉') {
+          if (!seen.has('黄边桃')) {
+            deduped.push({ label: '黄边桃(蓝腰黄桃)', value: '黄边桃' })
+          }
+        }
+        plumageColors.value = deduped
+      }
 		} catch (e) {
 			console.error('Failed to parse plumage_json', e)
 		}
@@ -464,6 +482,24 @@ const resetForm = () => {
     avatar_url: ''
 	}
 	plumageColors.value = []
+}
+
+const decorateColorForDisplay = (speciesName, name) => {
+  const s = String(speciesName || '')
+  const n = String(name || '')
+  if (s === '牡丹鹦鹉') {
+    if (n === '黄边桃' || n.includes('蓝腰黄桃')) return '黄边桃(蓝腰黄桃)'
+  }
+  return n
+}
+
+const canonicalizeColor = (speciesName, name) => {
+  const s = String(speciesName || '')
+  const n = String(name || '')
+  if (s === '牡丹鹦鹉') {
+    if (n.includes('黄边桃') || n.includes('蓝腰黄桃')) return '黄边桃'
+  }
+  return n
 }
 
 const handleClose = () => {
@@ -596,6 +632,10 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     const payload = { ...form.value }
+    const sp = speciesList.value.find(s => s.id === payload.species_id)
+    if (sp && payload.color) {
+      payload.color = canonicalizeColor(sp.name, payload.color)
+    }
     // Ensure numeric values are numbers or null
     if (payload.weight === '') payload.weight = null
     
