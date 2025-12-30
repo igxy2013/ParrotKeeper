@@ -1,5 +1,7 @@
 from flask import Blueprint, request
-from models import db, Announcement, SystemSetting, InvitationCode
+from models import db, Announcement, SystemSetting, InvitationCode, User, Parrot
+from team_models import TeamMember, Team
+from sqlalchemy import func
 from utils import login_required, success_response, error_response
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -242,6 +244,151 @@ def get_api_configs():
         return success_response({'configs': items, 'lists': {'remove_bg_list': remove_list, 'aliyun_list': aliyun_list}})
     except Exception as e:
         return error_response(f'获取API配置失败: {str(e)}')
+
+
+@admin_bp.route('/users/stats', methods=['GET'])
+@login_required
+def get_users_stats():
+    """用户统计：总用户数与团队用户数（去重）"""
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        total_users = User.query.count()
+        team_user_count = db.session.query(User.id).join(TeamMember, TeamMember.user_id == User.id) \
+            .filter(TeamMember.is_active == True).distinct().count()
+
+        role_super_admin = User.query.filter(User.role == 'super_admin').count()
+        role_admin = User.query.filter(User.role == 'admin').count()
+        role_user = User.query.filter(User.role == 'user').count()
+
+        team_count = Team.query.filter(Team.is_active == True).count()
+        members_per_team = db.session.query(TeamMember.team_id, func.count(TeamMember.id)) \
+            .filter(TeamMember.is_active == True).group_by(TeamMember.team_id).all()
+        avg_members = 0.0
+        if team_count > 0 and members_per_team:
+            total_members = sum(c for _, c in members_per_team)
+            avg_members = round(float(total_members) / float(team_count), 2)
+
+        return success_response({
+            'total_users': total_users,
+            'team_users': team_user_count,
+            'role_counts': {
+                'super_admin': role_super_admin,
+                'admin': role_admin,
+                'user': role_user
+            },
+            'team_stats': {
+                'team_count': team_count,
+                'avg_members': avg_members
+            }
+        })
+    except Exception as e:
+        return error_response(f'获取用户统计失败: {str(e)}')
+
+
+@admin_bp.route('/users', methods=['GET'])
+@login_required
+def list_users():
+    """用户列表（基础信息，支持分页），仅超级管理员"""
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        try:
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', 50))
+        except Exception:
+            page, per_page = 1, 50
+        per_page = max(1, min(200, per_page))
+        offset = max(0, (page - 1) * per_page)
+
+        q = User.query.order_by(User.created_at.desc())
+        keyword = (request.args.get('keyword') or '').strip()
+        role = (request.args.get('role') or '').strip()
+        user_mode = (request.args.get('user_mode') or '').strip()
+        sort_by = (request.args.get('sort_by') or '').strip()
+        sort_order = (request.args.get('sort_order') or 'desc').strip()
+        if keyword:
+            like = f"%{keyword}%"
+            q = q.filter(
+                (User.nickname.ilike(like)) |
+                (User.openid.ilike(like)) |
+                (User.phone.ilike(like))
+            )
+        if role in ['super_admin', 'admin', 'user']:
+            q = q.filter(User.role == role)
+        if user_mode in ['personal', 'team']:
+            q = q.filter(User.user_mode == user_mode)
+
+        if sort_by == 'nickname':
+            if sort_order == 'asc':
+                q = q.order_by(User.nickname.asc())
+            else:
+                q = q.order_by(User.nickname.desc())
+            total = q.count()
+            items = q.offset(offset).limit(per_page).all()
+        elif sort_by == 'parrot_count':
+            items_all = q.all()
+            total = len(items_all)
+
+            personal_counts_rows = db.session.query(Parrot.user_id, func.count(Parrot.id)) \
+                .filter(Parrot.team_id.is_(None), Parrot.is_active == True) \
+                .group_by(Parrot.user_id).all()
+            personal_counts_map = {uid: cnt for uid, cnt in personal_counts_rows}
+
+            team_counts_rows = db.session.query(Parrot.team_id, func.count(Parrot.id)) \
+                .filter(Parrot.team_id.isnot(None), Parrot.is_active == True) \
+                .group_by(Parrot.team_id).all()
+            team_counts_map = {tid: cnt for tid, cnt in team_counts_rows}
+
+            def _cnt(u):
+                if u.user_mode == 'team' and u.current_team_id:
+                    return int(team_counts_map.get(u.current_team_id, 0) or 0)
+                return int(personal_counts_map.get(u.id, 0) or 0)
+
+            items_all.sort(key=lambda u: _cnt(u), reverse=(sort_order != 'asc'))
+            items = items_all[offset: offset + per_page]
+        else:
+            total = q.count()
+            items = q.offset(offset).limit(per_page).all()
+
+        personal_counts_rows = db.session.query(Parrot.user_id, func.count(Parrot.id)) \
+            .filter(Parrot.team_id.is_(None), Parrot.is_active == True) \
+            .group_by(Parrot.user_id).all()
+        personal_counts_map = {uid: cnt for uid, cnt in personal_counts_rows}
+
+        team_counts_rows = db.session.query(Parrot.team_id, func.count(Parrot.id)) \
+            .filter(Parrot.team_id.isnot(None), Parrot.is_active == True) \
+            .group_by(Parrot.team_id).all()
+        team_counts_map = {tid: cnt for tid, cnt in team_counts_rows}
+
+        data = []
+        for u in items:
+            data.append({
+                'id': u.id,
+                'openid': u.openid,
+                'nickname': u.nickname,
+                'avatar_url': u.avatar_url,
+                'role': u.role,
+                'user_mode': u.user_mode,
+                'current_team_id': u.current_team_id,
+                'created_at': u.created_at.isoformat() if getattr(u, 'created_at', None) else None,
+                'parrot_count': int(team_counts_map.get(u.current_team_id, 0) or 0) if (u.user_mode == 'team' and u.current_team_id) else int(personal_counts_map.get(u.id, 0) or 0)
+            })
+
+        return success_response({
+            'items': data,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total
+            }
+        })
+    except Exception as e:
+        return error_response(f'获取用户列表失败: {str(e)}')
 
 
 @admin_bp.route('/invitation-codes', methods=['GET'])

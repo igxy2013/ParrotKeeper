@@ -16,7 +16,8 @@
         "parrot-species/parrot-species",
         "api-configs/api-configs",
         "market-prices/market-prices",
-        "invitation-codes/invitation-codes"
+        "invitation-codes/invitation-codes",
+        "users-management/users-management"
       ]
     },
     {

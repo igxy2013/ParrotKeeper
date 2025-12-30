@@ -50,4 +50,13 @@ Page({
   goAdminInvitationCodes() {
     wx.navigateTo({ url: '/pages/admin/invitation-codes/invitation-codes' })
   }
+  ,
+  goAdminUsersManagement() {
+    const userInfo = (app.globalData && app.globalData.userInfo) || {}
+    if (String(userInfo.role || '') !== 'super_admin') {
+      app.showError && app.showError('仅超级管理员可进入')
+      return
+    }
+    wx.navigateTo({ url: '/pages/admin/users-management/users-management' })
+  }
 })

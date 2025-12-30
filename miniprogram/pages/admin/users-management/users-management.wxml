@@ -1,0 +1,81 @@
+<view class="page-container">
+  <app-header title="用户管理" subtitle="统计与管理用户" showBack="{{true}}"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">仅超级管理员可访问该页面</view>
+    </block>
+    <block wx:else>
+      <block wx:if="{{loading}}">
+        <view class="loading">加载中...</view>
+      </block>
+      <block wx:else>
+        <view class="card stats-card">
+          <view class="stats-grid">
+            <view class="stat-item">
+              <view class="stat-icon bg-green">
+                <image class="stat-icon-img" src="/images/remix/user-line-white.png" mode="aspectFit" />
+              </view>
+              <view class="stat-content">
+                <text class="stat-value">{{stats.totalUsers}}</text>
+                <text class="stat-label">总用户数</text>
+              </view>
+            </view>
+            <view class="stat-item">
+              <view class="stat-icon bg-indigo">
+                <image class="stat-icon-img" src="/images/remix/group-line-white.png" mode="aspectFit" />
+              </view>
+              <view class="stat-content">
+                <text class="stat-value">{{stats.teamCount}}</text>
+                <text class="stat-label">团队数量</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="card">
+          <view class="card-header">
+            <text class="card-title">用户列表</text>
+          </view>
+          <view class="card-content">
+            <view class="filter-row">
+              <input class="search-input" placeholder="搜索昵称/ID/手机号" value="{{keyword}}" bindinput="onSearchInput" />
+              <view class="search-clear" bindtap="clearSearch" wx:if="{{keyword}}">清除</view>
+            </view>
+            <view class="chips-row">
+              <view class="chip {{modeFilter==='all' ? 'active' : ''}}" data-mode="all" bindtap="setModeFilter">全部模式</view>
+              <view class="chip {{modeFilter==='personal' ? 'active' : ''}}" data-mode="personal" bindtap="setModeFilter">个人模式</view>
+              <view class="chip {{modeFilter==='team' ? 'active' : ''}}" data-mode="team" bindtap="setModeFilter">团队模式</view>
+            </view>
+            <view class="chips-row">
+              <view class="chip {{sortBy==='parrot_count' ? 'active' : ''}}" bindtap="setSortByParrotCount">按鹦鹉数量</view>
+              <view class="chip {{sortBy==='nickname' ? 'active' : ''}}" bindtap="setSortByNickname">按用户名称</view>
+            </view>
+            <view class="user-list">
+              <block wx:for="{{users}}" wx:key="id">
+                <view class="user-item">
+                  <image class="avatar" src="{{item.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+                  <view class="user-main">
+                    <view class="row">
+                      <text class="name">{{item.nickname || ('用户' + item.id)}}</text>
+                      <text class="tag role {{item.role}}">{{item.role === 'super_admin' ? '超级管理员' : (item.role === 'admin' ? '管理员' : '普通用户')}}</text>
+                      <text class="tag mode {{item.user_mode}}">{{item.user_mode === 'team' ? '团队模式' : '个人模式'}}</text>
+                    </view>
+                    <view class="meta">
+                      <text class="meta-text">ID {{item.id}}</text>
+                      <text class="meta-text">鹦鹉: {{item.parrot_count || 0}}</text>
+                      <text class="meta-text">{{item.created_at || ''}}</text>
+                    </view>
+                  </view>
+                </view>
+              </block>
+              <view class="empty" wx:if="{{!users.length && !listLoading}}">暂无数据</view>
+              <view class="load-more" wx:if="{{hasMore}}">
+                <button class="btn" bindtap="loadMore" disabled="{{listLoading}}">{{listLoading ? '加载中...' : '加载更多'}}</button>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </block>
+  </view>
+</view>

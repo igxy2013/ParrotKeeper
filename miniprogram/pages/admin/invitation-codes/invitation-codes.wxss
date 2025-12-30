@@ -8,7 +8,7 @@
 .controls { display: flex; align-items: center; gap: 16rpx; }
 .number-input { flex: 1; height: 72rpx; border-radius: 16rpx; border: 1rpx solid #e5e7eb; padding: 0 20rpx; font-size: 28rpx; background: #ffffff; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.03); }
 .hint { font-size: 24rpx; color: #6b7280; }
-.btn-primary { padding: 18rpx 32rpx; border-radius: 999rpx; background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; font-size: 26rpx; box-shadow: 0 10rpx 24rpx rgba(16, 185, 129, 0.35); }
+.btn-primary { padding: 8rpx 32rpx; border-radius: 32rpx; background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; font-size: 26rpx; box-shadow: 0 10rpx 24rpx rgba(16, 185, 129, 0.35); }
 .btn-primary:active { opacity: 0.9; }
 .loading { color: #6b7280; font-size: 26rpx; }
 .empty { color: #9ca3af; font-size: 26rpx; text-align: center; padding: 20rpx 0; }
