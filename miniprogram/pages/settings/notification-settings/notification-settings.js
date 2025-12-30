@@ -29,11 +29,66 @@ Page({
       feeding_frequency_low: true,
       weight_decline: true,
       care_general_topic: true
+    },
+    iconPaths: {
+      notifyBell: '/images/remix/notification-3-line.png',
+      feedRestaurant: '/images/remix/ri-restaurant-fill-orange.png',
+      timeClock: '/images/remix/ri-time-line.png',
+      healthShield: '/images/remix/ri-shield-check-fill-green.png',
+      settingsGear: '/images/remix/settings-3-line.png',
+      chickCare: '/images/remix/ri-heart-fill-emerald.png',
+      incubationAdvice: '/images/remix/ri-book-fill-orange.png',
+      feedingGap: '/images/remix/ri-time-line.png',
+      feedingFrequencyLow: '/images/remix/ri-arrow-down-s-fill-gray.png',
+      weightDecline: '/images/remix/ri-scales-fill-green.png',
+      careGeneralTopic: '/images/remix/ri-book-fill-green.png',
+      cleaning: '/images/remix/ri-home-5-fill-green.png',
+      medication: '/images/remix/ri-heart-fill-red.png',
+      breeding: '/images/remix/ri-heart-fill-purple.png',
+      keyLine: '/images/remix/key-2-line.png',
+      testExperiment: '/images/remix/ri-nurse-line-purple.png',
+      arrowRight: '/images/remix/arrow-right-s-line.png'
     }
   },
 
   onLoad() {
     this.loadPreferences();
+  },
+
+  onNotificationIconError(e) {
+    try {
+      const keyPath = e.currentTarget.dataset.key
+      const current = this.data.iconPaths || {}
+      const next = JSON.parse(JSON.stringify(current))
+      const setByPath = (obj, path, value) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length - 1; i++) {
+          const p = parts[i]
+          if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {}
+          cur = cur[p]
+        }
+        cur[parts[parts.length - 1]] = value
+      }
+      const getByPath = (obj, path) => {
+        const parts = String(path).split('.')
+        let cur = obj
+        for (let i = 0; i < parts.length; i++) {
+          cur = cur[parts[i]]
+          if (cur === undefined || cur === null) return null
+        }
+        return cur
+      }
+      const replaceExt = (p, toExt) => {
+        if (!p || typeof p !== 'string') return p
+        return p.replace(/\.(png|svg)$/i, `.${toExt}`)
+      }
+      const curVal = getByPath(next, keyPath)
+      if (typeof curVal === 'string') {
+        setByPath(next, keyPath, replaceExt(curVal, 'svg'))
+        this.setData({ iconPaths: next })
+      }
+    } catch (_) {}
   },
 
   // 加载用户偏好设置

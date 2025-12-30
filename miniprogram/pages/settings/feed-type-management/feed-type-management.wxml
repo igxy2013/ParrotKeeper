@@ -1,5 +1,5 @@
 <view class="page-container">
-  <app-header title="食物类型管理" showBack="true"></app-header>
+  <app-header title="食物类型管理" subtitle="管理食物类型与单位" showBack="{{true}}"></app-header>
   <view class="page-content">
     <view class="feed-list">
       <block wx:for="{{feedTypes}}" wx:key="id">

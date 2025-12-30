@@ -8,7 +8,7 @@
       
       <view class="setting-action-item">
         <view class="setting-icon-wrapper">
-          <view class="setting-icon notify-icon">🔔</view>
+          <image class="setting-icon-img" src="{{iconPaths.notifyBell}}" mode="aspectFit" binderror="onNotificationIconError" data-key="notifyBell" />
         </view>
         <view class="setting-content">
           <view class="setting-name">通知总开关</view>
@@ -22,7 +22,7 @@
         <view wx:if="{{!hasTemplateIds}}" class="setting-hint">未配置订阅模板ID，将仅支持本地提醒。</view>
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">🍽️</view>
+            <image class="setting-icon-img" src="{{iconPaths.feedRestaurant}}" mode="aspectFit" binderror="onNotificationIconError" data-key="feedRestaurant" />
           </view>
           <view class="setting-content">
             <view class="setting-name">喂食提醒</view>
@@ -34,7 +34,7 @@
         <!-- 喂食提醒时间选择器 -->
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">⏰</view>
+            <image class="setting-icon-img" src="{{iconPaths.timeClock}}" mode="aspectFit" binderror="onNotificationIconError" data-key="timeClock" />
           </view>
           <view class="setting-content">
             <view class="setting-name">喂食提醒时间</view>
@@ -47,7 +47,7 @@
 
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">🏥</view>
+            <image class="setting-icon-img" src="{{iconPaths.healthShield}}" mode="aspectFit" binderror="onNotificationIconError" data-key="healthShield" />
           </view>
           <view class="setting-content">
             <view class="setting-name">健康提醒</view>
@@ -58,7 +58,7 @@
 
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">⚙️</view>
+            <image class="setting-icon-img" src="{{iconPaths.settingsGear}}" mode="aspectFit" binderror="onNotificationIconError" data-key="settingsGear" />
           </view>
           <view class="setting-content">
             <view class="setting-name">健康提醒类型</view>
@@ -67,32 +67,32 @@
         </view>
         <view class="notification-details">
           <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">🐣</view></view>
+            <view class="setting-icon-wrapper"><image class="setting-icon-img" src="{{iconPaths.chickCare}}" mode="aspectFit" binderror="onNotificationIconError" data-key="chickCare" /></view>
             <view class="setting-content"><view class="setting-name">雏鸟护理</view><view class="setting-desc">雏鸟0-45天护理提醒</view></view>
             <switch checked="{{healthAlertPreferences.chick_care}}" bindchange="toggleHealthAlertType" data-key="chick_care" />
           </view>
           <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">🥚</view></view>
+            <view class="setting-icon-wrapper"><image class="setting-icon-img" src="{{iconPaths.incubationAdvice}}" mode="aspectFit" binderror="onNotificationIconError" data-key="incubationAdvice" /></view>
             <view class="setting-content"><view class="setting-name">孵化建议</view><view class="setting-desc">温湿度、翻蛋、照蛋建议</view></view>
             <switch checked="{{healthAlertPreferences.incubation_advice}}" bindchange="toggleHealthAlertType" data-key="incubation_advice" />
           </view>
           <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">⏱️</view></view>
+            <view class="setting-icon-wrapper"><image class="setting-icon-img" src="{{iconPaths.feedingGap}}" mode="aspectFit" binderror="onNotificationIconError" data-key="feedingGap" /></view>
             <view class="setting-content"><view class="setting-name">喂食间隔异常</view><view class="setting-desc">长间隔提醒</view></view>
             <switch checked="{{healthAlertPreferences.feeding_gap}}" bindchange="toggleHealthAlertType" data-key="feeding_gap" />
           </view>
           <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">📉</view></view>
+            <view class="setting-icon-wrapper"><image class="setting-icon-img" src="{{iconPaths.feedingFrequencyLow}}" mode="aspectFit" binderror="onNotificationIconError" data-key="feedingFrequencyLow" /></view>
             <view class="setting-content"><view class="setting-name">喂食频次偏低</view><view class="setting-desc">频次异常提醒</view></view>
             <switch checked="{{healthAlertPreferences.feeding_frequency_low}}" bindchange="toggleHealthAlertType" data-key="feeding_frequency_low" />
           </view>
           <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">⚖️</view></view>
+            <view class="setting-icon-wrapper"><image class="setting-icon-img" src="{{iconPaths.weightDecline}}" mode="aspectFit" binderror="onNotificationIconError" data-key="weightDecline" /></view>
             <view class="setting-content"><view class="setting-name">体重下降</view><view class="setting-desc">体重趋势异常</view></view>
             <switch checked="{{healthAlertPreferences.weight_decline}}" bindchange="toggleHealthAlertType" data-key="weight_decline" />
           </view>
           <view class="setting-action-item">
-            <view class="setting-icon-wrapper"><view class="setting-icon">📘</view></view>
+            <view class="setting-icon-wrapper"><image class="setting-icon-img" src="{{iconPaths.careGeneralTopic}}" mode="aspectFit" binderror="onNotificationIconError" data-key="careGeneralTopic" /></view>
             <view class="setting-content"><view class="setting-name">通用护理主题</view><view class="setting-desc">每日轮换主题建议</view></view>
             <switch checked="{{healthAlertPreferences.care_general_topic}}" bindchange="toggleHealthAlertType" data-key="care_general_topic" />
           </view>
@@ -100,7 +100,7 @@
 
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">🧹</view>
+            <image class="setting-icon-img" src="{{iconPaths.cleaning}}" mode="aspectFit" binderror="onNotificationIconError" data-key="cleaning" />
           </view>
           <view class="setting-content">
             <view class="setting-name">清洁提醒</view>
@@ -112,7 +112,7 @@
         <!-- 清洁提醒时间选择器 -->
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">⏰</view>
+            <image class="setting-icon-img" src="{{iconPaths.timeClock}}" mode="aspectFit" binderror="onNotificationIconError" data-key="timeClock" />
           </view>
           <view class="setting-content">
             <view class="setting-name">清洁提醒时间</view>
@@ -125,7 +125,7 @@
 
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">💊</view>
+            <image class="setting-icon-img" src="{{iconPaths.medication}}" mode="aspectFit" binderror="onNotificationIconError" data-key="medication" />
           </view>
           <view class="setting-content">
             <view class="setting-name">用药提醒</view>
@@ -136,7 +136,7 @@
 
         <view class="setting-action-item">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">🥚</view>
+            <image class="setting-icon-img" src="{{iconPaths.breeding}}" mode="aspectFit" binderror="onNotificationIconError" data-key="breeding" />
           </view>
           <view class="setting-content">
             <view class="setting-name">繁殖提醒</view>
@@ -148,23 +148,23 @@
         <!-- 订阅权限与测试 -->
         <view class="setting-action-item" bindtap="reapplySubscriptionPermissions">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon">🔑</view>
+            <image class="setting-icon-img" src="{{iconPaths.keyLine}}" mode="aspectFit" binderror="onNotificationIconError" data-key="keyLine" />
           </view>
           <view class="setting-content">
             <view class="setting-name">订阅权限</view>
             <view class="setting-desc">重新申请模板消息权限</view>
           </view>
-          <view class="setting-arrow">></view>
+          <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onNotificationIconError" data-key="arrowRight" />
         </view>
         <view class="setting-action-item" bindtap="sendTestNotification">
           <view class="setting-icon-wrapper">
-            <view class="setting-icon test-icon">🧪</view>
+            <image class="setting-icon-img" src="{{iconPaths.testExperiment}}" mode="aspectFit" binderror="onNotificationIconError" data-key="testExperiment" />
           </view>
           <view class="setting-content">
             <view class="setting-name">测试通知</view>
             <view class="setting-desc">发送一条测试订阅消息</view>
           </view>
-          <view class="setting-arrow">></view>
+          <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onNotificationIconError" data-key="arrowRight" />
         </view>
       </view>
 

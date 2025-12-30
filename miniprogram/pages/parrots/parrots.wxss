@@ -375,10 +375,10 @@
 }
 
 /* 列宽分配 */
-.col-name { width: 140rpx; font-weight: 500; font-size: 26rpx; }
+.col-name { width: 120rpx; font-weight: 500; font-size: 26rpx; }
 .col-gender { width: 80rpx; text-align: center; font-size: 26rpx; }
-.col-species { width: 160rpx; }
-.col-age { width: 100rpx; }
+.col-species { width: 120rpx; }
+.col-age { width: 140rpx; }
 .col-weight { width: 100rpx; }
 .col-ring { width: 200rpx; color: #6b7280; font-size: 26rpx; }
 

@@ -9,11 +9,12 @@
 .setting-action-item { display: flex; align-items: center; padding: 20rpx; background: #ffffff; border: 1rpx solid #eef2f7; border-radius: 24rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.05); transition: all 0.3s ease; }
 .setting-action-item:active { background: #fafafa; transform: scale(0.98); }
 .setting-icon-wrapper { width: 56rpx; height: 56rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 16rpx; flex-shrink: 0; background: #f3f4f6; }
-.setting-icon { font-size: 28rpx; }
+.setting-icon-img { width: 32rpx; height: 32rpx; }
 .setting-content { flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
 .setting-name { font-weight: 600; color: #1f2937; }
 .setting-desc { color: #6b7280; font-size: 24rpx; }
 .setting-arrow { font-size: 24rpx; color: #9ca3af; margin-left: auto; }
+.arrow-icon { width: 24rpx; height: 24rpx; margin-left: auto; }
 
 /* Right-align system controls */
 .setting-action-item switch { margin-left: auto; transform: scale(0.96); }
@@ -31,9 +32,7 @@
   border-radius: 12rpx;
 }
 
-.notification-details .setting-icon {
-  font-size: 32rpx;
-}
+.notification-details .setting-icon-img { width: 32rpx; height: 32rpx; }
 
 .notification-details .setting-name {
   font-size: 28rpx;

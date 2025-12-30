@@ -5,7 +5,7 @@
   <view class="page-content">
 
     <view class="section-title">
-      <text class="title-icon">🔧</text>
+      <image class="title-icon-img" src="{{iconPaths.sectionSettings}}" mode="aspectFit" binderror="onSettingsIconError" data-key="sectionSettings" />
       <text>偏好设置</text>
     </view>
 
@@ -14,13 +14,13 @@
       
       <view class="setting-action-item" bindtap="goToNotificationSettings">
         <view class="setting-icon-wrapper">
-          <view class="setting-icon notify-icon">🔔</view>
+          <image class="setting-icon-img" src="{{iconPaths.notifyBell}}" mode="aspectFit" binderror="onSettingsIconError" data-key="notifyBell" />
         </view>
         <view class="setting-content">
           <view class="setting-name">通知设置</view>
           <view class="setting-desc">开启推送与提醒</view>
         </view>
-        <view class="setting-arrow">></view>
+        <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onSettingsIconError" data-key="arrowRight" />
       </view>
 
 
@@ -42,52 +42,56 @@
     </view>
 
     <view class="section-title">
-      <text class="title-icon">📊</text>
+      <image class="title-icon-img" src="{{iconPaths.sectionData}}" mode="aspectFit" binderror="onSettingsIconError" data-key="sectionData" />
       <text>数据管理</text>
     </view>
     <view class="settings-actions">
       <view class="setting-action-item" bindtap="goToCategoryManagement">
-        <view class="setting-icon-wrapper"><view class="setting-icon">💰</view></view>
+        <view class="setting-icon-wrapper">
+          <image class="setting-icon-img" src="{{iconPaths.categoryMoney}}" mode="aspectFit" binderror="onSettingsIconError" data-key="categoryMoney" />
+        </view>
         <view class="setting-content">
           <view class="setting-name">收支类别管理</view>
           <view class="setting-desc">自定义收入与支出类别</view>
         </view>
-        <view class="setting-arrow">></view>
+        <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onSettingsIconError" data-key="arrowRight" />
       </view>
       <view class="setting-action-item" bindtap="goToFeedTypeManagement">
-        <view class="setting-icon-wrapper"><view class="setting-icon">🥣</view></view>
+        <view class="setting-icon-wrapper">
+          <image class="setting-icon-img" src="{{iconPaths.feedRestaurant}}" mode="aspectFit" binderror="onSettingsIconError" data-key="feedRestaurant" />
+        </view>
         <view class="setting-content">
           <view class="setting-name">食物类型管理</view>
           <view class="setting-desc">自定义喂食食物类型</view>
         </view>
-        <view class="setting-arrow">></view>
+        <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onSettingsIconError" data-key="arrowRight" />
       </view>
     </view>
 
     <view class="section-title">
-      <text class="title-icon">👤</text>
+      <image class="title-icon-img" src="{{iconPaths.sectionAccount}}" mode="aspectFit" binderror="onSettingsIconError" data-key="sectionAccount" />
       <text>账户</text>
     </view>
     <view class="settings-actions">
       <view class="setting-action-item" bindtap="goToAccountManagement">
         <view class="setting-icon-wrapper">
-          <view class="setting-icon">🔐</view>
+          <image class="setting-icon-img" src="{{iconPaths.accountLock}}" mode="aspectFit" binderror="onSettingsIconError" data-key="accountLock" />
         </view>
         <view class="setting-content">
           <view class="setting-name">账号管理</view>
           <view class="setting-desc">账号绑定与设置</view>
         </view>
-        <view class="setting-arrow">></view>
+        <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onSettingsIconError" data-key="arrowRight" />
       </view>
       <view class="setting-action-item logout-item" bindtap="handleLogout">
         <view class="setting-icon-wrapper">
-          <view class="setting-icon logout-icon">🚪</view>
+          <image class="setting-icon-img" src="{{iconPaths.logoutClose}}" mode="aspectFit" binderror="onSettingsIconError" data-key="logoutClose" />
         </view>
         <view class="setting-content">
           <view class="setting-name">退出登录</view>
           <view class="setting-desc">安全退出当前账户</view>
         </view>
-        <view class="setting-arrow">></view>
+        <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onSettingsIconError" data-key="arrowRight" />
       </view>
     </view>
 

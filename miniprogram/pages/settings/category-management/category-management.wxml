@@ -1,5 +1,5 @@
 <view class="page-container">
-  <app-header title="收支类别管理" showBack="true"></app-header>
+  <app-header title="收支类别管理" subtitle="管理收入/支出类别" showBack="{{true}}"></app-header>
   <view class="page-content">
     <!-- Tabs -->
     <view class="tabs">
