@@ -15,15 +15,23 @@
   backdrop-filter: blur(8rpx);
 }
 
-/* 弹窗内容容器（对齐旧版添加鹦鹉弹窗尺寸） */
 .modal-content {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-card {
+  width: 100%;
   max-width: 700rpx;
-  max-height: 82vh;
+  height: 80vh;
   background: #ffffff;
   border-radius: 48rpx;
   overflow: hidden;
   box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
 }
 
 /* 弹窗头部渐变区域 */
@@ -64,9 +72,10 @@
   height: 32rpx; 
 }
 
-/* 弹窗滚动区域（对齐旧版鹦鹉弹窗） */
 .modal-scroll {
-  max-height: calc(82vh - 240rpx);
+  flex: 1;
+  min-height: 0;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* 表单区域 */
@@ -175,6 +184,7 @@
   padding: 20rpx 28rpx;
   border-top: 2rpx solid #f3f4f6;
   background: #f9fafb;
+  flex-shrink: 0;
 }
 
 .btn-secondary {
