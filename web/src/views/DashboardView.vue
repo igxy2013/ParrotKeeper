@@ -208,7 +208,7 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="12">
+      <el-col :span="12" v-if="showHealthAlertsCard">
         <div class="chart-card">
           <div class="chart-header">
             <div class="header-title">
@@ -307,6 +307,40 @@ const rangeText = computed(() => {
 const recentActivities = ref([])
 const healthAlerts = ref([])
 
+// 通知设置与显示控制
+const reminderSettings = ref({
+  enabled: false,
+  feedingReminder: true,
+  healthReminder: true,
+  cleaningReminder: true,
+  medicationReminder: true,
+  breedingReminder: true,
+  feedingReminderTime: '08:00',
+  cleaningReminderTime: '18:00',
+  medicationReminderTime: '09:00',
+  healthAlertPreferences: {
+    chick_care: false,
+    incubation_advice: false,
+    feeding_gap: false,
+    feeding_frequency_low: false,
+    weight_decline: false,
+    care_general_topic: false
+  }
+})
+
+const isOn = (v) => (v === true || v === 1 || v === 'true' || v === '1')
+const allTypesOff = computed(() => {
+  const prefs = reminderSettings.value?.healthAlertPreferences || {}
+  const keys = ['chick_care','incubation_advice','feeding_gap','feeding_frequency_low','weight_decline','care_general_topic']
+  return keys.every(k => prefs.hasOwnProperty(k) ? !isOn(prefs[k]) : true)
+})
+const showHealthAlertsCard = computed(() => {
+  const s = reminderSettings.value || {}
+  if (!isOn(s.enabled) || !isOn(s.healthReminder)) return false
+  if (allTypesOff.value) return false
+  return (healthAlerts.value && healthAlerts.value.length > 0)
+})
+
 // Species Distribution
 const speciesDistribution = ref([])
 const speciesCanvas = ref(null)
@@ -351,9 +385,21 @@ const fetchHealthAlerts = async (days) => {
     const d = typeof days === 'number' ? days : trendDays.value || 30
     const res = await api.get('/statistics/health-anomalies', { params: { days: d } })
     const results = res.data?.data?.results || []
+    const s = reminderSettings.value || {}
+    if (!isOn(s.enabled) || !isOn(s.healthReminder)) { healthAlerts.value = []; return }
+
+    const prefs = (s && s.healthAlertPreferences) || {}
+    const allowType = (t) => {
+      const v = prefs && prefs[t]
+      if (typeof v === 'undefined') return false
+      return isOn(v)
+    }
+
     const items = []
     results.forEach(p => {
       (p.anomalies || []).forEach(an => {
+        const type = an.type || ''
+        if (!allowType(type)) return
         items.push({
           key: `${p.parrot_id}-${an.type}-${an.severity}`,
           parrot_name: p.parrot_name,
@@ -362,6 +408,7 @@ const fetchHealthAlerts = async (days) => {
         })
       })
     })
+    if (allTypesOff.value) { healthAlerts.value = []; return }
     healthAlerts.value = items.slice(0, 8)
   } catch (_) {
     healthAlerts.value = []
@@ -372,6 +419,31 @@ const fetchOverview = async () => {
   const res = await api.get('/statistics/overview', { params: { days: trendDays.value } })
   if (res.data && res.data.success) {
     stats.value = res.data.data
+  }
+}
+
+const fetchReminderSettings = async () => {
+  try {
+    const res = await api.get('/reminders/settings')
+    const data = (res.data && res.data.data) || res.data || {}
+    const next = { ...reminderSettings.value }
+    if (typeof data.enabled !== 'undefined') next.enabled = !!data.enabled
+    if (typeof data.feedingReminder !== 'undefined') next.feedingReminder = !!data.feedingReminder
+    if (typeof data.healthReminder !== 'undefined') next.healthReminder = !!data.healthReminder
+    if (typeof data.cleaningReminder !== 'undefined') next.cleaningReminder = !!data.cleaningReminder
+    if (typeof data.medicationReminder !== 'undefined') next.medicationReminder = !!data.medicationReminder
+    if (typeof data.breedingReminder !== 'undefined') next.breedingReminder = !!data.breedingReminder
+    if (data.feedingReminderTime) next.feedingReminderTime = data.feedingReminderTime
+    if (data.cleaningReminderTime) next.cleaningReminderTime = data.cleaningReminderTime
+    if (data.medicationReminderTime) next.medicationReminderTime = data.medicationReminderTime
+    if (data.healthAlertPreferences && typeof data.healthAlertPreferences === 'object') {
+      next.healthAlertPreferences = {
+        ...next.healthAlertPreferences,
+        ...data.healthAlertPreferences
+      }
+    }
+    reminderSettings.value = next
+  } catch (_) {
   }
 }
 
@@ -936,6 +1008,7 @@ const onChartMouseLeave = () => {
 
 onMounted(async () => {
   try {
+    await fetchReminderSettings()
     await fetchOverview()
     await fetchWeightTrends()
     await fetchRecentActivities()

@@ -86,12 +86,12 @@ const form = ref({
   cleaningReminderTime: '18:00',
   medicationReminderTime: '09:00',
   healthAlertPreferences: {
-    chick_care: true,
-    incubation_advice: true,
-    feeding_gap: true,
-    feeding_frequency_low: true,
-    weight_decline: true,
-    care_general_topic: true
+    chick_care: false,
+    incubation_advice: false,
+    feeding_gap: false,
+    feeding_frequency_low: false,
+    weight_decline: false,
+    care_general_topic: false
   }
 })
 

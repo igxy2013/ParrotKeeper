@@ -1078,6 +1078,20 @@ Page({
   // 加载健康提醒
   async loadHealthAlerts() {
     try {
+      const nm0 = app.globalData && app.globalData.notificationManager
+      const s0 = nm0 && nm0.getNotificationSettings ? nm0.getNotificationSettings() : null
+      if (s0 && (s0.enabled === false || s0.healthReminder === false)) {
+        this.setData({ healthAlerts: [], healthAlertsTotal: 0 })
+        return
+      }
+      const prefs0 = (s0 && s0.healthAlertPreferences) || {}
+      const keys0 = ['chick_care','incubation_advice','feeding_gap','feeding_frequency_low','weight_decline','care_general_topic']
+      const isOn = (v) => (v === true || v === 1 || v === 'true' || v === '1')
+      const allOff = keys0.every(k => prefs0.hasOwnProperty(k) && !isOn(prefs0[k]))
+      if (allOff) {
+        this.setData({ healthAlerts: [], healthAlertsTotal: 0 })
+        return
+      }
       const res = await app.request({
         url: '/api/statistics/health-anomalies',
         method: 'GET',
@@ -1139,7 +1153,8 @@ Page({
       })()
       const allowType = (t) => {
         const v = nmPrefs && nmPrefs[t]
-        return typeof v === 'undefined' ? true : !!v
+        if (typeof v === 'undefined') return false
+        return (v === true || v === 1 || v === 'true' || v === '1')
       }
       const alertsF = alerts.filter(a => allowType(a.type))
       alertsF.sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
@@ -1292,7 +1307,7 @@ Page({
       try {
         const nm = app.globalData.notificationManager
         const settings = nm.getNotificationSettings()
-        if (settings && settings.enabled) {
+        if (settings && settings.enabled && settings.healthReminder) {
           const today = new Date()
           const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
           const sup = wx.getStorageSync('suppressed_notifications_today') || {}
