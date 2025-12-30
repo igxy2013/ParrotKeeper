@@ -83,6 +83,25 @@ Page({
     suppressPullDownUntil: 0
   },
 
+  formatBirthPlaceDisplay(p) {
+    const clean = (v) => {
+      const s = String(v || '').trim()
+      if (!s) return ''
+      if (s === '未选择' || s === '请选择') return ''
+      if (s.includes('未选择') || s.includes('请选择')) return ''
+      if (s === 'null' || s === 'undefined') return ''
+      return s
+    }
+    const province = clean(p && p.birth_place_province)
+    const city = clean(p && p.birth_place_city)
+    const county = clean(p && p.birth_place_county)
+    const parts = [province, city, county].filter(Boolean)
+    if (parts.length) return parts.join('')
+    const bp = clean(p && p.birth_place)
+    if (!bp) return ''
+    return String(bp).replace(/未选择|请选择/g, '').replace(/\s+/g, ' ').trim()
+  },
+
   onLoad(options) {
     // 检查操作权限
     const hasOperationPermission = app.hasOperationPermission()
@@ -348,6 +367,8 @@ Page({
         } catch (e) {
           parrot.weight_display = ''
         }
+
+        parrot.birth_place_display = this.formatBirthPlaceDisplay(parrot)
         
         const ageShort = this.calculateAgeShort(parrot.birth_date)
         const agePrecise = this.calculateAgePrecise(parrot.birth_date)

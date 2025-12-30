@@ -134,7 +134,7 @@
             <div class="parrot-extra-info">
               <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
               <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
-              <span v-if="parrot.ring_number" class="info-item">脚环：{{ parrot.ring_number }}</span>
+              <span v-if="parrot.ring_number" class="info-item">脚环号：{{ parrot.ring_number }}</span>
               <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
             </div>
           </div>

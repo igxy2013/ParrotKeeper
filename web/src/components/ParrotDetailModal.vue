@@ -23,7 +23,7 @@
           <div class="extra-row">
             <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
             <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
-            <span v-if="parrot.ring_number" class="info-item">脚环：{{ parrot.ring_number }}</span>
+            <span v-if="parrot.ring_number" class="info-item">脚环号：{{ parrot.ring_number }}</span>
             <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
           </div>
         </div>
@@ -41,6 +41,7 @@
             <div class="basic-item"><span class="label">品种</span><span class="value">{{ parrot.species_name || parrot.species?.name || '-' }}</span></div>
             <div class="basic-item"><span class="label">性别</span><span class="value">{{ genderText }}</span></div>
             <div class="basic-item"><span class="label">出生日期</span><span class="value">{{ formatDate(parrot.birth_date) || '-' }}</span></div>
+            <div class="basic-item"><span class="label">出生地</span><span class="value">{{ birthPlaceDisplay || '-' }}</span></div>
             <div class="basic-item"><span class="label">入住日期</span><span class="value">{{ formatDate(parrot.acquisition_date) || '-' }}</span></div>
             <div class="basic-item"><span class="label">编号</span><span class="value">{{ parrot.parrot_number || '-' }}</span></div>
             <div class="basic-item"><span class="label">脚环号</span><span class="value">{{ parrot.ring_number || '-' }}</span></div>
@@ -165,6 +166,23 @@ const transferSubmitting = ref(false)
 const genderText = computed(() => {
   const g = parrot.value.gender
   return g === 'male' ? '雄性' : (g === 'female' ? '雌性' : '未知')
+})
+
+const birthPlaceDisplay = computed(() => {
+  const p = parrot.value || {}
+  const clean = (v) => {
+    const s = String(v || '').trim()
+    if (!s) return ''
+    if (s === '未选择' || s === '请选择') return ''
+    if (s.includes('未选择') || s.includes('请选择')) return ''
+    if (s === 'null' || s === 'undefined') return ''
+    return s
+  }
+  const parts = [clean(p.birth_place_province), clean(p.birth_place_city), clean(p.birth_place_county)].filter(Boolean)
+  if (parts.length) return parts.join('')
+  const bp = clean(p.birth_place)
+  if (!bp) return ''
+  return String(bp).replace(/未选择|请选择/g, '').replace(/\s+/g, ' ').trim()
 })
 
 const init = async () => { await reload() }

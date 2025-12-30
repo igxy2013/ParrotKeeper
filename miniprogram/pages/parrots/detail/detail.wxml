@@ -147,7 +147,7 @@
                 <text class="grid-label">出生地</text>
               </view>
               <view class="grid-value">
-                {{(parrot.birth_place_province || parrot.birth_place_city || parrot.birth_place_county) ? ((parrot.birth_place_province || '') + (parrot.birth_place_city || '') + (parrot.birth_place_county || '')) : '未设置'}}
+                {{parrot.birth_place_display || '未设置'}}
               </view>
             </view>
             <view class="info-grid-item color-info">
