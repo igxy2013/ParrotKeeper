@@ -44,7 +44,9 @@ Component({
     visible: false,
     tempColorIndex: 0,
     selectedSplitsDisplay: [],
-    localSplits: []
+    localSplits: [],
+    searchKeyword: '',
+    renderColors: []
   },
 
   observers: {
@@ -67,10 +69,23 @@ Component({
           localSplits: updatedSplits
         });
       }
+
+      // Update render color list
+      this.setRenderColors(colors);
     }
   },
 
   methods: {
+    setRenderColors(colors) {
+      const kw = String(this.data.searchKeyword || '').trim().toLowerCase();
+      const src = Array.isArray(colors) ? colors : (this.data.colors || []);
+      const list = (src || []).map((name, index) => ({ name, index }));
+      const filtered = kw
+        ? list.filter(it => String(it.name || '').toLowerCase().includes(kw))
+        : list;
+      this.setData({ renderColors: filtered });
+    },
+
     updateDisplay() {
       const { splitIds, splits } = this.data;
       if (!splits || !splitIds) return;
@@ -107,6 +122,8 @@ Component({
         tempColorIndex: colorIndex,
         localSplits: tempSplits
       });
+      
+      this.setRenderColors(colors);
     },
 
     closeSelector() {
@@ -145,6 +162,17 @@ Component({
     preventTouchMove() {
       // Block background scrolling
       return;
+    },
+
+    onSearchInput(e) {
+      const kw = String((e && e.detail && e.detail.value) || '').trim();
+      this.setData({ searchKeyword: kw });
+      this.setRenderColors();
+    },
+
+    clearSearch() {
+      this.setData({ searchKeyword: '' });
+      this.setRenderColors();
     }
   }
 })

@@ -31,15 +31,28 @@
       <!-- Section 1: Main Color -->
       <view class="section">
         <view class="section-title">羽色 (Visual)</view>
+        <view class="search-row">
+          <input 
+            class="search-input" 
+            placeholder="搜索羽色，例如：蓝和尚" 
+            value="{{searchKeyword}}" 
+            bindinput="onSearchInput" 
+          />
+          <view 
+            class="clear-btn" 
+            wx:if="{{searchKeyword}}" 
+            bindtap="clearSearch"
+          >清除</view>
+        </view>
         <view class="options-grid">
           <view 
-            wx:for="{{colors}}" 
-            wx:key="*this" 
-            class="option-chip {{tempColorIndex === index ? 'active' : ''}}"
-            data-index="{{index}}"
+            wx:for="{{renderColors}}" 
+            wx:key="index" 
+            class="option-chip {{tempColorIndex === item.index ? 'active' : ''}}"
+            data-index="{{item.index}}"
             bindtap="selectColor"
           >
-            {{item}}
+            {{item.name}}
           </view>
         </view>
       </view>
