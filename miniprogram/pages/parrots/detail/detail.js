@@ -15,7 +15,24 @@ Page({
     showMenu: false,
     // 选项卡
     activeTab: '基本信息',
-    tabs: ['基本信息', '喂食记录', '健康档案', '繁殖记录'],
+    tabs: ['基本信息', '体重趋势', '喂食记录', '健康档案', '繁殖记录'],
+    
+    // 体重趋势数据
+    weightSeries: [],
+    weightDays: 30,
+    weightRangeDates: [],
+    weightStartIndex: 0,
+    weightEndIndex: 0,
+    weightStartDate: '',
+    weightEndDate: '',
+    weightLeft: 0,
+    weightRight: 100,
+    weightWidth: 100,
+    weightAvgChart: '',
+    weightRefChart: '',
+    weightRefValue: null,
+    activeWeightPoint: null,
+    weightColors: ['#10b981'],
     
     // 健康状态映射
     healthStatusText: '',
@@ -223,6 +240,17 @@ Page({
   setActiveTab(e) {
     const tab = e.currentTarget.dataset.tab || e.detail || '基本信息'
     this.setData({ activeTab: tab })
+    if (tab === '体重趋势') {
+      // 如果尚未加载数据或需要刷新，则加载
+      if (!this.data.weightSeries || this.data.weightSeries.length === 0) {
+        this.loadWeightTrends()
+      } else {
+        // 切换回来时可能需要重绘 Canvas
+        setTimeout(() => {
+          this.drawWeightChart()
+        }, 200)
+      }
+    }
   },
 
   // 抠图前确认
@@ -1221,6 +1249,526 @@ Page({
   ,
 
   // 图标加载失败时回退为 SVG
+  // 加载体重趋势
+  async loadWeightTrends() {
+    try {
+      // 获取所有含体重的健康记录
+      const res = await app.request({
+        url: '/api/records/health',
+        method: 'GET',
+        data: { 
+          parrot_id: this.data.parrotId, 
+          page: 1, 
+          per_page: 100 
+        }
+      })
+      
+      if (res.success) {
+        const records = Array.isArray(res.data?.items) ? res.data.items : (Array.isArray(res.data) ? res.data : [])
+        const weightData = (records || [])
+          .map(r => {
+            const rd = String(r.record_date || '').trim()
+            let rt = String(r.record_time || '').trim()
+            if (rt.length === 5) rt = `${rt}:00`
+            if (rt.length > 8) rt = rt.substring(0, 8)
+            let merged = ''
+            if (rd || rt) {
+              merged = rd && rt ? `${rd}T${rt}` : (rd || rt)
+            }
+            const dt = this.parseServerTime(merged) || this.parseServerTime(r.created_at || '')
+            const wraw = (r.weight != null ? r.weight : (r.data && r.data.weight))
+            const w = typeof wraw === 'string' ? parseFloat(wraw) : wraw
+            return {
+              date: dt ? getApp().formatDateTime(dt, 'YYYY-MM-DD') : (r.record_date || ''),
+              value: (typeof w === 'number' && isFinite(w) && !isNaN(w)) ? w : null,
+              timestamp: dt ? dt.getTime() : 0
+            }
+          })
+          .filter(p => p.value != null)
+          .sort((a, b) => a.timestamp - b.timestamp)
+
+        if (weightData.length > 0) {
+          const series = [{
+            parrot_id: this.data.parrotId,
+            parrot_name: this.data.parrot.name || '当前鹦鹉',
+            data: weightData
+          }]
+          
+          this.setData({ weightSeries: series })
+          // 初始化图表范围
+          this.initWeightRange(series)
+        } else {
+          this.setData({ weightSeries: [] })
+        }
+      }
+    } catch (err) {
+      console.error('加载体重趋势失败:', err)
+      // 不显示错误提示，以免打扰用户，显示空状态即可
+    }
+  },
+
+  // 初始化体重图表范围
+  initWeightRange(series) {
+    if (!series || series.length === 0) return
+    
+    // 收集所有日期
+    let allDates = []
+    series.forEach(s => {
+      if (s.data && s.data.length > 0) {
+        s.data.forEach(p => allDates.push(p.date))
+      }
+    })
+    
+    // 去重并排序
+    allDates = [...new Set(allDates)].sort()
+    
+    if (allDates.length === 0) return
+    
+    // 默认显示最近30个点，或者全部
+    const totalPoints = allDates.length
+    let startIndex = 0
+    if (totalPoints > 30) {
+      startIndex = totalPoints - 30
+    }
+    
+    this.setData({
+      weightRangeDates: allDates,
+      weightStartIndex: startIndex,
+      weightEndIndex: totalPoints - 1,
+      weightLeft: (startIndex / (totalPoints - 1 || 1)) * 100,
+      weightRight: 100,
+      weightWidth: ((totalPoints - 1 - startIndex) / (totalPoints - 1 || 1)) * 100
+    })
+    
+    this.updateWeightDateLabels()
+    
+    // 延迟绘制
+    setTimeout(() => {
+      this.drawWeightChart()
+    }, 100)
+  },
+
+  // 更新体重日期标签
+  updateWeightDateLabels() {
+    const dates = this.data.weightRangeDates
+    if (!dates || dates.length === 0) return
+    const start = dates[this.data.weightStartIndex]
+    const end = dates[this.data.weightEndIndex]
+    
+    const fmt = (dStr) => {
+      if (!dStr) return ''
+      const d = new Date(dStr)
+      return `${d.getMonth() + 1}/${d.getDate()}`
+    }
+    
+    this.setData({
+      weightStartDate: fmt(start),
+      weightEndDate: fmt(end)
+    })
+  },
+
+  // 绘制体重趋势图
+  drawWeightChart() {
+    const query = wx.createSelectorQuery().in(this)
+    query.select('#weightCanvas').fields({ node: true, size: true }).exec((res) => {
+      if (!res || !res[0]) return
+      const canvas = res[0].node
+      const width = res[0].width
+      const height = res[0].height
+      const ctx = canvas.getContext('2d')
+      const dpr = wx.getSystemInfoSync().pixelRatio
+      
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      ctx.scale(dpr, dpr)
+      
+      this.renderWeightChart(ctx, width, height)
+    })
+  },
+
+  // 渲染图表核心逻辑
+  renderWeightChart(ctx, width, height) {
+    const series = this.data.weightSeries
+    const dates = this.data.weightRangeDates
+    const startIndex = this.data.weightStartIndex
+    const endIndex = this.data.weightEndIndex
+    
+    ctx.clearRect(0, 0, width, height)
+    
+    if (!series || series.length === 0 || !dates || dates.length === 0) {
+      // 空状态
+      return
+    }
+    
+    // 筛选当前时间范围内的数据点
+    const validDates = dates.slice(startIndex, endIndex + 1)
+    if (validDates.length === 0) return
+    
+    // 计算Y轴范围
+    let minVal = Infinity
+    let maxVal = -Infinity
+    
+    // 收集范围内所有点的值
+    const pointsMap = {} // date -> { parrotId: value }
+    
+    series.forEach(s => {
+      if (!s.data) return
+      s.data.forEach(p => {
+        if (validDates.includes(p.date)) {
+          minVal = Math.min(minVal, p.value)
+          maxVal = Math.max(maxVal, p.value)
+          
+          if (!pointsMap[p.date]) pointsMap[p.date] = {}
+          pointsMap[p.date][s.parrot_id] = p.value
+        }
+      })
+    })
+    
+    if (minVal === Infinity) return
+    
+    // Y轴留白
+    const range = maxVal - minVal
+    const padding = range === 0 ? (minVal * 0.1) : (range * 0.2)
+    const yMin = Math.max(0, minVal - padding)
+    const yMax = maxVal + padding
+    const yRange = yMax - yMin
+    
+    // 绘制区域
+    const chartLeft = 40
+    const chartRight = width - 10
+    const chartTop = 20
+    const chartBottom = height - 30
+    const chartWidth = chartRight - chartLeft
+    const chartHeight = chartBottom - chartTop
+    
+    // 绘制坐标轴
+    ctx.strokeStyle = '#eeeeee'
+    ctx.lineWidth = 1
+    
+    // Y轴网格线 (5条)
+    ctx.fillStyle = '#999999'
+    ctx.font = '10px sans-serif'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    
+    for (let i = 0; i <= 4; i++) {
+      const y = chartBottom - (chartHeight * i / 4)
+      const val = yMin + (yRange * i / 4)
+      
+      ctx.beginPath()
+      ctx.moveTo(chartLeft, y)
+      ctx.lineTo(chartRight, y)
+      ctx.stroke()
+      
+      ctx.fillText(val.toFixed(1), chartLeft - 5, y)
+    }
+    
+    // X轴日期 (首尾)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    const fmtDate = (dStr) => {
+      const d = new Date(dStr)
+      return `${d.getMonth() + 1}/${d.getDate()}`
+    }
+    
+    if (validDates.length > 0) {
+      ctx.fillText(fmtDate(validDates[0]), chartLeft, chartBottom + 5)
+      ctx.fillText(fmtDate(validDates[validDates.length - 1]), chartRight, chartBottom + 5)
+    }
+    
+    // 绘制折线
+    const xStep = chartWidth / (validDates.length - 1 || 1)
+    
+    // 保存坐标用于交互
+    this._chartLayout = {
+      chartLeft, chartRight, chartTop, chartBottom, chartWidth, chartHeight,
+      yMin, yMax, yRange, xStep, validDates, pointsMap
+    }
+    
+    let totalSum = 0
+    let totalCount = 0
+    series.forEach((s) => {
+      const color = '#7c3aed'
+      const pts = []
+      validDates.forEach((date, idx) => {
+        const val = pointsMap[date] && pointsMap[date][s.parrot_id]
+        if (val !== undefined) {
+          totalSum += val
+          totalCount++
+          const x = chartLeft + idx * xStep
+          const y = chartBottom - ((val - yMin) / yRange) * chartHeight
+          pts.push({ x, y })
+        }
+      })
+      if (pts.length === 0) return
+      if (pts.length === 1) {
+        ctx.fillStyle = color
+        ctx.beginPath()
+        ctx.arc(pts[0].x, pts[0].y, 3, 0, Math.PI * 2)
+        ctx.fill()
+        return
+      }
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(pts[0].x, pts[0].y)
+      const n = pts.length
+      const xs = pts.map(p => p.x)
+      const ys = pts.map(p => p.y)
+      const dxArr = new Array(n - 1)
+      const mArr = new Array(n - 1)
+      for (let i = 0; i < n - 1; i++) {
+        const dx = xs[i + 1] - xs[i]
+        dxArr[i] = dx
+        mArr[i] = dx !== 0 ? ((ys[i + 1] - ys[i]) / dx) : 0
+      }
+      const tArr = new Array(n)
+      tArr[0] = mArr[0]
+      tArr[n - 1] = mArr[n - 2]
+      for (let i = 1; i <= n - 2; i++) {
+        const m0 = mArr[i - 1]
+        const m1 = mArr[i]
+        if (m0 * m1 <= 0) tArr[i] = 0
+        else {
+          const dx0 = dxArr[i - 1]
+          const dx1 = dxArr[i]
+          tArr[i] = (dx0 + dx1) / ((dx1 / m0) + (dx0 / m1))
+        }
+      }
+      for (let i = 0; i < n - 1; i++) {
+        const x0 = xs[i], y0 = ys[i]
+        const x1 = xs[i + 1], y1 = ys[i + 1]
+        const dx = dxArr[i]
+        const cp1x = x0 + dx / 3
+        const cp1y = y0 + tArr[i] * dx / 3
+        const cp2x = x1 - dx / 3
+        const cp2y = y1 - tArr[i + 1] * dx / 3
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x1, y1)
+      }
+      const last = pts[pts.length - 1]
+      const first = pts[0]
+      ctx.lineTo(last.x, chartBottom)
+      ctx.lineTo(first.x, chartBottom)
+      const gradient = ctx.createLinearGradient(0, chartTop, 0, chartBottom)
+      gradient.addColorStop(0, 'rgba(124, 58, 237, 0.25)')
+      gradient.addColorStop(0.7, 'rgba(124, 58, 237, 0.10)')
+      gradient.addColorStop(1, 'rgba(124, 58, 237, 0.02)')
+      ctx.fillStyle = gradient
+      ctx.fill()
+      ctx.restore()
+      ctx.strokeStyle = color
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(pts[0].x, pts[0].y)
+      for (let i = 0; i < n - 1; i++) {
+        const x0 = xs[i], y0 = ys[i]
+        const x1 = xs[i + 1], y1 = ys[i + 1]
+        const dx = dxArr[i]
+        const cp1x = x0 + dx / 3
+        const cp1y = y0 + tArr[i] * dx / 3
+        const cp2x = x1 - dx / 3
+        const cp2y = y1 - tArr[i + 1] * dx / 3
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x1, y1)
+      }
+      ctx.stroke()
+    })
+    
+    // 更新平均体重
+    if (totalCount > 0) {
+      this.setData({
+        weightAvgChart: (totalSum / totalCount).toFixed(1) + 'g'
+      })
+    }
+    
+    // 绘制高亮交叉线
+    if (this.data.activeWeightPoint) {
+      const { x, y, value, date } = this.data.activeWeightPoint
+      
+      // 垂直线
+      ctx.strokeStyle = '#cccccc'
+      ctx.lineWidth = 1
+      ctx.setLineDash([4, 4])
+      ctx.beginPath()
+      ctx.moveTo(x, chartTop)
+      ctx.lineTo(x, chartBottom)
+      ctx.stroke()
+      ctx.setLineDash([])
+      
+      // 提示框
+      const tipText = `${value}g`
+      const dateText = fmtDate(date)
+      const tipWidth = ctx.measureText(tipText).width + 20
+      const tipHeight = 40
+      
+      let tipX = x - tipWidth / 2
+      let tipY = y - tipHeight - 10
+      
+      if (tipX < chartLeft) tipX = chartLeft
+      if (tipX + tipWidth > chartRight) tipX = chartRight - tipWidth
+      if (tipY < chartTop) tipY = y + 10
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+      ctx.fillRect(tipX, tipY, tipWidth, tipHeight)
+      
+      ctx.fillStyle = '#ffffff'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(dateText, tipX + tipWidth / 2, tipY + 12)
+      ctx.font = 'bold 12px sans-serif'
+      ctx.fillText(tipText, tipX + tipWidth / 2, tipY + 28)
+    }
+  },
+
+  // 图表触摸开始
+  onWeightTouchStart(e) {
+    this.handleWeightTouch(e)
+  },
+
+  // 图表触摸移动
+  onWeightTouchMove(e) {
+    this.handleWeightTouch(e)
+  },
+  
+  // 图表触摸结束
+  onWeightTouchEnd(e) {
+    // 延迟清除，方便查看
+    // setTimeout(() => {
+    //   this.setData({ activeWeightPoint: null })
+    //   this.drawWeightChart()
+    // }, 2000)
+  },
+  
+  // 关闭高亮
+  closeWeightHoverLabel() {
+    if (this.data.activeWeightPoint) {
+      this.setData({ activeWeightPoint: null })
+      this.drawWeightChart()
+    }
+  },
+  
+  // 处理图表触摸
+  handleWeightTouch(e) {
+    if (!this._chartLayout) return
+    const { chartLeft, chartRight, chartTop, chartBottom, chartWidth, chartHeight, yMin, yRange, xStep, validDates, pointsMap } = this._chartLayout
+    
+    const touch = e.touches[0]
+    const rect = e.target.offsetLeft // 简化处理，实际需要 boundingClientRect
+    // 由于是 canvas 2d，事件坐标通常是相对于 canvas 的
+    const x = touch.x
+    const y = touch.y
+    
+    if (x < chartLeft || x > chartRight || y < chartTop || y > chartBottom) return
+    
+    // 找到最近的日期索引
+    const idx = Math.round((x - chartLeft) / xStep)
+    if (idx < 0 || idx >= validDates.length) return
+    
+    const date = validDates[idx]
+    const pointX = chartLeft + idx * xStep
+    
+    // 找到最近的值
+    let bestVal = null
+    let bestY = null
+    let minDiff = Infinity
+    
+    const series = this.data.weightSeries
+    series.forEach(s => {
+      const val = pointsMap[date] && pointsMap[date][s.parrot_id]
+      if (val !== undefined) {
+        const py = chartBottom - ((val - yMin) / yRange) * chartHeight
+        const diff = Math.abs(y - py)
+        if (diff < minDiff) {
+          minDiff = diff
+          bestVal = val
+          bestY = py
+        }
+      }
+    })
+    
+    if (bestVal !== null) {
+      this.setData({
+        activeWeightPoint: {
+          x: pointX,
+          y: bestY,
+          value: bestVal,
+          date: date
+        }
+      })
+      this.drawWeightChart()
+    }
+  },
+
+  // 滑块触摸开始
+  onSliderTouchStart(e) {
+    this._sliderTouching = e.currentTarget.dataset.type
+    this._sliderStartX = e.touches[0].clientX
+  },
+
+  // 滑块触摸移动
+  onSliderTouchMove(e) {
+    if (!this._sliderTouching) return
+    
+    const query = wx.createSelectorQuery().in(this)
+    query.select('#slider-area').boundingClientRect(rect => {
+      if (!rect) return
+      
+      const touchX = e.touches[0].clientX
+      const width = rect.width
+      const offsetX = touchX - rect.left
+      let percentage = (offsetX / width) * 100
+      
+      // 限制范围
+      percentage = Math.max(0, Math.min(100, percentage))
+      
+      const currentLeft = this.data.weightLeft
+      const currentRight = this.data.weightRight // 注意：slider-handle 的 right 是指百分比位置
+      // 但这里 right handle 的 style left 是 weightRight%
+      // 所以 weightRight 实际上是右滑块的位置百分比
+      
+      const dates = this.data.weightRangeDates
+      const total = dates.length
+      
+      if (this._sliderTouching === 'start') {
+        // 左滑块不能超过右滑块，且至少保留2个点
+        const maxLeft = this.data.weightRight - (2 / total * 100)
+        percentage = Math.min(percentage, maxLeft)
+        
+        this.setData({
+          weightLeft: percentage,
+          weightWidth: this.data.weightRight - percentage
+        })
+      } else {
+        // 右滑块不能小于左滑块
+        const minRight = this.data.weightLeft + (2 / total * 100)
+        percentage = Math.max(percentage, minRight)
+        
+        this.setData({
+          weightRight: percentage,
+          weightWidth: percentage - this.data.weightLeft
+        })
+      }
+      
+      // 更新索引
+      const startIndex = Math.floor((this.data.weightLeft / 100) * (total - 1))
+      const endIndex = Math.ceil((this.data.weightRight / 100) * (total - 1))
+      
+      if (startIndex !== this.data.weightStartIndex || endIndex !== this.data.weightEndIndex) {
+        this.setData({
+          weightStartIndex: startIndex,
+          weightEndIndex: endIndex
+        })
+        this.updateWeightDateLabels()
+        // 节流重绘
+        if (this._drawTimer) clearTimeout(this._drawTimer)
+        this._drawTimer = setTimeout(() => {
+          this.drawWeightChart()
+        }, 50)
+      }
+    }).exec()
+  },
+  
+  // 阻止冒泡
+  preventBubble() {},
+
   onDetailIconError(e) {
     try {
       const keyPath = e.currentTarget.dataset.key

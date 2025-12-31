@@ -355,18 +355,19 @@
 
 .tabs-bar {
   display: flex;
+  align-items: center;
+  justify-content: center;
   background: #fff;
   border-bottom: 1rpx solid #f3f4f6;
+  padding: 12rpx 64rpx;
 }
 
 .tab-item {
-  flex: 1;
-  padding: 24rpx 0;
-  text-align: center;
+  flex: none;
+  padding: 16rpx 4rpx;
   font-size: 28rpx;
   font-weight: 500;
   color: #6b7280;
-  position: relative;
 }
 
 .tab-item.active {
@@ -374,16 +375,9 @@
   font-weight: 600;
 }
 
-.tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40rpx;
-  height: 6rpx;
-  background: #10b981;
-  border-radius: 6rpx;
+.tab-sep {
+  color: #9ca3af;
+  margin: 0 6rpx;
 }
 
 .tab-content {
@@ -750,4 +744,121 @@
   background: #10b981;
   color: #fff;
   border: none;
+}
+
+/* 体重趋势图表样式 */
+.weight-chart-card {
+  background: #ffffff;
+  border-radius: 32rpx;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  border: 1px solid #f3f4f6;
+}
+
+.chart-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.chart-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.meta-label {
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.meta-value {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.meta-value + .meta-value {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.weight-chart-container {
+  margin: 0 -16rpx;
+  height: 400rpx;
+}
+
+/* 自定义时间范围滑块样式 */
+.weight-range-control {
+  margin-top: 16rpx;
+  padding: 8rpx 4rpx 0;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24rpx;
+  color: #6b7280;
+  margin-bottom: 8rpx;
+}
+
+.range-slider-container {
+  position: relative;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  margin: 10rpx 10rpx;
+}
+
+.slider-area {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.slider-track-bg {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 8rpx;
+  margin-top: -4rpx;
+  background-color: #e9ecef;
+  border-radius: 4rpx;
+}
+
+.slider-track-active {
+  position: absolute;
+  top: 50%;
+  height: 8rpx;
+  margin-top: -4rpx;
+  background-color: #7c3aed;
+  border-radius: 4rpx;
+}
+
+.slider-handle {
+  position: absolute;
+  width: 40rpx;
+  height: 40rpx;
+  margin-left: -20rpx;
+  background-color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+  border: 2rpx solid #7c3aed;
+  top: 50%;
+  margin-top: -20rpx;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slider-handle::after {
+  content: '';
+  width: 12rpx;
+  height: 12rpx;
+  background-color: #7c3aed;
+  border-radius: 50%;
 }

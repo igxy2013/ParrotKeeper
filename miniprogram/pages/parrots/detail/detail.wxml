@@ -106,7 +106,10 @@
     <!-- 选项卡 -->
     <view class="tabs-container">
       <view class="tabs-bar">
-        <view class="tab-item {{activeTab === item ? 'active' : ''}}" wx:for="{{tabs}}" wx:key="*this" bindtap="setActiveTab" data-tab="{{item}}">{{item}}</view>
+        <block wx:for="{{tabs}}" wx:key="*this" wx:for-index="idx">
+          <view class="tab-item {{activeTab === item ? 'active' : ''}}" bindtap="setActiveTab" data-tab="{{item}}">{{item}}</view>
+          <text class="tab-sep" wx:if="{{idx < tabs.length - 1}}">|</text>
+        </block>
       </view>
       
       <view class="tab-content">
@@ -223,6 +226,52 @@
             <view class="notes-content">
               <text class="notes-text" wx:if="{{parrot.notes}}">{{parrot.notes}}</text>
               <text class="notes-empty" wx:else>暂无备注信息</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 体重趋势（移除卡片容器，直接置于上级容器） -->
+        <view wx:elif="{{activeTab === '体重趋势'}}" class="tab-panel">
+          <view class="chart-content" bindtap="closeWeightHoverLabel">
+            <block wx:if="{{weightSeries.length > 0}}">
+              <view class="chart-meta">
+                <text class="meta-label">平均体重</text>
+                <text class="meta-value">{{weightAvgChart || '--'}}</text>
+                <text class="meta-label" wx:if="{{weightRefChart}}">参考体重</text>
+                <text class="meta-value" wx:if="{{weightRefChart}}">{{weightRefChart}}</text>
+              </view>
+              <view class="weight-chart-container">
+                <canvas type="2d" id="weightCanvas" style="width: 100%; height: 400rpx;" bindtouchstart="onWeightTouchStart" bindtouchmove="onWeightTouchMove" bindtouchend="onWeightTouchEnd" catchtap="preventBubble"></canvas>
+              </view>
+              <!-- 自定义时间范围滑块 -->
+              <view class="weight-range-control" wx:if="{{weightRangeDates.length > 1}}">
+                <view class="range-labels">
+                  <text class="range-start">{{weightStartDate}}</text>
+                  <text class="range-end">{{weightEndDate}}</text>
+                </view>
+                <view class="range-slider-container">
+                  <view class="slider-area" id="slider-area">
+                    <view class="slider-track-bg"></view>
+                    <view class="slider-track-active" style="left: {{weightLeft}}%; width: {{weightWidth}}%;"></view>
+                    <view class="slider-handle" 
+                          style="left: {{weightLeft}}%;" 
+                          data-type="start"
+                          catchtouchstart="onSliderTouchStart"
+                          catchtouchmove="onSliderTouchMove"
+                    ></view>
+                    <view class="slider-handle" 
+                          style="left: {{weightRight}}%;" 
+                          data-type="end"
+                          catchtouchstart="onSliderTouchStart"
+                          catchtouchmove="onSliderTouchMove"
+                    ></view>
+                  </view>
+                </view>
+              </view>
+            </block>
+            <view class="empty-tip" wx:else>
+              <image class="empty-icon-img" src="/images/remix/ri-line-chart-fill-gray.png" mode="widthFix" />
+              <text class="empty-text">暂无体重数据</text>
             </view>
           </view>
         </view>
