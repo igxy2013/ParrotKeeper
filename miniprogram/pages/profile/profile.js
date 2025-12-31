@@ -1,5 +1,6 @@
 // pages/profile/profile.js
 const app = getApp()
+const cache = require('../../utils/cache')
 Page({
   data: {
     isLogin: false,
@@ -103,6 +104,14 @@ Page({
   // —— 后台管理导航 ——
   goAdminFeedbacks() {
     wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' })
+  },
+
+  onPullDownRefresh() {
+    this._forceRefresh = true
+    Promise.resolve(this.loadOverviewStats()).finally(() => {
+      this._forceRefresh = false
+      wx.stopPullDownRefresh()
+    })
   },
   goAdminAnnouncements() {
     wx.navigateTo({ url: '/pages/admin/announcements/announcements' })
@@ -242,19 +251,34 @@ Page({
   // 加载统计概览用于展示统计网格（改用统一请求封装）
   async loadOverviewStats() {
     try {
-      const res = await app.request({ url: '/api/statistics/overview', method: 'GET' })
-      if (res.success && res.data) {
-        const d = res.data || {}
+      const force = !!this._forceRefresh
+      const cached = force ? null : cache.get('stats_overview')
+      if (cached) {
+        const d = cached || {}
         this.setData({
           stats: {
             ...this.data.stats,
-            // 后端字段为 snake_case，这里统一映射到前端 camelCase
             parrotCount: ('total_parrots' in d) ? d.total_parrots : (('parrot_count' in d) ? d.parrot_count : 0),
             totalFeedings: ('total_feedings' in d) ? d.total_feedings : (('monthly_feeding' in d) ? d.monthly_feeding : (d.today_records && ('feeding' in d.today_records) ? d.today_records.feeding : 0)),
             totalCheckups: ('total_checkups' in d) ? d.total_checkups : (('monthly_health_checks' in d) ? d.monthly_health_checks : 0),
             statsViews: ('stats_views' in d) ? d.stats_views : (('stats_view_count' in d) ? d.stats_view_count : 0)
           }
         })
+        return
+      }
+      const res = await app.request({ url: '/api/statistics/overview', method: 'GET' })
+      if (res.success && res.data) {
+        const d = res.data || {}
+        this.setData({
+          stats: {
+            ...this.data.stats,
+            parrotCount: ('total_parrots' in d) ? d.total_parrots : (('parrot_count' in d) ? d.parrot_count : 0),
+            totalFeedings: ('total_feedings' in d) ? d.total_feedings : (('monthly_feeding' in d) ? d.monthly_feeding : (d.today_records && ('feeding' in d.today_records) ? d.today_records.feeding : 0)),
+            totalCheckups: ('total_checkups' in d) ? d.total_checkups : (('monthly_health_checks' in d) ? d.monthly_health_checks : 0),
+            statsViews: ('stats_views' in d) ? d.stats_views : (('stats_view_count' in d) ? d.stats_view_count : 0)
+          }
+        })
+        cache.set('stats_overview', res.data, 180000)
       }
     } catch (err) {
       console.error('获取统计数据失败:', err)

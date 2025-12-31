@@ -23,7 +23,9 @@ App({
     networkConnected: true,
     pendingRequests: [],
     pendingForms: [],
-    imageCacheTTL: 604800000
+    imageCacheTTL: 604800000,
+    dataCacheTTL: 120000,
+    forceRefreshUntil: 0
   },
 
   // 初始化小程序版本号（优先使用微信官方版本号）
@@ -74,6 +76,7 @@ App({
     this.globalData.userMode = mode
     this.globalData.needRefresh = true
     try { wx.setStorageSync('userMode', mode) } catch(_) {}
+    try { this.clearDataCache() } catch (_) {}
 
     // 登录状态下通知后端更新用户模式（便于持久化）
     if (this.globalData.openid) {
@@ -85,6 +88,15 @@ App({
         console.warn('更新后端用户模式失败:', err)
       })
     }
+  },
+
+  beginForceRefresh(durationMs) {
+    const ms = typeof durationMs === 'number' ? durationMs : 8000
+    this.globalData.forceRefreshUntil = Date.now() + Math.max(0, ms)
+  },
+
+  clearDataCache() {
+    try { this._setDataCacheIndex({}) } catch (_) {}
   },
 
   onLaunch() {
@@ -320,7 +332,9 @@ App({
       const u = String(url || '')
       const d = data && typeof data === 'object' ? data : {}
       const entries = Object.keys(d).sort().map(k => `${k}=${encodeURIComponent(String(d[k]))}`)
-      return this.hashString(`${m}:${u}?${entries.join('&')}`)
+      const openid = this.globalData.openid || ''
+      const userMode = this.globalData.userMode || ''
+      return this.hashString(`${openid}:${userMode}:${m}:${u}?${entries.join('&')}`)
     } catch (_) {
       return this.hashString(String(url || '') + String(method || 'GET'))
     }
@@ -334,13 +348,13 @@ App({
     try { wx.setStorageSync('data_cache_index', idx || {}) } catch (_) {}
   },
 
-  _getCachedData(url, method, data, allowStale) {
+  _getCachedData(url, method, data, allowStale, ttlMs) {
     try {
       const key = this._buildDataCacheKey(url, method, data)
       const idx = this._getDataCacheIndex()
       const rec = idx[key]
       if (!rec) return null
-      const ttl = 3600000
+      const ttl = typeof ttlMs === 'number' ? ttlMs : 3600000
       const valid = allowStale ? true : (typeof rec.ts === 'number' && (Date.now() - rec.ts) < ttl)
       if (!valid) return null
       return rec.payload || null
@@ -537,6 +551,7 @@ App({
     wx.removeStorageSync('userInfo')
     wx.removeStorageSync('userMode') // 清除用户模式存储
     try { wx.removeStorageSync('pref_language') } catch (_) {}
+    try { this.clearDataCache() } catch (_) {}
   },
 
   // 检查登录状态
@@ -559,7 +574,8 @@ App({
   // 统一请求方法
   request(options) {
     return new Promise((resolve, reject) => {
-      const { url, method = 'GET', data = {}, header = {} } = options
+      const { url, method = 'GET', data = {}, header = {}, cache } = options
+      const upperMethod = String(method).toUpperCase()
       
       // 添加认证头
       if (this.globalData.openid) {
@@ -572,16 +588,39 @@ App({
       }
       
       const apiBase = this.globalData.baseUrl || ''
-      if (!this.globalData.networkConnected && String(method).toUpperCase() === 'GET') {
-        const cached = this._getCachedData(url, method, data, true)
+
+      const now = Date.now()
+      const isForceRefresh = now < (this.globalData.forceRefreshUntil || 0)
+      let cacheEnabled = upperMethod === 'GET'
+      let cacheForce = isForceRefresh
+      let cacheTTL = this.globalData.dataCacheTTL
+      if (cache === false) {
+        cacheEnabled = false
+      } else if (cache && typeof cache === 'object') {
+        if (cache.enabled === false) cacheEnabled = false
+        if (cache.force === true) cacheForce = true
+        if (typeof cache.ttl === 'number') cacheTTL = cache.ttl
+      }
+
+      if (!this.globalData.networkConnected && upperMethod === 'GET') {
+        const cached = this._getCachedData(url, upperMethod, data, true)
         if (cached) {
           resolve({ ...cached, fromCache: true })
           return
         }
       }
+
+      if (this.globalData.networkConnected && cacheEnabled && !cacheForce) {
+        const cached = this._getCachedData(url, upperMethod, data, false, cacheTTL)
+        if (cached) {
+          resolve({ ...cached, fromCache: true })
+          return
+        }
+      }
+
       wx.request({
         url: apiBase + url,
-        method,
+        method: upperMethod,
         data,
         header: {
           'Content-Type': 'application/json',
@@ -590,8 +629,13 @@ App({
         success: (res) => {
           if (res.statusCode === 200) {
             try {
-              if (String(method).toUpperCase() === 'GET') {
-                this._setCachedData(url, method, data, res.data)
+              if (upperMethod === 'GET') {
+                this._setCachedData(url, upperMethod, data, res.data)
+              }
+            } catch (_) {}
+            try {
+              if (upperMethod !== 'GET') {
+                this.clearDataCache()
               }
             } catch (_) {}
             resolve(res.data)
@@ -610,13 +654,13 @@ App({
         fail: (err) => {
           const errMsg = (err && err.errMsg) ? String(err.errMsg) : ''
           const isNetworkErr = !this.globalData.networkConnected || /fail|timeout|network/i.test(errMsg)
-          const isWriteOp = ['POST', 'PUT', 'DELETE'].includes(String(method).toUpperCase())
+          const isWriteOp = ['POST', 'PUT', 'DELETE'].includes(upperMethod)
           if (isNetworkErr && isWriteOp) {
             this.enqueueRequest({ url, method, data, header })
             wx.showToast({ title: '已缓存，网络恢复后自动重试', icon: 'none' })
             resolve({ success: false, offlineQueued: true, message: '已加入离线重试队列' })
-          } else if (isNetworkErr && String(method).toUpperCase() === 'GET') {
-            const cached = this._getCachedData(url, method, data, true)
+          } else if (isNetworkErr && upperMethod === 'GET') {
+            const cached = this._getCachedData(url, upperMethod, data, true)
             if (cached) {
               wx.showToast({ title: '离线模式，显示缓存数据', icon: 'none' })
               resolve({ ...cached, fromCache: true })

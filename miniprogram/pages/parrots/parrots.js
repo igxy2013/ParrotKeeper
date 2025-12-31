@@ -1,6 +1,7 @@
 // pages/parrots/parrots.js
 const app = getApp()
 const CACHE_TTL_MS = 60 * 1000
+const cache = require('../../utils/cache')
 
 Page({
   data: {
@@ -271,6 +272,7 @@ Page({
         wx.showToast({ title: '认领成功', icon: 'success' })
         this.setData({ showClaimByCodeModal: false, claimCode: '' })
         // 完全刷新列表
+        try { cache.clear('parrots_list_default') } catch (_) {}
         await this.refreshData()
       } else {
         app.showError(res && res.message ? res.message : '认领失败')
@@ -325,6 +327,41 @@ Page({
         health_status: this.data.selectedStatus,
         sort_by: this.data.sortBy === 'custom' ? 'created_at' : this.data.sortBy,
         sort_order: this.data.sortBy === 'custom' ? 'desc' : this.data.sortOrder
+      }
+      const isDefault = (
+        (params.page === 1) &&
+        (!params.search) &&
+        (!params.species_id) &&
+        (!params.health_status) &&
+        (params.sort_by === 'created_at') &&
+        (params.sort_order === 'desc')
+      )
+      if (!refresh && isDefault) {
+        const cachedList = cache.get('parrots_list_default')
+        if (Array.isArray(cachedList && cachedList.parrots)) {
+          const updatedParrots = cachedList.parrots
+          const maleCount = cachedList.maleCount || updatedParrots.filter(p => p.gender === 'male').length
+          const femaleCount = cachedList.femaleCount || updatedParrots.filter(p => p.gender === 'female').length
+          const totalParrots = cachedList.totalParrots || (this.data.totalParrots || 0)
+          const hasMore = cachedList.hasMore === true
+          this.setData({
+            parrots: updatedParrots,
+            page: 2,
+            hasMore,
+            maleCount,
+            femaleCount,
+            totalParrots,
+            lastParrotsLoadedAt: Date.now()
+          }, () => {
+            if (!refresh && preserveScrollTop !== null) {
+              wx.pageScrollTo({ scrollTop: preserveScrollTop, duration: 0 })
+            }
+          })
+          this.applyGenderFilter()
+          this.updateSpeciesOptionsFromParrots(updatedParrots)
+          this.updateLastFeedForParrots(updatedParrots)
+          return
+        }
       }
       
       console.log('请求参数:', params);
@@ -433,6 +470,15 @@ Page({
         this.updateLastFeedForParrots(updatedParrots)
         
         console.log('设置数据完成，当前parrots数量:', this.data.parrots.length);
+        if (isDefault) {
+          cache.set('parrots_list_default', {
+            parrots: updatedParrots,
+            maleCount,
+            femaleCount,
+            totalParrots,
+            hasMore: newParrots.length === 10
+          }, 180000)
+        }
       } else {
         console.log('API返回失败:', res);
       }
@@ -1166,6 +1212,7 @@ Page({
 
       if (res && res.success) {
         this.setData({ showParrotModal: false, currentParrotForm: null })
+        try { cache.clear('parrots_list_default') } catch (_) {}
         this.loadParrots(true)
       } else if (res) {
         const msg = res.message || (mode === 'edit' ? '编辑失败' : (mode === 'claim' ? '认领失败' : '添加失败'))

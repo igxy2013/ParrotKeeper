@@ -2,6 +2,7 @@
 const app = getApp()
 const { parseServerTime } = require('../../utils/time')
 const chickCare = require('../../utils/chick-care.js')
+const cache = require('../../utils/cache')
 
 Page({
   data: {
@@ -233,6 +234,7 @@ Page({
         app.globalData.needRefresh = false; // 重置标志
       }
       this.loadData()
+      try { this.preloadCommonCaches() } catch (_) {}
     }
 
     // 如有需要，在页面显示时自动弹出“添加鹦鹉”弹窗
@@ -295,9 +297,72 @@ Page({
   },
 
   onPullDownRefresh() {
+    this._forceRefresh = true
     this.loadData().finally(() => {
+      this._forceRefresh = false
       wx.stopPullDownRefresh()
     })
+  },
+
+  async preloadCommonCaches() {
+    try {
+      const force = !!this._forceRefresh
+      const tasks = []
+      if (!force && !cache.get('stats_overview')) {
+        tasks.push(app.request({ url: '/api/statistics/overview', method: 'GET' }).then(res => { if (res && res.success && res.data) cache.set('stats_overview', res.data, 180000) }))
+      }
+      if (!force && !cache.get('stats_feedingTrends_7')) {
+        tasks.push(app.request({ url: '/api/statistics/feeding-trends', method: 'GET', data: { days: 7 } }).then(res => { if (res && res.success && Array.isArray(res.data)) cache.set('stats_feedingTrends_7', res.data, 180000) }))
+      }
+      if (!force && !cache.get('stats_expenseAnalysis')) {
+        tasks.push(app.request({ url: '/api/statistics/expense-analysis', method: 'GET' }).then(res => { if (res && res.success && res.data) cache.set('stats_expenseAnalysis', res.data, 180000) }))
+      }
+      if (!force && !cache.get('stats_careFrequency')) {
+        tasks.push(app.request({ url: '/api/statistics/care-frequency', method: 'GET' }).then(res => { if (res && res.success && res.data) cache.set('stats_careFrequency', res.data, 180000) }))
+      }
+      if (!force && !cache.get('stats_weightTrends_30')) {
+        tasks.push(app.request({ url: '/api/statistics/weight-trends', method: 'GET', data: { days: 30 } }).then(res => { if (res && res.success && Array.isArray(res.data && res.data.series)) cache.set('stats_weightTrends_30', res.data.series, 180000) }))
+      }
+      if (!force && !cache.get('parrots_list_default')) {
+        tasks.push(app.request({ url: '/api/parrots', method: 'GET', data: { page: 1, per_page: 10, sort_by: 'created_at', sort_order: 'desc' } }).then(res => {
+          if (res && res.success && Array.isArray(res.data && res.data.parrots)) {
+            const list = res.data.parrots
+            const maleCount = list.filter(p => p.gender === 'male').length
+            const femaleCount = list.filter(p => p.gender === 'female').length
+            const hasMore = list.length === 10
+            const totalParrots = res.data.total || list.length
+            cache.set('parrots_list_default', { parrots: list, maleCount, femaleCount, totalParrots, hasMore }, 180000)
+          }
+        }))
+      }
+      const needSpecies = !force && !cache.get('stats_speciesDistribution')
+      if (needSpecies) {
+        tasks.push(Promise.all([
+          app.request({ url: '/api/parrots/species', method: 'GET' }),
+          app.request({ url: '/api/parrots', method: 'GET', data: { limit: 1000 } })
+        ]).then(([specRes, parrRes]) => {
+          if (specRes && specRes.success && Array.isArray(specRes.data) && parrRes && parrRes.success) {
+            const parrots = (parrRes.data && parrRes.data.parrots) || []
+            const map = {}
+            parrots.forEach(p => { const n = p.species_name || (p.species && p.species.name) || ''; if (n) map[n] = (map[n] || 0) + 1 })
+            const total = parrots.length
+            const colors = ['#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#ef4444', '#8b5cf6', '#06b6d4']
+            const dist = Object.keys(map).map((name, i) => ({ species: name, count: map[name], percentage: total > 0 ? Math.round(map[name] * 100 / total) : 0, color: colors[i % colors.length] }))
+            dist.sort((a,b) => b.count - a.count)
+            cache.set('stats_speciesDistribution', dist, 180000)
+          }
+        }))
+      }
+      const pLabel = '本月'
+      if (!force && !cache.get(`stats_foodPref_${pLabel}`)) {
+        const today = new Date()
+        const start = new Date(today.getFullYear(), today.getMonth(), 1)
+        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        const fmt = d => { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${dd}` }
+        tasks.push(app.request({ url: '/api/records/feeding', method: 'GET', data: { start_date: fmt(start), end_date: fmt(end) } }).then(res => { if (res && res.success && res.data) cache.set(`stats_foodPref_${pLabel}`, Array.isArray(res.data) ? res.data : (Array.isArray(res.data.items) ? res.data.items : ((res.data.records) || [])), 180000) }))
+      }
+      if (tasks.length) await Promise.allSettled(tasks)
+    } catch (_) {}
   },
 
   // 设置问候语
@@ -359,30 +424,40 @@ Page({
   // 加载概览数据
   async loadOverview() {
     try {
-      const res = await app.request({
-        url: '/api/statistics/overview',
-        method: 'GET'
-      })
-      
+      const force = !!this._forceRefresh
+      const cached = force ? null : cache.get('index_overview')
+      if (cached) {
+        const overviewStatusText = this.getHealthStatusText(cached)
+        this.setData({
+          overview: {
+            total_parrots: cached.total_parrots || 0,
+            today_records: { feeding: (cached.today_records && cached.today_records.feeding) || 0 },
+            monthly_income: cached.monthly_income || 0,
+            monthly_expense: cached.monthly_expense || 0,
+            ...cached
+          },
+          overview_status_text: overviewStatusText
+        })
+        return
+      }
+      const res = await app.request({ url: '/api/statistics/overview', method: 'GET' })
       if (res.success) {
         const overview = res.data
         const overviewStatusText = this.getHealthStatusText(overview)
         this.setData({
           overview: {
             total_parrots: overview.total_parrots || 0,
-            today_records: {
-              feeding: (overview.today_records && overview.today_records.feeding) || 0
-            },
+            today_records: { feeding: (overview.today_records && overview.today_records.feeding) || 0 },
             monthly_income: overview.monthly_income || 0,
             monthly_expense: overview.monthly_expense || 0,
             ...overview
           },
           overview_status_text: overviewStatusText
         })
+        cache.set('index_overview', overview, 180000)
       }
     } catch (error) {
       console.error('加载概览数据失败:', error)
-      // 保持默认值，不更新overview
     }
   },
 
@@ -655,10 +730,44 @@ Page({
   // 新增：加载首页-我的鹦鹉（横向展示全部）
   async loadMyParrots() {
     try {
+      const force = !!this._forceRefresh
+      const cachedList = force ? null : cache.get('index_myParrots')
+      if (Array.isArray(cachedList) && cachedList.length > 0) {
+        const ordered = cachedList
+        this.setData({ myParrots: ordered })
+        let newWelcome = '今天也要好好照顾小家伙们哦'
+        let isSingleParrot = false
+        let singleParrotName = ''
+        let singleParrotDays = 1
+        if (ordered.length === 1) {
+          const p = ordered[0]
+          const name = (p && p.name) ? p.name : '你的鹦鹉'
+          const startDateStr = p.acquisition_date || p.created_at || ''
+          const startDate = parseServerTime(startDateStr)
+          if (startDate) {
+            const today = new Date()
+            today.setHours(0,0,0,0)
+            const begin = new Date(startDate)
+            begin.setHours(0,0,0,0)
+            let days = Math.floor((today.getTime() - begin.getTime()) / 86400000) + 1
+            if (days < 1) days = 1
+            newWelcome = `今天是你和${name}相处的第${days}天！`
+            isSingleParrot = true
+            singleParrotName = name
+            singleParrotDays = days
+          } else {
+            newWelcome = `今天是你和${name}相处的第1天！`
+            isSingleParrot = true
+            singleParrotName = name
+            singleParrotDays = 1
+          }
+        }
+        this.setData({ welcomeMessage: newWelcome, isSingleParrot, singleParrotName, singleParrotDays })
+        return
+      }
       const res = await app.request({
         url: '/api/parrots',
         method: 'GET',
-        // 使用后端分页参数 per_page，获取尽可能多的鹦鹉
         data: { page: 1, per_page: 100, sort_by: 'created_at', sort_order: 'desc' }
       })
       if (res.success) {
@@ -703,6 +812,7 @@ Page({
         orderIds.forEach(id => { if (map[id]) ordered.push(map[id]) })
         parrotsRaw.forEach(p => { if (!orderIds.includes(p.id)) ordered.push(p) })
         this.setData({ myParrots: ordered })
+        cache.set('index_myParrots', ordered, 180000)
 
         // 仅当用户只有1只鹦鹉时，设置欢迎语为“今天是你和XX相处的第YY天！”
         let newWelcome = '今天也要好好照顾小家伙们哦'
@@ -2057,6 +2167,7 @@ Page({
       if (res.success) {
         app.showSuccess('添加成功')
         this.closeAddParrotModal()
+        try { cache.clear('index_myParrots'); cache.clear('index_overview') } catch (_) {}
         if (typeof this.loadMyParrots === 'function') {
           this.loadMyParrots()
         }
@@ -2091,6 +2202,7 @@ Page({
       }
       if (res && res.success) {
         this.closeAddParrotModal()
+        try { cache.clear('index_myParrots'); cache.clear('index_overview') } catch (_) {}
         if (typeof this.loadMyParrots === 'function') { this.loadMyParrots() }
       } else if (res) {
         app.showError(res.message || (mode === 'claim' ? '认领失败' : '添加失败'))

@@ -1,5 +1,6 @@
 // pages/statistics/statistics.js
 const app = getApp()
+const cache = require('../../utils/cache')
 
   Page({
     data: {
@@ -101,7 +102,9 @@ const app = getApp()
   },
 
   onPullDownRefresh() {
+    this._forceRefresh = true
     this.loadAllStatistics().finally(() => {
+      this._forceRefresh = false
       wx.stopPullDownRefresh()
     })
   },
@@ -113,6 +116,7 @@ const app = getApp()
     try {
       await Promise.all([
         this.loadOverview(),
+        this.loadFeedingTrends(),
         this.loadExpenseAnalysis(),
         this.loadCareFrequency(),
         this.loadSpeciesDistribution(),
@@ -130,15 +134,16 @@ const app = getApp()
   // 加载概览数据
   async loadOverview() {
     try {
-      const res = await app.request({
-        url: '/api/statistics/overview',
-        method: 'GET'
-      })
-      
+      const force = !!this._forceRefresh
+      const cached = force ? null : cache.get('stats_overview')
+      if (cached) {
+        this.setData({ overview: cached })
+        return
+      }
+      const res = await app.request({ url: '/api/statistics/overview', method: 'GET' })
       if (res.success) {
-        this.setData({
-          overview: res.data
-        })
+        this.setData({ overview: res.data })
+        cache.set('stats_overview', res.data, 180000)
       }
     } catch (error) {
       console.error('加载概览数据失败:', error)
@@ -148,23 +153,21 @@ const app = getApp()
   // 加载喂食趋势
   async loadFeedingTrends() {
     try {
-      // 根据period转换为days参数
       const days = this.data.feedingPeriod === 'week' ? 7 : 30
-      
-      const res = await app.request({
-        url: '/api/statistics/feeding-trends',
-        method: 'GET',
-        data: {
-          days: days
-        }
-      })
-      
+      const key = `stats_feedingTrends_${days}`
+      const force = !!this._forceRefresh
+      const cached = force ? null : cache.get(key)
+      if (cached && Array.isArray(cached)) {
+        const trends = this.processFeedingTrends(cached)
+        this.setData({ feedingTrends: trends })
+        this.drawFeedingChart()
+        return
+      }
+      const res = await app.request({ url: '/api/statistics/feeding-trends', method: 'GET', data: { days } })
       if (res.success) {
         const trends = this.processFeedingTrends(res.data)
-        this.setData({
-          feedingTrends: trends
-        })
-        // 数据就绪后绘制喂食折线面积图
+        this.setData({ feedingTrends: trends })
+        cache.set(key, res.data, 180000)
         this.drawFeedingChart()
       }
     } catch (error) {
@@ -195,24 +198,20 @@ const app = getApp()
   // 加载支出分析
   async loadExpenseAnalysis() {
     try {
-      console.log('开始加载支出分析数据')
-      const res = await app.request({
-        url: '/api/statistics/expense-analysis',
-        method: 'GET'
-      })
-      
-      console.log('支出分析API响应:', res)
-      
+      const force = !!this._forceRefresh
+      const cached = force ? null : cache.get('stats_expenseAnalysis')
+      if (cached && cached.category_expenses) {
+        const analysis = this.processExpenseAnalysis(cached)
+        this.setData({ expenseAnalysis: analysis, selectedExpenseIndex: -1 })
+        wx.nextTick(() => this.drawExpensePieChart())
+        return
+      }
+      const res = await app.request({ url: '/api/statistics/expense-analysis', method: 'GET' })
       if (res.success) {
         const analysis = this.processExpenseAnalysis(res.data)
-        console.log('处理后的支出分析数据:', analysis)
-        this.setData({ 
-          expenseAnalysis: analysis,
-          selectedExpenseIndex: -1
-        })
+        this.setData({ expenseAnalysis: analysis, selectedExpenseIndex: -1 })
+        cache.set('stats_expenseAnalysis', res.data, 180000)
         wx.nextTick(() => this.drawExpensePieChart())
-      } else {
-        console.error('支出分析API返回失败:', res)
       }
     } catch (error) {
       console.error('加载支出分析失败:', error)
@@ -509,15 +508,16 @@ const app = getApp()
   // 加载护理频率
   async loadCareFrequency() {
     try {
-      const res = await app.request({
-        url: '/api/statistics/care-frequency',
-        method: 'GET'
-      })
-      
+      const force = !!this._forceRefresh
+      const cached = force ? null : cache.get('stats_careFrequency')
+      if (cached) {
+        this.setData({ careFrequency: cached })
+        return
+      }
+      const res = await app.request({ url: '/api/statistics/care-frequency', method: 'GET' })
       if (res.success) {
-        this.setData({
-          careFrequency: res.data
-        })
+        this.setData({ careFrequency: res.data })
+        cache.set('stats_careFrequency', res.data, 180000)
       }
     } catch (error) {
       console.error('加载护理频率失败:', error)
@@ -527,25 +527,20 @@ const app = getApp()
   // 加载品种分布
   async loadSpeciesDistribution() {
     try {
-      const res = await app.request({
-        url: '/api/parrots/species',
-        method: 'GET'
-      })
-      
+      const force = !!this._forceRefresh
+      const cached = force ? null : cache.get('stats_speciesDistribution')
+      if (cached && Array.isArray(cached)) {
+        this.setData({ speciesDistribution: cached })
+        return
+      }
+      const res = await app.request({ url: '/api/parrots/species', method: 'GET' })
       if (res.success) {
-        // 获取每个品种的鹦鹉数量
-        const parrotsRes = await app.request({
-          url: '/api/parrots',
-          method: 'GET',
-          data: { limit: 1000 }
-        })
-        
+        const parrotsRes = await app.request({ url: '/api/parrots', method: 'GET', data: { limit: 1000 } })
         if (parrotsRes.success) {
           const parrots = parrotsRes.data.parrots || []
           const distribution = this.processSpeciesDistribution(res.data, parrots)
-          this.setData({
-            speciesDistribution: distribution
-          })
+          this.setData({ speciesDistribution: distribution })
+          cache.set('stats_speciesDistribution', distribution, 180000)
         }
       }
     } catch (error) {
@@ -616,14 +611,18 @@ const app = getApp()
         start = new Date(1970, 0, 1)
         end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
       }
-      const res = await app.request({
-        url: '/api/records/feeding',
-        method: 'GET',
-        data: { start_date: fmt(start), end_date: fmt(end) }
-      })
+      const key = `stats_foodPref_${p}`
+      const force = !!this._forceRefresh
+      const cached = force ? null : cache.get(key)
+      if (cached && Array.isArray(cached)) {
+        this.setData({ foodPreference: cached })
+        return
+      }
+      const res = await app.request({ url: '/api/records/feeding', method: 'GET', data: { start_date: fmt(start), end_date: fmt(end) } })
       if (res.success) {
         const pref = this.processFoodPreference(res.data)
         this.setData({ foodPreference: pref })
+        cache.set(key, pref, 180000)
       }
     } catch (e) {
       console.error('加载食物偏好失败:', e)
@@ -1047,104 +1046,104 @@ const app = getApp()
   // 加载体重趋势（每只鹦鹉的折线）
   async loadWeightTrends() {
     try {
-      const res = await app.request({
-        url: '/api/statistics/weight-trends',
-        method: 'GET',
-        data: { days: this.data.weightDays }
+      const days = this.data.weightDays
+      const key = `stats_weightTrends_${days}`
+      const force = !!this._forceRefresh
+      const cachedSeries = force ? null : cache.get(key)
+      let seriesArr
+      if (cachedSeries && Array.isArray(cachedSeries)) {
+        seriesArr = cachedSeries
+      } else {
+        const res = await app.request({ url: '/api/statistics/weight-trends', method: 'GET', data: { days } })
+        if (!(res.success && res.data && Array.isArray(res.data.series))) return
+        seriesArr = Array.isArray(res.data.series) ? res.data.series : []
+        cache.set(key, seriesArr, 180000)
+      }
+      this.setData({ weightSeries: seriesArr })
+      this.updateWeightLegend()
+      const dateSet = new Set()
+      for (let i = 0; i < seriesArr.length; i++) {
+        const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
+        for (let j = 0; j < pts.length; j++) {
+          const d = pts[j] && pts[j].date
+          if (d) dateSet.add(d)
+        }
+      }
+      const rangeDates = Array.from(dateSet).sort()
+      const startIdx = 0
+      const endIdx = Math.max(0, rangeDates.length - 1)
+      this.setData({
+        weightRangeDates: rangeDates,
+        weightStartIndex: startIdx,
+        weightEndIndex: endIdx,
+        weightStartDate: rangeDates[startIdx] || '',
+        weightEndDate: rangeDates[endIdx] || ''
       })
-      if (res.success && res.data && Array.isArray(res.data.series)) {
-        const seriesArr = Array.isArray(res.data.series) ? res.data.series : []
-        this.setData({ weightSeries: seriesArr })
-        this.updateWeightLegend()
-        // 计算可选日期范围（用于滑块）
-        const dateSet = new Set()
-        for (let i = 0; i < seriesArr.length; i++) {
-          const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
-          for (let j = 0; j < pts.length; j++) {
-            const d = pts[j] && pts[j].date
-            if (d) dateSet.add(d)
+      this.updateSliderView()
+      const allPoints = []
+      for (let i = 0; i < seriesArr.length; i++) {
+        const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
+        for (let j = 0; j < pts.length; j++) {
+          const w = pts[j] && pts[j].weight
+          if (typeof w === 'number' && !isNaN(w) && w > 0) {
+            allPoints.push(w)
           }
         }
-        const rangeDates = Array.from(dateSet).sort()
-        const startIdx = 0
-        const endIdx = Math.max(0, rangeDates.length - 1)
-        this.setData({
-          weightRangeDates: rangeDates,
-          weightStartIndex: startIdx,
-          weightEndIndex: endIdx,
-          weightStartDate: rangeDates[startIdx] || '',
-          weightEndDate: rangeDates[endIdx] || ''
-        })
-        this.updateSliderView()
-        // 计算平均体重用于概览卡（避免链式调用导致的编译异常）
-        const allPoints = []
+      }
+      let avg = ''
+      if (allPoints.length > 0) {
+        let sum = 0
+        for (let k = 0; k < allPoints.length; k++) sum += allPoints[k]
+        avg = Math.round(sum / allPoints.length) + 'g'
+      }
+      this.setData({ avgWeight: avg || '--' })
+      if (!this.data.selectedParrotId) {
+        const cutoff = Date.now() - (days || 30) * 86400000
+        let autoId = null
+        let autoName = ''
+        let maxCount = -1
         for (let i = 0; i < seriesArr.length; i++) {
           const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
+          let count = 0
           for (let j = 0; j < pts.length; j++) {
-            const w = pts[j] && pts[j].weight
-            if (typeof w === 'number' && !isNaN(w) && w > 0) {
-              allPoints.push(w)
-            }
+            const p = pts[j]
+            const d = p && p.date ? new Date(p.date) : null
+            const ts = d && !isNaN(d) ? d.getTime() : NaN
+            if (!isNaN(ts) && ts >= cutoff && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) count++
+          }
+          if (count > maxCount) {
+            maxCount = count
+            autoId = String(seriesArr[i].parrot_id)
+            autoName = seriesArr[i].parrot_name || ''
           }
         }
-        let avg = ''
-        if (allPoints.length > 0) {
-          let sum = 0
-          for (let k = 0; k < allPoints.length; k++) sum += allPoints[k]
-          avg = Math.round(sum / allPoints.length) + 'g'
-        }
-        this.setData({ avgWeight: avg || '--' })
-
-        // 默认选中：最近有数据且数据最多的鹦鹉；若最近无数据则回退到总体数据最多
-        if (!this.data.selectedParrotId) {
-          const cutoff = Date.now() - (this.data.weightDays || 30) * 86400000
-          let autoId = null
-          let autoName = ''
-          let maxCount = -1
+        if (maxCount <= 0) {
+          maxCount = -1
           for (let i = 0; i < seriesArr.length; i++) {
             const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
-            let count = 0
+            let allCount = 0
             for (let j = 0; j < pts.length; j++) {
               const p = pts[j]
-              const d = p && p.date ? new Date(p.date) : null
-              const ts = d && !isNaN(d) ? d.getTime() : NaN
-              if (!isNaN(ts) && ts >= cutoff && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) count++
+              if (p && p.date && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) allCount++
             }
-            if (count > maxCount) {
-              maxCount = count
+            if (allCount > maxCount) {
+              maxCount = allCount
               autoId = String(seriesArr[i].parrot_id)
               autoName = seriesArr[i].parrot_name || ''
             }
           }
-          if (maxCount <= 0) {
-            maxCount = -1
-            for (let i = 0; i < seriesArr.length; i++) {
-              const pts = Array.isArray(seriesArr[i].points) ? seriesArr[i].points : []
-              let allCount = 0
-              for (let j = 0; j < pts.length; j++) {
-                const p = pts[j]
-                if (p && p.date && typeof p.weight === 'number' && !isNaN(p.weight) && p.weight > 0) allCount++
-              }
-              if (allCount > maxCount) {
-                maxCount = allCount
-                autoId = String(seriesArr[i].parrot_id)
-                autoName = seriesArr[i].parrot_name || ''
-              }
-            }
-          }
-          if (autoId) {
-            this.setData({ selectedParrotId: autoId, selectedParrotName: autoName })
-          }
         }
-
-        this.updateWeightLegend()
-        if (this.data.selectedParrotId) {
-          this._loadParrotRefWeight && this._loadParrotRefWeight(this.data.selectedParrotId)
-        } else {
-          this.setData({ weightRefValue: null, weightRefChart: '' })
+        if (autoId) {
+          this.setData({ selectedParrotId: autoId, selectedParrotName: autoName })
         }
-        this.drawWeightChart()
       }
+      this.updateWeightLegend()
+      if (this.data.selectedParrotId) {
+        this._loadParrotRefWeight && this._loadParrotRefWeight(this.data.selectedParrotId)
+      } else {
+        this.setData({ weightRefValue: null, weightRefChart: '' })
+      }
+      this.drawWeightChart()
     } catch (err) {
       console.error('加载体重趋势失败:', err)
     }
