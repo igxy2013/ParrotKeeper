@@ -680,7 +680,7 @@ Page({
         const res = await app.request({ url: '/api/auth/profile', method: 'GET' });
         if (res && res.success && res.data) {
           const serverUser = res.data || {};
-          const merged = { ...userInfo, ...serverUser };
+          const merged = { ...baseUser, ...serverUser };
           // 更新全局与本地缓存
           app.globalData.userInfo = merged;
           try { wx.setStorageSync('userInfo', merged); } catch (_) {}
