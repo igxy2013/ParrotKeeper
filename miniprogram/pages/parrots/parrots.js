@@ -885,7 +885,8 @@ Page({
           species_name: speciesName,
           name: parrot.name
         })
-        return { ...parrot, photo_url: '', avatar_url: fallbackAvatar };
+        const fallbackThumb = app.getThumbnailUrl(fallbackAvatar, 128)
+        return { ...parrot, photo_url: '', photo_thumb: '', avatar_url: fallbackAvatar, avatar_thumb: fallbackThumb };
       }
       return parrot;
     });
