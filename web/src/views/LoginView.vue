@@ -45,17 +45,24 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { User, Lock, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import api from '../api/axios'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const activeTab = ref('login')
 const loading = ref(false)
+
+onMounted(() => {
+  if (route.query.tab === 'register') {
+    activeTab.value = 'register'
+  }
+})
 
 const loginForm = reactive({
   username: '',
@@ -127,36 +134,121 @@ const handleRegister = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: var(--primary-gradient);
+  background-color: #f8f9fa;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(0, 188, 212, 0.08), transparent 25%);
 }
+
 .login-card {
-  width: 400px;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  width: 420px;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
 }
+
 .card-header {
   text-align: center;
+  padding: 10px 0;
 }
+
 .card-header h2 {
   margin: 0;
-  color: var(--primary-color);
-  font-size: 24px;
+  color: #111827;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
+
 .logo-img {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 12px;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
 }
+
 .w-100 {
   width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  margin-top: 10px;
+  padding: 20px 0;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 16px;
+  border-radius: 12px;
+  height: 44px;
 }
+
+/* 覆盖 Element Plus 样式 */
+:deep(.el-card__header) {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+:deep(.el-card__body) {
+  padding: 30px 40px 40px;
+}
+
+:deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #e5e7eb inset;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background-color: #f9fafb;
+  transition: all 0.2s;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #d1d5db inset;
+  background-color: #fff;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px var(--primary-color) inset !important;
+  background-color: #fff;
+}
+
+:deep(.el-input__inner) {
+  height: 24px;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 20px;
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+  background-color: #f3f4f6;
+}
+
+:deep(.el-tabs__item) {
+  font-size: 16px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
 :deep(.el-tabs__item.is-active) {
   color: var(--primary-color);
+  font-weight: 600;
 }
+
 :deep(.el-tabs__active-bar) {
   background-color: var(--primary-color);
+  height: 3px;
+  border-radius: 3px;
+}
+
+:deep(.el-button--primary) {
+  --el-button-bg-color: var(--primary-gradient);
+  --el-button-border-color: transparent;
+  --el-button-hover-bg-color: var(--primary-gradient);
+  --el-button-hover-border-color: transparent;
+  background: var(--primary-gradient);
+  border: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+:deep(.el-button--primary:hover) {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 </style>

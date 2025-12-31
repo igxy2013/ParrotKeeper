@@ -2,18 +2,125 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>鹦鹉管家 · 专业的鹦鹉饲养管理平台</title>
+    <meta name="description" content="鹦鹉管家是一款面向繁育者与爱好者的专业鹦鹉饲养管理平台，支持体重记录、喂食管理、孵化建议、护理指南、团队协作与数据统计分析。" />
+    <meta name="keywords" content="鹦鹉饲养,鹦鹉繁育,鹦鹉护理,孵化管理,宠物管理,数据统计,团队协作,Parrot Keeper" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>鹦鹉管家</title>
-    <script type="module" crossorigin src="/assets/index-9601ddc4.js"></script>
-    <link rel="stylesheet" href="/assets/index-245ab200.css">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="鹦鹉管家 · 专业的鹦鹉饲养管理平台" />
+    <meta property="og:description" content="面向繁育者与爱好者的鹦鹉管理平台，记录、统计与协作一站式解决。" />
+    <meta property="og:image" content="/logo.png" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="鹦鹉管家 · 专业的鹦鹉饲养管理平台" />
+    <meta name="twitter:description" content="记录喂食、体重、繁育与护理，数据驱动科学饲养。" />
+    <meta name="twitter:image" content="/logo.png" />
+    <link rel="canonical" href="/" />
+    <style>
+      :root { --primary:#10b981; --bg:#0b1220; --text:#f8fafc; --muted:#cbd5e1; }
+      * { box-sizing:border-box }
+      body { margin:0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; color:var(--text); background:linear-gradient(180deg, #0b1220 0%, #0e1a2f 100%); }
+      a { color:inherit; text-decoration:none }
+      .container { max-width:1080px; margin:0 auto; padding:24px }
+      .nav { display:flex; align-items:center; justify-content:space-between; padding:16px 0 }
+      .nav img { height:40px }
+      .btn { display:inline-block; padding:12px 20px; background:var(--primary); color:#041b12; border-radius:8px; font-weight:600 }
+      .btn:hover { filter:brightness(1.05) }
+      .hero { display:grid; grid-template-columns:1.1fr 0.9fr; gap:32px; align-items:center; padding:40px 0 }
+      .hero h1 { font-size:40px; line-height:1.15; margin:0 0 12px }
+      .hero p { font-size:16px; color:var(--muted); margin:0 0 20px }
+      .hero .media { width:100%; border-radius:16px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,.35) }
+      .section { padding:24px 0 }
+      .section h2 { font-size:28px; margin:0 0 12px }
+      .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px }
+      .card { background:#101a2c; border:1px solid #15233a; border-radius:12px; padding:16px }
+      .card img { width:100%; border-radius:8px; margin-bottom:12px }
+      .card h3 { margin:0 0 6px; font-size:18px }
+      .card p { margin:0; color:var(--muted); font-size:14px }
+      .cta { text-align:center; padding:36px 0 }
+      .footer { color:#91a4bf; font-size:12px; border-top:1px solid #16253d; margin-top:24px; padding:16px 0 }
+      @media (max-width:900px){ .hero{ grid-template-columns:1fr } .grid{ grid-template-columns:1fr } .hero h1{ font-size:32px } }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context":"https://schema.org",
+        "@type":"SoftwareApplication",
+        "name":"鹦鹉管家",
+        "applicationCategory":"Pets",
+        "operatingSystem":"Web",
+        "description":"面向繁育者与爱好者的鹦鹉饲养管理平台，支持体重、喂食、繁育与护理记录及统计分析。",
+        "image":"/logo.png",
+        "url":"/",
+        "offers":{ "@type":"Offer", "price":"0", "priceCurrency":"CNY" }
+      }
+    </script>
   </head>
   <body>
-    <div id="app"></div>
-    
+    <div class="container">
+      <div class="nav">
+        <img src="/logo.png" alt="鹦鹉管家" />
+        <a class="btn" href="/app.html">进入应用</a>
+      </div>
+      <section class="hero">
+        <div>
+          <h1>首页仪表盘：喂食、体重、公告与统计一屏掌握</h1>
+          <p>图示为首页仪表盘（web01），包含今日喂食提醒、体重趋势概览、公告与数据统计入口，快速把控饲养与繁育全局。</p>
+          <a class="btn" href="/app.html">立即使用</a>
+        </div>
+        <div>
+          <img class="media" src="/web01.png" alt="首页仪表盘预览：今日喂食、体重趋势与公告模块" />
+        </div>
+      </section>
+      <section class="section">
+        <h2>核心功能（对应示例图）</h2>
+        <div class="grid">
+          <div class="card">
+            <img src="/web02.png" alt="体重趋势图与喂食记录表单示例" />
+            <h3>体重趋势与喂食记录（web02）</h3>
+            <p>展示折线图趋势与日常喂食记录表单，支持按鹦鹉切换与多只并行管理。</p>
+          </div>
+          <div class="card">
+            <img src="/web03.png" alt="孵化建议卡片与参数设置界面示例" />
+            <h3>孵化建议与参数设置（web03）</h3>
+            <p>根据天数与参数生成建议卡片，提供温湿度与翻蛋等步骤提醒，提高孵化成功率。</p>
+          </div>
+          <div class="card">
+            <img src="/web04.jpg" alt="护理与健康知识卡片示例" />
+            <h3>护理与健康指南（web04）</h3>
+            <p>以知识卡片形式呈现常见护理要点与健康提示，支持分类浏览与快速检索。</p>
+          </div>
+        </div>
+      </section>
+      <section class="section">
+        <h2>团队协作与统计（对应示例图）</h2>
+        <div class="grid">
+          <div class="card">
+            <img src="/web05.png" alt="团队成员列表与权限设置界面示例" />
+            <h3>团队成员与权限管理（web05）</h3>
+            <p>成员列表、角色权限与分工设置清晰可见，结合通知提醒提升协作效率。</p>
+          </div>
+          <div class="card">
+            <img src="/web06.png" alt="统计图表与数据导出界面示例" />
+            <h3>统计图表与数据导出（web06）</h3>
+            <p>支持饲养成本、体重趋势等多维度图表分析，并提供数据导出用于复盘与分享。</p>
+          </div>
+          <div class="card">
+            <img src="/parrot.png" alt="更多功能" />
+            <h3>更多功能</h3>
+            <p>公告中心、护理指南、品种与羽色管理等不断完善。</p>
+          </div>
+        </div>
+      </section>
+      <div class="cta">
+        <a class="btn" href="/app.html">免费开始使用</a>
+      </div>
+      <div class="footer">© 2025 鹦鹉管家</div>
+    </div>
   </body>
 </html>

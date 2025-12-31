@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import DashboardView from '../views/DashboardView.vue'
@@ -24,7 +24,7 @@ import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
 import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(),
   routes: [
     {
       path: '/login',
