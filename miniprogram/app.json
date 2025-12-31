@@ -113,7 +113,8 @@
       "root": "pages/tools",
       "pages": [
         "pairing-calculator/pairing-calculator",
-        "pairing-records/pairing-records"
+        "pairing-records/pairing-records",
+        "parrot-id-photo/parrot-id-photo"
       ]
     }
   ],
