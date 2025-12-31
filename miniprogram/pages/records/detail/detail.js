@@ -276,11 +276,31 @@ Page({
       const headerRecorder = this.resolveRecorderName(headerRecord)
       const uniqueParrots = Array.from(new Set(listItems.map(x => x.parrotName).filter(Boolean)))
 
+      let allLogs = []
+      okItems.forEach(item => {
+        const pName = (item.parrot && item.parrot.name) || item.parrot_name || ''
+        const logs = this.deriveOperationLogs(item)
+        logs.forEach(l => {
+            if (pName) {
+                l.actionText = `${l.actionText} (${pName})`
+            }
+            l._rawTime = l.timeText 
+        })
+        allLogs = allLogs.concat(logs)
+      })
+      
+      allLogs.sort((a, b) => {
+          if (a._rawTime < b._rawTime) return 1
+          if (a._rawTime > b._rawTime) return -1
+          return 0
+      })
+
       this.setData({
         aggregateRecords: listItems,
         displayTime: headerTime,
         recorderName: headerRecorder,
         parrotName: uniqueParrots.join('、'),
+        operationLogs: allLogs,
         loading: false
       })
     } catch (e) {
@@ -523,11 +543,12 @@ Page({
       const uBy = record.updated_by_nickname || (record.updated_by && record.updated_by.nickname) || record.updated_by_username || (record.updated_by && record.updated_by.username) || ''
       const dcText = this.formatOperationLogTime(cAt)
       const duText = this.formatOperationLogTime(uAt)
+      const rid = record.id || ''
       if (dcText) {
-        logs.push({ id: `created-${cAt}-${cBy}`, actionText: '创建', operatorName: cBy, timeText: dcText, note: '', changeLines: [] })
+        logs.push({ id: `created-${cAt}-${cBy}-${rid}`, actionText: '创建', operatorName: cBy, timeText: dcText, note: '', changeLines: [] })
       }
       if (duText && (!dcText || duText !== dcText)) {
-        logs.push({ id: `updated-${uAt}-${uBy}`, actionText: '编辑', operatorName: (uBy || cBy), timeText: duText, note: '', changeLines: [] })
+        logs.push({ id: `updated-${uAt}-${uBy}-${rid}`, actionText: '编辑', operatorName: (uBy || cBy), timeText: duText, note: '', changeLines: [] })
       }
       return logs
     } catch (_) {

@@ -162,8 +162,8 @@
       </block>
     </view>
 
-    <!-- 操作日志区域（仅单条记录） -->
-    <view class="oplogs-section" wx:if="{{!isAggregate}}">
+    <!-- 操作日志区域 -->
+    <view class="oplogs-section">
       <view class="oplogs-title-wrap">
         <text class="oplogs-title">操作日志</text>
       </view>
