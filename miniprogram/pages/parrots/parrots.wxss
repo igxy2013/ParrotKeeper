@@ -290,7 +290,7 @@
 
 .view-mode-segment.active {
   background: #ffffff;
-  color: #10b981;
+  color: #10a876ff;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
   font-weight: 600;
 }
@@ -304,7 +304,7 @@
 
 .view-mode-segment.active .view-mode-icon {
   opacity: 1;
-  filter: invert(56%) sepia(86%) saturate(389%) hue-rotate(107deg) brightness(93%) contrast(88%);
+  filter: invert(56%) sepia(86%) saturate(289%) hue-rotate(107deg) brightness(93%) contrast(88%);
 }
 
 /* 鹦鹉列表 */
