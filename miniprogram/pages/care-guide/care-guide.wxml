@@ -1,10 +1,6 @@
 <!-- pages/care-guide/care-guide.wxml -->
 <view class="page-container {{pageThemeClass}}">
-  <app-header title="护理指南" subtitle="鹦鹉护理知识与建议" showBack="true" customBack="true" bind:back="onHeaderBack">
-    <view slot="actions" class="cg-header-btn" bindtap="onSmartAdviceTap">
-      <text class="cg-header-btn-text">✨ 智能建议</text>
-    </view>
-  </app-header>
+  <app-header title="护理指南" subtitle="鹦鹉护理知识与建议" showBack="true" customBack="true" bind:back="onHeaderBack" />
   <view class="page-content">
     <view wx:if="{{loading}}" class="loading-box">正在加载护理指南...</view>
     <view wx:if="{{!!error}}" class="error-box">{{error}}</view>
@@ -17,6 +13,9 @@
             <text class="option-text">{{item.name}}</text>
           </view>
         </block>
+        <view class="chip smart-advice-chip" bindtap="onSmartAdviceTap">
+          <text class="option-text">✨ 智能建议</text>
+        </view>
       </scroll-view>
     </view>
 

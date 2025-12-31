@@ -234,6 +234,7 @@ Page({
         app.globalData.needRefresh = false; // 重置标志
       }
       this.loadData()
+      try { this.prefetchHomePagesOnce() } catch (_) {}
     }
 
     // 如有需要，在页面显示时自动弹出“添加鹦鹉”弹窗
@@ -245,6 +246,64 @@ Page({
         app.showError('请先登录后添加鹦鹉')
       }
     }
+  },
+
+  prefetchHomePagesOnce() {
+    try {
+      const done = wx.getStorageSync('home_prefetch_done')
+      if (done) return
+      wx.setStorageSync('home_prefetch_done', 1)
+    } catch (_) {}
+    setTimeout(() => { this._prefetchMyParrotsDefault() }, 0)
+    setTimeout(() => { this._prefetchStatisticsDefault() }, 10)
+    setTimeout(() => { this._prefetchProfileDefault() }, 20)
+  },
+
+  async _prefetchMyParrotsDefault() {
+    try {
+      const res = await app.request({
+        url: '/api/parrots',
+        method: 'GET',
+        data: { page: 1, per_page: 10, sort_by: 'created_at', sort_order: 'desc' }
+      })
+      if (res && res.success) {
+        const parrots = Array.isArray(res.data && res.data.parrots) ? res.data.parrots : []
+        const total = (res.data && (res.data.total || res.data.count)) || parrots.length
+        cache.set('parrots_list_default_raw', { parrots, total, hasMore: parrots.length === 10 }, 180000)
+      }
+    } catch (_) {}
+  },
+
+  async _prefetchStatisticsDefault() {
+    try {
+      const tasks = []
+      tasks.push(app.request({ url: '/api/statistics/overview', method: 'GET' }))
+      tasks.push(app.request({ url: '/api/statistics/feeding-trends', method: 'GET', data: { days: 7 } }))
+      tasks.push(app.request({ url: '/api/statistics/expense-analysis', method: 'GET' }))
+      tasks.push(app.request({ url: '/api/statistics/care-frequency', method: 'GET' }))
+      tasks.push(app.request({ url: '/api/statistics/weight-trends', method: 'GET', data: { days: 30 } }))
+      const [overviewRes, feedRes, expenseRes, careRes, weightRes] = await Promise.all(tasks)
+      try { if (overviewRes && overviewRes.success) cache.set('stats_overview', overviewRes.data, 180000) } catch (_) {}
+      try { if (feedRes && feedRes.success) cache.set('stats_feedingTrends_7', feedRes.data, 180000) } catch (_) {}
+      try { if (expenseRes && expenseRes.success) cache.set('stats_expenseAnalysis', expenseRes.data, 180000) } catch (_) {}
+      try { if (careRes && careRes.success) cache.set('stats_careFrequency', careRes.data, 180000) } catch (_) {}
+      try {
+        if (weightRes && weightRes.success && weightRes.data && Array.isArray(weightRes.data.series)) {
+          cache.set('stats_weightTrends_30', weightRes.data.series, 180000)
+        }
+      } catch (_) {}
+    } catch (_) {}
+  },
+
+  async _prefetchProfileDefault() {
+    try {
+      const res = await app.request({ url: '/api/auth/profile', method: 'GET' })
+      if (res && res.success && res.data) {
+        const merged = { ...(app.globalData && app.globalData.userInfo) || {}, ...res.data }
+        app.globalData.userInfo = merged
+        try { wx.setStorageSync('userInfo', merged) } catch (_) {}
+      }
+    } catch (_) {}
   },
 
   // 同步后端提醒设置到本地（确保“健康提醒不再提醒”等偏好在清缓存后仍生效）

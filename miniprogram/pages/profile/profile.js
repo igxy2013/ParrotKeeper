@@ -659,16 +659,18 @@ Page({
   // 初始化用户信息（并从后端刷新）
   async initUser() {
     const app = getApp();
+    let stored = {}
+    try { const s = wx.getStorageSync('userInfo'); if (s && typeof s === 'object') stored = s } catch (_) {}
+    const baseUser = (app.globalData.userInfo && Object.keys(app.globalData.userInfo).length) ? app.globalData.userInfo : stored
     const isLogin = !!app.globalData.openid;
-    const userInfo = app.globalData.userInfo || {};
-    const points = (typeof userInfo.points === 'number' ? userInfo.points :
-                    typeof userInfo.score === 'number' ? userInfo.score : 0);
+    const points = (typeof baseUser.points === 'number' ? baseUser.points :
+                    typeof baseUser.score === 'number' ? baseUser.score : 0);
     this.setData({
       isLogin,
-      userInfo,
-      isSuperAdmin: (userInfo.role === 'super_admin'),
-      joinDate: app.formatDate(userInfo.created_at || Date.now()),
-      roleDisplay: this.mapRoleDisplay(userInfo),
+      userInfo: baseUser,
+      isSuperAdmin: (baseUser.role === 'super_admin'),
+      joinDate: app.formatDate(baseUser.created_at || Date.now()),
+      roleDisplay: this.mapRoleDisplay(baseUser),
       points,
     });
 

@@ -1,5 +1,6 @@
 // pages/parrots/detail/detail.js
 const app = getApp()
+const cache = require('../../../utils/cache')
 
 Page({
   data: {
@@ -111,11 +112,82 @@ Page({
       this.setData({
         parrotId: options.id
       })
-      this.loadParrotDetail()
+      try {
+        const cached = cache.get(`parrot_detail_${options.id}`)
+        if (cached && cached.rawParrot) {
+          const parrot = this.normalizeParrot(cached.rawParrot)
+          const ageShort = this.calculateAgeShort(parrot.birth_date)
+          const agePrecise = this.calculateAgePrecise(parrot.birth_date)
+          const daysWithUs = this.calculateDaysWithUs(parrot.acquisition_date)
+          const healthStatusMap = {
+            'healthy': '健康',
+            'sick': '生病',
+            'recovering': '康复中',
+            'observation': '观察中'
+          }
+          const careLevelMap = {
+            'easy': '容易',
+            'medium': '中等',
+            'hard': '困难'
+          }
+          this.setData({
+            parrot,
+            age: ageShort,
+            agePrecise,
+            daysWithUs,
+            healthStatusText: healthStatusMap[parrot.health_status] || '健康',
+            careLevelText: parrot.species ? careLevelMap[parrot.species.care_level] || '未知' : '未知'
+          })
+          wx.setNavigationBarTitle({ title: parrot.name || '鹦鹉详情' })
+          this.setData({ loading: false })
+          setTimeout(() => this.loadParrotDetail(), 0)
+        } else {
+          this.loadParrotDetail()
+        }
+      } catch (_) {
+        this.loadParrotDetail()
+      }
     } else {
       app.showError('参数错误')
       wx.navigateBack()
     }
+  },
+
+  normalizeParrot(rawParrot) {
+    const speciesName = rawParrot.species && rawParrot.species.name ? rawParrot.species.name : (rawParrot.species_name || '')
+    const parrot = {
+      ...rawParrot,
+      photo_url_raw: rawParrot.photo_url,
+      photo_url: app.resolveUploadUrl(rawParrot.photo_url),
+      avatar_url: rawParrot.avatar_url ? app.resolveUploadUrl(rawParrot.avatar_url) : app.getDefaultAvatarForParrot({
+        gender: rawParrot.gender,
+        species_name: speciesName,
+        name: rawParrot.name
+      })
+    }
+    try {
+      const photoThumb = parrot.photo_url ? app.getThumbnailUrl(parrot.photo_url, 160) : ''
+      const avatarThumb = parrot.avatar_url ? app.getThumbnailUrl(parrot.avatar_url, 128) : ''
+      parrot.photo_thumb = photoThumb
+      parrot.avatar_thumb = avatarThumb
+    } catch (_) {}
+    try {
+      const w = parrot.weight
+      let weightDisplay = ''
+      if (w !== null && w !== undefined && w !== '') {
+        const num = typeof w === 'number' ? w : parseFloat(String(w))
+        if (!isNaN(num) && isFinite(num)) {
+          const rounded = Math.round(num * 10) / 10
+          weightDisplay = `${rounded}g`
+        }
+      }
+      parrot.weight_display = weightDisplay
+    } catch (e) {
+      parrot.weight_display = ''
+    }
+    parrot.birth_place_display = this.formatBirthPlaceDisplay(parrot)
+    parrot.plumageSplitsText = this.computePlumageSplitsText(parrot)
+    return parrot
   },
 
   onShow() {
@@ -333,62 +405,21 @@ Page({
       
       if (detailRes.success) {
         const rawParrot = detailRes.data
-        // 规范化图片URL，兼容后端返回相对路径
-        const speciesName = rawParrot.species && rawParrot.species.name ? rawParrot.species.name : (rawParrot.species_name || '')
-        const parrot = {
-          ...rawParrot,
-          photo_url_raw: rawParrot.photo_url,
-          photo_url: app.resolveUploadUrl(rawParrot.photo_url),
-          avatar_url: rawParrot.avatar_url ? app.resolveUploadUrl(rawParrot.avatar_url) : app.getDefaultAvatarForParrot({
-            gender: rawParrot.gender,
-            species_name: speciesName,
-            name: rawParrot.name
-          })
-        }
-        try {
-          const photoThumb = parrot.photo_url ? app.getThumbnailUrl(parrot.photo_url, 160) : ''
-          const avatarThumb = parrot.avatar_url ? app.getThumbnailUrl(parrot.avatar_url, 128) : ''
-          parrot.photo_thumb = photoThumb
-          parrot.avatar_thumb = avatarThumb
-        } catch (_) {}
-        // 规范化体重展示，避免 WXML 中方法调用导致的 undefinedg
-        try {
-          const w = parrot.weight
-          let weightDisplay = ''
-          if (w !== null && w !== undefined && w !== '') {
-            const num = typeof w === 'number' ? w : parseFloat(String(w))
-            if (!isNaN(num) && isFinite(num)) {
-              // 保留 1 位小数（如为整数则仍显示 .0 由 UI 接受）
-              const rounded = Math.round(num * 10) / 10
-              weightDisplay = `${rounded}g`
-            }
-          }
-          parrot.weight_display = weightDisplay
-        } catch (e) {
-          parrot.weight_display = ''
-        }
-
-        parrot.birth_place_display = this.formatBirthPlaceDisplay(parrot)
-        
+        const parrot = this.normalizeParrot(rawParrot)
         const ageShort = this.calculateAgeShort(parrot.birth_date)
         const agePrecise = this.calculateAgePrecise(parrot.birth_date)
         const daysWithUs = this.calculateDaysWithUs(parrot.acquisition_date)
-        
-        // 获取健康状态文本
         const healthStatusMap = {
           'healthy': '健康',
           'sick': '生病',
           'recovering': '康复中',
           'observation': '观察中'
         }
-        
-        // 获取饲养难度文本
         const careLevelMap = {
           'easy': '容易',
           'medium': '中等',
           'hard': '困难'
         }
-        
         this.setData({
           parrot,
           age: ageShort,
@@ -398,7 +429,6 @@ Page({
           careLevelText: parrot.species ? careLevelMap[parrot.species.care_level] || '未知' : '未知',
           plumageSplitsText: this.computePlumageSplitsText(parrot)
         })
-        
         wx.setNavigationBarTitle({ title: parrot.name })
       }
       

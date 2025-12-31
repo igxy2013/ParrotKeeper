@@ -362,6 +362,70 @@ Page({
           this.updateLastFeedForParrots(updatedParrots)
           return
         }
+        const rawCached = cache.get('parrots_list_default_raw')
+        if (Array.isArray(rawCached && rawCached.parrots)) {
+          try {
+            const parrots = rawCached.parrots || []
+            const newParrots = parrots.map(p => {
+              const speciesName = p.species && p.species.name ? p.species.name : (p.species_name || '')
+              const photoUrl = app.resolveUploadUrl(p.photo_url)
+              const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
+                gender: p.gender,
+                species_name: speciesName,
+                name: p.name
+              })
+              const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
+              const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 128) : ''
+              let weightDisplay = ''
+              try {
+                const w = p.weight
+                if (w !== null && w !== undefined && w !== '') {
+                  const num = typeof w === 'number' ? w : parseFloat(String(w))
+                  if (!isNaN(num) && isFinite(num)) {
+                    const rounded = Math.round(num * 10) / 10
+                    weightDisplay = `${rounded}g`
+                  }
+                }
+              } catch (e) { weightDisplay = '' }
+              const ageDisplay = this.computeAgeDisplay(p.birth_date)
+              return {
+                ...p,
+                weight: p.weight ? parseFloat(p.weight) : null,
+                weight_display: weightDisplay,
+                age_display: ageDisplay,
+                acquisition_date_formatted: app.formatDate(p.acquisition_date),
+                photo_url: photoUrl,
+                avatar_url: avatarUrl,
+                photo_thumb: photoThumb,
+                avatar_thumb: avatarThumb,
+                species_name_short: this.formatSpeciesName(speciesName)
+              }
+            })
+            const maleCount = newParrots.filter(parrot => parrot.gender === 'male').length
+            const femaleCount = newParrots.filter(parrot => parrot.gender === 'female').length
+            const totalParrots = (this.data.totalParrots || rawCached.total || 0)
+            const hasMore = rawCached.hasMore === true
+            const bundle = { parrots: newParrots, maleCount, femaleCount, totalParrots, hasMore }
+            cache.set('parrots_list_default', bundle, 180000)
+            this.setData({
+              parrots: newParrots,
+              page: 2,
+              hasMore,
+              maleCount,
+              femaleCount,
+              totalParrots,
+              lastParrotsLoadedAt: Date.now()
+            }, () => {
+              if (!refresh && preserveScrollTop !== null) {
+                wx.pageScrollTo({ scrollTop: preserveScrollTop, duration: 0 })
+              }
+            })
+            this.applyGenderFilter()
+            this.updateSpeciesOptionsFromParrots(newParrots)
+            this.updateLastFeedForParrots(newParrots)
+            return
+          } catch (_) {}
+        }
       }
       
       console.log('请求参数:', params);
@@ -479,6 +543,12 @@ Page({
             hasMore: newParrots.length === 10
           }, 180000)
         }
+        try {
+          const ids = (updatedParrots || []).slice(0, 10).map(p => p.id).filter(Boolean)
+          if (ids.length) {
+            setTimeout(() => this.prefetchParrotDetails(ids), 0)
+          }
+        } catch (_) {}
       } else {
         console.log('API返回失败:', res);
       }
@@ -492,6 +562,24 @@ Page({
       this.loadParrots(true)
     }
   }
+  },
+
+  async prefetchParrotDetails(ids) {
+    try {
+      const cacheTTL = 180000
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i]
+        const k = `parrot_detail_${id}`
+        const exist = cache.get(k)
+        if (exist) continue
+        try {
+          const res = await app.request({ url: `/api/parrots/${id}`, method: 'GET' })
+          if (res && res.success && res.data) {
+            cache.set(k, { rawParrot: res.data }, cacheTTL)
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
   },
 
   // 仅用当前用户的鹦鹉列表生成品种筛选项
