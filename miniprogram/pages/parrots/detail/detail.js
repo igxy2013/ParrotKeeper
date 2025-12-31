@@ -241,6 +241,7 @@ Page({
     const tab = e.currentTarget.dataset.tab || e.detail || '基本信息'
     this.setData({ activeTab: tab })
     if (tab === '体重趋势') {
+      this._loadParrotRefWeight && this._loadParrotRefWeight(this.data.parrotId)
       // 如果尚未加载数据或需要刷新，则加载
       if (!this.data.weightSeries || this.data.weightSeries.length === 0) {
         this.loadWeightTrends()
@@ -1354,16 +1355,9 @@ Page({
     if (!dates || dates.length === 0) return
     const start = dates[this.data.weightStartIndex]
     const end = dates[this.data.weightEndIndex]
-    
-    const fmt = (dStr) => {
-      if (!dStr) return ''
-      const d = new Date(dStr)
-      return `${d.getMonth() + 1}/${d.getDate()}`
-    }
-    
     this.setData({
-      weightStartDate: fmt(start),
-      weightEndDate: fmt(end)
+      weightStartDate: start || '',
+      weightEndDate: end || ''
     })
   },
 
@@ -1433,47 +1427,73 @@ Page({
     const yMax = maxVal + padding
     const yRange = yMax - yMin
     
-    // 绘制区域
+    // 绘制区域（与统计页对齐）
     const chartLeft = 40
-    const chartRight = width - 10
-    const chartTop = 20
-    const chartBottom = height - 30
+    const chartRight = width - 12
+    const chartTop = 18
+    const chartBottom = height - 36
     const chartWidth = chartRight - chartLeft
     const chartHeight = chartBottom - chartTop
     
-    // 绘制坐标轴
-    ctx.strokeStyle = '#eeeeee'
+    // 绘制坐标轴（与统计页一致风格）
+    ctx.strokeStyle = '#ddd'
     ctx.lineWidth = 1
     
-    // Y轴网格线 (5条)
-    ctx.fillStyle = '#999999'
-    ctx.font = '10px sans-serif'
+    // Y轴网格线与刻度（4条，与统计页一致）
+    ctx.fillStyle = '#666'
+    ctx.font = '12px sans-serif'
     ctx.textAlign = 'right'
     ctx.textBaseline = 'middle'
-    
     for (let i = 0; i <= 4; i++) {
-      const y = chartBottom - (chartHeight * i / 4)
-      const val = yMin + (yRange * i / 4)
-      
+      const t = i / 4
+      const y = chartTop + (1 - t) * chartHeight
+      const val = yMin + (yRange * t)
+      ctx.strokeStyle = '#eee'
       ctx.beginPath()
       ctx.moveTo(chartLeft, y)
       ctx.lineTo(chartRight, y)
       ctx.stroke()
-      
-      ctx.fillText(val.toFixed(1), chartLeft - 5, y)
+      ctx.fillStyle = '#666'
+      ctx.fillText(isFinite(val) && !isNaN(val) ? val.toFixed(1) : '0.0', chartLeft - 6, y)
     }
     
-    // X轴日期 (首尾)
+    // X轴均匀采样最多6个刻度与竖向网格（与统计页一致）
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     const fmtDate = (dStr) => {
       const d = new Date(dStr)
       return `${d.getMonth() + 1}/${d.getDate()}`
     }
-    
-    if (validDates.length > 0) {
-      ctx.fillText(fmtDate(validDates[0]), chartLeft, chartBottom + 5)
-      ctx.fillText(fmtDate(validDates[validDates.length - 1]), chartRight, chartBottom + 5)
+    const maxXTicks = Math.min(6, validDates.length)
+    for (let i = 0; i < maxXTicks; i++) {
+      let idx, x
+      if (validDates.length === 1) {
+        idx = 0
+        x = chartLeft + chartWidth / 2
+      } else {
+        idx = Math.round((i / (maxXTicks - 1)) * (validDates.length - 1))
+        x = chartLeft + (idx / (validDates.length - 1)) * chartWidth
+      }
+      const label = fmtDate(validDates[idx])
+      const yAxis = chartBottom
+      ctx.strokeStyle = '#eee'
+      ctx.beginPath()
+      ctx.moveTo(x, chartTop)
+      ctx.lineTo(x, yAxis)
+      ctx.stroke()
+      ctx.fillStyle = '#666'
+      if (idx === 0) {
+        ctx.textAlign = 'left'
+        const lx = Math.max(x, chartLeft + 2)
+        ctx.fillText(label, lx, yAxis + 4)
+      } else if (idx === validDates.length - 1) {
+        ctx.textAlign = 'right'
+        const rx = Math.min(x, chartRight - 2)
+        ctx.fillText(label, rx, yAxis + 4)
+      } else {
+        ctx.textAlign = 'center'
+        ctx.fillText(label, x, yAxis + 4)
+      }
     }
     
     // 绘制折线
@@ -1578,6 +1598,24 @@ Page({
         weightAvgChart: (totalSum / totalCount).toFixed(1) + 'g'
       })
     }
+
+    // 绘制参考体重虚线（与统计页一致）
+    if (typeof this.data.weightRefValue === 'number' && isFinite(this.data.weightRefValue) && yRange > 0) {
+      const norm = (this.data.weightRefValue - yMin) / yRange
+      if (isFinite(norm) && !isNaN(norm)) {
+        const yRef = chartTop + (1 - norm) * chartHeight
+        ctx.save()
+        ctx.strokeStyle = '#7c3aed'
+        ctx.lineWidth = 1
+        if (typeof ctx.setLineDash === 'function') ctx.setLineDash([4, 4])
+        ctx.beginPath()
+        ctx.moveTo(chartLeft, yRef)
+        ctx.lineTo(chartRight, yRef)
+        ctx.stroke()
+        if (typeof ctx.setLineDash === 'function') ctx.setLineDash([])
+        ctx.restore()
+      }
+    }
     
     // 绘制高亮交叉线
     if (this.data.activeWeightPoint) {
@@ -1615,6 +1653,49 @@ Page({
       ctx.fillText(dateText, tipX + tipWidth / 2, tipY + 12)
       ctx.font = 'bold 12px sans-serif'
       ctx.fillText(tipText, tipX + tipWidth / 2, tipY + 28)
+    }
+  },
+
+  async _loadParrotRefWeight(parrotId) {
+    try {
+      if (!parrotId) {
+        this.setData({ weightRefValue: null, weightRefChart: '' })
+        return
+      }
+      const detailRes = await app.request({ url: `/api/parrots/${parrotId}`, method: 'GET' })
+      let speciesId = ''
+      let speciesName = ''
+      if (detailRes && detailRes.success && detailRes.data) {
+        const p = detailRes.data
+        speciesId = p.species_id || (p.species && p.species.id) || ''
+        speciesName = (p.species && p.species.name) || p.species_name || ''
+      }
+      const speciesRes = await app.request({ url: '/api/parrots/species', method: 'GET' })
+      let refWeight = null
+      if (speciesRes && speciesRes.success && Array.isArray(speciesRes.data)) {
+        const list = speciesRes.data
+        let matched = null
+        if (speciesId) {
+          matched = list.find(s => String(s.id) === String(speciesId)) || null
+        }
+        if (!matched && speciesName) {
+          matched = list.find(s => String(s.name) === String(speciesName)) || null
+        }
+        if (matched) {
+          const raw = (matched.reference_weight_g != null ? matched.reference_weight_g : matched.reference_weight)
+          const num = typeof raw === 'string' ? parseFloat(raw) : raw
+          if (typeof num === 'number' && isFinite(num) && !isNaN(num) && num > 0) {
+            refWeight = num
+          }
+        }
+      }
+      if (typeof refWeight === 'number') {
+        this.setData({ weightRefValue: refWeight, weightRefChart: refWeight.toFixed(1) + 'g' }, () => this.drawWeightChart())
+      } else {
+        this.setData({ weightRefValue: null, weightRefChart: '' }, () => this.drawWeightChart())
+      }
+    } catch (_) {
+      this.setData({ weightRefValue: null, weightRefChart: '' }, () => this.drawWeightChart())
     }
   },
 
