@@ -234,7 +234,6 @@ Page({
         app.globalData.needRefresh = false; // 重置标志
       }
       this.loadData()
-      try { this.preloadCommonCaches() } catch (_) {}
     }
 
     // 如有需要，在页面显示时自动弹出“添加鹦鹉”弹窗
@@ -302,67 +301,6 @@ Page({
       this._forceRefresh = false
       wx.stopPullDownRefresh()
     })
-  },
-
-  async preloadCommonCaches() {
-    try {
-      const force = !!this._forceRefresh
-      const tasks = []
-      if (!force && !cache.get('stats_overview')) {
-        tasks.push(app.request({ url: '/api/statistics/overview', method: 'GET' }).then(res => { if (res && res.success && res.data) cache.set('stats_overview', res.data, 180000) }))
-      }
-      if (!force && !cache.get('stats_feedingTrends_7')) {
-        tasks.push(app.request({ url: '/api/statistics/feeding-trends', method: 'GET', data: { days: 7 } }).then(res => { if (res && res.success && Array.isArray(res.data)) cache.set('stats_feedingTrends_7', res.data, 180000) }))
-      }
-      if (!force && !cache.get('stats_expenseAnalysis')) {
-        tasks.push(app.request({ url: '/api/statistics/expense-analysis', method: 'GET' }).then(res => { if (res && res.success && res.data) cache.set('stats_expenseAnalysis', res.data, 180000) }))
-      }
-      if (!force && !cache.get('stats_careFrequency')) {
-        tasks.push(app.request({ url: '/api/statistics/care-frequency', method: 'GET' }).then(res => { if (res && res.success && res.data) cache.set('stats_careFrequency', res.data, 180000) }))
-      }
-      if (!force && !cache.get('stats_weightTrends_30')) {
-        tasks.push(app.request({ url: '/api/statistics/weight-trends', method: 'GET', data: { days: 30 } }).then(res => { if (res && res.success && Array.isArray(res.data && res.data.series)) cache.set('stats_weightTrends_30', res.data.series, 180000) }))
-      }
-      if (!force && !cache.get('parrots_list_default')) {
-        tasks.push(app.request({ url: '/api/parrots', method: 'GET', data: { page: 1, per_page: 10, sort_by: 'created_at', sort_order: 'desc' } }).then(res => {
-          if (res && res.success && Array.isArray(res.data && res.data.parrots)) {
-            const list = res.data.parrots
-            const maleCount = list.filter(p => p.gender === 'male').length
-            const femaleCount = list.filter(p => p.gender === 'female').length
-            const hasMore = list.length === 10
-            const totalParrots = res.data.total || list.length
-            cache.set('parrots_list_default', { parrots: list, maleCount, femaleCount, totalParrots, hasMore }, 180000)
-          }
-        }))
-      }
-      const needSpecies = !force && !cache.get('stats_speciesDistribution')
-      if (needSpecies) {
-        tasks.push(Promise.all([
-          app.request({ url: '/api/parrots/species', method: 'GET' }),
-          app.request({ url: '/api/parrots', method: 'GET', data: { limit: 1000 } })
-        ]).then(([specRes, parrRes]) => {
-          if (specRes && specRes.success && Array.isArray(specRes.data) && parrRes && parrRes.success) {
-            const parrots = (parrRes.data && parrRes.data.parrots) || []
-            const map = {}
-            parrots.forEach(p => { const n = p.species_name || (p.species && p.species.name) || ''; if (n) map[n] = (map[n] || 0) + 1 })
-            const total = parrots.length
-            const colors = ['#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#ef4444', '#8b5cf6', '#06b6d4']
-            const dist = Object.keys(map).map((name, i) => ({ species: name, count: map[name], percentage: total > 0 ? Math.round(map[name] * 100 / total) : 0, color: colors[i % colors.length] }))
-            dist.sort((a,b) => b.count - a.count)
-            cache.set('stats_speciesDistribution', dist, 180000)
-          }
-        }))
-      }
-      const pLabel = '本月'
-      if (!force && !cache.get(`stats_foodPref_${pLabel}`)) {
-        const today = new Date()
-        const start = new Date(today.getFullYear(), today.getMonth(), 1)
-        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-        const fmt = d => { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${dd}` }
-        tasks.push(app.request({ url: '/api/records/feeding', method: 'GET', data: { start_date: fmt(start), end_date: fmt(end) } }).then(res => { if (res && res.success && res.data) cache.set(`stats_foodPref_${pLabel}`, Array.isArray(res.data) ? res.data : (Array.isArray(res.data.items) ? res.data.items : ((res.data.records) || [])), 180000) }))
-      }
-      if (tasks.length) await Promise.allSettled(tasks)
-    } catch (_) {}
   },
 
   // 设置问候语
