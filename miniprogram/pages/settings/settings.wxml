@@ -66,6 +66,16 @@
         </view>
         <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onSettingsIconError" data-key="arrowRight" />
       </view>
+      <view class="setting-action-item" bindtap="handleClearCache">
+        <view class="setting-icon-wrapper">
+          <image class="setting-icon-img" src="{{iconPaths.deleteBin}}" mode="aspectFit" binderror="onSettingsIconError" data-key="deleteBin" />
+        </view>
+        <view class="setting-content">
+          <view class="setting-name">清除缓存</view>
+          <view class="setting-desc">释放存储空间，重新加载数据</view>
+        </view>
+        <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" binderror="onSettingsIconError" data-key="arrowRight" />
+      </view>
     </view>
 
     <view class="section-title">

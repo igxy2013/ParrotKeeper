@@ -777,13 +777,14 @@ Page({
             name: p.name
           })
           const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
-          const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 160) : ''
+          const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 128) : ''
           return {
             ...p,
             species_name: speciesName,
-            // 统一使用后端最近健康状态文本
             health_text: p.current_health_status_text || '健康',
             age_display: this.computeAgeDisplay(p.birth_date),
+            original_photo_url: p.photo_url,
+            original_avatar_url: p.avatar_url,
             photo_url: photoUrl,
             avatar_url: avatarUrl,
             photo_thumb: photoThumb,
@@ -1741,13 +1742,20 @@ Page({
     })
   },
 
-  // 新增：卡片图片加载错误时替换为占位图
   handleIndexParrotImageError(e) {
     const id = e.currentTarget.dataset.id
     const parrots = (this.data.myParrots || []).map(p => {
       if (p.id === id) {
-        const fallback = app.getDefaultAvatarForParrot(p)
-        return { ...p, photo_url: '', avatar_url: fallback }
+        if (p.photo_thumb && p.photo_url && p.photo_thumb !== p.photo_url) {
+          return { ...p, photo_thumb: '' }
+        }
+        if (p.avatar_thumb && p.avatar_url && p.avatar_thumb !== p.avatar_url) {
+          return { ...p, avatar_thumb: '' }
+        }
+        const speciesName = (p.species && p.species.name) ? p.species.name : (p.species_name || '')
+        const fallback = app.getDefaultAvatarForParrot({ gender: p.gender, species_name: speciesName, name: p.name })
+        const fallbackThumb = app.getThumbnailUrl(fallback, 128)
+        return { ...p, photo_url: '', photo_thumb: '', avatar_url: fallback, avatar_thumb: fallbackThumb }
       }
       return p
     })

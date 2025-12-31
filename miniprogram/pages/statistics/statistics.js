@@ -611,10 +611,12 @@ const cache = require('../../utils/cache')
         start = new Date(1970, 0, 1)
         end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
       }
-      const key = `stats_foodPref_${p}`
+      // 使用 v2 后缀避免旧缓存数据结构不匹配导致的显示异常（旧缓存可能是未处理的原始数据列表）
+      const key = `stats_foodPref_v2_${p}`
       const force = !!this._forceRefresh
       const cached = force ? null : cache.get(key)
-      if (cached && Array.isArray(cached)) {
+      // 增加数据结构校验，确保缓存的是已处理的数据（包含 percentage 字段）
+      if (cached && Array.isArray(cached) && (cached.length === 0 || cached[0].percentage !== undefined)) {
         this.setData({ foodPreference: cached })
         return
       }

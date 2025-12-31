@@ -272,7 +272,7 @@ Page({
         wx.showToast({ title: '认领成功', icon: 'success' })
         this.setData({ showClaimByCodeModal: false, claimCode: '' })
         // 完全刷新列表
-        try { cache.clear('parrots_list_default') } catch (_) {}
+        try { cache.clear('parrots_list_default_v2') } catch (_) {}
         await this.refreshData()
       } else {
         app.showError(res && res.message ? res.message : '认领失败')
@@ -337,9 +337,23 @@ Page({
         (params.sort_order === 'desc')
       )
       if (!refresh && isDefault) {
-        const cachedList = cache.get('parrots_list_default')
+        const cachedList = cache.get('parrots_list_default_v2')
         if (Array.isArray(cachedList && cachedList.parrots)) {
-          const updatedParrots = cachedList.parrots
+          let updatedParrots = cachedList.parrots
+          // 重新验证缓存中的图片路径，确保持久化文件未丢失
+          updatedParrots = updatedParrots.map(p => {
+            const copy = { ...p }
+            if (copy.original_photo_url) {
+              copy.photo_url = app.resolveUploadUrl(copy.original_photo_url)
+              copy.photo_thumb = copy.photo_url ? app.getThumbnailUrl(copy.photo_url, 160) : ''
+            }
+            if (copy.original_avatar_url) {
+              copy.avatar_url = app.resolveUploadUrl(copy.original_avatar_url)
+              copy.avatar_thumb = copy.avatar_url ? app.getThumbnailUrl(copy.avatar_url, 128) : ''
+            }
+            return copy
+          })
+          
           const maleCount = cachedList.maleCount || updatedParrots.filter(p => p.gender === 'male').length
           const femaleCount = cachedList.femaleCount || updatedParrots.filter(p => p.gender === 'female').length
           const totalParrots = cachedList.totalParrots || (this.data.totalParrots || 0)
@@ -394,6 +408,8 @@ Page({
                 weight_display: weightDisplay,
                 age_display: ageDisplay,
                 acquisition_date_formatted: app.formatDate(p.acquisition_date),
+                original_photo_url: p.photo_url,
+                original_avatar_url: p.avatar_url,
                 photo_url: photoUrl,
                 avatar_url: avatarUrl,
                 photo_thumb: photoThumb,
@@ -406,7 +422,7 @@ Page({
             const totalParrots = (this.data.totalParrots || rawCached.total || 0)
             const hasMore = rawCached.hasMore === true
             const bundle = { parrots: newParrots, maleCount, femaleCount, totalParrots, hasMore }
-            cache.set('parrots_list_default', bundle, 180000)
+            cache.set('parrots_list_default_v2', bundle, 180000)
             this.setData({
               parrots: newParrots,
               page: 2,
@@ -476,6 +492,8 @@ Page({
             weight_display: weightDisplay,
             age_display: ageDisplay,
             acquisition_date_formatted: app.formatDate(p.acquisition_date),
+            original_photo_url: p.photo_url, // 保存原始URL用于缓存恢复
+            original_avatar_url: p.avatar_url,
             photo_url: photoUrl,
             avatar_url: avatarUrl,
             photo_thumb: photoThumb,
@@ -535,7 +553,7 @@ Page({
         
         console.log('设置数据完成，当前parrots数量:', this.data.parrots.length);
         if (isDefault) {
-          cache.set('parrots_list_default', {
+          cache.set('parrots_list_default_v2', {
             parrots: updatedParrots,
             maleCount,
             femaleCount,
@@ -879,6 +897,17 @@ Page({
     const id = e.currentTarget.dataset.id;
     const parrots = this.data.parrots.map(parrot => {
       if (parrot.id === id) {
+        // 如果当前有缩略图且与原图不同，说明可能缩略图加载失败，尝试降级到原图
+        if (parrot.photo_thumb && parrot.photo_url && parrot.photo_thumb !== parrot.photo_url) {
+          console.log(`Parrot ${id} photo thumbnail failed, falling back to original url`);
+          return { ...parrot, photo_thumb: '' };
+        }
+        if (parrot.avatar_thumb && parrot.avatar_url && parrot.avatar_thumb !== parrot.avatar_url) {
+          console.log(`Parrot ${id} avatar thumbnail failed, falling back to original url`);
+          return { ...parrot, avatar_thumb: '' };
+        }
+
+        // 如果已经是原图失败，或者没有原图，则回退到默认头像
         const speciesName = (parrot.species && parrot.species.name) ? parrot.species.name : (parrot.species_name || '')
         const fallbackAvatar = app.getDefaultAvatarForParrot({
           gender: parrot.gender,
@@ -886,6 +915,7 @@ Page({
           name: parrot.name
         })
         const fallbackThumb = app.getThumbnailUrl(fallbackAvatar, 128)
+        console.log(`Parrot ${id} image failed, falling back to default avatar`);
         return { ...parrot, photo_url: '', photo_thumb: '', avatar_url: fallbackAvatar, avatar_thumb: fallbackThumb };
       }
       return parrot;
