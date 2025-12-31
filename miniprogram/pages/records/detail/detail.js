@@ -16,6 +16,7 @@ Page({
     aggregateCount: 0,
     aggregateRecords: [],
     hasOperationPermission: false,
+    operationLogs: []
   },
 
   onLoad(options) {
@@ -129,6 +130,7 @@ Page({
         recorderName,
         loading: false
       });
+      try { this.fetchOperationLogs(type, id) } catch(_) {}
     }).catch(err => {
       this.setData({ loading: false, error: err.message || String(err) });
     });
@@ -340,18 +342,35 @@ Page({
     // 最后回退：原始字符串规范化为人类可读
     const s = String(updated || created || '').trim()
     if (!s) return ''
-    if (s.includes('T')) {
-      const x = s.replace('T', ' ').replace('Z', '').replace(/([\+\-]\d{2}:?\d{2})$/, '')
-      return x.includes('.') ? x.split('.')[0].substring(0, 19) : x.substring(0, 19)
+    return this.formatLocalTime(s)
+  },
+
+  formatLocalTime(t) {
+    try {
+      let dt = parseServerTime(t)
+      if (!dt && typeof t === 'string') {
+        let s = t.trim()
+        if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}\s+\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
+          let local = s.replace(/-/g, '/')
+          if (/^\d{4}\/\d{1,2}\/\d{1,2}\s+\d{1,2}:\d{2}$/.test(local)) local = local + ':00'
+          const dLocal = new Date(local)
+          if (!isNaN(dLocal.getTime())) dt = dLocal
+        }
+        if (!dt) {
+          let iso = s.includes(' ') ? s.replace(' ', 'T') : s
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) iso = iso + ':00'
+          const dIso = new Date(iso)
+          if (!isNaN(dIso.getTime())) dt = dIso
+        }
+      }
+      if (!dt && t) {
+        const dAny = new Date(t)
+        if (!isNaN(dAny.getTime())) dt = dAny
+      }
+      return dt ? app.formatDateTime(dt, 'YYYY-MM-DD HH:mm:ss') : String(t || '')
+    } catch (_) {
+      return String(t || '')
     }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s} 00:00:00`
-    if (s.includes(' ')) {
-      const parts = s.split(' ')
-      let t0 = (parts[1] || '00:00:00')
-      if (t0.length === 5) t0 = `${t0}:00`
-      return `${parts[0]} ${t0.substring(0, 8)}`
-    }
-    return s
   },
 
   resolveRecorderName(record) {
@@ -360,5 +379,208 @@ Page({
     if (nick) return nick
     const uname = record.created_by_username || (record.created_by && record.created_by.username) || ''
     return uname
+  },
+
+  formatOperationLogTime(t) {
+    try {
+      if (!t) return ''
+      if (t instanceof Date) return app.formatDateTime(t, 'YYYY-MM-DD HH:mm:ss')
+      if (typeof t === 'number') {
+        const dNum = new Date(t)
+        return isNaN(dNum.getTime()) ? '' : app.formatDateTime(dNum, 'YYYY-MM-DD HH:mm:ss')
+      }
+
+      const s0 = String(t).trim()
+      if (!s0) return ''
+
+      const hasTZ = /[Zz]|[+\-]\d{2}:?\d{2}$/.test(s0)
+
+      if (hasTZ) {
+        let s = s0
+        if (s.includes(' ') && !s.includes('T')) s = s.replace(' ', 'T')
+        s = s.replace(/([+\-]\d{2})(\d{2})$/, '$1:$2')
+        const d = new Date(s)
+        if (!isNaN(d.getTime())) return app.formatDateTime(d, 'YYYY-MM-DD HH:mm:ss')
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?$/.test(s0)) {
+        const d = new Date(s0 + 'Z')
+        if (!isNaN(d.getTime())) return app.formatDateTime(d, 'YYYY-MM-DD HH:mm:ss')
+      }
+
+      let m = s0.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/)
+      if (!m) m = s0.match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/)
+      if (m) {
+        const y = parseInt(m[1], 10)
+        const mo = parseInt(m[2], 10) - 1
+        const d0 = parseInt(m[3], 10)
+        const hh = parseInt(m[4], 10)
+        const mm = parseInt(m[5], 10)
+        const ss = m[6] ? parseInt(m[6], 10) : 0
+        const d = new Date(Date.UTC(y, mo, d0, hh, mm, ss))
+        if (!isNaN(d.getTime())) return app.formatDateTime(d, 'YYYY-MM-DD HH:mm:ss')
+      }
+
+      const dt = parseServerTime(s0)
+      return dt ? app.formatDateTime(dt, 'YYYY-MM-DD HH:mm:ss') : s0
+    } catch (_) {
+      return String(t || '')
+    }
+  },
+
+  onShow() {
+    const type = this.data.recordType
+    const id = this.data.recordId || (Array.isArray(this.data.recordIds) && this.data.recordIds[0]) || ''
+    if (!this.data.isAggregate && type && id) {
+      this.fetchSingleRecord(type, id)
+    }
+  },
+
+  async fetchOperationLogs(type, id) {
+    try {
+      const tryEndpoints = [
+        `/api/records/${type}/${id}/operations`,
+        `/api/records/${type}/${id}/logs`,
+        `/api/records/${type}/${id}/history`,
+        `/api/records/${type}/operations?id=${encodeURIComponent(id)}`,
+        `/api/records/operations?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`
+      ]
+      let list = []
+      for (let i = 0; i < tryEndpoints.length; i++) {
+        const url = tryEndpoints[i]
+        try {
+          const res = await app.request({ url, method: 'GET' })
+          if (res && res.success) {
+            const raw = (res.data && (res.data.operations || res.data.logs || res.data.items)) || (Array.isArray(res.data) ? res.data : [])
+            if (Array.isArray(raw) && raw.length) { list = raw; break }
+          }
+        } catch (_) {
+          continue
+        }
+      }
+      const mapped = (list || []).map(it => {
+        const actionRaw = String(it.action || it.operation || it.type || it.event || '').toLowerCase()
+        const actionText = this.mapActionToCN(actionRaw)
+        let operatorName = (
+          it.operator_nickname ||
+          (it.operator && it.operator.nickname) ||
+          it.created_by_nickname ||
+          it.updated_by_nickname ||
+          it.operator_name ||
+          (it.operator && it.operator.name) ||
+          it.created_by_name ||
+          it.updated_by_name ||
+          (it.operator && it.operator.username) ||
+          it.created_by_username ||
+          it.updated_by_username ||
+          ''
+        )
+        operatorName = String(operatorName || '').trim()
+        if (!operatorName) {
+          const r = this.data.record || {}
+          operatorName = String(
+            r.created_by_nickname || (r.created_by && r.created_by.nickname) ||
+            (app.globalData && app.globalData.userInfo && app.globalData.userInfo.nickname) ||
+            ''
+          ).trim()
+        }
+        const t = it.time || it.created_at || it.updated_at || it.operation_time || it.record_time || ''
+        const timeText = this.formatOperationLogTime(t)
+        const note = it.note || it.notes || it.description || ''
+        const changeLines = this.formatChangeSummary(it, type, this.data.record || {})
+        return { id: it.id || `${actionRaw}-${t}-${operatorName}`, actionText, operatorName, timeText, note, changeLines }
+      })
+      if (mapped.length) {
+        this.setData({ operationLogs: mapped })
+      } else {
+        const fallback = this.deriveOperationLogs(this.data.record || {})
+        this.setData({ operationLogs: fallback })
+      }
+    } catch (_) {
+      const fallback = this.deriveOperationLogs(this.data.record || {})
+      this.setData({ operationLogs: fallback })
+    }
+  },
+
+  mapActionToCN(a) {
+    const s = String(a || '').toLowerCase()
+    if (!s) return '操作'
+    if (s.includes('create') || s.includes('new') || s === 'add') return '创建'
+    if (s.includes('update') || s.includes('edit') || s === 'modify') return '编辑'
+    if (s.includes('delete') || s === 'remove') return '删除'
+    if (s.includes('assign')) return '分配'
+    if (s.includes('approve')) return '审批'
+    if (s.includes('reject')) return '驳回'
+    return s
+  },
+
+  deriveOperationLogs(record) {
+    try {
+      const logs = []
+      const cAt = record.created_at || ''
+      const uAt = record.updated_at || ''
+      const cBy = record.created_by_nickname || (record.created_by && record.created_by.nickname) || record.created_by_username || (record.created_by && record.created_by.username) || ''
+      const uBy = record.updated_by_nickname || (record.updated_by && record.updated_by.nickname) || record.updated_by_username || (record.updated_by && record.updated_by.username) || ''
+      const dcText = this.formatOperationLogTime(cAt)
+      const duText = this.formatOperationLogTime(uAt)
+      if (dcText) {
+        logs.push({ id: `created-${cAt}-${cBy}`, actionText: '创建', operatorName: cBy, timeText: dcText, note: '', changeLines: [] })
+      }
+      if (duText && (!dcText || duText !== dcText)) {
+        logs.push({ id: `updated-${uAt}-${uBy}`, actionText: '编辑', operatorName: (uBy || cBy), timeText: duText, note: '', changeLines: [] })
+      }
+      return logs
+    } catch (_) {
+      return []
+    }
+  },
+
+  formatChangeSummary(log, type, record) {
+    try {
+      const lines = []
+      const payload = log.changes || log.diff || log.delta || null
+      if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        const keys = Object.keys(payload)
+        for (let i = 0; i < keys.length; i++) {
+          const k = keys[i]
+          const v = payload[k]
+          const from = (v && (v.from != null ? v.from : v.old))
+          const to = (v && (v.to != null ? v.to : v.new))
+          if (from == null && to == null) continue
+          const label = this.mapFieldLabel(k, type)
+          if (type === 'feeding' && k === 'amount') {
+            const unit = (v && v.unit) || record.amountUnit || 'g'
+            const f = from != null ? `${from}${unit}` : '—'
+            const t = to != null ? `${to}${unit}` : '—'
+            lines.push(`${label} ${f} → ${t}`)
+          } else {
+            const f = from != null ? String(from) : '—'
+            const t = to != null ? String(to) : '—'
+            lines.push(`${label} ${f} → ${t}`)
+          }
+        }
+      } else {
+        const txt = log.diff_text || log.change_summary || log.summary || ''
+        if (txt) lines.push(String(txt))
+      }
+      return lines
+    } catch (_) {
+      return []
+    }
+  },
+
+  mapFieldLabel(field, type) {
+    const s = String(field || '')
+    if (type === 'feeding') {
+      if (s === 'amount') return '食物量'
+      if (s === 'feed_type' || s === 'feed_type_id' || s === 'feed') return '食物类型'
+    } else if (type === 'cleaning') {
+      if (s === 'cleaning_type') return '清洁类型'
+      if (s === 'description') return '清洁描述'
+    } else if (type === 'health') {
+      if (s === 'weight') return '体重'
+      if (s === 'health_status') return '健康状态'
+    }
+    return s
   }
 });

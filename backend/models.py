@@ -222,6 +222,20 @@ class BreedingRecord(db.Model):
     female_parrot = db.relationship('Parrot', foreign_keys=[female_parrot_id], backref='female_breeding_records')
     created_by = db.relationship('User', backref='created_breeding_records', lazy=True)
 
+class OperationLog(db.Model):
+    __tablename__ = 'operation_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    record_type = db.Column(db.Enum('feeding', 'cleaning', 'health', 'breeding'), nullable=False)
+    record_id = db.Column(db.Integer, nullable=False)
+    action = db.Column(db.Enum('create', 'update', 'delete'), nullable=False)
+    operator_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    team_id = db.Column(db.Integer, nullable=True)
+    change_json = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    operator = db.relationship('User', backref='operation_logs', lazy=True)
+
 class Egg(db.Model):
     __tablename__ = 'eggs'
 

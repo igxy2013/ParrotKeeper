@@ -31,6 +31,69 @@
             bind:change="onCategoryChange" 
           />
         </view>
+        <!-- 关联鹦鹉（可选，下拉可搜索） -->
+        <view class="form-item">
+          <text class="form-label">关联鹦鹉（可选）</text>
+          <block wx:if="{{!isEdit}}">
+            <view class="picker-display" catchtap="toggleParrotDropdown">
+              <view class="item-line">
+                <text class="item-name">{{selectedParrotName || '不关联'}}</text>
+                <block wx:if="{{selectedParrotName && (selectedParrotNumber || selectedRingNumber)}}">
+                  <text class="item-meta">（</text>
+                  <text class="item-meta" wx:if="{{selectedParrotNumber}}">{{selectedParrotNumber}}</text>
+                  <text class="item-meta" wx:if="{{selectedParrotNumber && selectedRingNumber}}">｜</text>
+                  <text class="item-meta" wx:if="{{selectedRingNumber}}">{{selectedRingNumber}}</text>
+                  <text class="item-meta">）</text>
+                </block>
+              </view>
+              <image class="picker-arrow" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit" />
+            </view>
+            <view class="dropdown-menu dropdown-panel" wx:if="{{showParrotDropdown}}" catchtap="stopPropagation">
+              <view class="search-row">
+                <input 
+                  class="search-input" 
+                  placeholder="搜索名称、编号或脚环号" 
+                  value="{{parrotSearchKeyword}}" 
+                  bindinput="onParrotSearchInput" 
+                />
+                <view class="clear-btn" wx:if="{{parrotSearchKeyword}}" bindtap="clearParrotSearch">清除</view>
+              </view>
+              <scroll-view scroll-y="true" class="dropdown-scroll">
+                <view class="dropdown-item" catchtap="selectParrot" data-id="" data-name="" data-num="" data-ring="">
+                  <text class="item-text">不关联</text>
+                  <text class="check-icon">{{!selectedParrotId ? '✓' : ''}}</text>
+                </view>
+                <view class="dropdown-item" wx:for="{{filteredParrotOptions}}" wx:key="id" catchtap="selectParrot" data-id="{{item.id}}" data-name="{{item.name}}" data-num="{{item.parrot_number}}" data-ring="{{item.ring_number}}">
+                  <view class="item-line">
+                    <text class="item-name">{{item.name}}</text>
+                    <block wx:if="{{item.parrot_number || item.ring_number}}">
+                      <text class="item-meta">（</text>
+                      <text class="item-meta" wx:if="{{item.parrot_number}}">{{item.parrot_number}}</text>
+                      <text class="item-meta" wx:if="{{item.parrot_number && item.ring_number}}">｜</text>
+                      <text class="item-meta" wx:if="{{item.ring_number}}">{{item.ring_number}}</text>
+                      <text class="item-meta">）</text>
+                    </block>
+                  </view>
+                  <text class="check-icon">{{selectedParrotId == item.id ? '✓' : ''}}</text>
+                </view>
+              </scroll-view>
+            </view>
+          </block>
+          <block wx:else>
+            <view class="picker-display disabled">
+              <view class="item-line">
+                <text class="item-name">{{selectedParrotName || '不关联'}}</text>
+                <block wx:if="{{selectedParrotName && (selectedParrotNumber || selectedRingNumber)}}">
+                  <text class="item-meta">（</text>
+                  <text class="item-meta" wx:if="{{selectedParrotNumber}}">{{selectedParrotNumber}}</text>
+                  <text class="item-meta" wx:if="{{selectedParrotNumber && selectedRingNumber}}">｜</text>
+                  <text class="item-meta" wx:if="{{selectedRingNumber}}">{{selectedRingNumber}}</text>
+                  <text class="item-meta">）</text>
+                </block>
+              </view>
+            </view>
+          </block>
+        </view>
         <!-- 日期 -->
         <view class="form-item">
           <text class="form-label">{{formData.type}}日期</text>

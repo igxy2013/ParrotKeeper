@@ -137,11 +137,37 @@ def get_transactions():
                 amount = float(obj.amount)
                 # 前端需要 id: 'expense_1' 这种格式
                 frontend_id = f"expense_{obj.id}"
+                parrot_id = getattr(obj, 'parrot_id', None)
+                parrot_name = None
+                parrot_number = None
+                ring_number = None
+                try:
+                    parrot = getattr(obj, 'parrot', None)
+                    parrot_name = getattr(parrot, 'name', None) if parrot else None
+                    parrot_number = getattr(parrot, 'parrot_number', None) if parrot else None
+                    ring_number = getattr(parrot, 'ring_number', None) if parrot else None
+                except Exception:
+                    parrot_name = None
+                    parrot_number = None
+                    ring_number = None
             else:
                 cat_text = income_cat_map.get(obj.category, obj.category)
                 date_str = obj.income_date.strftime('%Y-%m-%d')
                 amount = float(obj.amount)
                 frontend_id = f"income_{obj.id}"
+                parrot_id = getattr(obj, 'parrot_id', None)
+                parrot_name = None
+                parrot_number = None
+                ring_number = None
+                try:
+                    parrot = getattr(obj, 'parrot', None)
+                    parrot_name = getattr(parrot, 'name', None) if parrot else None
+                    parrot_number = getattr(parrot, 'parrot_number', None) if parrot else None
+                    ring_number = getattr(parrot, 'ring_number', None) if parrot else None
+                except Exception:
+                    parrot_name = None
+                    parrot_number = None
+                    ring_number = None
 
             items.append({
                 'id': frontend_id,
@@ -153,7 +179,11 @@ def get_transactions():
                 'amount': amount,
                 'description': obj.description,
                 'date': date_str,
-                'created_at': obj.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                'created_at': obj.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'parrot_id': parrot_id,
+                'parrot_name': parrot_name,
+                'parrot_number': parrot_number,
+                'ring_number': ring_number
             })
             
         return success_response({

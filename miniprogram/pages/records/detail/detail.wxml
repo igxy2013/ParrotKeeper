@@ -161,5 +161,32 @@
         </view>
       </block>
     </view>
+
+    <!-- 操作日志区域（仅单条记录） -->
+    <view class="oplogs-section" wx:if="{{!isAggregate}}">
+      <view class="oplogs-title-wrap">
+        <text class="oplogs-title">操作日志</text>
+      </view>
+      <block wx:if="{{operationLogs && operationLogs.length}}">
+        <view class="oplog-list">
+          <view class="oplog-item" wx:for="{{operationLogs}}" wx:key="id">
+            <view class="oplog-header">
+              <text class="oplog-action">{{item.actionText}}</text>
+              <text class="oplog-time">{{item.timeText}}</text>
+            </view>
+          <view class="oplog-meta">
+            <text class="oplog-operator">操作人：{{item.operatorName || '—'}}</text>
+          </view>
+          <view class="oplog-diff" wx:if="{{item.changeLines && item.changeLines.length}}">
+            <block wx:for="{{item.changeLines}}" wx:key="*this">
+              <text class="oplog-diff-item">{{item}}</text>
+            </block>
+          </view>
+          <view class="oplog-notes" wx:if="{{item.note}}">{{item.note}}</view>
+        </view>
+      </view>
+    </block>
+    <view class="oplogs-empty" wx:else>暂无操作日志</view>
+    </view>
   </block>
 </view>

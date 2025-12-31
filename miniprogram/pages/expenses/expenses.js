@@ -547,7 +547,7 @@ Page({
       if (!categoryMatch) return false
       // 关键字匹配：匹配类型、类别、描述、鹦鹉名、日期、时间
       if (!keyword) return true
-      const haystack = `${rec.type} ${recCategoryLabel} ${rec.description || ''} ${rec.parrot || ''} ${rec.date || ''} ${rec.time || ''}`.toLowerCase()
+      const haystack = `${rec.type} ${recCategoryLabel} ${rec.description || ''} ${rec.parrot || ''} ${rec.parrot_name || ''} ${rec.parrot_number || ''} ${rec.ring_number || ''} ${rec.date || ''} ${rec.time || ''}`.toLowerCase()
       return haystack.includes(keyword)
     })
     // 仅更新列表，不再覆盖统计卡片的后端汇总值
@@ -816,7 +816,10 @@ Page({
       editRecord: {
         id: record.id,
         type: record.type,
-        parrot: record.parrot || '小彩',
+        parrot_id: record.parrot_id || '',
+        parrot_name: record.parrot_name || '',
+        parrot_number: record.parrot_number || '',
+        ring_number: record.ring_number || '',
         category: record.category,
         amount: record.amount,
         description: record.description || '',

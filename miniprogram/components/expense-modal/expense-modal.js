@@ -37,6 +37,15 @@ Component({
     },
     categoryOptions: [],
     canSubmit: false,
+    // 关联鹦鹉选择
+    parrotOptions: [],
+    filteredParrotOptions: [],
+    selectedParrotId: '',
+    selectedParrotName: '',
+    selectedParrotNumber: '',
+    selectedRingNumber: '',
+    showParrotDropdown: false,
+    parrotSearchKeyword: '',
     // 类别定义
     incomeCategories: [
       { label: '繁殖销售', value: 'breeding_sale', icon: '/images/remix/ri-shopping-bag-fill-blue.png' },
@@ -61,6 +70,7 @@ Component({
     'visible': function(visible) {
       if (visible) {
         this.initForm()
+        this.loadParrots()
       }
     },
     'editRecord': function(editRecord) {
@@ -101,7 +111,9 @@ Component({
           date: dateStr
         },
         categoryOptions,
-        canSubmit: false
+        canSubmit: false,
+        selectedParrotId: '',
+        selectedParrotName: ''
       })
     },
 
@@ -135,6 +147,27 @@ Component({
         categoryOptions,
         canSubmit: true
       })
+
+      // 初始化编辑时的关联鹦鹉
+      const possibleId = (editRecord.parrot_id != null && editRecord.parrot_id !== '') ? String(editRecord.parrot_id) : ''
+      const possibleName = editRecord.parrot_name || editRecord.parrot || ''
+      const possibleNumber = editRecord.parrot_number || ''
+      const possibleRing = editRecord.ring_number || ''
+      if (possibleId) {
+        this.setData({ selectedParrotId: possibleId, selectedParrotName: possibleName || '', selectedParrotNumber: possibleNumber, selectedRingNumber: possibleRing })
+      } else if (possibleName) {
+        const list = this.data.parrotOptions || []
+        const found = list.find(p => String(p.name) === String(possibleName))
+        if (found) {
+          this.setData({ selectedParrotId: String(found.id), selectedParrotName: found.name, selectedParrotNumber: found.parrot_number || '', selectedRingNumber: found.ring_number || '' })
+        } else {
+          this.setData({ selectedParrotId: '', selectedParrotName: possibleName , selectedParrotNumber: possibleNumber, selectedRingNumber: possibleRing })
+        }
+      } else {
+        this.setData({ selectedParrotId: '', selectedParrotName: '' , selectedParrotNumber: '', selectedRingNumber: '' })
+      }
+      // 确保与选项同步（避免异步加载导致未显示名称）
+      this.syncSelectedParrotFromOptions()
     },
 
     // 设置收支类型
@@ -225,6 +258,85 @@ Component({
       // 阻止事件冒泡
     },
 
+    // 加载鹦鹉列表
+    async loadParrots() {
+      try {
+        const res = await app.request({ url: '/api/parrots', method: 'GET', data: { per_page: 100 } })
+        const list = (res && res.success && res.data && Array.isArray(res.data.parrots)) ? res.data.parrots : []
+        const options = list.map(p => ({ 
+          id: p.id, 
+          name: p.name, 
+          ring_number: p.ring_number || '',
+          parrot_number: p.parrot_number || ''
+        }))
+        this.setData({ parrotOptions: options, filteredParrotOptions: options })
+        // 如果已经有选中的名字但没有ID，尝试回填
+        if (!this.data.selectedParrotId && this.data.selectedParrotName) {
+          const found = options.find(p => p.name === this.data.selectedParrotName)
+          if (found) this.setData({ selectedParrotId: String(found.id), selectedParrotNumber: found.parrot_number || '', selectedRingNumber: found.ring_number || '' })
+        }
+        // 如果已有ID但未有名称，尝试根据ID回填名称与编号
+        this.syncSelectedParrotFromOptions()
+      } catch (e) {
+        // 静默失败
+      }
+    },
+
+    // 根据当前选中ID或名称，从options回填展示字段
+    syncSelectedParrotFromOptions() {
+      const options = Array.isArray(this.data.parrotOptions) ? this.data.parrotOptions : []
+      const sid = this.data.selectedParrotId
+      const sname = this.data.selectedParrotName
+      if (sid) {
+        const found = options.find(p => String(p.id) === String(sid))
+        if (found) {
+          this.setData({ selectedParrotName: found.name || sname || '', selectedParrotNumber: found.parrot_number || '', selectedRingNumber: found.ring_number || '' })
+        }
+      } else if (sname) {
+        const found = options.find(p => String(p.name) === String(sname))
+        if (found) {
+          this.setData({ selectedParrotId: String(found.id), selectedParrotNumber: found.parrot_number || '', selectedRingNumber: found.ring_number || '' })
+        }
+      }
+    },
+
+    // 下拉开关
+    toggleParrotDropdown() {
+      if (this.data.isEdit) return
+      this.setData({ showParrotDropdown: !this.data.showParrotDropdown })
+    },
+
+    // 搜索输入
+    onParrotSearchInput(e) {
+      const kw = String((e && e.detail && e.detail.value) || '').trim().toLowerCase()
+      const src = Array.isArray(this.data.parrotOptions) ? this.data.parrotOptions : []
+      const filtered = kw ? src.filter(p => {
+        const name = String(p.name || '').toLowerCase()
+        const ring = String(p.ring_number || '').toLowerCase()
+        const num = String(p.parrot_number || '').toLowerCase()
+        return name.includes(kw) || ring.includes(kw) || num.includes(kw)
+      }) : src
+      this.setData({ parrotSearchKeyword: kw, filteredParrotOptions: filtered })
+    },
+
+    // 清除搜索
+    clearParrotSearch() {
+      const src = Array.isArray(this.data.parrotOptions) ? this.data.parrotOptions : []
+      this.setData({ parrotSearchKeyword: '', filteredParrotOptions: src })
+    },
+
+    // 选择鹦鹉
+    selectParrot(e) {
+      if (this.data.isEdit) return
+      const id = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id
+      const name = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.name
+      const num = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.num
+      const ring = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.ring
+      const selId = id ? String(id) : ''
+      const selName = name || ''
+      this.setData({ selectedParrotId: selId, selectedParrotName: selName, selectedParrotNumber: num || '', selectedRingNumber: ring || '', showParrotDropdown: false })
+    },
+
     // 提交收支记录
     async onSubmit() {
       const f = this.data.formData
@@ -251,6 +363,10 @@ Component({
           description: f.description || '',
           income_date: f.date || ''
         }
+        if (this.data.selectedParrotId) {
+          const pidNum = Number(this.data.selectedParrotId)
+          if (!isNaN(pidNum) && pidNum > 0) payload.parrot_id = pidNum
+        }
         
         if (this.data.isEdit && this.data.editRecord) {
           const rawId = String(this.data.editRecord.id || '')
@@ -268,6 +384,10 @@ Component({
           amount: Number(f.amount),
           description: f.description || '',
           expense_date: f.date || ''
+        }
+        if (this.data.selectedParrotId) {
+          const pidNum = Number(this.data.selectedParrotId)
+          if (!isNaN(pidNum) && pidNum > 0) payload.parrot_id = pidNum
         }
         
         if (this.data.isEdit && this.data.editRecord) {

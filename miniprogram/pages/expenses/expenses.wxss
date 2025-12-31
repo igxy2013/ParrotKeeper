@@ -233,6 +233,10 @@
   color: #999;
 }
 
+.parrot-line { display: flex; align-items: baseline; gap: 8rpx; }
+.parrot-name { font-size: 22rpx; color: #6b7280; }
+.parrot-meta { font-size: 22rpx; color: #9ca3af; }
+
 .record-amount {
   font-size: 32rpx;
   font-weight: bold;

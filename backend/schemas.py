@@ -130,6 +130,9 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
     parrot_number = fields.Method('get_parrot_number', dump_only=True)
     ring_number = fields.Method('get_ring_number', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
+    amount_unit = fields.Method('get_amount_unit', dump_only=True)
+    summary_title = fields.Method('get_summary_title', dump_only=True)
+    summary_items = fields.Method('get_summary_items', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
@@ -168,6 +171,40 @@ class FeedingRecordSchema(SQLAlchemyAutoSchema):
         except Exception:
             return []
 
+    def get_amount_unit(self, obj):
+        try:
+            ft = getattr(obj, 'feed_type', None)
+            if ft and getattr(ft, 'unit', None):
+                return ft.unit
+        except Exception:
+            pass
+        return 'g'
+
+    def get_summary_title(self, obj):
+        try:
+            name = self.get_feed_type_name(obj) or ''
+            if not name:
+                return '喂食'
+            return f"喂食 {name}"
+        except Exception:
+            return '喂食'
+
+    def get_summary_items(self, obj):
+        items = []
+        try:
+            amt = obj.amount
+            unit = self.get_amount_unit(obj)
+            if amt is not None:
+                try:
+                    items.append(f"分量: {float(amt)}{unit}")
+                except Exception:
+                    items.append(f"分量: {amt}{unit}")
+            if obj.notes:
+                items.append(str(obj.notes))
+        except Exception:
+            pass
+        return items
+
 class HealthRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = HealthRecord
@@ -183,6 +220,8 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
     parrot_number = fields.Method('get_parrot_number', dump_only=True)
     ring_number = fields.Method('get_ring_number', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
+    summary_title = fields.Method('get_summary_title', dump_only=True)
+    summary_items = fields.Method('get_summary_items', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
@@ -228,6 +267,44 @@ class HealthRecordSchema(SQLAlchemyAutoSchema):
         except Exception:
             return []
 
+    def get_summary_title(self, obj):
+        try:
+            type_map = {
+                'checkup': '健康检查', 'illness': '疾病记录', 'treatment': '治疗护理', 'vaccination': '疫苗接种', 'weight': '体重称量'
+            }
+            t = type_map.get(getattr(obj, 'record_type', None), getattr(obj, 'record_type', None)) or '健康'
+            s = self.get_health_status_text(obj) or ''
+            if s:
+                return f"{t}（{s}）"
+            return t
+        except Exception:
+            return '健康'
+
+    def get_summary_items(self, obj):
+        items = []
+        try:
+            if obj.weight is not None:
+                try:
+                    items.append(f"体重: {float(obj.weight)}g")
+                except Exception:
+                    items.append(f"体重: {obj.weight}g")
+            if obj.temperature is not None:
+                try:
+                    items.append(f"体温: {float(obj.temperature)}℃")
+                except Exception:
+                    items.append(f"体温: {obj.temperature}℃")
+            if obj.medication:
+                items.append(f"用药: {obj.medication}")
+            if obj.treatment:
+                items.append(f"处理: {obj.treatment}")
+            if obj.symptoms:
+                items.append(f"症状: {obj.symptoms}")
+            if obj.notes:
+                items.append(str(obj.notes))
+        except Exception:
+            pass
+        return items
+
 class CleaningRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = CleaningRecord
@@ -243,6 +320,8 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
     parrot_number = fields.Method('get_parrot_number', dump_only=True)
     ring_number = fields.Method('get_ring_number', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
+    summary_title = fields.Method('get_summary_title', dump_only=True)
+    summary_items = fields.Method('get_summary_items', dump_only=True)
     
     def get_parrot_name(self, obj):
         return obj.parrot.name if obj.parrot else None
@@ -292,6 +371,24 @@ class CleaningRecordSchema(SQLAlchemyAutoSchema):
         except Exception:
             return []
 
+    def get_summary_title(self, obj):
+        try:
+            t = self.get_cleaning_type_text(obj) or ''
+            return t or '清洁'
+        except Exception:
+            return '清洁'
+
+    def get_summary_items(self, obj):
+        items = []
+        try:
+            if obj.description:
+                items.append(str(obj.description))
+            if obj.notes:
+                items.append(str(obj.notes))
+        except Exception:
+            pass
+        return items
+
 class BreedingRecordSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = BreedingRecord
@@ -306,6 +403,8 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
     created_by_username = fields.Method('get_created_by_username', dump_only=True)
     created_by_nickname = fields.Method('get_created_by_nickname', dump_only=True)
     photos = fields.Method('get_photos', dump_only=True)
+    summary_title = fields.Method('get_summary_title', dump_only=True)
+    summary_items = fields.Method('get_summary_items', dump_only=True)
     
     def get_male_parrot_name(self, obj):
         return obj.male_parrot.name if obj.male_parrot else None
@@ -337,6 +436,36 @@ class BreedingRecordSchema(SQLAlchemyAutoSchema):
             return data if isinstance(data, list) else []
         except Exception:
             return []
+
+    def get_summary_title(self, obj):
+        try:
+            m = self.get_male_parrot_name(obj) or ''
+            f = self.get_female_parrot_name(obj) or ''
+            if m or f:
+                return f"配对 {m} × {f}".strip()
+            return '繁殖记录'
+        except Exception:
+            return '繁殖记录'
+
+    def get_summary_items(self, obj):
+        items = []
+        try:
+            if obj.mating_date:
+                items.append(f"交配: {obj.mating_date}")
+            if obj.egg_laying_date is not None:
+                items.append(f"产蛋: {obj.egg_laying_date}（{int(obj.egg_count or 0)}枚）")
+            if obj.hatching_date is not None:
+                items.append(f"孵化: {obj.hatching_date}（{int(obj.chick_count or 0)}只）")
+            if obj.success_rate is not None:
+                try:
+                    items.append(f"成功率: {float(obj.success_rate)}%")
+                except Exception:
+                    items.append(f"成功率: {obj.success_rate}%")
+            if obj.notes:
+                items.append(str(obj.notes))
+        except Exception:
+            pass
+        return items
 
 class ExpenseSchema(SQLAlchemyAutoSchema):
     class Meta:

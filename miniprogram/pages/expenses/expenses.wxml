@@ -86,6 +86,16 @@
                 </view>
                 <view class="list-item-desc">{{item.description || '无描述'}}</view>
                 <view class="list-item-meta">
+                  <view class="parrot-line" wx:if="{{item.parrot_name}}">
+                    <text class="parrot-name">{{item.parrot_name}}</text>
+                    <block wx:if="{{item.parrot_number || item.ring_number}}">
+                      <text class="parrot-meta">（</text>
+                      <text class="parrot-meta" wx:if="{{item.parrot_number}}">{{item.parrot_number}}</text>
+                      <text class="parrot-meta" wx:if="{{item.parrot_number && item.ring_number}}">｜</text>
+                      <text class="parrot-meta" wx:if="{{item.ring_number}}">{{item.ring_number}}</text>
+                      <text class="parrot-meta">）</text>
+                    </block>
+                  </view>
                   <text class="date-tag">{{item.date}} {{item.time}}</text>
                 </view>
               </view>

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord, FeedType
+from models import db, Parrot, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord, FeedType, OperationLog
 from schemas import (feeding_record_schema, feeding_records_schema, 
                     health_record_schema, health_records_schema,
                     cleaning_record_schema, cleaning_records_schema,
@@ -50,6 +50,26 @@ def _validate_weight(weight_value):
     if w >= 1000:
         return '体重超出范围（0–999.99 g）'
     return None
+
+def _log_operation(record_type, record_id, action, operator_user_id=None, team_id=None, changes=None):
+    try:
+        import json
+        op = OperationLog(
+            record_type=record_type,
+            record_id=record_id,
+            action=action,
+            operator_user_id=operator_user_id,
+            team_id=team_id,
+            change_json=(json.dumps(changes, ensure_ascii=False) if isinstance(changes, dict) else None)
+        )
+        db.session.add(op)
+        db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        pass
 
 def add_feeding_record_internal(data):
     """内部函数：添加喂食记录"""
@@ -175,6 +195,15 @@ def add_feeding_record_internal(data):
         # 增加喂食记录积分（每日首次添加喂食记录获得1积分）
         if created_records:
             add_user_points(user.id, 1, 'feeding')
+        try:
+            for r in created_records:
+                _log_operation('feeding', r.id, 'create', operator_user_id=user.id, team_id=getattr(r, 'team_id', None), changes={
+                    'feed_type_id': {'from': None, 'to': r.feed_type_id},
+                    'amount': {'from': None, 'to': (float(r.amount) if r.amount is not None else None)},
+                    'feeding_time': {'from': None, 'to': r.feeding_time.strftime('%Y-%m-%d %H:%M:%S') if r.feeding_time else None}
+                })
+        except Exception:
+            pass
         
         # 如果没有创建任何记录，明确返回错误，避免误导用户
         if not created_records:
@@ -292,6 +321,15 @@ def add_health_record_internal(data):
         # 增加健康记录积分（每日首次添加健康记录获得1积分）
         if created_records:
             add_user_points(user.id, 1, 'health')
+        try:
+            for r in created_records:
+                _log_operation('health', r.id, 'create', operator_user_id=user.id, team_id=getattr(r, 'team_id', None), changes={
+                    'record_type': {'from': None, 'to': r.record_type},
+                    'health_status': {'from': None, 'to': r.health_status},
+                    'record_date': {'from': None, 'to': r.record_date.strftime('%Y-%m-%d %H:%M:%S') if r.record_date else None}
+                })
+        except Exception:
+            pass
         
         return success_response({
             'records': health_records_schema.dump(created_records)
@@ -360,6 +398,14 @@ def add_cleaning_record_internal(data):
         # 增加清洁记录积分（每日首次添加清洁记录获得1积分）
         if created_records:
             add_user_points(user.id, 1, 'cleaning')
+        try:
+            for r in created_records:
+                _log_operation('cleaning', r.id, 'create', operator_user_id=user.id, team_id=getattr(r, 'team_id', None), changes={
+                    'cleaning_type': {'from': None, 'to': r.cleaning_type},
+                    'cleaning_time': {'from': None, 'to': r.cleaning_time.strftime('%Y-%m-%d %H:%M:%S') if r.cleaning_time else None}
+                })
+        except Exception:
+            pass
         
         return success_response({
             'records': cleaning_records_schema.dump(created_records)
@@ -486,6 +532,14 @@ def add_breeding_record_internal(data):
         
         # 增加繁殖记录积分（每日首次添加繁殖记录获得1积分）
         add_user_points(user.id, 1, 'breeding')
+        try:
+            _log_operation('breeding', record.id, 'create', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes={
+                'mating_date': {'from': None, 'to': record.mating_date.strftime('%Y-%m-%d') if record.mating_date else None},
+                'egg_laying_date': {'from': None, 'to': record.egg_laying_date.strftime('%Y-%m-%d') if record.egg_laying_date else None},
+                'hatching_date': {'from': None, 'to': record.hatching_date.strftime('%Y-%m-%d') if record.hatching_date else None}
+            })
+        except Exception:
+            pass
         
         return success_response({
             'record': breeding_record_schema.dump(record)
@@ -728,6 +782,113 @@ def get_record_by_type(record_type, record_id):
     except Exception as e:
         return error_response(f'获取记录失败: {str(e)}')
 
+@records_bp.route('/<string:record_type>/<int:record_id>/operations', methods=['GET'])
+@records_bp.route('/<string:record_type>/<int:record_id>/logs', methods=['GET'])
+@records_bp.route('/<string:record_type>/<int:record_id>/history', methods=['GET'])
+@login_required
+def get_record_operations(record_type, record_id):
+    try:
+        user = request.current_user
+
+        record = None
+        accessible_ids = []
+        team_id = None
+        if record_type == 'feeding':
+            record = FeedingRecord.query.get(record_id)
+            accessible_ids = get_accessible_feeding_record_ids_by_mode(user)
+            team_id = getattr(record, 'team_id', None) if record else None
+        elif record_type == 'health':
+            record = HealthRecord.query.get(record_id)
+            accessible_ids = get_accessible_health_record_ids_by_mode(user)
+            team_id = getattr(record, 'team_id', None) if record else None
+        elif record_type == 'cleaning':
+            record = CleaningRecord.query.get(record_id)
+            accessible_ids = get_accessible_cleaning_record_ids_by_mode(user)
+            team_id = getattr(record, 'team_id', None) if record else None
+        elif record_type == 'breeding':
+            record = BreedingRecord.query.get(record_id)
+            accessible_ids = get_accessible_breeding_record_ids_by_mode(user)
+            team_id = getattr(record, 'team_id', None) if record else None
+        else:
+            return error_response('不支持的记录类型')
+
+        if not record:
+            return error_response('记录不存在', 404)
+        if accessible_ids and (record.id not in accessible_ids):
+            return error_response('权限不足或记录不存在', 403)
+
+        q = db.session.query(OperationLog).filter(
+            OperationLog.record_type == record_type,
+            OperationLog.record_id == record_id
+        )
+        if team_id is None:
+            q = q.filter((OperationLog.team_id == None) | (OperationLog.team_id == None))
+        else:
+            q = q.filter((OperationLog.team_id == team_id) | (OperationLog.team_id == None))
+        logs = q.order_by(OperationLog.created_at.desc()).all()
+
+        items = []
+        for lg in logs:
+            operator_name = None
+            operator_nickname = None
+            operator_username = None
+            try:
+                op = lg.operator
+                if op:
+                    operator_nickname = getattr(op, 'nickname', None)
+                    account = getattr(op, 'account', None)
+                    if account:
+                        operator_username = getattr(account, 'username', None)
+                    
+                    # 优先使用昵称，其次用户名，最后openid
+                    operator_name = operator_nickname or operator_username or getattr(op, 'openid', None)
+            except Exception:
+                operator_name = None
+            
+            try:
+                import json
+                changes = None
+                if lg.change_json and lg.change_json.strip():
+                    changes = json.loads(lg.change_json)
+            except Exception:
+                changes = None
+            items.append({
+                'id': lg.id,
+                'action': lg.action,
+                'operator_name': operator_name,
+                'operator_nickname': operator_nickname,
+                'operator_username': operator_username,
+                'created_at': lg.created_at.isoformat() if lg.created_at else None,
+                'changes': changes
+            })
+
+        return success_response({ 'operations': items })
+    except Exception as e:
+        return error_response(f'获取操作记录失败: {str(e)}')
+
+@records_bp.route('/operations', methods=['GET'])
+@login_required
+def get_operations_fallback():
+    try:
+        record_type = request.args.get('type')
+        record_id = request.args.get('id', type=int)
+        if not record_type or not record_id:
+            return error_response('缺少参数')
+        return get_record_operations(record_type, record_id)
+    except Exception as e:
+        return error_response(f'获取操作记录失败: {str(e)}')
+
+@records_bp.route('/<string:record_type>/operations', methods=['GET'])
+@login_required
+def get_operations_with_query(record_type):
+    try:
+        record_id = request.args.get('id', type=int)
+        if not record_id:
+            return error_response('缺少参数id')
+        return get_record_operations(record_type, record_id)
+    except Exception as e:
+        return error_response(f'获取操作记录失败: {str(e)}')
+
 # 饲料类型相关
 @records_bp.route('/feed-types', methods=['GET'])
 @login_required
@@ -807,6 +968,12 @@ def update_feeding_record_internal(record_id, data):
     if not record:
         return error_response('记录不存在', 404)
     
+    original = {
+        'feed_type_id': record.feed_type_id,
+        'amount': float(record.amount) if record.amount is not None else None,
+        'feeding_time': record.feeding_time.strftime('%Y-%m-%d %H:%M:%S') if record.feeding_time else None,
+        'notes': record.notes
+    }
     if 'feed_type_id' in data:
         record.feed_type_id = data['feed_type_id']
     if 'amount' in data:
@@ -832,7 +999,28 @@ def update_feeding_record_internal(record_id, data):
             pass
     
     db.session.commit()
-    
+    try:
+        changes = {}
+        unit = 'g'
+        try:
+            ft = record.feed_type
+            if ft and ft.unit:
+                unit = ft.unit
+        except Exception:
+            unit = 'g'
+        if original.get('feed_type_id') != record.feed_type_id:
+            changes['feed_type_id'] = {'from': original.get('feed_type_id'), 'to': record.feed_type_id}
+        o_amt = original.get('amount')
+        n_amt = float(record.amount) if record.amount is not None else None
+        if o_amt != n_amt:
+            changes['amount'] = {'from': o_amt, 'to': n_amt, 'unit': unit}
+        if original.get('feeding_time') != (record.feeding_time.strftime('%Y-%m-%d %H:%M:%S') if record.feeding_time else None):
+            changes['feeding_time'] = {'from': original.get('feeding_time'), 'to': (record.feeding_time.strftime('%Y-%m-%d %H:%M:%S') if record.feeding_time else None)}
+        if original.get('notes') != record.notes:
+            changes['notes'] = {'from': original.get('notes'), 'to': record.notes}
+        _log_operation('feeding', record.id, 'update', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes=changes)
+    except Exception:
+        pass
     return success_response(feeding_record_schema.dump(record), '更新成功')
 
 def update_health_record_internal(record_id, data):
@@ -848,6 +1036,21 @@ def update_health_record_internal(record_id, data):
     if not record:
         return error_response('记录不存在', 404)
     
+    original = {
+        'record_type': record.record_type,
+        'description': record.description,
+        'weight': float(record.weight) if record.weight is not None else None,
+        'temperature': float(record.temperature) if record.temperature is not None else None,
+        'health_status': record.health_status,
+        'symptoms': record.symptoms,
+        'treatment': record.treatment,
+        'medication': record.medication,
+        'vet_name': record.vet_name,
+        'cost': float(record.cost) if record.cost is not None else None,
+        'record_date': record.record_date.strftime('%Y-%m-%d %H:%M:%S') if record.record_date else None,
+        'next_checkup_date': record.next_checkup_date.strftime('%Y-%m-%d') if record.next_checkup_date else None,
+        'notes': record.notes
+    }
     if 'record_type' in data:
         record.record_type = data['record_type']
     if 'description' in data:
@@ -900,7 +1103,28 @@ def update_health_record_internal(record_id, data):
     except Exception:
         pass
     db.session.commit()
-    
+    try:
+        changes = {}
+        def _cmp_field(k, fmt=None):
+            ov = original.get(k)
+            nv = getattr(record, k)
+            if fmt == 'dt':
+                nv = nv.strftime('%Y-%m-%d %H:%M:%S') if nv else None
+            elif fmt == 'date':
+                nv = nv.strftime('%Y-%m-%d') if nv else None
+            elif isinstance(nv, (int, float)):
+                nv = float(nv)
+            if ov != nv:
+                changes[k] = {'from': ov, 'to': nv}
+        for k in ['record_type','description','health_status','symptoms','treatment','medication','vet_name','notes']:
+            _cmp_field(k)
+        for k in ['weight','temperature','cost']:
+            _cmp_field(k)
+        _cmp_field('record_date','dt')
+        _cmp_field('next_checkup_date','date')
+        _log_operation('health', record.id, 'update', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes=changes)
+    except Exception:
+        pass
     return success_response(health_record_schema.dump(record), '更新成功')
 
 def update_cleaning_record_internal(record_id, data):
@@ -915,6 +1139,12 @@ def update_cleaning_record_internal(record_id, data):
     record = CleaningRecord.query.get(record_id)
     if not record:
         return error_response('记录不存在', 404)
+    original = {
+        'cleaning_type': record.cleaning_type,
+        'description': record.description,
+        'cleaning_time': record.cleaning_time.strftime('%Y-%m-%d %H:%M:%S') if record.cleaning_time else None,
+        'notes': record.notes
+    }
     
     # 处理多清洁类型的编辑
     if 'cleaning_types' in data and isinstance(data['cleaning_types'], list):
@@ -988,7 +1218,20 @@ def update_cleaning_record_internal(record_id, data):
             pass
     
     db.session.commit()
-    
+    try:
+        changes = {}
+        if original.get('cleaning_type') != record.cleaning_type:
+            changes['cleaning_type'] = {'from': original.get('cleaning_type'), 'to': record.cleaning_type}
+        if original.get('description') != record.description:
+            changes['description'] = {'from': original.get('description'), 'to': record.description}
+        ct_new = record.cleaning_time.strftime('%Y-%m-%d %H:%M:%S') if record.cleaning_time else None
+        if original.get('cleaning_time') != ct_new:
+            changes['cleaning_time'] = {'from': original.get('cleaning_time'), 'to': ct_new}
+        if original.get('notes') != record.notes:
+            changes['notes'] = {'from': original.get('notes'), 'to': record.notes}
+        _log_operation('cleaning', record.id, 'update', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes=changes)
+    except Exception:
+        pass
     return success_response(cleaning_record_schema.dump(record), '更新成功')
 
 def update_breeding_record_internal(record_id, data):
@@ -1003,6 +1246,18 @@ def update_breeding_record_internal(record_id, data):
     record = BreedingRecord.query.get(record_id)
     if not record:
         return error_response('记录不存在', 404)
+    original = {
+        'male_parrot_id': record.male_parrot_id,
+        'female_parrot_id': record.female_parrot_id,
+        'mating_date': record.mating_date.strftime('%Y-%m-%d') if record.mating_date else None,
+        'egg_laying_date': record.egg_laying_date.strftime('%Y-%m-%d') if record.egg_laying_date else None,
+        'egg_count': record.egg_count,
+        'hatching_date': record.hatching_date.strftime('%Y-%m-%d') if record.hatching_date else None,
+        'chick_count': record.chick_count,
+        'success_rate': float(record.success_rate) if record.success_rate is not None else None,
+        'notes': record.notes,
+        'created_at': record.created_at.strftime('%Y-%m-%d %H:%M:%S') if record.created_at else None
+    }
     
     if 'male_parrot_id' in data:
         record.male_parrot_id = data['male_parrot_id']
@@ -1074,7 +1329,32 @@ def update_breeding_record_internal(record_id, data):
             pass
     
     db.session.commit()
-    
+    try:
+        changes = {}
+        def _cmp(k, fmt=None):
+            ov = original.get(k)
+            nv = getattr(record, k)
+            if fmt == 'date':
+                nv = nv.strftime('%Y-%m-%d') if nv else None
+            elif fmt == 'dt':
+                nv = nv.strftime('%Y-%m-%d %H:%M:%S') if nv else None
+            elif isinstance(nv, (int, float)):
+                nv = float(nv)
+            if ov != nv:
+                changes[k] = {'from': ov, 'to': nv}
+        for k in ['male_parrot_id','female_parrot_id']:
+            _cmp(k)
+        _cmp('mating_date','date')
+        _cmp('egg_laying_date','date')
+        _cmp('egg_count')
+        _cmp('hatching_date','date')
+        _cmp('chick_count')
+        _cmp('success_rate')
+        _cmp('notes')
+        _cmp('created_at','dt')
+        _log_operation('breeding', record.id, 'update', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes=changes)
+    except Exception:
+        pass
     return success_response(breeding_record_schema.dump(record), '更新成功')
 
 @records_bp.route('/feeding', methods=['POST'])
@@ -1173,6 +1453,10 @@ def delete_feeding_record(record_id):
         
         db.session.delete(record)
         db.session.commit()
+        try:
+            _log_operation('feeding', record_id, 'delete', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes={})
+        except Exception:
+            pass
         
         return success_response(message='删除成功')
         
@@ -1269,6 +1553,10 @@ def delete_health_record(record_id):
         except Exception:
             pass
         db.session.commit()
+        try:
+            _log_operation('health', record_id, 'delete', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes={})
+        except Exception:
+            pass
         
         return success_response(message='删除成功')
         
@@ -1452,6 +1740,10 @@ def delete_cleaning_record(record_id):
         
         db.session.delete(record)
         db.session.commit()
+        try:
+            _log_operation('cleaning', record_id, 'delete', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes={})
+        except Exception:
+            pass
         
         return success_response(message='删除成功')
         
@@ -1566,6 +1858,10 @@ def delete_breeding_record(record_id):
         
         db.session.delete(record)
         db.session.commit()
+        try:
+            _log_operation('breeding', record_id, 'delete', operator_user_id=user.id, team_id=getattr(record, 'team_id', None), changes={})
+        except Exception:
+            pass
         
         return success_response(message='删除成功')
         
