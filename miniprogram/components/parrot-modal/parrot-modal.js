@@ -50,6 +50,11 @@ Component({
       if (!parrot) return
       // 初始化表单
       const genderDisplay = this.apiGenderToDisplay(parrot.gender)
+      const province = this.sanitizeRegionPart(parrot.birth_place_province)
+      const city = this.sanitizeRegionPart(parrot.birth_place_city)
+      const county = this.sanitizeRegionPart(parrot.birth_place_county)
+      const birthPlaceTextFromApi = this.sanitizeBirthPlaceText(parrot.birth_place)
+      const birthPlaceText = birthPlaceTextFromApi || this.buildBirthPlaceText(province, city, county)
       const form = {
         id: parrot.id || '',
         name: parrot.name || '',
@@ -58,10 +63,10 @@ Component({
         gender: parrot.gender || '',
         gender_display: genderDisplay,
         color: parrot.color || '',
-        birth_place_province: parrot.birth_place_province || '',
-        birth_place_city: parrot.birth_place_city || '',
-        birth_place_county: parrot.birth_place_county || '',
-        birth_place_text: parrot.birth_place || '',
+        birth_place_province: province,
+        birth_place_city: city,
+        birth_place_county: county,
+        birth_place_text: birthPlaceText,
         birth_date: parrot.birth_date || parrot.birthDate || '',
         notes: parrot.notes || '',
         parrot_number: parrot.parrot_number || '',
@@ -85,15 +90,33 @@ Component({
       } catch (_) {}
       const splitIds = (parrot && Array.isArray(parrot.plumage_split_ids)) ? parrot.plumage_split_ids : []
       const rv = [
-        form.birth_place_province || '',
-        form.birth_place_city || '',
-        form.birth_place_county || ''
+        province,
+        city,
+        county
       ]
       this.setData({ form, typeIndex, photoTouched: false, plumageSplitIds: splitIds, regionValue: rv })
       this.refreshPlumageOptions()
     }
   },
   methods: {
+    sanitizeRegionPart(v) {
+      const s = String(v == null ? '' : v).trim()
+      if (!s) return ''
+      if (s === '未选择' || s === '请选择') return ''
+      if (s === 'null' || s === 'undefined') return ''
+      return s
+    },
+    sanitizeBirthPlaceText(v) {
+      const s = String(v == null ? '' : v)
+      if (!s.trim()) return ''
+      return s
+        .replace(/未选择|请选择/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+    },
+    buildBirthPlaceText(province, city, county) {
+      return [province, city, county].filter(Boolean).join(' ')
+    },
     stopPropagation() {},
     onOverlayTap() { this.triggerEvent('cancel') },
     onCancel() { this.triggerEvent('cancel') },
@@ -210,10 +233,10 @@ Component({
     onBirthPlaceChange(e) {
       try {
         const arr = e && e.detail && e.detail.value ? e.detail.value : []
-        const province = arr[0] || ''
-        const city = arr[1] || ''
-        const county = arr[2] || ''
-        const text = [province, city, county].filter(Boolean).join(' ')
+        const province = this.sanitizeRegionPart(arr[0])
+        const city = this.sanitizeRegionPart(arr[1])
+        const county = this.sanitizeRegionPart(arr[2])
+        const text = this.buildBirthPlaceText(province, city, county)
         this.setData({
           'form.birth_place_province': province,
           'form.birth_place_city': city,
@@ -490,7 +513,14 @@ Component({
           submitData[key] === '' &&
           key !== 'parrot_number' &&
           key !== 'ring_number' &&
-          key !== 'photo_url'
+          key !== 'photo_url' &&
+          !(
+            this.data.mode === 'edit' &&
+            (key === 'birth_place' ||
+              key === 'birth_place_province' ||
+              key === 'birth_place_city' ||
+              key === 'birth_place_county')
+          )
         ) {
           delete submitData[key]
         }
