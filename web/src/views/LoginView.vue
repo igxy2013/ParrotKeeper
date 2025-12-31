@@ -35,6 +35,20 @@
             </el-form-item>
             <el-form-item>
               <el-input v-model="registerForm.invitation_code" placeholder="邀请码（必填）" />
+              <div class="invitation-tip">
+                <el-popover
+                  placement="top"
+                  :width="200"
+                  trigger="hover"
+                >
+                  <template #reference>
+                    <span class="tip-text">关注公众号免费获取邀请码</span>
+                  </template>
+                  <div class="qrcode-container">
+                    <img src="/qrcode.jpg" alt="公众号二维码" style="width: 100%;" />
+                  </div>
+                </el-popover>
+              </div>
             </el-form-item>
             <el-button type="primary" :loading="loading" class="w-100" @click="handleRegister">注册</el-button>
           </el-form>
@@ -250,5 +264,22 @@ const handleRegister = async () => {
 :deep(.el-button--primary:hover) {
   opacity: 0.9;
   transform: translateY(-1px);
+}
+
+.invitation-tip {
+  margin-top: 8px;
+  text-align: right;
+  font-size: 13px;
+}
+
+.tip-text {
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.tip-text:hover {
+  opacity: 0.8;
+  text-decoration: underline;
 }
 </style>
