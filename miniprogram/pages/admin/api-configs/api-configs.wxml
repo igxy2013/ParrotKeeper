@@ -22,6 +22,9 @@
                   <text class="quota">剩余额度 {{item.remaining_quota}}/50</text>
                 </view>
                 <view class="api-item-actions">
+                  <view class="icon-action-btn pin {{item.is_top ? 'active' : ''}}" bindtap="toggleTop" data-group="remove" data-index="{{index}}">
+                    <image class="action-icon-img" src="{{item.is_top ? '/images/remix/skip-up-fill-white.png' : '/images/remix/skip-up-fill-white.png'}}" mode="aspectFit" />
+                  </view>
                   <view class="icon-action-btn edit" bindtap="openEditModal" data-group="remove" data-index="{{index}}">
                     <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
                   </view>
@@ -52,6 +55,9 @@
                   <text class="api-key-mask">{{item.api_key_masked}}</text>
                 </view>
                 <view class="api-item-actions">
+                  <view class="icon-action-btn pin {{item.is_top ? 'active' : ''}}" bindtap="toggleTop" data-group="aliyun" data-index="{{index}}">
+                    <image class="action-icon-img" src="{{item.is_top ? '/images/remix/skip-up-fill-white.png' : '/images/remix/skip-up-fill-white.png'}}" mode="aspectFit" />
+                  </view>
                   <view class="icon-action-btn edit" bindtap="openEditModal" data-group="aliyun" data-index="{{index}}">
                     <image class="action-icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
                   </view>
@@ -99,13 +105,15 @@
                 </view>
                 <view class="form-item">
                   <text class="form-label">Model</text>
-                  <input class="form-input" placeholder="qwen-plus" value="{{addForm.model}}" bindinput="onAddInput" data-field="model" />
+                  <picker bindchange="onModelChange" range="{{modelOptions}}">
+                    <view class="form-input">{{addForm.model || '请选择模型'}}</view>
+                  </picker>
                 </view>
               </block>
             </view>
             <view class="modal-actions">
               <button class="modal-btn cancel-btn" bindtap="closeAddModal">取消</button>
-              <button class="modal-btn submit-btn" bindtap="submitAdd">添加</button>
+              <button class="modal-btn submit-btn" bindtap="submitAdd">{{editingIndex !== null ? '保存' : '添加'}}</button>
             </view>
           </view>
         </view>

@@ -28,6 +28,8 @@
 .quota { color: #10b981; font-size: 22rpx; }
 .api-item-actions { display: flex; align-items: center; }
 .icon-action-btn { width: 64rpx; height: 64rpx; border-radius: 14rpx; display: inline-flex; align-items: center; justify-content: center; margin-left: 12rpx; }
+.icon-action-btn.pin { background: linear-gradient(135deg, #a855f7 0%, #d946ef 100%); box-shadow: 0 6rpx 16rpx rgba(168,85,247,0.28); }
+.icon-action-btn.pin.active { background: linear-gradient(135deg, #7e22ce 0%, #c026d3 100%); }
 .icon-action-btn.edit { background: linear-gradient(135deg, #4CAF50 0%, #26A69A 100%); box-shadow: 0 6rpx 16rpx rgba(76,175,80,0.28); }
 .icon-action-btn.delete { background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); box-shadow: 0 6rpx 16rpx rgba(239,68,68,0.28); }
 .action-icon-img { width: 32rpx; height: 32rpx; }

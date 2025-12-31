@@ -11,7 +11,8 @@ Page({
     showAddModal: false,
     currentGroup: 'remove',
     addForm: { tag: '', api_key: '', api_url: '', base_url: '', model: '' },
-    editingIndex: null
+    editingIndex: null,
+    modelOptions: ['qwen3-coder-plus', 'qwen-flash', 'deepseek-v3.2', 'qwen3-omni-flash-2025-12-01'],
   },
 
   onShow() { this.initAccessAndLoad() },
@@ -30,8 +31,13 @@ Page({
       if (res && res.success) {
         const configs = (res.data && res.data.configs) || {}
         const lists = (res.data && res.data.lists) || {}
-        const removeBgList = Array.isArray(lists.remove_bg_list) ? lists.remove_bg_list.map(it => ({ tag: it.tag || '', api_key: it.api_key || '', api_key_masked: it.api_key_masked || '', api_url: it.api_url || '', remaining_quota: (typeof it.remaining_quota === 'number' ? it.remaining_quota : 50) })) : []
-        const aliyunList = Array.isArray(lists.aliyun_list) ? lists.aliyun_list.map(it => ({ tag: it.tag || '', api_key: it.api_key || '', api_key_masked: it.api_key_masked || '', base_url: it.base_url || '', model: it.model || '' })) : []
+        const removeBgList = Array.isArray(lists.remove_bg_list) ? lists.remove_bg_list.map(it => ({ tag: it.tag || '', api_key: it.api_key || '', api_key_masked: it.api_key_masked || '', api_url: it.api_url || '', remaining_quota: (typeof it.remaining_quota === 'number' ? it.remaining_quota : 50), is_top: it.is_top || false })) : []
+        const aliyunList = Array.isArray(lists.aliyun_list) ? lists.aliyun_list.map(it => ({ tag: it.tag || '', api_key: it.api_key || '', api_key_masked: it.api_key_masked || '', base_url: it.base_url || '', model: it.model || '', is_top: it.is_top || false })) : []
+        
+        // Sort lists to ensure top items are first
+        removeBgList.sort((a, b) => (b.is_top ? 1 : 0) - (a.is_top ? 1 : 0))
+        aliyunList.sort((a, b) => (b.is_top ? 1 : 0) - (a.is_top ? 1 : 0))
+        
         this.setData({ configs, removeBgList, aliyunList })
       } else {
         wx.showToast({ title: (res && res.message) || '获取配置失败', icon: 'none' })
@@ -47,17 +53,25 @@ Page({
     const group = e.currentTarget.dataset.group || 'remove'
     const defaults = group === 'remove'
       ? { tag: '', api_key: '', api_url: 'https://api.remove.bg/v1.0/removebg', base_url: '', model: '' }
-      : { tag: '', api_key: '', api_url: '', base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' }
-    this.setData({ currentGroup: group, addForm: defaults, showAddModal: true })
+      : { tag: '', api_key: '', api_url: '', base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: '' }
+    this.setData({ currentGroup: group, addForm: defaults, showAddModal: true, editingIndex: null })
   },
 
-  closeAddModal() { this.setData({ showAddModal: false }) },
+  closeAddModal() { this.setData({ showAddModal: false, editingIndex: null }) },
 
   onAddInput(e) {
     const field = e.currentTarget.dataset.field
     const value = e.detail.value
     const form = Object.assign({}, this.data.addForm)
     form[field] = value
+    this.setData({ addForm: form })
+  },
+
+  onModelChange(e) {
+    const index = e.detail.value
+    const value = this.data.modelOptions[index]
+    const form = Object.assign({}, this.data.addForm)
+    form.model = value
     this.setData({ addForm: form })
   },
 
@@ -121,10 +135,48 @@ Page({
     }
   },
 
+  async toggleTop(e) {
+    const group = e.currentTarget.dataset.group
+    const index = e.currentTarget.dataset.index
+    if (index === undefined) return
+    
+    let removeList = (this.data.removeBgList || []).slice()
+    let aliyunList = (this.data.aliyunList || []).slice()
+    
+    if (group === 'remove') {
+      const item = removeList[index]
+      item.is_top = !item.is_top
+      if (item.is_top) {
+        removeList.forEach((it, idx) => {
+          if (idx !== index) it.is_top = false
+        })
+      }
+      removeList.sort((a, b) => (b.is_top ? 1 : 0) - (a.is_top ? 1 : 0))
+    } else if (group === 'aliyun') {
+      const item = aliyunList[index]
+      item.is_top = !item.is_top
+      if (item.is_top) {
+        aliyunList.forEach((it, idx) => {
+          if (idx !== index) it.is_top = false
+        })
+      }
+      aliyunList.sort((a, b) => (b.is_top ? 1 : 0) - (a.is_top ? 1 : 0))
+    }
+    
+    // Immediate UI update
+    this.setData({
+      removeBgList: removeList,
+      aliyunList: aliyunList
+    })
+    
+    await this.saveLists(removeList, aliyunList)
+    this.loadConfigs()
+  },
+
   async saveLists(removeList, aliyunList) {
     const payload = {
-      remove_bg_list: (removeList || []).map(it => ({ tag: it.tag || '', api_key: it.api_key || '', api_url: it.api_url || '' })),
-      aliyun_list: (aliyunList || []).map(it => ({ tag: it.tag || '', api_key: it.api_key || '', base_url: it.base_url || '', model: it.model || '' }))
+      remove_bg_list: (removeList || []).map(it => ({ tag: it.tag || '', api_key: it.api_key || '', api_url: it.api_url || '', is_top: it.is_top || false })),
+      aliyun_list: (aliyunList || []).map(it => ({ tag: it.tag || '', api_key: it.api_key || '', base_url: it.base_url || '', model: it.model || '', is_top: it.is_top || false }))
     }
     try {
       const res = await app.request({ url: '/api/admin/api-configs', method: 'PUT', data: payload })
