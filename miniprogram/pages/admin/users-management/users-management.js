@@ -22,7 +22,13 @@ Page({
     hasMore: false,
     keyword: '',
     modeFilter: 'all',
+    modeOptions: ['全部模式', '个人模式', '团队模式'],
+    modeValues: ['all', 'personal', 'team'],
+    modeIndex: 0,
     sortBy: 'created_at',
+    sortOptions: ['按注册时间', '按鹦鹉数量', '按用户名称', '按积分数量'],
+    sortValues: ['created_at', 'parrot_count', 'nickname', 'points'],
+    sortIndex: 0,
     sortOrder: 'desc'
   },
 
@@ -142,20 +148,24 @@ Page({
     this.reloadList(true)
   }
   ,
-  setModeFilter(e) {
-    const mode = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.mode) ? e.currentTarget.dataset.mode : 'all'
-    this.setData({ modeFilter: mode })
+  onModeChange(e) {
+    const idx = e.detail.value
+    const mode = this.data.modeValues[idx]
+    this.setData({ modeIndex: idx, modeFilter: mode })
     this.reloadList(true)
   }
   ,
-  setSortByParrotCount() {
-    this.setData({ sortBy: 'parrot_count', sortOrder: 'desc', page: 1 })
+  onSortChange(e) {
+    const idx = e.detail.value
+    const sortBy = this.data.sortValues[idx]
+    let sortOrder = 'desc'
+    if (sortBy === 'nickname') sortOrder = 'asc'
+    this.setData({ sortIndex: idx, sortBy, sortOrder, page: 1 })
     this.reloadList(true)
   }
   ,
-  setSortByNickname() {
-    this.setData({ sortBy: 'nickname', sortOrder: 'asc', page: 1 })
-    this.reloadList(true)
+  onReachBottom() {
+    this.loadMore()
   }
   ,
   loadMore() {

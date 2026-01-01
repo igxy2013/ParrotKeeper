@@ -330,6 +330,13 @@ def list_users():
                 q = q.order_by(User.nickname.desc())
             total = q.count()
             items = q.offset(offset).limit(per_page).all()
+        elif sort_by == 'points':
+            if sort_order == 'asc':
+                q = q.order_by(User.points.asc())
+            else:
+                q = q.order_by(User.points.desc())
+            total = q.count()
+            items = q.offset(offset).limit(per_page).all()
         elif sort_by == 'parrot_count':
             items_all = q.all()
             total = len(items_all)
@@ -374,6 +381,7 @@ def list_users():
                 'avatar_url': u.avatar_url,
                 'role': u.role,
                 'user_mode': u.user_mode,
+                'points': u.points or 0,
                 'current_team_id': u.current_team_id,
                 'created_at': u.created_at.isoformat() if getattr(u, 'created_at', None) else None,
                 'parrot_count': int(team_counts_map.get(u.current_team_id, 0) or 0) if (u.user_mode == 'team' and u.current_team_id) else int(personal_counts_map.get(u.id, 0) or 0)

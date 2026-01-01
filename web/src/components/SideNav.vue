@@ -199,23 +199,9 @@ const menuItems = computed(() => [
   { path: '/care-guide', label: '护理指南', icon: Reading }, 
   { path: '/incubation', label: '人工孵化', icon: Sunny },
   { path: '/pairing', label: '配对计算器', icon: Connection },
-  { 
-    path: '/announcements', 
-    label: '公告中心', 
-    icon: Bell, 
-    badge: messageCount.value > 0 ? (messageCount.value > 99 ? '99+' : messageCount.value) : null, 
-    badgeColor: 'green' 
-  },
-  {
-    path: '/reports',
-    label: '报表导出',
-    icon: Download
-  },
-  {
-    path: '/about',
-    label: '关于我们',
-    icon: InfoFilled
-  },
+  {path: '/reports',label: '报表导出',icon: Download},
+  { path: '/announcements', label: '公告中心', icon: Bell, badge: messageCount.value > 0 ? (messageCount.value > 99 ? '99+' : messageCount.value) : null, badgeColor: 'green' },
+  {path: '/about',label: '关于我们',icon: InfoFilled},
   {
     path: '/settings', 
     label: '设置', 
