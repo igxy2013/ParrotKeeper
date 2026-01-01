@@ -1,6 +1,6 @@
 <template>
-  <div class="settings-page">
-    <div class="header">
+  <div class="settings-page page-container">
+    <div class="page-header">
       <h2>通知设置</h2>
       <div class="header-actions">
         <el-button type="primary" :loading="saving" @click="save">保存设置</el-button>
@@ -146,15 +146,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.settings-page {
-  padding: 20px;
-}
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
+.settings-page {}
 .section-card {
   margin-bottom: 16px;
 }

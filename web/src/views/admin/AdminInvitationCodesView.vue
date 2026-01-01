@@ -1,6 +1,6 @@
 <template>
-  <div class="admin-page">
-    <div class="header">
+  <div class="admin-page page-container">
+    <div class="page-header">
       <div class="header-left">
         <h2>邀请码管理</h2>
       </div>
@@ -139,9 +139,6 @@ onMounted(async () => {
 
 <style scoped>
 .admin-page { padding-bottom: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.header-left { display: flex; align-items: center; gap: 8px; }
-.header h2 { margin: 0; color: var(--text-primary); }
 .no-access { background: #fff; border-radius: 8px; padding: 16px; color: #909399; }
 .toolbar { margin-bottom: 12px; }
 </style>

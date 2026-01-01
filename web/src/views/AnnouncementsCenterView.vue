@@ -1,6 +1,6 @@
 <template>
-  <div class="ann-page">
-    <div class="header">
+  <div class="ann-page page-container">
+    <div class="page-header">
       <h2>公告中心</h2>
     </div>
     <div class="content">
@@ -88,8 +88,6 @@ onMounted(async () => {
 
 <style scoped>
 .ann-page { padding-bottom: 20px; }
-.header { display:flex; justify-content: space-between; align-items:center; margin-bottom:16px; }
-.header h2 { margin:0; color: var(--text-primary); }
 .content { background:#fff; border-radius:8px; padding: 16px; }
 .tips { color:#909399; }
 .empty { color:#909399; text-align:center; padding: 24px 0; }

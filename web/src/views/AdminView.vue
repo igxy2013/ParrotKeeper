@@ -1,6 +1,6 @@
 <template>
-  <div class="admin-container">
-    <div class="header">
+  <div class="admin-container page-container">
+    <div class="page-header">
       <h2>后台管理</h2>
       <div class="header-actions">
         <el-tag type="info">仅超级管理员可访问</el-tag>
@@ -110,8 +110,6 @@ const go = (path) => { router.push(path) }
 
 <style scoped>
 .admin-container { padding-bottom: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.header h2 { margin: 0; color: var(--text-primary); }
 .no-access { background: #fff; border-radius: 8px; padding: 16px; color: #909399; }
 .menu-card { border-radius: 12px; }
 .section-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-primary); }

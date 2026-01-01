@@ -1,6 +1,6 @@
 <template>
-  <div class="expenses-page">
-    <div class="header">
+  <div class="expenses-page page-container">
+    <div class="page-header">
       <h2>收支管理</h2>
       <div class="header-actions">
         <div class="time-range-tabs">
@@ -910,26 +910,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.expenses-page {
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
+.expenses-page {}
 
 .header-actions {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-
-.header h2 {
-  margin: 0;
-  color: var(--text-primary);
 }
 
 .stats-card {

@@ -1,6 +1,6 @@
 <template>
-  <div class="admin-page">
-    <div class="header">
+  <div class="admin-page page-container">
+    <div class="page-header">
       <h2>反馈管理</h2>
       <div class="header-actions">
         <el-button type="primary" @click="markAllRead" :loading="marking">标记全部已读</el-button>
@@ -83,9 +83,6 @@ onMounted(async () => {
 
 <style scoped>
 .admin-page { padding-bottom: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.header h2 { margin: 0; color: var(--text-primary); }
-.header-left { display:flex; align-items:center; gap:8px; }
 .no-access { background: #fff; border-radius: 8px; padding: 16px; color: #909399; }
 .image-list { display: flex; gap: 6px; flex-wrap: wrap; }
 .img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; cursor: pointer; }

@@ -1,6 +1,6 @@
 <template>
-  <div class="report-export-page">
-    <div class="header">
+  <div class="report-export-page page-container">
+    <div class="page-header">
       <h2>报表导出</h2>
       <div class="header-actions">
         <el-button type="primary" size="large" @click="exportExcel" :loading="exportLoading">
@@ -380,7 +380,7 @@ const onFlowChange = () => {
 
 <style scoped>
 .report-export-page {
-  padding: 24px;
+  padding: 0;
   max-width: 1400px;
   margin: 0 auto;
   height: calc(100vh - 48px);
@@ -388,13 +388,7 @@ const onFlowChange = () => {
   flex-direction: column;
 }
 
-.header {
-  margin-bottom: 16px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.header { }
 
 .header-actions {
   display: flex;
@@ -402,11 +396,7 @@ const onFlowChange = () => {
   gap: 12px;
 }
 
-.header h2 {
-  margin: 0;
-  font-size: 24px;
-  color: #1a1a1a;
-}
+.header h2 { }
 
 .report-tabs {
   margin-bottom: 16px;

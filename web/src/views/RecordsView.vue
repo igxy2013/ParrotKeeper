@@ -1,8 +1,10 @@
 <template>
-  <div>
-    <div class="header-actions">
+  <div class="page-container">
+    <div class="page-header">
       <h2>饲养记录</h2>
-      <el-button type="primary" :icon="Plus" @click="openAddDialog">添加记录</el-button>
+      <div class="header-actions">
+        <el-button type="primary" :icon="Plus" @click="openAddDialog">添加记录</el-button>
+      </div>
     </div>
     <div class="toolbar">
       <el-date-picker
@@ -1028,16 +1030,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-h2 {
-  color: var(--text-primary);
-  margin-bottom: 24px;
-}
-.header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
+h2 { color: var(--text-primary); }
+.header-actions { display: inline-flex; align-items: center; gap: 8px; }
 :deep(.el-tabs__item.is-active) {
   color: var(--primary-color);
   font-weight: 600;

@@ -1,9 +1,11 @@
 <template>
-  <div class="parrots-container">
-    <div class="header-actions">
+  <div class="parrots-container page-container">
+    <div class="page-header">
       <h2>我的鹦鹉</h2>
-      <el-button type="primary" :icon="Plus" class="add-btn" @click="handleAdd">添加新鹦鹉</el-button>
-      
+      <div class="header-actions">
+        <el-button type="primary" :icon="Plus" class="add-btn" @click="handleAdd">添加新鹦鹉</el-button>
+      </div>
+    
     </div>
     <div class="toolbar">
       <el-input 
@@ -474,19 +476,7 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
 </script>
 
 <style scoped>
-.parrots-container {
-  padding-bottom: 20px;
-}
-.header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-.header-actions h2 {
-  margin: 0;
-  color: var(--text-primary);
-}
+.parrots-container { padding-bottom: 20px; }
 .add-btn {
   background: var(--primary-gradient);
   border: none;

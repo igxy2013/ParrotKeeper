@@ -1,6 +1,6 @@
 <template>
-  <div class="incubation-view">
-    <div class="header">
+  <div class="incubation-view page-container">
+    <div class="page-header">
       <h2>人工孵化</h2>
       <el-button type="primary" @click="openAddEgg">
         <el-icon><Plus /></el-icon> 新增孵化
@@ -769,15 +769,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.incubation-view {
-  padding: 20px;
-}
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
 .mb-4 {
   margin-bottom: 20px;
 }

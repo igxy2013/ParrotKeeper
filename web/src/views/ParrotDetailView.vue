@@ -1,10 +1,12 @@
 <template>
-  <div class="parrot-detail-container">
-    <div class="header-actions">
+  <div class="parrot-detail-container page-container">
+    <div class="page-header">
       <h2>鹦鹉详情</h2>
-      <div class="header-buttons">
-        <el-button @click="openTransfer">鹦鹉过户</el-button>
-        <el-button type="primary" @click="openEdit">编辑鹦鹉</el-button>
+      <div class="header-actions">
+        <div class="header-buttons">
+          <el-button @click="openTransfer">鹦鹉过户</el-button>
+          <el-button type="primary" @click="openEdit">编辑鹦鹉</el-button>
+        </div>
       </div>
     </div>
 
@@ -414,7 +416,6 @@ const submitTransfer = async () => {
 
 <style scoped>
 .parrot-detail-container { padding-bottom: 20px; }
-.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .header-buttons { display: flex; gap: 8px; }
 .info-card { display: flex; gap: 16px; background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 16px; }
 .avatar-col { flex: 0 0 auto; }

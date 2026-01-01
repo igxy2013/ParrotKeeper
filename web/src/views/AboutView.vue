@@ -1,6 +1,6 @@
 <template>
-  <div class="about-page">
-    <div class="header">
+  <div class="about-page page-container">
+    <div class="page-header">
       <h2>关于我们</h2>
     </div>
 
@@ -51,8 +51,6 @@ const onGzhError = (e) => { if (e && e.target) e.target.src = '/qrcode.jpg' }
 
 <style scoped>
 .about-page { padding-bottom: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.header h2 { margin: 0; color: var(--text-primary); }
 .about-card { }
 .about-content { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; }
 .left-block { display: flex; flex-direction: column; gap: 16px; }

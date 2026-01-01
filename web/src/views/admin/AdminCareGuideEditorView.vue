@@ -1,6 +1,6 @@
 <template>
-  <div class="admin-page">
-    <div class="header">
+  <div class="admin-page page-container">
+    <div class="page-header">
       <h2>饲养指南编辑</h2>
       <div class="header-actions">
         <el-button type="primary" @click="save" :loading="saving">保存修改</el-button>
@@ -50,8 +50,5 @@ onMounted(async () => { await (authStore.refreshProfile && authStore.refreshProf
 
 <style scoped>
 .admin-page { padding-bottom: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.header h2 { margin: 0; color: var(--text-primary); }
-.header-left { display:flex; align-items:center; gap:8px; }
 .no-access { background: #fff; border-radius: 8px; padding: 16px; color: #909399; }
 </style>

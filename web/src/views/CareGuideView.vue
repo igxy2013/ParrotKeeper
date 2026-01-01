@@ -1,6 +1,6 @@
 <template>
-  <div class="care-container">
-    <div class="header">
+  <div class="care-container page-container">
+    <div class="page-header">
       <h2>护理指南</h2>
       <div class="header-actions">
         <el-tag type="info">为中文用户提供通用与雏鸟护理建议</el-tag>
@@ -152,8 +152,6 @@ onMounted(async () => {
 
 <style scoped>
 .care-container { padding-bottom: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.header h2 { margin: 0; color: var(--text-primary); }
 .loading-box { background: #fff; padding: 16px; border-radius: 8px; }
 .tabs { background: #fff; border-radius: 8px; padding: 8px 12px; }
 .sections { margin-top: 12px; display: grid; grid-template-columns: 1fr; gap: 12px; }

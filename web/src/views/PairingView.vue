@@ -1,9 +1,9 @@
 <template>
-  <div class="pairing-container">
-    <div class="header">
+  <div class="pairing-container page-container">
+    <div class="page-header">
       <h2>鹦鹉配对计算器</h2>
-      <p class="subtitle">基于基因遗传规律预测子代颜色</p>
     </div>
+    <p class="subtitle">基于基因遗传规律预测子代颜色</p>
 
     <div v-if="loading" class="loading-state">
       <el-skeleton :rows="5" animated />
@@ -812,7 +812,7 @@ const clearAll = async () => {
 
 <style scoped>
 .pairing-container {
-  padding: 20px;
+  padding-bottom: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -820,15 +820,7 @@ const clearAll = async () => {
 .pairing-container :deep(.el-table th .cell) { font-size: 16px; }
 .pairing-container :deep(.el-table td .cell) { font-size: 16px; }
 
-.header {
-  margin-bottom: 24px;
-}
-
-.header h2 {
-  margin: 0;
-  font-size: 24px;
-  color: #303133;
-}
+/* 标题由全局 .page-header 控制 */
 
 .subtitle {
   margin: 8px 0 0;

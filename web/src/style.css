@@ -191,3 +191,28 @@ body {
     overflow: visible !important;
   }
 }
+
+/* 页面统一样式 */
+.page-container {
+  padding: 0 4px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.page-header .header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
