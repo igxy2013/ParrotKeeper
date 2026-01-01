@@ -120,7 +120,8 @@ import {
   Edit,
   Notification,
   ArrowRight,
-  Download
+  Download,
+  InfoFilled
 } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -209,6 +210,11 @@ const menuItems = computed(() => [
     path: '/reports',
     label: '报表导出',
     icon: Download
+  },
+  {
+    path: '/about',
+    label: '关于我们',
+    icon: InfoFilled
   },
   {
     path: '/settings', 

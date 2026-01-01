@@ -11,6 +11,7 @@ import PairingView from '../views/PairingView.vue'
 import CareGuideView from '../views/CareGuideView.vue'
 import AnnouncementsCenterView from '../views/AnnouncementsCenterView.vue'
 import ReportExportView from '../views/ReportExportView.vue'
+import AboutView from '../views/AboutView.vue'
 import AdminView from '../views/AdminView.vue'
 import AdminFeedbacksView from '../views/admin/AdminFeedbacksView.vue'
 import AdminIncubationSuggestionsView from '../views/admin/AdminIncubationSuggestionsView.vue'
@@ -79,6 +80,11 @@ const router = createRouter({
           path: 'reports',
           name: 'reports',
           component: ReportExportView
+        },
+        {
+          path: 'about',
+          name: 'about',
+          component: AboutView
         },
         {
           path: 'care-guide',
