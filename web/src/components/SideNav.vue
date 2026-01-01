@@ -121,7 +121,8 @@ import {
   Notification,
   ArrowRight,
   Download,
-  InfoFilled
+  InfoFilled,
+  User
 } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -219,6 +220,7 @@ const menuItems = computed(() => [
     icon: Setting, 
     adminOnly: true,
     children: [
+       { path: '/admin/users', label: '用户管理', icon: User },
        { path: '/admin/feedbacks', label: '反馈管理', icon: ChatLineSquare },
        { path: '/admin/incubation-suggestions', label: '孵化建议', icon: Sunny },
        { path: '/admin/market-prices', label: '参考价格', icon: TrendCharts },
