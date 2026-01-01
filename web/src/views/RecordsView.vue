@@ -25,7 +25,7 @@
         class="filter-item"
         @change="handleFilterChange"
       >
-        <el-option :label="'全部鹦鹉'" :value="null" />
+        <el-option label="全部鹦鹉" value="" />
         <el-option v-for="p in parrots" :key="p.id" :label="p.name" :value="p.id" />
       </el-select>
       <el-input
@@ -365,6 +365,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import api from '../api/axios'
+import { getCache, setCache } from '@/utils/cache'
 
 const route = useRoute()
 const activeTab = ref('feeding')
@@ -387,6 +388,7 @@ const addFormDateTime = ref('')
 const editingRecordId = ref(null)
 const recordsCache = reactive({})
 const cacheTTL = 30000
+const RECORDS_CACHE_TTL = 60000
 const addForm = reactive({
   parrot_ids: [],
   notes: '',
@@ -475,7 +477,7 @@ const normalizeToDateTimeString = (value) => {
 const buildRecordsCacheKey = () => {
   const range = Array.isArray(dateRange.value) ? dateRange.value.join(',') : ''
   const parrot = selectedParrotId.value || ''
-  return `${activeTab.value}|${currentPage.value}|${pageSize.value}|${parrot}|${range}`
+  return `records_list|${activeTab.value}|${currentPage.value}|${pageSize.value}|${parrot}|${range}`
 }
 
 const fetchRecords = async () => {
@@ -514,10 +516,9 @@ const fetchRecords = async () => {
     if (activeTab.value === 'breeding') {
       if (selectedParrotId.value) params.male_parrot_id = selectedParrotId.value
     }
-    const res = await api.get(url, { params })
-    
-    if (res.data.success) {
-      const d = res.data.data
+    const persisted = getCache(cacheKey, RECORDS_CACHE_TTL)
+    if (persisted && typeof persisted === 'object') {
+      const d = persisted
       recordsCache[cacheKey] = { data: d, timestamp: now }
       if (activeTab.value === 'feeding') {
         feedingRecords.value = d.items || d.records || []
@@ -529,6 +530,24 @@ const fetchRecords = async () => {
         breedingRecords.value = d.items || d.records || []
       }
       total.value = d.total || 0
+    } else {
+      const res = await api.get(url, { params })
+      
+      if (res.data.success) {
+        const d = res.data.data
+        recordsCache[cacheKey] = { data: d, timestamp: now }
+        setCache(cacheKey, d)
+        if (activeTab.value === 'feeding') {
+          feedingRecords.value = d.items || d.records || []
+        } else if (activeTab.value === 'health') {
+          healthRecords.value = d.items || d.records || []
+        } else if (activeTab.value === 'cleaning') {
+          cleaningRecords.value = d.items || d.records || []
+        } else if (activeTab.value === 'breeding') {
+          breedingRecords.value = d.items || d.records || []
+        }
+        total.value = d.total || 0
+      }
     }
   } catch (e) {
     console.error(e)

@@ -285,6 +285,7 @@ import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api/axios'
+import { getCache, setCache } from '@/utils/cache'
 
 // --- State ---
 const loading = ref(false)
@@ -444,8 +445,16 @@ const getStatusType = (status) => {
 const fetchEggs = async () => {
   loading.value = true
   try {
-    const res = await api.get('/incubation/eggs')
-    const items = (res.data && res.data.data && res.data.data.items) || []
+    const EGGS_KEY = 'incubation_eggs_list'
+    const cached = getCache(EGGS_KEY, 60000)
+    let items = []
+    if (cached && Array.isArray(cached)) {
+      items = cached
+    } else {
+      const res = await api.get('/incubation/eggs')
+      items = (res.data && res.data.data && res.data.data.items) || []
+      setCache(EGGS_KEY, items)
+    }
     const mapped = items.map(it => {
       const speciesName = (it && it.species && it.species.name) ? it.species.name : (it && it.species_name) || ''
       return {
@@ -464,11 +473,18 @@ const fetchEggs = async () => {
 
 const fetchSpecies = async () => {
   try {
-    const res = await api.get('/parrots/species')
-    if (res.data && res.data.success) {
-      speciesList.value = res.data.data || []
+    const SPECIES_KEY = 'parrot_species_all'
+    const cached = getCache(SPECIES_KEY, 60000)
+    if (cached && Array.isArray(cached)) {
+      speciesList.value = cached
     } else {
-      speciesList.value = []
+      const res = await api.get('/parrots/species')
+      if (res.data && res.data.success) {
+        speciesList.value = res.data.data || []
+        setCache(SPECIES_KEY, speciesList.value)
+      } else {
+        speciesList.value = []
+      }
     }
   } catch (e) {
     // Silent fail

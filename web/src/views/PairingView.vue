@@ -250,6 +250,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api/axios'
+import { getCache, setCache } from '@/utils/cache'
 import { simulatePairing, simulatePairingDetailed, analyzeAllOffsprings } from '@/utils/genetics'
 import { ElMessage } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
@@ -278,6 +279,8 @@ const expectedAveragePrice = ref(0)
 const bestFatherSuggestion = ref(null)
 const bestMotherSuggestion = ref(null)
 
+const PAIRING_CACHE_TTL = 60000
+
 onMounted(async () => {
   await fetchSpecies()
   loadRecords()
@@ -286,8 +289,15 @@ onMounted(async () => {
 const fetchSpecies = async () => {
   loading.value = true
   try {
-    const res = await api.get('/parrots/species')
-    const list = (res.data && res.data.success) ? (res.data.data || []) : []
+    const cached = getCache('pairing_species', PAIRING_CACHE_TTL)
+    let list = []
+    if (cached && Array.isArray(cached)) {
+      list = cached
+    } else {
+      const res = await api.get('/parrots/species')
+      list = (res.data && res.data.success) ? (res.data.data || []) : []
+      setCache('pairing_species', list)
+    }
     speciesList.value = list.filter(s => !!s.plumage_json)
     
     if (speciesList.value.length > 0) {
@@ -660,8 +670,13 @@ const getDefaultPriceMap = (species) => {
 
 const fetchPrices = async (species) => {
   try {
-    const res = await api.get('/market/prices', { params: { species } })
-    const list = res.data && res.data.data && Array.isArray(res.data.data.prices) ? res.data.data.prices : (res.data && Array.isArray(res.data.prices) ? res.data.prices : [])
+    const key = `market_prices|${species}`
+    let list = getCache(key, PAIRING_CACHE_TTL)
+    if (!Array.isArray(list)) {
+      const res = await api.get('/market/prices', { params: { species } })
+      list = res.data && res.data.data && Array.isArray(res.data.data.prices) ? res.data.data.prices : (res.data && Array.isArray(res.data.prices) ? res.data.prices : [])
+      setCache(key, list)
+    }
     const male = {}
     const female = {}
     const neutral = {}
@@ -742,10 +757,15 @@ const computeSuggestions = () => {
   expectedAveragePrice.value = avg
 }
 
-const loadRecords = async () => {
+const loadRecords = async (force = false) => {
   try {
-    const res = await api.get('/pairings')
-    const list = (res.data && res.data.success && Array.isArray(res.data.data)) ? res.data.data : (Array.isArray(res.data) ? res.data : [])
+    const key = 'pairings_records'
+    let list = (!force && getCache(key, PAIRING_CACHE_TTL)) || null
+    if (!Array.isArray(list)) {
+      const res = await api.get('/pairings')
+      list = (res.data && res.data.success && Array.isArray(res.data.data)) ? res.data.data : (Array.isArray(res.data) ? res.data : [])
+      setCache(key, list)
+    }
     records.value = list
   } catch (_) {
     records.value = []
@@ -770,7 +790,7 @@ const savePairing = async () => {
     if (!ok) throw new Error((res.data && res.data.message) || '保存失败')
     ElMessage.success('已保存配对')
     activeTab.value = 'records'
-    await loadRecords()
+    await loadRecords(true)
   } catch (e) {
     ElMessage.error(e.message || '保存失败')
   }
@@ -791,7 +811,7 @@ const deleteRecord = async (idx) => {
     const ok = res.data && res.data.success
     if (!ok) throw new Error((res.data && res.data.message) || '删除失败')
     ElMessage.success('已删除')
-    await loadRecords()
+    await loadRecords(true)
   } catch (e) {
     ElMessage.error(e.message || '删除失败')
   }
@@ -804,6 +824,7 @@ const clearAll = async () => {
     if (!ok) throw new Error((res.data && res.data.message) || '清空失败')
     records.value = []
     ElMessage.success('已清空')
+    setCache('pairings_records', [])
   } catch (e) {
     ElMessage.error(e.message || '清空失败')
   }

@@ -237,6 +237,7 @@ import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Wallet, Money, FirstAidKit, Dish, Calendar, Timer, TrendCharts, List, Brush, Warning } from '@element-plus/icons-vue'
 import api from '../api/axios'
+import { getCache, setCache } from '@/utils/cache'
 
 const router = useRouter()
 const goTo = (path) => { router.push(path) }
@@ -244,6 +245,14 @@ const goTo = (path) => { router.push(path) }
 const currentDate = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 const stats = ref({})
 const loading = ref(true)
+
+const DASHBOARD_CACHE_TTL = 60000
+const DASHBOARD_OVERVIEW_KEY_BASE = 'dashboard_overview'
+const DASHBOARD_RECENT_KEY = 'dashboard_recent'
+const DASHBOARD_HEALTH_KEY = 'dashboard_health'
+const DASHBOARD_REMINDER_KEY = 'dashboard_reminder'
+const DASHBOARD_WEIGHT_KEY = 'dashboard_weight'
+const DASHBOARD_SPECIES_KEY = 'dashboard_species'
 
 const timeRanges = [
   { label: '本周', value: 'week' },
@@ -304,6 +313,39 @@ const rangeText = computed(() => {
   return '本月'
 })
 
+const formatLocalDate = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const buildRangeParams = () => {
+  const now = new Date()
+  let startDate
+  let endDate
+  if (activeRange.value === 'week') {
+    const dayOfWeek = now.getDay()
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)
+    startDate = new Date(now.getFullYear(), now.getMonth(), diff)
+    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  } else if (activeRange.value === 'month') {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  } else if (activeRange.value === 'year') {
+    startDate = new Date(now.getFullYear(), 0, 1)
+    endDate = new Date(now.getFullYear() + 1, 0, 1)
+  }
+  if (!startDate || !endDate || activeRange.value === 'all') return {}
+  return { start_date: formatLocalDate(startDate), end_date: formatLocalDate(endDate) }
+}
+
+const buildOverviewCacheKey = () => {
+  const p = buildRangeParams()
+  if (!p.start_date || !p.end_date) return `${DASHBOARD_OVERVIEW_KEY_BASE}|all`
+  return `${DASHBOARD_OVERVIEW_KEY_BASE}|${activeRange.value}|${p.start_date}|${p.end_date}`
+}
+
 const recentActivities = ref([])
 const healthAlerts = ref([])
 
@@ -347,6 +389,49 @@ const speciesCanvas = ref(null)
 const selectedSpeciesIndex = ref(-1)
 const speciesColors = ['#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#ef4444', '#8b5cf6', '#06b6d4']
 
+const preloadFromCache = async () => {
+  let hasCache = false
+  try {
+    const cachedOverview = getCache(buildOverviewCacheKey(), DASHBOARD_CACHE_TTL)
+    if (cachedOverview) {
+      stats.value = cachedOverview
+      hasCache = true
+    }
+    const cachedRecent = getCache(DASHBOARD_RECENT_KEY, DASHBOARD_CACHE_TTL)
+    if (cachedRecent && Array.isArray(cachedRecent)) {
+      recentActivities.value = cachedRecent
+      hasCache = true
+    }
+    const cachedHealth = getCache(DASHBOARD_HEALTH_KEY, DASHBOARD_CACHE_TTL)
+    if (cachedHealth && Array.isArray(cachedHealth)) {
+      healthAlerts.value = cachedHealth
+      hasCache = true
+    }
+    const cachedReminder = getCache(DASHBOARD_REMINDER_KEY, DASHBOARD_CACHE_TTL)
+    if (cachedReminder && typeof cachedReminder === 'object') {
+      reminderSettings.value = cachedReminder
+      hasCache = true
+    }
+    const cachedWeight = getCache(DASHBOARD_WEIGHT_KEY, DASHBOARD_CACHE_TTL)
+    if (cachedWeight && Array.isArray(cachedWeight.series)) {
+      weightSeries.value = cachedWeight.series
+      if (cachedWeight.selectedParrotId) selectedParrotId.value = cachedWeight.selectedParrotId
+      if (cachedWeight.selectedParrotName) selectedParrotName.value = cachedWeight.selectedParrotName
+      hasCache = true
+      await computeAvgAndDraw()
+    }
+    const cachedSpecies = getCache(DASHBOARD_SPECIES_KEY, DASHBOARD_CACHE_TTL)
+    if (cachedSpecies && Array.isArray(cachedSpecies)) {
+      speciesDistribution.value = cachedSpecies
+      hasCache = true
+      await nextTick()
+      drawSpeciesPie()
+    }
+  } catch (_) {}
+  if (hasCache) loading.value = false
+  return hasCache
+}
+
 const fetchRecentActivities = async () => {
   try {
     const res = await api.get('/records/recent', { params: { limit: 6 } })
@@ -375,8 +460,10 @@ const fetchRecentActivities = async () => {
     add(data.breeding, 'breeding')
     list.sort((a, b) => (new Date(b.time).getTime() || 0) - (new Date(a.time).getTime() || 0))
     recentActivities.value = list.slice(0, 8)
+    setCache(DASHBOARD_RECENT_KEY, recentActivities.value)
   } catch (_) {
     recentActivities.value = []
+    setCache(DASHBOARD_RECENT_KEY, recentActivities.value)
   }
 }
 
@@ -408,17 +495,24 @@ const fetchHealthAlerts = async (days) => {
         })
       })
     })
-    if (allTypesOff.value) { healthAlerts.value = []; return }
-    healthAlerts.value = items.slice(0, 8)
+    if (allTypesOff.value) {
+      healthAlerts.value = []
+    } else {
+      healthAlerts.value = items.slice(0, 8)
+    }
+    setCache(DASHBOARD_HEALTH_KEY, healthAlerts.value)
   } catch (_) {
     healthAlerts.value = []
+    setCache(DASHBOARD_HEALTH_KEY, healthAlerts.value)
   }
 }
 
 const fetchOverview = async () => {
-  const res = await api.get('/statistics/overview', { params: { days: trendDays.value } })
+  const params = buildRangeParams()
+  const res = await api.get('/statistics/overview', { params })
   if (res.data && res.data.success) {
     stats.value = res.data.data
+    setCache(buildOverviewCacheKey(), stats.value)
   }
 }
 
@@ -443,6 +537,7 @@ const fetchReminderSettings = async () => {
       }
     }
     reminderSettings.value = next
+    setCache(DASHBOARD_REMINDER_KEY, reminderSettings.value)
   } catch (_) {
   }
 }
@@ -467,6 +562,11 @@ const fetchWeightTrends = async () => {
     }
     buildColorMap()
     await computeAvgAndDraw()
+    setCache(DASHBOARD_WEIGHT_KEY, {
+      series: weightSeries.value,
+      selectedParrotId: selectedParrotId.value,
+      selectedParrotName: selectedParrotName.value
+    })
   }
 }
 
@@ -1007,7 +1107,12 @@ const onChartMouseLeave = () => {
 }
 
 onMounted(async () => {
+  let hasCache = false
   try {
+    hasCache = await preloadFromCache()
+    if (!hasCache) {
+      loading.value = true
+    }
     await fetchReminderSettings()
     await fetchOverview()
     await fetchWeightTrends()
@@ -1084,6 +1189,7 @@ const loadSpeciesDistribution = async () => {
       color: speciesColors[idx % speciesColors.length]
     })).sort((a, b) => b.count - a.count)
     speciesDistribution.value = items
+    setCache(DASHBOARD_SPECIES_KEY, speciesDistribution.value)
     await nextTick()
     drawSpeciesPie()
   } catch (e) {

@@ -103,7 +103,7 @@
     <div class="toolbar">
       <div class="filter-group">
         <el-radio-group v-model="recordType" size="default" @change="onRecordTypeChange">
-          <el-radio-button v-for="t in recordTypeOptions" :key="t" :label="t">{{ t }}</el-radio-button>
+          <el-radio-button v-for="t in recordTypeOptions" :key="t" :value="t">{{ t }}</el-radio-button>
         </el-radio-group>
         
         <div class="category-tags" v-if="categoryOptions.length > 1">
@@ -192,6 +192,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import api from '@/api/axios'
 import ExpenseModal from '../components/ExpenseModal.vue'
+import { getCache, setCache } from '@/utils/cache'
 
 use([BarChart, LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
@@ -249,6 +250,35 @@ const selectedExpenseIndex = ref(-1)
 const expensePieCanvas = ref(null)
 const analysisType = ref('支出')
 const pieColors = ['#f97373', '#fb923c', '#facc15', '#22c55e', '#2dd4bf', '#fb7185', '#fbbf24', '#4ade80', '#34d399', '#38bdf8', '#a855f7']
+
+const EXPENSES_CACHE_TTL = 60000
+
+const buildListCacheKey = () => {
+  const period = selectedPeriod.value
+  const type = recordType.value
+  const category = selectedCategory.value
+  return `expenses_list|${period}|${type}|${category}|${page.value}|${perPage.value}`
+}
+
+const buildStatsCacheKey = () => {
+  const period = selectedPeriod.value
+  const type = recordType.value
+  const category = selectedCategory.value
+  return `expenses_stats|${period}|${type}|${category}`
+}
+
+const buildTrendCacheKey = (params) => {
+  const period = selectedPeriod.value
+  const s = params?.start_date || ''
+  const e = params?.end_date || ''
+  const pt = ['本年','全部'].includes(period) ? 'month' : 'day'
+  return `expenses_trend|${period}|${s}|${e}|${pt}`
+}
+
+const buildAnalysisCacheKey = () => {
+  const type = analysisType.value
+  return `expenses_analysis|${type}|months_6`
+}
 
 const incomeCategoryLabelMap = {
   breeding_sale: '繁殖销售',
@@ -383,15 +413,24 @@ const loadExpenses = async () => {
       ...commonParams
     }
 
-    const res = await api.get('/expenses/transactions', { params })
-    if (res.data && res.data.success) {
-      const data = res.data.data || {}
-      const items = Array.isArray(data.items) ? data.items : []
-      records.value = items
-      total.value = data.total || items.length || 0
+    const listKey = buildListCacheKey()
+    const cached = getCache(listKey, EXPENSES_CACHE_TTL)
+    if (cached && Array.isArray(cached.items)) {
+      records.value = cached.items
+      total.value = cached.total || cached.items.length || 0
       applyFilters()
     } else {
-      ElMessage.error(res.data?.message || '加载记录失败')
+      const res = await api.get('/expenses/transactions', { params })
+      if (res.data && res.data.success) {
+        const data = res.data.data || {}
+        const items = Array.isArray(data.items) ? data.items : []
+        records.value = items
+        total.value = data.total || items.length || 0
+        setCache(listKey, { items, total: total.value })
+        applyFilters()
+      } else {
+        ElMessage.error(res.data?.message || '加载记录失败')
+      }
     }
   } catch (e) {
     ElMessage.error('加载记录失败')
@@ -408,9 +447,17 @@ const loadTrend = async () => {
       ...dateParams,
       period: periodType
     }
-    const res = await api.get('/expenses/trend', { params })
-    const payload = res.data || {}
-    const raw = Array.isArray(payload.data) ? payload.data : []
+    const trendKey = buildTrendCacheKey(dateParams)
+    let raw = []
+    const cached = getCache(trendKey, EXPENSES_CACHE_TTL)
+    if (cached && Array.isArray(cached)) {
+      raw = cached
+    } else {
+      const res = await api.get('/expenses/trend', { params })
+      const payload = res.data || {}
+      raw = Array.isArray(payload.data) ? payload.data : []
+      setCache(trendKey, raw)
+    }
 
     let data = raw
 
@@ -492,7 +539,8 @@ const loadTrend = async () => {
         left: '3%',
         right: '4%',
         bottom: '3%',
-        containLabel: true
+        outerBoundsMode: 'same',
+        outerBoundsContain: 'axisLabel'
       },
       xAxis: {
         type: 'category',
@@ -567,12 +615,25 @@ const loadStats = async () => {
     if (categoryValue) {
       params.category = categoryValue
     }
-    const res = await api.get('/expenses/summary', { params })
-    if (res.data && res.data.success) {
-      const data = res.data.data || {}
-      stats.value.totalExpense = data.totalExpense || 0
-      stats.value.totalIncome = data.totalIncome || 0
-      stats.value.netIncome = data.netIncome || 0
+    const statsKey = buildStatsCacheKey()
+    const cached = getCache(statsKey, EXPENSES_CACHE_TTL)
+    if (cached && typeof cached === 'object') {
+      stats.value.totalExpense = cached.totalExpense || 0
+      stats.value.totalIncome = cached.totalIncome || 0
+      stats.value.netIncome = cached.netIncome || 0
+    } else {
+      const res = await api.get('/expenses/summary', { params })
+      if (res.data && res.data.success) {
+        const data = res.data.data || {}
+        stats.value.totalExpense = data.totalExpense || 0
+        stats.value.totalIncome = data.totalIncome || 0
+        stats.value.netIncome = data.netIncome || 0
+        setCache(statsKey, {
+          totalExpense: stats.value.totalExpense,
+          totalIncome: stats.value.totalIncome,
+          netIncome: stats.value.netIncome
+        })
+      }
     }
   } catch (e) {
     ElMessage.error('加载统计数据失败')
@@ -718,11 +779,19 @@ const loadExpenseAnalysis = async () => {
   try {
     const isIncome = analysisType.value === '收入'
     const url = isIncome ? '/statistics/income-analysis' : '/statistics/expense-analysis'
-    const res = await api.get(url, { params: { months: 6 } })
-    const data = res.data?.data || {}
-    const rawList = isIncome
-      ? Array.isArray(data.category_incomes) ? data.category_incomes : []
-      : Array.isArray(data.category_expenses) ? data.category_expenses : []
+    const key = buildAnalysisCacheKey()
+    let rawList = []
+    const cached = getCache(key, EXPENSES_CACHE_TTL)
+    if (cached && Array.isArray(cached)) {
+      rawList = cached
+    } else {
+      const res = await api.get(url, { params: { months: 6 } })
+      const data = res.data?.data || {}
+      rawList = isIncome
+        ? Array.isArray(data.category_incomes) ? data.category_incomes : []
+        : Array.isArray(data.category_expenses) ? data.category_expenses : []
+      setCache(key, rawList)
+    }
     const total = rawList.reduce((sum, it) => sum + (Number(it.total_amount) || 0), 0)
     const mapped = rawList
       .map((it, idx) => {

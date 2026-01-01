@@ -2,9 +2,6 @@
   <div class="care-container page-container">
     <div class="page-header">
       <h2>护理指南</h2>
-      <div class="header-actions">
-        <el-tag type="info">为中文用户提供通用与雏鸟护理建议</el-tag>
-      </div>
     </div>
 
     <div v-if="loading" class="loading-box">
@@ -40,6 +37,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api/axios'
+import { getCache, setCache } from '@/utils/cache'
 
 const loading = ref(true)
 const error = ref('')
@@ -47,6 +45,10 @@ const sections = ref([])
 const speciesTabs = ref([])
 const guidesMap = ref({})
 const activeTabKey = ref('general')
+
+const CARE_CACHE_TTL = 60000
+const CARE_GENERAL_KEY = 'care_general'
+const CARE_PERSONALIZED_KEY = 'care_personalized'
 
 const selectTab = (key) => {
   activeTabKey.value = key
@@ -105,6 +107,22 @@ const buildChickGuide = () => {
 
 const fetchPersonalized = async () => {
   try {
+    const cached = getCache(CARE_PERSONALIZED_KEY, CARE_CACHE_TTL)
+    if (cached && typeof cached === 'object') {
+      const general = Array.isArray((cached.general || {}).sections) ? (cached.general.sections || []) : []
+      const chickKey = 'chick_0_45'
+      const chickName = '手养雏鸟 0-45天'
+      const chickSections = buildChickGuide()
+      speciesTabs.value = [{ key: 'general', name: '通用建议' }, { key: chickKey, name: chickName }]
+      guidesMap.value = { [chickKey]: { display_name: chickName, sections: chickSections } }
+      generalSections.value = general
+      const desired = activeTabKey.value
+      const keys = speciesTabs.value.map(t => t.key)
+      const active = (desired && keys.includes(desired)) ? desired : 'general'
+      selectTab(active)
+      error.value = ''
+      return true
+    }
     const res = await api.get('/care-guide/personalized')
     if (res.data && res.data.success) {
       const data = res.data.data || {}
@@ -115,6 +133,7 @@ const fetchPersonalized = async () => {
       speciesTabs.value = [{ key: 'general', name: '通用建议' }, { key: chickKey, name: chickName }]
       guidesMap.value = { [chickKey]: { display_name: chickName, sections: chickSections } }
       generalSections.value = general
+      setCache(CARE_PERSONALIZED_KEY, { general: { sections: general } })
       const desired = activeTabKey.value
       const keys = speciesTabs.value.map(t => t.key)
       const active = (desired && keys.includes(desired)) ? desired : 'general'
@@ -129,9 +148,18 @@ const fetchPersonalized = async () => {
 }
 
 const fetchGeneral = async () => {
-  const res = await api.get('/care-guide')
-  const ok = res.data && res.data.success
-  const secs = ok ? (Array.isArray(res.data.data.sections) ? res.data.data.sections : []) : []
+  const cached = getCache(CARE_GENERAL_KEY, CARE_CACHE_TTL)
+  let secs = []
+  let ok = false
+  if (cached && Array.isArray(cached)) {
+    secs = cached
+    ok = true
+  } else {
+    const res = await api.get('/care-guide')
+    ok = res.data && res.data.success
+    secs = ok ? (Array.isArray(res.data.data.sections) ? res.data.data.sections : []) : []
+    if (ok) setCache(CARE_GENERAL_KEY, secs)
+  }
   const chickKey = 'chick_0_45'
   const chickName = '手养雏鸟 0-45天'
   const chickSections = buildChickGuide()

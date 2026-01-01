@@ -180,6 +180,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { Plus, Male, Female, ArrowRight, Search, Grid, Tickets } from '@element-plus/icons-vue'
 import api from '../api/axios'
+import { getCache, setCache } from '@/utils/cache'
 import ParrotModal from '../components/ParrotModal.vue'
 import ParrotDetailModal from '../components/ParrotDetailModal.vue'
 import { useAuthStore } from '../stores/auth'
@@ -201,6 +202,9 @@ const selectedGender = ref('')
 const selectedStatus = ref('')
 const selectedSort = ref('created_desc')
 const viewMode = ref('card')
+
+const PARROTS_CACHE_KEY = 'parrots_list_default'
+const PARROTS_CACHE_TTL = 60000
 
 // Initialize viewMode from localStorage or user_mode
 const initViewMode = () => {
@@ -239,8 +243,8 @@ const sortOptions = [
   { label: '年龄从大到小', value: 'age_desc', by: 'birth_date', order: 'asc' }
 ]
 
-const fetchParrots = async () => {
-  loading.value = true
+const fetchParrots = async (withLoading = true) => {
+  if (withLoading) loading.value = true
   try {
     const res = await api.get('/parrots', {
       params: {
@@ -257,11 +261,25 @@ const fetchParrots = async () => {
     if (res.data.success) {
       parrots.value = res.data.data.parrots || []
       total.value = res.data.data.total || 0
+      const isDefaultQuery =
+        currentPage.value === 1 &&
+        !searchKeyword.value &&
+        !selectedSpeciesId.value &&
+        !selectedGender.value &&
+        !selectedStatus.value &&
+        selectedSort.value === 'created_desc'
+      if (isDefaultQuery) {
+        setCache(PARROTS_CACHE_KEY, {
+          parrots: parrots.value,
+          total: total.value,
+          pageSize: pageSize.value
+        })
+      }
     }
   } catch (e) {
     console.error(e)
   } finally {
-    loading.value = false
+    if (withLoading) loading.value = false
   }
 }
 
@@ -442,8 +460,29 @@ const onAvatarError = (e, parrot) => {
   }
 }
 
+const preloadFromCache = () => {
+  try {
+    const cached = getCache(PARROTS_CACHE_KEY, PARROTS_CACHE_TTL)
+    if (!cached || !Array.isArray(cached.parrots)) return false
+    parrots.value = cached.parrots
+    total.value = cached.total || cached.parrots.length
+    currentPage.value = 1
+    selectedSort.value = 'created_desc'
+    loading.value = false
+    return true
+  } catch (_) {
+    return false
+  }
+}
+
 onMounted(() => {
-  fetchParrots()
+  initViewMode()
+  const hasCache = preloadFromCache()
+  if (!hasCache) {
+    fetchParrots()
+  } else {
+    fetchParrots(false)
+  }
   loadSpecies()
 })
 
