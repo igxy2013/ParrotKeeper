@@ -1,8 +1,0 @@
-{
-  "navigationBarTitleText": "鹦鹉证件照",
-  "navigationStyle": "custom",
-  "usingComponents": {
-    "app-header": "/components/app-header/app-header",
-    "bottom-nav": "/components/bottom-nav/bottom-nav"
-  }
-}

@@ -69,20 +69,6 @@ Page({
       { icon: '🥚', title: '人工孵化', desc: '记录孵化过程', bgClass: 'bg-purple', iconSrc: '/images/remix/information-line.png' },
       { icon: '⭐', title: '积分计划', desc: '查看积分规则', bgClass: 'bg-blue', iconSrc: '/images/remix/information-line.png' },
       { icon: '🧮', title: '鹦鹉配对计算器', desc: '按羽色计算后代概率', bgClass: 'bg-indigo', iconSrc: '/images/remix/calculator-line.png', badge: '限时免费' },
-      { icon: '🖼️', title: '鹦鹉证件照', desc: '上传照片生成白底证件照', bgClass: 'bg-blue', iconSrc: '/images/remix/user-line.png' },
-      { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.png', isContact: true },
-      { icon: '❓', title: '帮助反馈', desc: '提交问题与建议', bgClass: 'bg-amber', iconSrc: '/images/remix/feedback-line.png' },
-      { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.png' },
-      { icon: '📤', title: '分享应用', desc: '推荐给朋友', bgClass: 'bg-pink', iconSrc: '/images/remix/share-forward-line.png' }
-    ],
-
-    baseMenuItems: [
-      { icon: '⚙️', title: '设置', desc: '个人偏好设置', bgClass: 'bg-gray', iconSrc: '/images/remix/settings-3-line.png' },
-      { icon: '📘', title: '护理指南', desc: '鹦鹉护理知识', bgClass: 'bg-green', iconSrc: '/images/remix/ri-book-line.png' },
-      { icon: '🥚', title: '人工孵化', desc: '记录孵化过程', bgClass: 'bg-purple', iconSrc: '/images/remix/information-line.png' },
-      { icon: '⭐', title: '积分计划', desc: '查看积分规则', bgClass: 'bg-blue', iconSrc: '/images/remix/information-line.png' },
-      { icon: '🧮', title: '鹦鹉配对计算器', desc: '按羽色计算后代概率', bgClass: 'bg-indigo', iconSrc: '/images/remix/calculator-line.png', badge: '限时免费' },
-      { icon: '🖼️', title: '鹦鹉证件照', desc: '上传照片生成白底证件照', bgClass: 'bg-blue', iconSrc: '/images/remix/user-line.png' },
       { icon: '🛠️', title: '客服支持', desc: '联系我们获取帮助', bgClass: 'bg-orange', iconSrc: '/images/remix/customer-service-2-line.png', isContact: true },
       { icon: '❓', title: '帮助反馈', desc: '提交问题与建议', bgClass: 'bg-amber', iconSrc: '/images/remix/feedback-line.png' },
       { icon: 'ℹ️', title: '关于我们', desc: '了解鹦鹉管家', bgClass: 'bg-indigo', iconSrc: '/images/remix/information-line.png' },
@@ -501,9 +487,6 @@ Page({
       wx.navigateTo({ url: '/pages/points/plan/plan' });
     } else if (title === '鹦鹉配对计算器') {
       wx.navigateTo({ url: '/pages/tools/pairing-calculator/pairing-calculator' });
-    } else if (title === '鹦鹉证件照') {
-      if (!this.data.isSuperAdmin) { wx.showToast({ title: '仅超级管理员可使用', icon: 'none' }); return }
-      wx.navigateTo({ url: '/pages/tools/parrot-id-photo/parrot-id-photo' });
     } else if (title === '客服支持') {
       // 备选处理：若未通过内置按钮触发，可给出提示
       wx.showToast({ title: '请点击该项以打开客服会话', icon: 'none' });
@@ -690,7 +673,6 @@ Page({
       roleDisplay: this.mapRoleDisplay(baseUser),
       points,
     });
-    this.applyMenuVisibility();
 
     // 若已登录，则尝试从后端获取最新的用户信息（包含role等字段）
     if (isLogin) {
@@ -711,18 +693,11 @@ Page({
             joinDate: app.formatDate(merged.created_at || Date.now()),
             points: points,
           });
-          this.applyMenuVisibility();
         }
       } catch (e) {
         console.warn('刷新用户信息失败:', e);
       }
     }
-  },
-
-  applyMenuVisibility() {
-    const full = (this.data.baseMenuItems || []).slice();
-    const filtered = this.data.isSuperAdmin ? full : full.filter(i => i.title !== '鹦鹉证件照');
-    this.setData({ menuItems: filtered });
   },
 
   // 将后端角色枚举映射为展示文案
