@@ -59,6 +59,12 @@
 
 .save-pair-section { margin-bottom: 12rpx; }
 
+/* 开始计算按钮 */
+.calculate-btn { background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%); color: #ffffff; border: none; border-radius: 48rpx; padding:24rpx 200rpx; font-size: 32rpx; font-weight: bold; box-shadow: 0 8rpx 24rpx rgba(76, 175, 80, 0.3); transition: all 0.3s ease; margin: 16rpx 20rpx 0 20rpx; display: flex; align-items: center; justify-content: center; }
+.calculate-btn:active { transform: translateY(2rpx) scale(0.98); box-shadow: 0 4rpx 16rpx rgba(76, 175, 80, 0.4); }
+.calculate-btn-text { color: #ffffff; font-size: 32rpx; font-weight: bold; text-align: center; }
+.calculate-section { margin-bottom: 12rpx; }
+
 /* 顶部右侧删除图标按钮 */
 .record-delete-btn { position: absolute; top: 18rpx; right: 18rpx; width: 64rpx; height: 64rpx; border-radius: 14rpx; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 6rpx 16rpx rgba(239,68,68,0.28); display: flex; align-items: center; justify-content: center; }
 .record-delete-icon { width: 32rpx; height: 32rpx; }

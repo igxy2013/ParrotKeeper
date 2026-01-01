@@ -55,11 +55,17 @@
       <view class="hint">提示：勾选“携带基因”可模拟隐性基因携带情况。部分复杂突变可能未完全覆盖。</view>
     </view>
 
+    <view class="calculate-section">
+      <view class="calculate-btn" bindtap="startCalculation">
+        <view class="calculate-btn-text">开始计算</view>
+      </view>
+    </view>
+
     <view class="card">
       <view class="section-title">
         <text>预测结果</text>
       </view>
-      <view wx:if="{{results && results.length > 0}}" class="results">
+      <view wx:if="{{hasCalculated && results && results.length > 0}}" class="results">
         <block wx:for="{{results}}" wx:key="index">
           <view class="result-item">
             <view class="result-info">
@@ -69,10 +75,10 @@
           </view>
         </block>
       </view>
-      <view wx:else class="empty">请选择上方选项以计算</view>
+      <view wx:else class="empty">点击上方“开始计算”后显示结果</view>
     </view>
 
-    <view wx:if="{{sexBreakdown && (sexBreakdown.male.length || sexBreakdown.female.length)}}" class="card">
+    <view wx:if="{{hasCalculated && sexBreakdown && (sexBreakdown.male.length || sexBreakdown.female.length)}}" class="card">
       <view class="section-title">
         <text>按性别分布详情</text>
       </view>
@@ -106,7 +112,7 @@
       </view>
     </view>
 
-    <view class="card">
+    <view wx:if="{{hasCalculated}}" class="card">
       <view class="section-title">
         <text>预计均价</text>
       </view>
@@ -116,7 +122,7 @@
       </view>
     </view>
 
-    <view class="save-pair-section">
+    <view wx:if="{{hasCalculated}}" class="save-pair-section">
       <view class="save-pair-btn" bindtap="savePairing">
         <view class="save-pair-btn-text">保存配对</view>
       </view>

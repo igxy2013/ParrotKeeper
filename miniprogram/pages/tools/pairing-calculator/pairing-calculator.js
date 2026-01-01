@@ -210,6 +210,7 @@ Page({
     fatherSplits: [],
     
     results: [],
+    hasCalculated: false,
     sexBreakdown: { male: [], female: [] },
     priceMap: {},
     priceMapMale: {},
@@ -242,10 +243,18 @@ Page({
     const defIdx = this.data.speciesOptions.indexOf('和尚鹦鹉')
     const targetIdx = hasSi ? si : (defIdx >= 0 ? defIdx : 0)
     this.updateSpeciesData(targetIdx)
-    this.setData({ motherColorIndex: mi, fatherColorIndex: fi, motherSplits: ms, fatherSplits: fs }, () => {
-      this.compute()
+    this.setData({ 
+      motherColorIndex: mi, 
+      fatherColorIndex: fi, 
+      motherSplits: ms, 
+      fatherSplits: fs,
+      results: [],
+      sexBreakdown: { male: [], female: [] },
+      hasCalculated: false
+    }, () => {
       const species = this.data.speciesOptions[this.data.speciesIndex]
       this.fetchPrices(species)
+      this.computeSuggestions()
     })
   },
 
@@ -304,10 +313,13 @@ Page({
       fatherSplits: [],
       priceMap: {},
       bestFatherSuggestion: null,
-      bestMotherSuggestion: null
+      bestMotherSuggestion: null,
+      results: [],
+      sexBreakdown: { male: [], female: [] },
+      hasCalculated: false
     }, () => {
-      this.compute()
       this.fetchPrices(species)
+      this.computeSuggestions()
     })
   },
 
@@ -315,9 +327,11 @@ Page({
     const { colorIndex, splitIds } = e.detail
     this.setData({ 
       motherColorIndex: colorIndex,
-      motherSplits: splitIds 
+      motherSplits: splitIds,
+      hasCalculated: false,
+      results: [],
+      sexBreakdown: { male: [], female: [] }
     }, () => { 
-      this.compute(); 
       this.computeSuggestions() 
     })
   },
@@ -326,24 +340,51 @@ Page({
     const { colorIndex, splitIds } = e.detail
     this.setData({ 
       fatherColorIndex: colorIndex,
-      fatherSplits: splitIds 
+      fatherSplits: splitIds,
+      hasCalculated: false,
+      results: [],
+      sexBreakdown: { male: [], female: [] }
     }, () => { 
-      this.compute(); 
       this.computeSuggestions() 
     })
   },
 
   onMotherColorChange(e) {
-    this.setData({ motherColorIndex: Number(e.detail.value) }, () => { this.compute(); this.computeSuggestions() })
+    this.setData({ 
+      motherColorIndex: Number(e.detail.value),
+      hasCalculated: false,
+      results: [],
+      sexBreakdown: { male: [], female: [] }
+    }, () => { this.computeSuggestions() })
   },
   onFatherColorChange(e) {
-    this.setData({ fatherColorIndex: Number(e.detail.value) }, () => { this.compute(); this.computeSuggestions() })
+    this.setData({ 
+      fatherColorIndex: Number(e.detail.value),
+      hasCalculated: false,
+      results: [],
+      sexBreakdown: { male: [], female: [] }
+    }, () => { this.computeSuggestions() })
   },
   onMotherSplitsChange(e) {
-    this.setData({ motherSplits: e.detail.value }, () => { this.compute(); this.computeSuggestions() })
+    this.setData({ 
+      motherSplits: e.detail.value,
+      hasCalculated: false,
+      results: [],
+      sexBreakdown: { male: [], female: [] }
+    }, () => { this.computeSuggestions() })
   },
   onFatherSplitsChange(e) {
-    this.setData({ fatherSplits: e.detail.value }, () => { this.compute(); this.computeSuggestions() })
+    this.setData({ 
+      fatherSplits: e.detail.value,
+      hasCalculated: false,
+      results: [],
+      sexBreakdown: { male: [], female: [] }
+    }, () => { this.computeSuggestions() })
+  },
+
+  startCalculation() {
+    this.compute()
+    this.setData({ hasCalculated: true })
   },
 
   

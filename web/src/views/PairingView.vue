@@ -47,13 +47,13 @@
               </template>
               <el-form label-position="top">
                 <el-form-item label="外观颜色 (Visual)">
-                  <el-select 
-                    v-model="motherColorIndex" 
-                    filterable 
-                    placeholder="选择颜色" 
-                    style="width: 100%"
-                    @change="calculate"
-                  >
+          <el-select 
+            v-model="motherColorIndex" 
+            filterable 
+            placeholder="选择颜色" 
+            style="width: 100%"
+            @change="onConfigChanged"
+          >
                     <el-option 
                       v-for="(c, idx) in colorOptions" 
                       :key="idx" 
@@ -70,7 +70,7 @@
                     collapse-tags 
                     collapse-tags-tooltip
                     style="width: 100%"
-                    @change="calculate"
+                    @change="onConfigChanged"
                   >
                     <el-option 
                       v-for="s in splitOptions" 
@@ -103,7 +103,7 @@
                     filterable 
                     placeholder="选择颜色" 
                     style="width: 100%"
-                    @change="calculate"
+                    @change="onConfigChanged"
                   >
                     <el-option 
                       v-for="(c, idx) in colorOptions" 
@@ -121,7 +121,7 @@
                     collapse-tags 
                     collapse-tags-tooltip
                     style="width: 100%"
-                    @change="calculate"
+                    @change="onConfigChanged"
                   >
                     <el-option 
                       v-for="s in splitOptions" 
@@ -140,8 +140,12 @@
         </el-col>
       </el-row>
 
+        <div class="calculate-section">
+          <el-button type="primary" size="large" @click="startCalculation">开始计算</el-button>
+        </div>
+
         <!-- Results -->
-        <div class="results-section">
+        <div v-if="hasCalculated" class="results-section">
           <div class="section-title">
             <h3>计算结果</h3>
             <span class="result-count">共 {{ results.length }} 种可能</span>
@@ -167,7 +171,7 @@
         </div>
 
         <!-- Sex Breakdown -->
-        <div v-if="sexBreakdown.male.length || sexBreakdown.female.length" class="results-section">
+        <div v-if="hasCalculated && (sexBreakdown.male.length || sexBreakdown.female.length)" class="results-section">
           <div class="section-title"><h3>按性别分布</h3></div>
           <el-row :gutter="20">
             <el-col :xs="24" :sm="12">
@@ -197,7 +201,7 @@
           </el-row>
         </div>
 
-        <div class="results-section">
+        <div v-if="hasCalculated" class="results-section">
           <div class="section-title"><h3>预计均价</h3></div>
           <div class="avg-box">
             <span class="avg-value">¥{{ expectedAveragePrice }}</span>
@@ -205,7 +209,7 @@
           </div>
         </div>
 
-        <div class="save-pair-section">
+        <div v-if="hasCalculated" class="save-pair-section">
           <el-button type="primary" @click="savePairing">保存配对</el-button>
         </div>
       </div>
@@ -280,6 +284,8 @@ const bestFatherSuggestion = ref(null)
 const bestMotherSuggestion = ref(null)
 
 const PAIRING_CACHE_TTL = 60000
+
+const hasCalculated = ref(false)
 
 onMounted(async () => {
   await fetchSpecies()
@@ -463,8 +469,11 @@ const updateSpeciesData = (idx) => {
     motherSplits.value = []
     fatherSplits.value = []
     
-    calculate()
+    hasCalculated.value = false
+    results.value = []
+    sexBreakdown.value = { male: [], female: [] }
     fetchPrices(species.name)
+    computeSuggestions()
   } catch (e) {
     console.error('Failed to parse plumage config', e)
     plumageConfig.value = null
@@ -495,6 +504,18 @@ const calculate = () => {
     fatherSplits.value
   )
   sexBreakdown.value = detail.sexBreakdown
+  computeSuggestions()
+}
+
+const startCalculation = () => {
+  calculate()
+  hasCalculated.value = true
+}
+
+const onConfigChanged = () => {
+  hasCalculated.value = false
+  results.value = []
+  sexBreakdown.value = { male: [], female: [] }
   computeSuggestions()
 }
 
@@ -882,6 +903,7 @@ const clearAll = async () => {
 
 .empty-sm { color: #909399; font-size: 13px; margin-top: 8px; }
 .save-pair-section { margin-top: 16px; }
+.calculate-section { margin-top: 16px; }
 .record-card { margin-bottom: 16px; }
 .record-header { font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .record-delete-btn { flex: 0 0 auto; }
