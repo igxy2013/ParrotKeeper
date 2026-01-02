@@ -38,6 +38,56 @@
         </el-card>
       </div>
 
+      <!-- 用户趋势 -->
+      <el-card class="analysis-card" shadow="never" style="margin-bottom: 20px;">
+        <div class="card-header-row">
+          <div class="card-title-row">
+            <span class="card-icon"><el-icon><TrendCharts /></el-icon></span>
+            <span class="card-title-text">用户趋势</span>
+          </div>
+          <div class="time-range-tabs">
+            <div
+              v-for="p in userPeriods"
+              :key="p"
+              class="time-range-tab"
+              :class="{ active: selectedUserPeriod === p }"
+              @click="setSelectedUserPeriod(p)"
+            >{{ p }}</div>
+            <el-date-picker
+              v-if="selectedUserPeriod === '月'"
+              v-model="selectedUserMonth"
+              type="month"
+              size="small"
+              format="YYYY-MM"
+              value-format="YYYY-MM"
+              placeholder="选择月份"
+              style="margin-left:8px"
+              @change="loadUserTrend"
+            />
+            <el-date-picker
+              v-if="selectedUserPeriod === '年'"
+              v-model="selectedUserYear"
+              type="year"
+              size="small"
+              format="YYYY"
+              value-format="YYYY"
+              placeholder="选择年份"
+              style="margin-left:8px"
+              @change="loadUserTrend"
+            />
+          </div>
+        </div>
+        <div class="analysis-content">
+          <VChart
+            v-if="userTrendData.length"
+            :option="userChartOption"
+            autoresize
+            class="trend-chart"
+          />
+          <div v-else class="empty-tip">暂无趋势数据</div>
+        </div>
+      </el-card>
+
       <!-- Filters -->
       <div class="filter-bar">
         <el-input
@@ -113,7 +163,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, TrendCharts } from '@element-plus/icons-vue'
 import api from '@/api/axios'
 import { useAuthStore } from '@/stores/auth'
 
@@ -263,11 +313,105 @@ const handlePageChange = (val) => {
   fetchList()
 }
 
+// 用户趋势（按天，最近30天）
+const userTrendData = ref([])
+const userChartOption = ref({})
+const userPeriods = ['周', '月', '年', '全部']
+const selectedUserPeriod = ref('月')
+const selectedUserMonth = ref('')
+const selectedUserYear = ref('')
+
+const setSelectedUserPeriod = (p) => {
+  selectedUserPeriod.value = p
+  loadUserTrend()
+}
+
+const loadUserTrend = async () => {
+  try {
+    const now = new Date()
+    const fmtDate = (d) => {
+      const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${dd}`
+    }
+    let params = {}
+    let axisPeriod = 'day'
+    if (selectedUserPeriod.value === '周') {
+      const end_date = fmtDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()))
+      const start_date = fmtDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6))
+      params = { start_date, end_date, period: 'day' }
+      axisPeriod = 'day'
+    } else if (selectedUserPeriod.value === '月') {
+      const ym = selectedUserMonth.value || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+      const [yy, mm] = ym.split('-')
+      const s = `${yy}-${mm}-01`
+      const eDate = new Date(parseInt(yy), parseInt(mm), 1)
+      const e = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}-01`
+      params = { start_date: s, end_date: e, period: 'day' }
+      axisPeriod = 'day'
+    } else if (selectedUserPeriod.value === '年') {
+      const yy = selectedUserYear.value || String(now.getFullYear())
+      const s = `${yy}-01-01`
+      const e = `${parseInt(yy) + 1}-01-01`
+      params = { start_date: s, end_date: e, period: 'month' }
+      axisPeriod = 'month'
+    } else { // 全部
+      params = { period: 'month' }
+      axisPeriod = 'month'
+    }
+
+    const res = await api.get('/admin/users/trend', { params })
+    const raw = (res.data && res.data.success && Array.isArray(res.data.data)) ? res.data.data : []
+    const data = raw.map(it => ({
+      date: String(it.date || ''),
+      add: Number(it.new_users || 0),
+      total: Number(it.total_users || 0)
+    }))
+    userTrendData.value = data
+
+    const formatLabel = (t) => {
+      const s = String(t)
+      if (axisPeriod === 'day' && /^\d{4}-\d{2}-\d{2}$/.test(s)) return s.slice(5)
+      if (axisPeriod === 'month' && /^\d{4}-\d{2}$/.test(s)) return s.slice(5)
+      return s
+    }
+
+    const xAxisData = data.map(i => formatLabel(i.date))
+    const addSeries = data.map(i => i.add)
+    const totalSeries = data.map(i => i.total)
+    const maxVal = Math.max(addSeries.reduce((m, v) => Math.max(m, v || 0), 0), 0) || 1
+
+    userChartOption.value = {
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      legend: {
+        top: 0,
+        left: 'center',
+        icon: 'circle',
+        itemWidth: 10,
+        itemHeight: 10,
+        textStyle: { color: '#4b5563' },
+        data: ['新增', '累计']
+      },
+      grid: { top: 40, left: '3%', right: '4%', bottom: '3%', outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
+      xAxis: { type: 'category', data: xAxisData, axisLine: { lineStyle: { color: '#e5e7eb' } }, axisTick: { show: false }, axisLabel: { color: '#6b7280' } },
+      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#6b7280' }, splitLine: { lineStyle: { color: '#e5e7eb' } } },
+      series: [
+        { name: '占位', type: 'bar', data: xAxisData.map(() => maxVal), itemStyle: { color: 'rgba(16, 185, 129, 0.12)', borderRadius: [12,12,4,4] }, barGap: '-100%', silent: true, emphasis: { disabled: true } },
+        { name: '新增', type: 'bar', data: addSeries, itemStyle: { color: '#064e3b', borderRadius: [12,12,4,4] } },
+        { name: '累计', type: 'line', smooth: true, data: totalSeries, itemStyle: { color: '#10b981' }, lineStyle: { width: 3, color: '#10b981' } }
+      ]
+    }
+  } catch (e) {
+    userTrendData.value = []
+    console.error('Fetch user trend error', e)
+  }
+}
+
 onMounted(async () => {
   await (authStore.refreshProfile && authStore.refreshProfile())
   if (isSuperAdmin.value) {
     fetchStats()
     fetchList()
+    loadUserTrend()
   }
 })
 </script>
@@ -320,4 +464,8 @@ onMounted(async () => {
   justify-content: flex-end;
   margin-top: 20px;
 }
+.analysis-card .card-title-row { display: flex; align-items: center; gap: 8px; }
+.analysis-content { padding: 8px 0; }
+.trend-chart { width: 100%; height: 280px; }
+.empty-tip { color: #909399; text-align: center; padding: 20px 0; }
 </style>

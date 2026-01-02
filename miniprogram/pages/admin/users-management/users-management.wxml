@@ -43,6 +43,9 @@
            </view>
         </view>
 
+        <!-- 用户趋势图表 -->
+        <user-trend-chart data="{{userTrendData}}" bind:filterchange="handleFilterChange" />
+
         <!-- Filters -->
         <view class="filter-dropdowns-row">
             <picker class="filter-picker" mode="selector" range="{{modeOptions}}" value="{{modeIndex}}" bindchange="onModeChange">
