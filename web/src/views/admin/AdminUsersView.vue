@@ -165,7 +165,20 @@ const getRoleType = (role) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString()
+  const s = String(dateStr).trim()
+  if (/^\d+$/.test(s)) {
+    const n = parseInt(s, 10)
+    const ms = s.length > 10 ? n : n * 1000
+    const d = new Date(ms)
+    return d.toLocaleString('zh-CN', { hour12: false })
+  }
+  let str = s.replace(' ', 'T')
+  if (/[Zz]|[\+\-]\d{2}:?\d{2}$/.test(str)) {
+    const d = new Date(str)
+    return d.toLocaleString('zh-CN', { hour12: false })
+  }
+  const d = new Date(str + 'Z')
+  return d.toLocaleString('zh-CN', { hour12: false })
 }
 
 // Fetch Stats

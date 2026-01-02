@@ -41,28 +41,48 @@
     </div>
     <div class="stats-overview">
       <div class="stats-grid">
-        <div class="stat-card stat-primary">
-          <div class="stat-title">鹦鹉总数</div>
-          <div class="stat-value">{{ total }}</div>
-        </div>
         <div class="stat-card">
-          <div class="stat-title">性别分布</div>
-          <div class="stat-pills">
-            <span class="pill pill-male">公 {{ stats.male }}</span>
-            <span class="pill pill-female">母 {{ stats.female }}</span>
+          <div class="stat-icon-wrapper icon-primary">
+            <el-icon><User /></el-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">鹦鹉总数</div>
+            <div class="stat-value">{{ total }}</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-title">健康状况</div>
-          <div class="stat-pills">
-            <span class="pill pill-healthy">健康 {{ stats.healthy }}</span>
-            <span class="pill pill-sick">生病 {{ stats.sick }}</span>
-            <span class="pill pill-recovering">康复中 {{ stats.recovering }}</span>
+          <div class="stat-icon-wrapper icon-gender">
+            <el-icon><User /></el-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">性别分布</div>
+            <div class="stat-pills">
+              <span class="pill pill-male">公 {{ stats.male }}</span>
+              <span class="pill pill-female">母 {{ stats.female }}</span>
+            </div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-title">平均体重</div>
-          <div class="stat-value">{{ stats.avgWeight }}</div>
+          <div class="stat-icon-wrapper icon-health">
+            <el-icon><FirstAidKit /></el-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">健康状况</div>
+            <div class="stat-pills">
+              <span class="pill pill-healthy">健康 {{ stats.healthy }}</span>
+              <span class="pill pill-sick">生病 {{ stats.sick }}</span>
+              <span class="pill pill-recovering">康复中 {{ stats.recovering }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon-wrapper icon-weight">
+            <el-icon><TrendCharts /></el-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">平均体重</div>
+            <div class="stat-value">{{ stats.avgWeight }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -178,7 +198,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { Plus, Male, Female, ArrowRight, Search, Grid, Tickets } from '@element-plus/icons-vue'
+import { Plus, Male, Female, ArrowRight, Search, Grid, Tickets, User, FirstAidKit, TrendCharts } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import { getCache, setCache } from '@/utils/cache'
 import ParrotModal from '../components/ParrotModal.vue'
@@ -552,24 +572,38 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
   border-radius: 12px;
   padding: 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-.stat-card.stat-primary {
-  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
-  color: #ffffff;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+.stat-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.icon-primary { background: #eff6ff; color: #2563eb; }
+.icon-gender { background: #f0fdf4; color: #16a34a; }
+.icon-health { background: #faf5ff; color: #9333ea; }
+.icon-weight { background: #fff7ed; color: #ea580c; }
+
+.stat-content { flex: 1; min-width: 0; }
 .stat-title {
   font-size: 13px;
   color: #909399;
 }
-.stat-card.stat-primary .stat-title {
-  color: rgba(255,255,255,0.9);
-}
 .stat-value {
   font-size: 16px;
   color: var(--text-primary);
-}
-.stat-card.stat-primary .stat-value {
-  color: #ffffff;
 }
 .stat-pills {
   display: flex;
