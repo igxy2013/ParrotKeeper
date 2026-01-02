@@ -9,32 +9,81 @@
       <!-- Stats Cards -->
       <div class="stats-cards" v-loading="loadingStats">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">总用户</div>
-          <div class="stat-value">{{ stats.totalUsers }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-primary">
+              <el-icon><User /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">总用户</div>
+              <div class="stat-value">{{ stats.totalUsers }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">团队用户</div>
-          <div class="stat-value">{{ stats.teamUsers }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-purple">
+              <el-icon><UserFilled /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">团队用户</div>
+              <div class="stat-value">{{ stats.teamUsers }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">超级管理员</div>
-          <div class="stat-value">{{ stats.roleSuperAdmin }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-danger">
+              <el-icon><Trophy /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">超级管理员</div>
+              <div class="stat-value">{{ stats.roleSuperAdmin }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">管理员</div>
-          <div class="stat-value">{{ stats.roleAdmin }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-warning">
+              <el-icon><Medal /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">管理员</div>
+              <div class="stat-value">{{ stats.roleAdmin }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">普通用户</div>
-          <div class="stat-value">{{ stats.roleUser }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-success">
+              <el-icon><Avatar /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">普通用户</div>
+              <div class="stat-value">{{ stats.roleUser }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">团队数量</div>
-          <div class="stat-value">{{ stats.teamCount }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-info">
+              <el-icon><OfficeBuilding /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">团队数量</div>
+              <div class="stat-value">{{ stats.teamCount }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">平均成员</div>
-          <div class="stat-value">{{ stats.avgMembers }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-indigo">
+              <el-icon><PieChart /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">平均成员</div>
+              <div class="stat-value">{{ stats.avgMembers }}</div>
+            </div>
+          </div>
         </el-card>
       </div>
 
@@ -45,46 +94,36 @@
             <span class="card-icon"><el-icon><TrendCharts /></el-icon></span>
             <span class="card-title-text">用户趋势</span>
           </div>
-          <div class="time-range-tabs">
-            <div
-              v-for="p in userPeriods"
-              :key="p"
-              class="time-range-tab"
-              :class="{ active: selectedUserPeriod === p }"
-              @click="setSelectedUserPeriod(p)"
-            >{{ p }}</div>
-            <el-date-picker
-              v-if="selectedUserPeriod === '月'"
-              v-model="selectedUserMonth"
-              type="month"
-              size="small"
-              format="YYYY-MM"
-              value-format="YYYY-MM"
-              placeholder="选择月份"
-              style="margin-left:8px"
-              @change="loadUserTrend"
-            />
-            <el-date-picker
-              v-if="selectedUserPeriod === '年'"
-              v-model="selectedUserYear"
-              type="year"
-              size="small"
-              format="YYYY"
-              value-format="YYYY"
-              placeholder="选择年份"
-              style="margin-left:8px"
-              @change="loadUserTrend"
-            />
-          </div>
         </div>
         <div class="analysis-content">
-          <VChart
-            v-if="userTrendData.length"
-            :option="userChartOption"
-            autoresize
+          <UserTrendChart 
+            :data="userTrendData" 
+            @filter-change="handleFilterChange" 
             class="trend-chart"
           />
-          <div v-else class="empty-tip">暂无趋势数据</div>
+          <div class="metrics-grid">
+            <div class="metrics-title">指标总览</div>
+            <div class="metric-item">
+              <div class="metric-label">当前区间</div>
+              <div class="metric-value">{{ trendSummary.start }} ~ {{ trendSummary.end }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">新增总计</div>
+              <div class="metric-value">{{ trendSummary.sumNew }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">日均新增</div>
+              <div class="metric-value">{{ trendSummary.avgNew }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">峰值新增</div>
+              <div class="metric-value">{{ trendSummary.maxNew }}（{{ trendSummary.maxDate }}）</div>
+            </div>
+            <div class="metric-item" v-if="trendSummary.totalUsers !== null">
+              <div class="metric-label">累计用户</div>
+              <div class="metric-value">{{ trendSummary.totalUsers }}</div>
+            </div>
+          </div>
         </div>
       </el-card>
 
@@ -163,9 +202,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, TrendCharts } from '@element-plus/icons-vue'
+import { Search, TrendCharts, User, UserFilled, Avatar, Trophy, Medal, OfficeBuilding, PieChart } from '@element-plus/icons-vue'
 import api from '@/api/axios'
 import { useAuthStore } from '@/stores/auth'
+import UserTrendChart from '@/components/UserTrendChart.vue'
 
 const authStore = useAuthStore()
 const isSuperAdmin = computed(() => String((authStore.user || {}).role || 'user') === 'super_admin')
@@ -313,105 +353,57 @@ const handlePageChange = (val) => {
   fetchList()
 }
 
-// 用户趋势（按天，最近30天）
+// 用户趋势
 const userTrendData = ref([])
-const userChartOption = ref({})
-const userPeriods = ['周', '月', '年', '全部']
-const selectedUserPeriod = ref('月')
-const selectedUserMonth = ref('')
-const selectedUserYear = ref('')
 
-const setSelectedUserPeriod = (p) => {
-  selectedUserPeriod.value = p
-  loadUserTrend()
-}
-
-const loadUserTrend = async () => {
+const handleFilterChange = async (filter) => {
+  const { period, startDate, endDate, type } = filter
+  
+  let params = {}
+  if (type === 'all') {
+    params = { period: 'month' }
+  } else if (type === 'year') {
+    params = { start_date: startDate, end_date: endDate, period: 'month' }
+  } else {
+    // week or month -> period=day
+    params = { start_date: startDate, end_date: endDate, period: 'day' }
+  }
+  
   try {
-    const now = new Date()
-    const fmtDate = (d) => {
-      const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0')
-      return `${y}-${m}-${dd}`
-    }
-    let params = {}
-    let axisPeriod = 'day'
-    if (selectedUserPeriod.value === '周') {
-      const end_date = fmtDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()))
-      const start_date = fmtDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6))
-      params = { start_date, end_date, period: 'day' }
-      axisPeriod = 'day'
-    } else if (selectedUserPeriod.value === '月') {
-      const ym = selectedUserMonth.value || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-      const [yy, mm] = ym.split('-')
-      const s = `${yy}-${mm}-01`
-      const eDate = new Date(parseInt(yy), parseInt(mm), 1)
-      const e = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}-01`
-      params = { start_date: s, end_date: e, period: 'day' }
-      axisPeriod = 'day'
-    } else if (selectedUserPeriod.value === '年') {
-      const yy = selectedUserYear.value || String(now.getFullYear())
-      const s = `${yy}-01-01`
-      const e = `${parseInt(yy) + 1}-01-01`
-      params = { start_date: s, end_date: e, period: 'month' }
-      axisPeriod = 'month'
-    } else { // 全部
-      params = { period: 'month' }
-      axisPeriod = 'month'
-    }
-
     const res = await api.get('/admin/users/trend', { params })
     const raw = (res.data && res.data.success && Array.isArray(res.data.data)) ? res.data.data : []
-    const data = raw.map(it => ({
+    userTrendData.value = raw.map(it => ({
       date: String(it.date || ''),
-      add: Number(it.new_users || 0),
-      total: Number(it.total_users || 0)
+      new_users: Number(it.new_users || 0),
+      total_users: typeof it.total_users === 'number' ? it.total_users : undefined
     }))
-    userTrendData.value = data
-
-    const formatLabel = (t) => {
-      const s = String(t)
-      if (axisPeriod === 'day' && /^\d{4}-\d{2}-\d{2}$/.test(s)) return s.slice(5)
-      if (axisPeriod === 'month' && /^\d{4}-\d{2}$/.test(s)) return s.slice(5)
-      return s
-    }
-
-    const xAxisData = data.map(i => formatLabel(i.date))
-    const addSeries = data.map(i => i.add)
-    const totalSeries = data.map(i => i.total)
-    const maxVal = Math.max(addSeries.reduce((m, v) => Math.max(m, v || 0), 0), 0) || 1
-
-    userChartOption.value = {
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      legend: {
-        top: 0,
-        left: 'center',
-        icon: 'circle',
-        itemWidth: 10,
-        itemHeight: 10,
-        textStyle: { color: '#4b5563' },
-        data: ['新增', '累计']
-      },
-      grid: { top: 40, left: '3%', right: '4%', bottom: '3%', outerBoundsMode: 'same', outerBoundsContain: 'axisLabel' },
-      xAxis: { type: 'category', data: xAxisData, axisLine: { lineStyle: { color: '#e5e7eb' } }, axisTick: { show: false }, axisLabel: { color: '#6b7280' } },
-      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#6b7280' }, splitLine: { lineStyle: { color: '#e5e7eb' } } },
-      series: [
-        { name: '占位', type: 'bar', data: xAxisData.map(() => maxVal), itemStyle: { color: 'rgba(16, 185, 129, 0.12)', borderRadius: [12,12,4,4] }, barGap: '-100%', silent: true, emphasis: { disabled: true } },
-        { name: '新增', type: 'bar', data: addSeries, itemStyle: { color: '#064e3b', borderRadius: [12,12,4,4] } },
-        { name: '累计', type: 'line', smooth: true, data: totalSeries, itemStyle: { color: '#10b981' }, lineStyle: { width: 3, color: '#10b981' } }
-      ]
-    }
   } catch (e) {
-    userTrendData.value = []
     console.error('Fetch user trend error', e)
+    userTrendData.value = []
   }
 }
+
+const trendSummary = computed(() => {
+  const arr = userTrendData.value || []
+  if (!arr.length) return { sumNew: 0, avgNew: 0, maxNew: 0, maxDate: '-', start: '-', end: '-', totalUsers: null }
+  const sumNew = arr.reduce((s, x) => s + (Number(x.new_users) || 0), 0)
+  const avgNew = Math.round((sumNew / arr.length) * 100) / 100
+  let maxNew = -1
+  let maxDate = '-'
+  arr.forEach(x => { const v = Number(x.new_users) || 0; if (v > maxNew) { maxNew = v; maxDate = String(x.date || '') } })
+  const start = String(arr[0].date || '').slice(0, 10)
+  const end = String(arr[arr.length - 1].date || '').slice(0, 10)
+  const lastTotal = arr[arr.length - 1].total_users
+  const totalUsers = typeof lastTotal === 'number' ? lastTotal : null
+  return { sumNew, avgNew, maxNew, maxDate, start, end, totalUsers }
+})
 
 onMounted(async () => {
   await (authStore.refreshProfile && authStore.refreshProfile())
   if (isSuperAdmin.value) {
     fetchStats()
     fetchList()
-    loadUserTrend()
+    // Chart will trigger filter-change on mount
   }
 })
 </script>
@@ -431,20 +423,48 @@ onMounted(async () => {
 }
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
-.stat-card .stat-label {
+.stat-card :deep(.el-card__body) {
+  padding: 16px;
+}
+.stat-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.stat-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.stat-info {
+  flex: 1;
+}
+.stat-label {
   font-size: 14px;
   color: #909399;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
-.stat-card .stat-value {
+.stat-value {
   font-size: 24px;
   font-weight: bold;
   color: #303133;
 }
+.icon-primary { background: #ecf5ff; color: #409eff; }
+.icon-purple { background: #f3e8ff; color: #9333ea; }
+.icon-danger { background: #fef0f0; color: #f56c6c; }
+.icon-warning { background: #fdf6ec; color: #e6a23c; }
+.icon-success { background: #f0f9eb; color: #67c23a; }
+.icon-info { background: #f4f4f5; color: #909399; }
+.icon-indigo { background: #e0e7ff; color: #4f46e5; }
+
 .filter-bar {
   display: flex;
   gap: 12px;
@@ -465,7 +485,12 @@ onMounted(async () => {
   margin-top: 20px;
 }
 .analysis-card .card-title-row { display: flex; align-items: center; gap: 8px; }
-.analysis-content { padding: 8px 0; }
-.trend-chart { width: 100%; height: 280px; }
+.analysis-content { display: flex; gap: 16px; align-items: stretch; padding: 8px 0; }
+.trend-chart { width: 50%; height: 280px; }
+.metrics-title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 8px; grid-column: 1 / -1; }
+.metrics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; flex: 1 1 50%; }
+.metric-item { background: #f8f9fa; border-radius: 10px; padding: 12px; }
+.metric-label { font-size: 13px; color: #6b7280; margin-bottom: 6px; }
+.metric-value { font-size: 18px; font-weight: 600; color: #111827; }
 .empty-tip { color: #909399; text-align: center; padding: 20px 0; }
 </style>
