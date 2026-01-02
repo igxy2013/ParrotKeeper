@@ -74,7 +74,7 @@
                   <text class="meta-text">ID {{item.id}}</text>
                   <text class="meta-text">鹦鹉: {{item.parrot_count || 0}}</text>
                   <text class="meta-text">积分: {{item.points || 0}}</text>
-                  <text class="meta-text">{{item.created_at || ''}}</text>
+                  <text class="meta-text">注册时间：{{item.created_at_display || ''}}</text>
                 </view>
               </view>
             </view>

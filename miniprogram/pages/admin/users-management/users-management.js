@@ -126,14 +126,69 @@ Page({
       const res = await app.request({ url: '/api/admin/users' + qs, method: 'GET' })
       if (res && res.success && res.data) {
         const items = Array.isArray(res.data.items) ? res.data.items : []
+        const processed = items.map(it => {
+          const display = this.formatLocalTime(it && it.created_at)
+          return Object.assign({}, it, { created_at_display: display })
+        })
         const total = res.data.pagination && typeof res.data.pagination.total === 'number' ? res.data.pagination.total : items.length
-        const merged = reset ? items : (this.data.users.concat(items))
+        const merged = reset ? processed : (this.data.users.concat(processed))
         const hasMore = merged.length < total
         this.setData({ users: merged, total, page: page, hasMore })
       }
     } catch (_) {
     } finally {
       this.setData({ listLoading: false })
+    }
+  }
+  ,
+  // 将服务端时间安全解析为本地时间显示（YYYY-MM-DD HH:mm:ss）
+  formatLocalTime(t) {
+    try {
+      if (!t) return ''
+      if (t instanceof Date) return app.formatDateTime(t, 'YYYY-MM-DD HH:mm:ss')
+      if (typeof t === 'number') {
+        const dNum = new Date(t)
+        return isNaN(dNum.getTime()) ? '' : app.formatDateTime(dNum, 'YYYY-MM-DD HH:mm:ss')
+      }
+      const s0 = String(t).trim()
+      if (!s0) return ''
+      // 纯 ISO 且不含时区：按 UTC 解释再转本地
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?$/.test(s0)) {
+        const dUtc = new Date(s0 + 'Z')
+        if (!isNaN(dUtc.getTime())) return app.formatDateTime(dUtc, 'YYYY-MM-DD HH:mm:ss')
+      }
+      // 已含时区（Z 或 +08:00 等）
+      if (/[Zz]|[+\-]\d{2}:?\d{2}$/.test(s0)) {
+        let s = s0
+        if (s.includes(' ') && !s.includes('T')) s = s.replace(' ', 'T')
+        s = s.replace(/([+\-]\d{2})(\d{2})$/, '$1:$2')
+        const d = new Date(s)
+        return isNaN(d.getTime()) ? s0 : app.formatDateTime(d, 'YYYY-MM-DD HH:mm:ss')
+      }
+      // "YYYY-MM-DD HH:mm[:ss]" iOS 兼容解析
+      if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s0)) {
+        // 该格式一般也来源于后端的 UTC 无时区输出，优先按 UTC 解释
+        let isoUtc = s0.replace(' ', 'T')
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(isoUtc)) isoUtc += ':00'
+        const dUtc2 = new Date(isoUtc + 'Z')
+        if (!isNaN(dUtc2.getTime())) return app.formatDateTime(dUtc2, 'YYYY-MM-DD HH:mm:ss')
+        let fixed = s0.replace(/-/g, '/')
+        if (/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/.test(fixed)) fixed += ':00'
+        const d1 = new Date(fixed)
+        if (!isNaN(d1.getTime())) return app.formatDateTime(d1, 'YYYY-MM-DD HH:mm:ss')
+        let iso = s0.replace(' ', 'T')
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) iso += ':00'
+        const d2 = new Date(iso)
+        if (!isNaN(d2.getTime())) return app.formatDateTime(d2, 'YYYY-MM-DD HH:mm:ss')
+      }
+      // 其他：尽量按本地解析
+      let iso2 = s0.includes(' ') ? s0.replace(' ', 'T') : s0
+      if (/([+\-]\d{2})(\d{2})$/.test(iso2)) iso2 = iso2.replace(/([+\-]\d{2})(\d{2})$/, '$1:$2')
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso2)) iso2 += ':00'
+      const dAny = new Date(iso2)
+      return isNaN(dAny.getTime()) ? s0 : app.formatDateTime(dAny, 'YYYY-MM-DD HH:mm:ss')
+    } catch (_) {
+      return String(t || '')
     }
   }
   ,
