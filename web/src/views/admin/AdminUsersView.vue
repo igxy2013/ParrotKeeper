@@ -9,38 +9,123 @@
       <!-- Stats Cards -->
       <div class="stats-cards" v-loading="loadingStats">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">总用户</div>
-          <div class="stat-value">{{ stats.totalUsers }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-primary">
+              <el-icon><User /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">总用户</div>
+              <div class="stat-value">{{ stats.totalUsers }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">团队用户</div>
-          <div class="stat-value">{{ stats.teamUsers }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-purple">
+              <el-icon><UserFilled /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">团队用户</div>
+              <div class="stat-value">{{ stats.teamUsers }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">鹦鹉总数</div>
-          <div class="stat-value">{{ stats.parrotTotalCount }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-danger">
+              <el-icon><Trophy /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">超级管理员</div>
+              <div class="stat-value">{{ stats.roleSuperAdmin }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">超级管理员</div>
-          <div class="stat-value">{{ stats.roleSuperAdmin }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-warning">
+              <el-icon><Medal /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">管理员</div>
+              <div class="stat-value">{{ stats.roleAdmin }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">管理员</div>
-          <div class="stat-value">{{ stats.roleAdmin }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-success">
+              <el-icon><Avatar /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">普通用户</div>
+              <div class="stat-value">{{ stats.roleUser }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">普通用户</div>
-          <div class="stat-value">{{ stats.roleUser }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-info">
+              <el-icon><OfficeBuilding /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">团队数量</div>
+              <div class="stat-value">{{ stats.teamCount }}</div>
+            </div>
+          </div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">团队数量</div>
-          <div class="stat-value">{{ stats.teamCount }}</div>
-        </el-card>
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-label">平均成员</div>
-          <div class="stat-value">{{ stats.avgMembers }}</div>
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-indigo">
+              <el-icon><PieChart /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">平均成员</div>
+              <div class="stat-value">{{ stats.avgMembers }}</div>
+            </div>
+          </div>
         </el-card>
       </div>
+
+      <!-- 用户趋势 -->
+      <el-card class="analysis-card" shadow="never" style="margin-bottom: 20px;">
+        <div class="card-header-row">
+          <div class="card-title-row">
+            <span class="card-icon"><el-icon><TrendCharts /></el-icon></span>
+            <span class="card-title-text">用户趋势</span>
+          </div>
+        </div>
+        <div class="analysis-content">
+          <UserTrendChart 
+            :data="userTrendData" 
+            @filter-change="handleFilterChange" 
+            class="trend-chart"
+          />
+          <div class="metrics-grid">
+            <div class="metrics-title">指标总览</div>
+            <div class="metric-item">
+              <div class="metric-label">当前区间</div>
+              <div class="metric-value">{{ trendSummary.start }} ~ {{ trendSummary.end }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">新增总计</div>
+              <div class="metric-value">{{ trendSummary.sumNew }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">日均新增</div>
+              <div class="metric-value">{{ trendSummary.avgNew }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">峰值新增</div>
+              <div class="metric-value">{{ trendSummary.maxNew }}（{{ trendSummary.maxDate }}）</div>
+            </div>
+            <div class="metric-item" v-if="trendSummary.totalUsers !== null">
+              <div class="metric-label">累计用户</div>
+              <div class="metric-value">{{ trendSummary.totalUsers }}</div>
+            </div>
+          </div>
+        </div>
+      </el-card>
 
       <!-- Filters -->
       <div class="filter-bar">
@@ -131,9 +216,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Collection } from '@element-plus/icons-vue'
+import { Search, TrendCharts, User, UserFilled, Avatar, Trophy, Medal, OfficeBuilding, PieChart, Collection } from '@element-plus/icons-vue'
 import api from '@/api/axios'
 import { useAuthStore } from '@/stores/auth'
+import UserTrendChart from '@/components/UserTrendChart.vue'
 
 const authStore = useAuthStore()
 const isSuperAdmin = computed(() => String((authStore.user || {}).role || 'user') === 'super_admin')
@@ -184,7 +270,20 @@ const getRoleType = (role) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString()
+  const s = String(dateStr).trim()
+  if (/^\d+$/.test(s)) {
+    const n = parseInt(s, 10)
+    const ms = s.length > 10 ? n : n * 1000
+    const d = new Date(ms)
+    return d.toLocaleString('zh-CN', { hour12: false })
+  }
+  let str = s.replace(' ', 'T')
+  if (/[Zz]|[\+\-]\d{2}:?\d{2}$/.test(str)) {
+    const d = new Date(str)
+    return d.toLocaleString('zh-CN', { hour12: false })
+  }
+  const d = new Date(str + 'Z')
+  return d.toLocaleString('zh-CN', { hour12: false })
 }
 
 // Fetch Stats
@@ -270,11 +369,57 @@ const handlePageChange = (val) => {
   fetchList()
 }
 
+// 用户趋势
+const userTrendData = ref([])
+
+const handleFilterChange = async (filter) => {
+  const { period, startDate, endDate, type } = filter
+  
+  let params = {}
+  if (type === 'all') {
+    params = { period: 'month' }
+  } else if (type === 'year') {
+    params = { start_date: startDate, end_date: endDate, period: 'month' }
+  } else {
+    // week or month -> period=day
+    params = { start_date: startDate, end_date: endDate, period: 'day' }
+  }
+  
+  try {
+    const res = await api.get('/admin/users/trend', { params })
+    const raw = (res.data && res.data.success && Array.isArray(res.data.data)) ? res.data.data : []
+    userTrendData.value = raw.map(it => ({
+      date: String(it.date || ''),
+      new_users: Number(it.new_users || 0),
+      total_users: typeof it.total_users === 'number' ? it.total_users : undefined
+    }))
+  } catch (e) {
+    console.error('Fetch user trend error', e)
+    userTrendData.value = []
+  }
+}
+
+const trendSummary = computed(() => {
+  const arr = userTrendData.value || []
+  if (!arr.length) return { sumNew: 0, avgNew: 0, maxNew: 0, maxDate: '-', start: '-', end: '-', totalUsers: null }
+  const sumNew = arr.reduce((s, x) => s + (Number(x.new_users) || 0), 0)
+  const avgNew = Math.round((sumNew / arr.length) * 100) / 100
+  let maxNew = -1
+  let maxDate = '-'
+  arr.forEach(x => { const v = Number(x.new_users) || 0; if (v > maxNew) { maxNew = v; maxDate = String(x.date || '') } })
+  const start = String(arr[0].date || '').slice(0, 10)
+  const end = String(arr[arr.length - 1].date || '').slice(0, 10)
+  const lastTotal = arr[arr.length - 1].total_users
+  const totalUsers = typeof lastTotal === 'number' ? lastTotal : null
+  return { sumNew, avgNew, maxNew, maxDate, start, end, totalUsers }
+})
+
 onMounted(async () => {
   await (authStore.refreshProfile && authStore.refreshProfile())
   if (isSuperAdmin.value) {
     fetchStats()
     fetchList()
+    // Chart will trigger filter-change on mount
   }
 })
 </script>
@@ -294,20 +439,48 @@ onMounted(async () => {
 }
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
-.stat-card .stat-label {
+.stat-card :deep(.el-card__body) {
+  padding: 16px;
+}
+.stat-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.stat-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.stat-info {
+  flex: 1;
+}
+.stat-label {
   font-size: 14px;
   color: #909399;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
-.stat-card .stat-value {
+.stat-value {
   font-size: 24px;
   font-weight: bold;
   color: #303133;
 }
+.icon-primary { background: #ecf5ff; color: #409eff; }
+.icon-purple { background: #f3e8ff; color: #9333ea; }
+.icon-danger { background: #fef0f0; color: #f56c6c; }
+.icon-warning { background: #fdf6ec; color: #e6a23c; }
+.icon-success { background: #f0f9eb; color: #67c23a; }
+.icon-info { background: #f4f4f5; color: #909399; }
+.icon-indigo { background: #e0e7ff; color: #4f46e5; }
+
 .filter-bar {
   display: flex;
   gap: 12px;
@@ -332,4 +505,13 @@ onMounted(async () => {
   justify-content: flex-end;
   margin-top: 20px;
 }
+.analysis-card .card-title-row { display: flex; align-items: center; gap: 8px; }
+.analysis-content { display: flex; gap: 16px; align-items: stretch; padding: 8px 0; }
+.trend-chart { width: 50%; height: 280px; }
+.metrics-title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 8px; grid-column: 1 / -1; }
+.metrics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; flex: 1 1 50%; }
+.metric-item { background: #f8f9fa; border-radius: 10px; padding: 12px; }
+.metric-label { font-size: 13px; color: #6b7280; margin-bottom: 6px; }
+.metric-value { font-size: 18px; font-weight: 600; color: #111827; }
+.empty-tip { color: #909399; text-align: center; padding: 20px 0; }
 </style>

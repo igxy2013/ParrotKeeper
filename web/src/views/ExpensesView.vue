@@ -18,28 +18,57 @@
       </div>
     </div>
 
-    <el-card class="stats-card" shadow="never">
-      <div class="stats-grid">
-        <div class="stat-item clickable" @click="filterByStat('支出')">
-          <div class="stat-label">总支出</div>
-          <div class="stat-value expense">¥{{ formatAmount(stats.totalExpense) }}</div>
-        </div>
-        <div class="stat-item clickable" @click="filterByStat('收入')">
-          <div class="stat-label">总收入</div>
-          <div class="stat-value income">¥{{ formatAmount(stats.totalIncome) }}</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">净收入</div>
-          <div class="stat-value" :class="stats.netIncome >= 0 ? 'income' : 'expense'">
-            ¥{{ formatAmount(stats.netIncome) }}
+    <div class="stats-grid">
+      <el-card shadow="hover" class="stat-card clickable" @click="filterByStat('支出')">
+        <div class="stat-content-wrapper">
+          <div class="stat-icon-box icon-expense">
+            <el-icon><Money /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">总支出</div>
+            <div class="stat-value expense">¥{{ formatAmount(stats.totalExpense) }}</div>
           </div>
         </div>
-        <div class="stat-item count-item">
-          <div class="stat-label">当前列表记录数</div>
-          <div class="stat-value">{{ displayTotalCount }}</div>
+      </el-card>
+
+      <el-card shadow="hover" class="stat-card clickable" @click="filterByStat('收入')">
+        <div class="stat-content-wrapper">
+          <div class="stat-icon-box icon-income">
+            <el-icon><Wallet /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">总收入</div>
+            <div class="stat-value income">¥{{ formatAmount(stats.totalIncome) }}</div>
+          </div>
         </div>
-      </div>
-    </el-card>
+      </el-card>
+
+      <el-card shadow="hover" class="stat-card">
+        <div class="stat-content-wrapper">
+          <div class="stat-icon-box icon-net">
+            <el-icon><Coin /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">净收入</div>
+            <div class="stat-value" :class="stats.netIncome >= 0 ? 'income' : 'expense'">
+              ¥{{ formatAmount(stats.netIncome) }}
+            </div>
+          </div>
+        </div>
+      </el-card>
+
+      <el-card shadow="hover" class="stat-card count-item">
+        <div class="stat-content-wrapper">
+          <div class="stat-icon-box icon-count">
+            <el-icon><Tickets /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">当前列表记录数</div>
+            <div class="stat-value">{{ displayTotalCount }}</div>
+          </div>
+        </div>
+      </el-card>
+    </div>
 
     <div class="analysis-row">
       <el-card class="analysis-card" shadow="never">
@@ -184,7 +213,7 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Wallet, TrendCharts } from '@element-plus/icons-vue'
+import { Plus, Wallet, TrendCharts, Money, Coin, Tickets } from '@element-plus/icons-vue'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
@@ -1062,40 +1091,59 @@ onMounted(() => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
+  margin-bottom: 24px;
 }
 
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  padding: 12px 16px;
-  border-radius: 12px;
-  background: #f9fafb;
+.stat-card :deep(.el-card__body) {
+  padding: 16px;
 }
 
-.stat-item.clickable {
+.stat-card.clickable {
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition: transform 0.1s;
 }
-.stat-item.clickable:hover {
-  background: #f3f4f6;
-}
-.stat-item.clickable:active {
-  background: #e5e7eb;
+.stat-card.clickable:active {
   transform: translateY(1px);
 }
 
+.stat-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.stat-info {
+  flex: 1;
+}
+
 .stat-label {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 14px;
+  color: #909399;
   margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
 }
+
+.icon-expense { background: #fef0f0; color: #f56c6c; }
+.icon-income { background: #f0f9eb; color: #67c23a; }
+.icon-net { background: #ecf5ff; color: #409eff; }
+.icon-count { background: #f4f4f5; color: #909399; }
 
 .stat-value.income {
   color: #16a34a;

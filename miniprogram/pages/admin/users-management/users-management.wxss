@@ -284,3 +284,5 @@
 .bg-purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
 .bg-indigo { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 .bg-gray { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+
+

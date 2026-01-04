@@ -402,6 +402,151 @@ def list_users():
         return error_response(f'获取用户列表失败: {str(e)}')
 
 
+@admin_bp.route('/users/trend', methods=['GET'])
+@login_required
+def get_users_trend():
+    """用户趋势数据：返回新增与累计总用户数
+    支持 period: day(天), month(月), year(年)
+    """
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        from datetime import datetime, timedelta, date
+
+        start_date_str = (request.args.get('start_date') or '').strip()
+        end_date_str = (request.args.get('end_date') or '').strip()
+        period = (request.args.get('period') or 'day').strip()
+
+        if period not in ['day', 'month', 'year']:
+            period = 'day'
+
+        # 解析日期范围；默认最近30天（含今天）
+        today = date.today()
+        if start_date_str:
+            try:
+                start_dt = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                start_dt = today - timedelta(days=29)
+        else:
+            start_dt = today - timedelta(days=29)
+
+        if end_date_str:
+            try:
+                end_dt = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                end_dt = today
+        else:
+            end_dt = today
+
+        if end_dt < start_dt:
+            start_dt, end_dt = end_dt, start_dt
+
+        # 构建分组表达式与连续桶
+        if period == 'day':
+            group_expr = func.date(User.created_at)
+            q = db.session.query(group_expr.label('bucket'), func.count(User.id).label('cnt')).\
+                filter(
+                    User.created_at >= datetime.combine(start_dt, datetime.min.time()),
+                    User.created_at < datetime.combine(end_dt + timedelta(days=1), datetime.min.time())
+                ).group_by('bucket').order_by('bucket')
+            rows = q.all()
+            daily_map = {}
+            for b, cnt in rows:
+                if isinstance(b, str):
+                    key = b[:10]
+                elif hasattr(b, 'strftime'):
+                    key = b.strftime('%Y-%m-%d')
+                else:
+                    key = str(b)
+                daily_map[key] = int(cnt or 0)
+            base_total = db.session.query(func.count(User.id)).\
+                filter(User.created_at < datetime.combine(start_dt, datetime.min.time())).scalar() or 0
+            items = []
+            total_running = int(base_total)
+            cur = start_dt
+            while cur <= end_dt:
+                key = cur.strftime('%Y-%m-%d')
+                new_users = int(daily_map.get(key, 0))
+                total_running += new_users
+                items.append({'date': key, 'new_users': new_users, 'total_users': total_running})
+                cur = cur + timedelta(days=1)
+            return success_response(items)
+
+        elif period == 'month':
+            # 若未提供范围，按全量数据范围聚合
+            if not start_date_str and not end_date_str:
+                first_row = db.session.query(func.min(User.created_at)).scalar()
+                last_row = db.session.query(func.max(User.created_at)).scalar()
+                if first_row and last_row:
+                    start_dt = first_row.date()
+                    end_dt = last_row.date()
+                else:
+                    return success_response([])
+            # 分组到月份
+            group_expr = func.date_format(User.created_at, '%Y-%m')
+            q = db.session.query(group_expr.label('bucket'), func.count(User.id).label('cnt')).\
+                filter(
+                    User.created_at >= datetime.combine(start_dt.replace(day=1), datetime.min.time()),
+                    User.created_at < datetime.combine((end_dt.replace(day=1) + timedelta(days=32)).replace(day=1), datetime.min.time())
+                ).group_by('bucket').order_by('bucket')
+            rows = q.all()
+            month_map = {str(b): int(cnt or 0) for b, cnt in rows}
+            # 基数：范围起始月之前累计总数
+            base_total = db.session.query(func.count(User.id)).\
+                filter(User.created_at < datetime.combine(start_dt.replace(day=1), datetime.min.time())).scalar() or 0
+            # 连续月份桶
+            items = []
+            total_running = int(base_total)
+            cur_month = start_dt.replace(day=1)
+            end_month = end_dt.replace(day=1)
+            while cur_month <= end_month:
+                key = cur_month.strftime('%Y-%m')
+                add = int(month_map.get(key, 0))
+                total_running += add
+                items.append({'date': key, 'new_users': add, 'total_users': total_running})
+                # 下个月一号
+                next_month = (cur_month + timedelta(days=32)).replace(day=1)
+                cur_month = next_month
+            return success_response(items)
+
+        else:  # year
+            # 若未提供范围，按全量数据范围聚合
+            if not start_date_str and not end_date_str:
+                first_row = db.session.query(func.min(User.created_at)).scalar()
+                last_row = db.session.query(func.max(User.created_at)).scalar()
+                if first_row and last_row:
+                    start_dt = first_row.date()
+                    end_dt = last_row.date()
+                else:
+                    return success_response([])
+            group_expr = func.year(User.created_at)
+            q = db.session.query(group_expr.label('bucket'), func.count(User.id).label('cnt')).\
+                filter(
+                    User.created_at >= datetime.combine(start_dt.replace(month=1, day=1), datetime.min.time()),
+                    User.created_at < datetime.combine(end_dt.replace(month=1, day=1).replace(year=end_dt.year + 1), datetime.min.time())
+                ).group_by('bucket').order_by('bucket')
+            rows = q.all()
+            year_map = {int(b): int(cnt or 0) for b, cnt in rows}
+            base_total = db.session.query(func.count(User.id)).\
+                filter(User.created_at < datetime.combine(start_dt.replace(month=1, day=1), datetime.min.time())).scalar() or 0
+            # 连续年份桶
+            start_year = start_dt.year
+            end_year = end_dt.year
+            items = []
+            total_running = int(base_total)
+            for y in range(start_year, end_year + 1):
+                add = int(year_map.get(y, 0))
+                total_running += add
+                items.append({'date': str(y), 'new_users': add, 'total_users': total_running})
+            return success_response(items)
+
+        # 不可达
+    except Exception as e:
+        return error_response(f'获取用户趋势失败: {str(e)}')
+
+
 @admin_bp.route('/invitation-codes', methods=['GET'])
 @login_required
 def list_invitation_codes():

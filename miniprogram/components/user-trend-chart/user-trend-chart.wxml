@@ -1,0 +1,46 @@
+<view class="chart-container">
+  <view class="chart-header-row">
+    <!-- Segmented Control -->
+    <view class="segment-control">
+      <view class="segment-item {{currentType === 'week' ? 'active' : ''}}" bindtap="onTypeChange" data-type="week">周</view>
+      <view class="segment-item {{currentType === 'month' ? 'active' : ''}}" bindtap="onTypeChange" data-type="month">月</view>
+      <view class="segment-item {{currentType === 'year' ? 'active' : ''}}" bindtap="onTypeChange" data-type="year">年</view>
+      <view class="segment-item {{currentType === 'all' ? 'active' : ''}}" bindtap="onTypeChange" data-type="all">全</view>
+    </view>
+  </view>
+
+  <!-- 日期选择器 -->
+  <view class="date-picker-row" wx:if="{{currentType !== 'all'}}">
+    <view class="nav-btn" bindtap="onPrevDate">
+      <image class="nav-icon left" src="/images/remix/arrow-right-s-line.png" />
+    </view>
+    <picker mode="date" fields="{{currentType === 'week' ? 'day' : currentType}}" value="{{pickerDate}}" bindchange="onDateChange">
+      <view class="current-date">
+        <text>{{displayDate}}</text>
+        <image class="dropdown-icon" src="/images/remix/arrow-down-s-line.png" />
+      </view>
+    </picker>
+    <view class="nav-btn" bindtap="onNextDate">
+      <image class="nav-icon" src="/images/remix/arrow-right-s-line.png" />
+    </view>
+  </view>
+
+  <canvas
+    type="2d"
+    id="userTrendCanvas"
+    class="chart-canvas"
+    bindtouchstart="handleTouch"
+    bindtouchmove="handleTouch"
+    bindtouchend="handleTouchEnd"
+  ></canvas>
+  <view class="chart-legend">
+    <view class="legend-item">
+      <view class="dot new"></view>
+      <text>新增趋势</text>
+    </view>
+    <view class="legend-item">
+      <view class="dot bar"></view>
+      <text>每日新增</text>
+    </view>
+  </view>
+</view>

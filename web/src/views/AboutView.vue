@@ -20,6 +20,10 @@
             <a class="value" href="mailto:acbim@qq.com">acbim@qq.com</a>
           </div>
           <div class="info-item">
+            <span class="label">网页版</span>
+            <a class="value" href="https://parrot.acbim.cn" target="_blank">parrot.acbim.cn</a>
+          </div>
+          <div class="info-item">
             <span class="label">微信号</span>
             <span class="value">parrotkeeper</span>
           </div>

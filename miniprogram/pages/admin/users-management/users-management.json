@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "app-header": "/components/app-header/app-header"
+    "app-header": "/components/app-header/app-header",
+    "user-trend-chart": "/components/user-trend-chart/user-trend-chart"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "用户管理",

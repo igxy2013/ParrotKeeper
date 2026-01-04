@@ -6,6 +6,163 @@
         <el-button type="primary" :icon="Plus" @click="openAddDialog">添加记录</el-button>
       </div>
     </div>
+    <div class="records-stats">
+      <div class="stats-grid" v-if="activeTab === 'feeding'">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-green"><el-icon><Dish /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">当前范围喂食次数</div>
+              <div class="stat-value">{{ total }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-blue"><el-icon><Calendar /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">今日喂食次数</div>
+              <div class="stat-value">{{ feedingStats.today }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-purple"><el-icon><User /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">涉及鹦鹉数</div>
+              <div class="stat-value">{{ feedingStats.parrotCount }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-orange"><el-icon><Timer /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">最近喂食时间</div>
+              <div class="stat-value">{{ feedingStats.lastTimeStr }}</div>
+            </div>
+          </div>
+        </el-card>
+      </div>
+
+      <div class="stats-grid" v-else-if="activeTab === 'health'">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-green"><el-icon><FirstAidKit /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">当前范围健康记录</div>
+              <div class="stat-value">{{ total }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-blue"><el-icon><Calendar /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">今日健康记录</div>
+              <div class="stat-value">{{ healthStats.today }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-purple"><el-icon><User /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">涉及鹦鹉数</div>
+              <div class="stat-value">{{ healthStats.parrotCount }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-orange"><el-icon><Timer /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">最近检查时间</div>
+              <div class="stat-value">{{ healthStats.lastTimeStr }}</div>
+            </div>
+          </div>
+        </el-card>
+      </div>
+
+      <div class="stats-grid" v-else-if="activeTab === 'cleaning'">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-green"><el-icon><Brush /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">当前范围清洁记录</div>
+              <div class="stat-value">{{ total }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-blue"><el-icon><Calendar /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">今日清洁记录</div>
+              <div class="stat-value">{{ cleaningStats.today }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-purple"><el-icon><List /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">本页类型数</div>
+              <div class="stat-value">{{ cleaningStats.typeCount }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-orange"><el-icon><Timer /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">最近清洁时间</div>
+              <div class="stat-value">{{ cleaningStats.lastTimeStr }}</div>
+            </div>
+          </div>
+        </el-card>
+      </div>
+
+      <div class="stats-grid" v-else>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-green"><el-icon><Calendar /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">当前范围繁殖记录</div>
+              <div class="stat-value">{{ total }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-blue"><el-icon><Calendar /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">今日配对记录</div>
+              <div class="stat-value">{{ breedingStats.today }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-purple"><el-icon><User /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">涉及鹦鹉数</div>
+              <div class="stat-value">{{ breedingStats.parrotCount }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-orange"><el-icon><Timer /></el-icon></div>
+            <div class="stat-info">
+              <div class="stat-label">最近配对时间</div>
+              <div class="stat-value">{{ breedingStats.lastTimeStr }}</div>
+            </div>
+          </div>
+        </el-card>
+      </div>
+    </div>
     <div class="toolbar">
       <el-date-picker
         v-model="dateRange"
@@ -363,7 +520,7 @@
 import { ref, onMounted, watch, computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Dish, FirstAidKit, Brush, Calendar, Timer, User, List } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import { getCache, setCache } from '@/utils/cache'
 
@@ -830,6 +987,67 @@ const applyClientFilter = () => {
   }
 }
 
+const todayLabel = new Date().toLocaleDateString()
+
+const formatRelativeTime = (date) => {
+  if (!date) return '--'
+  const now = new Date()
+  const diff = now - date
+  const seconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (days > 0) return `${days}天前`
+  if (hours > 0) return `${hours}小时前`
+  if (minutes > 0) return `${minutes}分钟前`
+  return '刚刚'
+}
+
+const feedingStats = computed(() => {
+  const list = Array.isArray(feedingRecordsFiltered.value) ? feedingRecordsFiltered.value : []
+  const today = list.filter(r => formatDate(r.feeding_time, 'YYYY-MM-DD') === todayLabel).length
+  const ids = new Set(list.map(r => r.parrot_id || (r.parrot && r.parrot.id)))
+  let last = null
+  list.forEach(r => { const d = r.feeding_time ? new Date(r.feeding_time) : null; if (d && (!last || d > last)) last = d })
+  const lastStr = last ? formatRelativeTime(last) : '--'
+  return { today, parrotCount: ids.size, lastTimeStr: lastStr }
+})
+
+const healthStats = computed(() => {
+  const list = Array.isArray(healthRecordsFiltered.value) ? healthRecordsFiltered.value : []
+  const today = list.filter(r => formatDate(r.record_date, 'YYYY-MM-DD') === todayLabel).length
+  const ids = new Set(list.map(r => r.parrot_id || (r.parrot && r.parrot.id)))
+  let last = null
+  list.forEach(r => { const d = r.record_date ? new Date(r.record_date) : null; if (d && (!last || d > last)) last = d })
+  const lastStr = last ? formatRelativeTime(last) : '--'
+  return { today, parrotCount: ids.size, lastTimeStr: lastStr }
+})
+
+const cleaningStats = computed(() => {
+  const list = Array.isArray(cleaningRecordsFiltered.value) ? cleaningRecordsFiltered.value : []
+  const today = list.filter(r => formatDate(r.cleaning_time, 'YYYY-MM-DD') === todayLabel).length
+  const types = new Set(list.map(r => r.cleaning_type_text || r.cleaning_type).filter(Boolean))
+  let last = null
+  list.forEach(r => { const d = r.cleaning_time ? new Date(r.cleaning_time) : null; if (d && (!last || d > last)) last = d })
+  const lastStr = last ? formatRelativeTime(last) : '--'
+  return { today, typeCount: types.size, lastTimeStr: lastStr }
+})
+
+const breedingStats = computed(() => {
+  const list = Array.isArray(breedingRecordsFiltered.value) ? breedingRecordsFiltered.value : []
+  const today = list.filter(r => formatDate(r.mating_date, 'YYYY-MM-DD') === todayLabel).length
+  const ids = new Set()
+  list.forEach(r => { if (r.male_parrot_id) ids.add(r.male_parrot_id); if (r.female_parrot_id) ids.add(r.female_parrot_id) })
+  let last = null
+  list.forEach(r => {
+    const candidates = [r.mating_date, r.egg_laying_date, r.hatching_date].filter(Boolean).map(d => new Date(d))
+    candidates.forEach(d => { if (d && (!last || d > last)) last = d })
+  })
+  const lastStr = last ? formatRelativeTime(last) : '--'
+  return { today, parrotCount: ids.size, lastTimeStr: lastStr }
+})
+
 const handleDelete = async (row, type) => {
   if (!row || !row.id) return
   try {
@@ -1071,6 +1289,64 @@ h2 { color: var(--text-primary); }
   margin-top: 20px;
   justify-content: center;
 }
+
+.records-stats { margin-bottom: 16px; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card :deep(.el-card__body) {
+  padding: 16px;
+}
+
+.stat-card.clickable {
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.stat-card.clickable:active {
+  transform: translateY(1px);
+}
+
+.stat-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.icon-green { background: #f0fdf4; color: #16a34a; }
+.icon-blue { background: #eff6ff; color: #2563eb; }
+.icon-purple { background: #faf5ff; color: #9333ea; }
+.icon-orange { background: #fff7ed; color: #ea580c; }
 
 .toolbar {
   display: flex;

@@ -41,29 +41,60 @@
     </div>
     <div class="stats-overview">
       <div class="stats-grid">
-        <div class="stat-card stat-primary">
-          <div class="stat-title">鹦鹉总数</div>
-          <div class="stat-value">{{ total }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-title">性别分布</div>
-          <div class="stat-pills">
-            <span class="pill pill-male">公 {{ stats.male }}</span>
-            <span class="pill pill-female">母 {{ stats.female }}</span>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-primary">
+              <el-icon><User /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">鹦鹉总数</div>
+              <div class="stat-value">{{ total }}</div>
+            </div>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-title">健康状况</div>
-          <div class="stat-pills">
-            <span class="pill pill-healthy">健康 {{ stats.healthy }}</span>
-            <span class="pill pill-sick">生病 {{ stats.sick }}</span>
-            <span class="pill pill-recovering">康复中 {{ stats.recovering }}</span>
+        </el-card>
+
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-gender">
+              <el-icon><User /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">性别分布</div>
+              <div class="stat-value">
+                <span class="pill pill-male">公 {{ stats.male }}</span>
+                <span class="pill pill-female">母 {{ stats.female }}</span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-title">平均体重</div>
-          <div class="stat-value">{{ stats.avgWeight }}</div>
-        </div>
+        </el-card>
+
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-health">
+              <el-icon><FirstAidKit /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">健康状况</div>
+              <div class="stat-value" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                <span class="pill pill-healthy">健康 {{ stats.healthy }}</span>
+                <span class="pill pill-sick">生病 {{ stats.sick }}</span>
+                <span class="pill pill-recovering">康复 {{ stats.recovering }}</span>
+              </div>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-weight">
+              <el-icon><TrendCharts /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">平均体重</div>
+              <div class="stat-value">{{ stats.avgWeight }}</div>
+            </div>
+          </div>
+        </el-card>
       </div>
     </div>
     
@@ -178,7 +209,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { Plus, Male, Female, ArrowRight, Search, Grid, Tickets } from '@element-plus/icons-vue'
+import { Plus, Male, Female, ArrowRight, Search, Grid, Tickets, User, FirstAidKit, TrendCharts } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import { getCache, setCache } from '@/utils/cache'
 import ParrotModal from '../components/ParrotModal.vue'
@@ -539,57 +570,61 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
 .toolbar-right { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; }
 .filter-item { min-width: 150px; }
 
-.stats-overview {
-  margin-bottom: 16px;
-}
+.stats-overview { margin-bottom: 24px; }
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
 }
-.stat-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+
+.stat-card :deep(.el-card__body) {
+  padding: 16px;
 }
-.stat-card.stat-primary {
-  background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%);
-  color: #ffffff;
-}
-.stat-title {
-  font-size: 13px;
-  color: #909399;
-}
-.stat-card.stat-primary .stat-title {
-  color: rgba(255,255,255,0.9);
-}
-.stat-value {
-  font-size: 16px;
-  color: var(--text-primary);
-}
-.stat-card.stat-primary .stat-value {
-  color: #ffffff;
-}
-.stat-pills {
+
+.stat-content-wrapper {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+  align-items: center;
+  gap: 16px;
 }
-.pill {
-  display: inline-block;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #f5f7fa;
-  color: #606266;
+
+.stat-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
 }
-.pill-healthy { background: #f0f9eb; color: #67c23a; }
-.pill-sick { background: #fef0f0; color: #f56c6c; }
-.pill-recovering { background: #fdf6ec; color: #e6a23c; }
-.pill-male { background: #ecf5ff; color: #409eff; }
-.pill-female { background: #fef0f0; color: #f56c6c; }
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.icon-primary { background-color: #ecf5ff; color: #409eff; }
+.icon-gender { background-color: #fdf6ec; color: #e6a23c; }
+.icon-health { background-color: #f0f9eb; color: #67c23a; }
+.icon-weight { background-color: #f4f4f5; color: #909399; }
+
+.stat-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+.pill { font-size: 12px; padding: 2px 6px; border-radius: 4px; display: inline-block; line-height: 1.4; }
+.pill-male { background: #eff6ff; color: #2563eb; }
+.pill-female { background: #fff1f2; color: #e11d48; }
+.pill-healthy { background: #f0fdf4; color: #16a34a; }
+.pill-sick { background: #fef2f2; color: #dc2626; }
+.pill-recovering { background: #fff7ed; color: #ea580c; }
 
 .parrot-list {
   display: flex;
