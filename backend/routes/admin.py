@@ -271,6 +271,8 @@ def get_users_stats():
             total_members = sum(c for _, c in members_per_team)
             avg_members = round(float(total_members) / float(team_count), 2)
 
+        parrot_total_count = db.session.query(func.count(Parrot.id)).filter(Parrot.is_active == True).scalar() or 0
+
         return success_response({
             'total_users': total_users,
             'team_users': team_user_count,
@@ -282,7 +284,8 @@ def get_users_stats():
             'team_stats': {
                 'team_count': team_count,
                 'avg_members': avg_members
-            }
+            },
+            'parrot_total_count': int(parrot_total_count)
         })
     except Exception as e:
         return error_response(f'获取用户统计失败: {str(e)}')

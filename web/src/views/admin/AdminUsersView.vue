@@ -17,6 +17,10 @@
           <div class="stat-value">{{ stats.teamUsers }}</div>
         </el-card>
         <el-card shadow="hover" class="stat-card">
+          <div class="stat-label">鹦鹉总数</div>
+          <div class="stat-value">{{ stats.parrotTotalCount }}</div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
           <div class="stat-label">超级管理员</div>
           <div class="stat-value">{{ stats.roleSuperAdmin }}</div>
         </el-card>
@@ -85,7 +89,21 @@
             <el-tag :type="getRoleType(scope.row.role)">{{ getRoleLabel(scope.row.role) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="parrot_count" label="鹦鹉数量" width="100" sortable="custom" />
+        <el-table-column label="工作模式" width="120">
+          <template #default="scope">
+            <el-tag :type="scope.row.user_mode === 'team' ? 'warning' : 'success'">
+              {{ scope.row.user_mode === 'team' ? '团队模式' : '个人模式' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="parrot_count" label="鹦鹉数量" width="120" sortable="custom">
+          <template #default="scope">
+            <div class="parrot-count">
+              <el-icon><Collection /></el-icon>
+              <span>{{ scope.row.parrot_count }}</span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="points" label="积分" width="100" sortable="custom" />
         <el-table-column prop="created_at" label="注册时间" width="180">
            <template #default="scope">
@@ -113,7 +131,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Collection } from '@element-plus/icons-vue'
 import api from '@/api/axios'
 import { useAuthStore } from '@/stores/auth'
 
@@ -125,6 +143,7 @@ const loadingStats = ref(false)
 const stats = ref({
   totalUsers: 0,
   teamUsers: 0,
+  parrotTotalCount: 0,
   roleSuperAdmin: 0,
   roleAdmin: 0,
   roleUser: 0,
@@ -180,6 +199,7 @@ const fetchStats = async () => {
       stats.value = {
         totalUsers: typeof d.total_users === 'number' ? d.total_users : (d.total || 0),
         teamUsers: typeof d.team_users === 'number' ? d.team_users : (d.team || 0),
+        parrotTotalCount: typeof d.parrot_total_count === 'number' ? d.parrot_total_count : 0,
         roleSuperAdmin: rc.super_admin || 0,
         roleAdmin: rc.admin || 0,
         roleUser: rc.user || 0,
@@ -301,6 +321,11 @@ onMounted(async () => {
 }
 .nickname {
   font-weight: 500;
+}
+.parrot-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .pagination-container {
   display: flex;
