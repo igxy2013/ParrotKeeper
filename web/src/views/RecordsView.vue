@@ -197,7 +197,7 @@
     </div>
     <el-tabs v-model="activeTab" @tab-click="handleTabClick">
       <el-tab-pane label="喂食" name="feeding">
-        <el-table :data="feedingRecordsFiltered" v-loading="loading">
+        <el-table :data="feedingRecordsFiltered" v-loading="loading" @row-click="handleRowClick">
           <el-table-column prop="feeding_time" label="时间" width="180">
             <template #default="scope">
               {{ formatDate(scope.row.feeding_time) }}
@@ -215,6 +215,7 @@
           <el-table-column prop="notes" label="备注" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
+              <el-button link type="info" @click="openDetail(scope.row, 'feeding')">详情</el-button>
               <el-button link type="success" @click="openEditDialog(scope.row, 'feeding')">编辑</el-button>
               <el-button link type="danger" @click="handleDelete(scope.row, 'feeding')">删除</el-button>
             </template>
@@ -223,7 +224,7 @@
       </el-tab-pane>
 
       <el-tab-pane label="健康" name="health">
-        <el-table :data="healthRecordsFiltered" v-loading="loading">
+        <el-table :data="healthRecordsFiltered" v-loading="loading" @row-click="handleRowClick">
           <el-table-column prop="record_date" label="日期" width="120">
              <template #default="scope">
               {{ formatDate(scope.row.record_date, 'YYYY-MM-DD') }}
@@ -243,6 +244,7 @@
           <el-table-column prop="description" label="描述" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
+              <el-button link type="info" @click="openDetail(scope.row, 'health')">详情</el-button>
               <el-button link type="success" @click="openEditDialog(scope.row, 'health')">编辑</el-button>
               <el-button link type="danger" @click="handleDelete(scope.row, 'health')">删除</el-button>
             </template>
@@ -251,7 +253,7 @@
       </el-tab-pane>
 
       <el-tab-pane label="清洁" name="cleaning">
-        <el-table :data="cleaningRecordsFiltered" v-loading="loading">
+        <el-table :data="cleaningRecordsFiltered" v-loading="loading" @row-click="handleRowClick">
           <el-table-column prop="cleaning_time" label="时间" width="180">
             <template #default="scope">
               {{ formatDate(scope.row.cleaning_time) }}
@@ -266,6 +268,7 @@
           <el-table-column prop="description" label="描述" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
+              <el-button link type="info" @click="openDetail(scope.row, 'cleaning')">详情</el-button>
               <el-button link type="success" @click="openEditDialog(scope.row, 'cleaning')">编辑</el-button>
               <el-button link type="danger" @click="handleDelete(scope.row, 'cleaning')">删除</el-button>
             </template>
@@ -274,7 +277,7 @@
       </el-tab-pane>
       
       <el-tab-pane label="繁殖" name="breeding">
-        <el-table :data="breedingRecordsFiltered" v-loading="loading">
+        <el-table :data="breedingRecordsFiltered" v-loading="loading" @row-click="handleRowClick">
           <el-table-column prop="mating_date" label="配对日期" width="140">
             <template #default="scope">{{ formatDate(scope.row.mating_date, 'YYYY-MM-DD') }}</template>
           </el-table-column>
@@ -292,6 +295,7 @@
           <el-table-column prop="notes" label="备注" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
+              <el-button link type="info" @click="openDetail(scope.row, 'breeding')">详情</el-button>
               <el-button link type="success" @click="openEditDialog(scope.row, 'breeding')">编辑</el-button>
               <el-button link type="danger" @click="handleDelete(scope.row, 'breeding')">删除</el-button>
             </template>
@@ -511,6 +515,95 @@
       <template #footer>
         <el-button type="primary" @click="addDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="addSubmitting" @click="submitAdd">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="detailDialogVisible"
+      :title="detailDialogTitle"
+      width="680px"
+    >
+      <div v-if="detailLoading" class="detail-loading">加载中...</div>
+      <div v-else>
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="类型">{{ detailTypeLabel }}</el-descriptions-item>
+          <el-descriptions-item label="记录时间">{{ detailDisplayTime }}</el-descriptions-item>
+          <el-descriptions-item v-if="detailRecorderName" label="记录人">{{ detailRecorderName }}</el-descriptions-item>
+          <el-descriptions-item v-if="detailParrotName" label="鹦鹉">{{ detailParrotName }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div class="detail-section" v-if="Array.isArray(detailRecord.photos) && detailRecord.photos.length">
+          <div class="photos-title">相关照片</div>
+          <div class="photos-grid">
+            <el-image
+              v-for="(url, idx) in detailRecord.photos"
+              :key="idx"
+              :src="url"
+              :preview-src-list="detailRecord.photos"
+              fit="cover"
+              class="photo-item"
+            />
+          </div>
+        </div>
+
+        <div class="detail-section" v-if="detailRecordType === 'feeding'">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="食物类型">{{ detailRecord.feed_type_name || (detailRecord.feed_type && detailRecord.feed_type.name) || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="数量">{{ detailAmountText }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <div class="detail-section" v-if="detailRecordType === 'health'">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="体重(g)">{{ detailRecord.weight ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="状态">{{ getHealthLabel(detailRecord.health_status) }}</el-descriptions-item>
+            <el-descriptions-item label="描述" v-if="detailRecord.description">{{ detailRecord.description }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <div class="detail-section" v-if="detailRecordType === 'cleaning'">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="类型">{{ detailRecord.cleaning_type_text || detailRecord.cleaning_type || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="描述" v-if="detailRecord.description">{{ detailRecord.description }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <div class="detail-section" v-if="detailRecordType === 'breeding'">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="公鸟">{{ detailRecord.male_parrot_name || (detailRecord.male_parrot && detailRecord.male_parrot.name) || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="母鸟">{{ detailRecord.female_parrot_name || (detailRecord.female_parrot && detailRecord.female_parrot.name) || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="配对日期">{{ formatDate(detailRecord.mating_date, 'YYYY-MM-DD') }}</el-descriptions-item>
+            <el-descriptions-item label="产蛋日期">{{ formatDate(detailRecord.egg_laying_date, 'YYYY-MM-DD') }}</el-descriptions-item>
+            <el-descriptions-item label="孵化日期">{{ formatDate(detailRecord.hatching_date, 'YYYY-MM-DD') }}</el-descriptions-item>
+            <el-descriptions-item label="产蛋数">{{ detailRecord.egg_count ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="出壳数">{{ detailRecord.chick_count ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="成功率">{{ detailRecord.success_rate !== undefined && detailRecord.success_rate !== null ? detailRecord.success_rate + '%' : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="备注" v-if="detailRecord.notes">{{ detailRecord.notes }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <div class="oplogs-section">
+          <div class="oplogs-title">操作日志</div>
+          <div v-if="detailOperationLogs && detailOperationLogs.length" class="oplog-list">
+            <div class="oplog-item" v-for="item in detailOperationLogs" :key="item.id">
+              <div class="oplog-header">
+                <span class="oplog-action">{{ item.actionText }}</span>
+                <span class="oplog-time">{{ item.timeText }}</span>
+              </div>
+              <div class="oplog-meta">操作人：{{ item.operatorName || '—' }}</div>
+              <div class="oplog-diff" v-if="item.changeLines && item.changeLines.length">
+                <div class="oplog-diff-item" v-for="line in item.changeLines" :key="line">{{ line }}</div>
+              </div>
+              <div class="oplog-notes" v-if="item.note">{{ item.note }}</div>
+            </div>
+          </div>
+          <div class="oplogs-empty" v-else>暂无操作日志</div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="editCurrentRecord" type="primary">编辑</el-button>
+        <el-button @click="deleteCurrentRecord" type="danger">删除</el-button>
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
   </div>
@@ -1082,6 +1175,176 @@ const handleDelete = async (row, type) => {
   }
 }
 
+const detailDialogVisible = ref(false)
+const detailDialogTitle = computed(() => '记录详情')
+const detailLoading = ref(false)
+const detailRecordType = ref('')
+const detailRecordId = ref(null)
+const detailRecord = ref({})
+const detailOperationLogs = ref([])
+const detailTypeLabel = computed(() => typeLabelMap[detailRecordType.value] || '')
+const detailParrotName = computed(() => {
+  const r = detailRecord.value || {}
+  return r.parrot_name || (r.parrot && r.parrot.name) || ''
+})
+const detailRecorderName = computed(() => {
+  const r = detailRecord.value || {}
+  const nick = r.created_by_nickname || (r.created_by && r.created_by.nickname) || ''
+  if (nick) return nick
+  return r.created_by_username || (r.created_by && r.created_by.username) || ''
+})
+const detailAmountText = computed(() => {
+  const r = detailRecord.value || {}
+  const unit = (r.feed_type && r.feed_type.unit) || r.amountUnit || 'g'
+  return r.amount !== undefined && r.amount !== null ? `${r.amount}${unit}` : '-'
+})
+const detailDisplayTime = computed(() => {
+  const r = detailRecord.value || {}
+  const t = r.record_time || r.feeding_time || r.record_date || r.cleaning_time || r.created_at || ''
+  return formatDate(t)
+})
+
+const openDetail = async (row, type) => {
+  const id = row && row.id
+  if (!id) return
+  detailRecordType.value = type
+  detailRecordId.value = id
+  detailDialogVisible.value = true
+  await fetchDetailRecord()
+  await fetchOperationLogs()
+}
+
+const handleRowClick = (row) => {
+  const type = activeTab.value
+  if (!type) return
+  openDetail(row, type)
+}
+
+const fetchDetailRecord = async () => {
+  detailLoading.value = true
+  try {
+    const url = `/records/${detailRecordType.value}/${detailRecordId.value}`
+    const res = await api.get(url)
+    if (res.data && res.data.success) {
+      detailRecord.value = res.data.data || {}
+    } else {
+      detailRecord.value = {}
+    }
+  } catch (_) {
+    detailRecord.value = {}
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+const mapActionToCN = (s) => {
+  const v = String(s || '').toLowerCase()
+  if (v.includes('create') || v === 'created') return '创建'
+  if (v.includes('update') || v.includes('edit')) return '编辑'
+  if (v.includes('delete')) return '删除'
+  if (v.includes('transfer')) return '过户'
+  if (v.includes('feed')) return '喂食'
+  if (v.includes('clean')) return '清洁'
+  if (v.includes('health')) return '健康检查'
+  if (v.includes('breed')) return '繁殖'
+  return '操作'
+}
+
+const formatOperationLogTime = (t) => {
+  if (!t) return ''
+  return formatDate(t)
+}
+
+const formatChangeSummary = (it, type, record) => {
+  return []
+}
+
+const deriveOperationLogs = (record) => {
+  const logs = []
+  const cAt = record.created_at || ''
+  const uAt = record.updated_at || ''
+  const cBy = record.created_by_nickname || (record.created_by && record.created_by.nickname) || record.created_by_username || (record.created_by && record.created_by.username) || ''
+  const uBy = record.updated_by_nickname || (record.updated_by && record.updated_by.nickname) || record.updated_by_username || (record.updated_by && record.updated_by.username) || ''
+  const dcText = formatOperationLogTime(cAt)
+  const duText = formatOperationLogTime(uAt)
+  const rid = record.id || ''
+  if (dcText) logs.push({ id: `created-${cAt}-${cBy}-${rid}`, actionText: '创建', operatorName: cBy, timeText: dcText, note: '', changeLines: [] })
+  if (duText && (!dcText || duText !== dcText)) logs.push({ id: `updated-${uAt}-${uBy}-${rid}`, actionText: '编辑', operatorName: (uBy || cBy), timeText: duText, note: '', changeLines: [] })
+  return logs
+}
+
+const fetchOperationLogs = async () => {
+  try {
+    const type = detailRecordType.value
+    const id = detailRecordId.value
+    const tryEndpoints = [
+      `/records/${type}/${id}/operations`,
+      `/records/${type}/${id}/logs`,
+      `/records/${type}/${id}/history`,
+      `/records/${type}/operations?id=${encodeURIComponent(id)}`,
+      `/records/operations?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`
+    ]
+    let list = []
+    for (let i = 0; i < tryEndpoints.length; i++) {
+      const url = tryEndpoints[i]
+      try {
+        const res = await api.get(url)
+        if (res.data && res.data.success) {
+          const raw = (res.data.data && (res.data.data.operations || res.data.data.logs || res.data.data.items)) || (Array.isArray(res.data.data) ? res.data.data : [])
+          if (Array.isArray(raw) && raw.length) { list = raw; break }
+        }
+      } catch (_) {}
+    }
+    const mapped = (list || []).map(it => {
+      const actionRaw = String(it.action || it.operation || it.type || it.event || '').toLowerCase()
+      const actionText = mapActionToCN(actionRaw)
+      let operatorName = (
+        it.operator_nickname ||
+        (it.operator && it.operator.nickname) ||
+        it.created_by_nickname ||
+        it.updated_by_nickname ||
+        it.operator_name ||
+        (it.operator && it.operator.name) ||
+        it.created_by_name ||
+        it.updated_by_name ||
+        (it.operator && it.operator.username) ||
+        it.created_by_username ||
+        it.updated_by_username ||
+        ''
+      )
+      operatorName = String(operatorName || '').trim()
+      if (!operatorName) {
+        const r = detailRecord.value || {}
+        operatorName = String(
+          r.created_by_nickname || (r.created_by && r.created_by.nickname) || ''
+        ).trim()
+      }
+      const t = it.time || it.created_at || it.updated_at || it.operation_time || it.record_time || ''
+      const timeText = formatOperationLogTime(t)
+      const note = it.note || it.notes || it.description || ''
+      const changeLines = formatChangeSummary(it, type, detailRecord.value || {})
+      return { id: it.id || `${actionRaw}-${t}-${operatorName}`, actionText, operatorName, timeText, note, changeLines }
+    })
+    if (mapped.length) {
+      detailOperationLogs.value = mapped
+    } else {
+      detailOperationLogs.value = deriveOperationLogs(detailRecord.value || {})
+    }
+  } catch (_) {
+    detailOperationLogs.value = deriveOperationLogs(detailRecord.value || {})
+  }
+}
+
+const editCurrentRecord = () => {
+  if (!detailRecord.value || !detailRecordId.value) return
+  openEditDialog(detailRecord.value, detailRecordType.value)
+}
+
+const deleteCurrentRecord = () => {
+  if (!detailRecord.value || !detailRecordId.value) return
+  handleDelete(detailRecord.value, detailRecordType.value)
+}
+
 const submitAdd = async () => {
   const type = addFormType.value
   if (type !== 'breeding') {
@@ -1358,4 +1621,21 @@ h2 { color: var(--text-primary); }
 .search-input { flex: 2 1 420px; min-width: 260px; }
 .toolbar-right { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; }
 .filter-item { min-width: 140px; flex: 0 0 140px; }
+
+.detail-loading { padding: 24px; text-align: center; color: #909399; }
+.detail-section { margin-top: 16px; }
+.photos-title { font-size: 16px; font-weight: 600; color: #303133; margin-bottom: 8px; }
+.photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+.photo-item { width: 100%; height: 88px; border-radius: 6px; overflow: hidden; }
+.oplogs-section { margin-top: 16px; }
+.oplogs-title { font-size: 16px; font-weight: 600; color: #303133; margin-bottom: 8px; }
+.oplog-list { display: flex; flex-direction: column; gap: 12px; }
+.oplog-item { padding: 12px; border: 1px solid #ebeef5; border-radius: 8px; }
+.oplog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.oplog-action { color: #409eff; font-weight: 600; }
+.oplog-time { color: #909399; }
+.oplog-meta { color: #606266; margin-bottom: 6px; }
+.oplog-diff-item { color: #606266; }
+.oplog-notes { color: #303133; }
+.oplogs-empty { color: #909399; }
 </style>
