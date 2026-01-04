@@ -32,6 +32,17 @@
         </el-card>
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content-wrapper">
+            <div class="stat-icon-box icon-info">
+              <el-icon><Collection /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">鹦鹉总数</div>
+              <div class="stat-value">{{ stats.parrotTotalCount }}</div>
+            </div>
+          </div>
+        </el-card>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content-wrapper">
             <div class="stat-icon-box icon-danger">
               <el-icon><Trophy /></el-icon>
             </div>
