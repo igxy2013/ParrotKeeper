@@ -471,11 +471,18 @@ const draw = () => {
   ctx.font = '10px sans-serif'
   ctx.textAlign = 'center'
   
-  const labelStep = (currentType.value === 'week' || currentType.value === 'year' || data.length <= 7) ? 1 : Math.ceil(data.length / 15)
+  const isMonth = currentType.value === 'month'
+  const labelStep = isMonth ? 1 : ((currentType.value === 'week' || currentType.value === 'year' || data.length <= 7) ? 1 : Math.ceil(data.length / 15))
   
   data.forEach((d, i) => {
     if (i % labelStep === 0) {
       const x = padding.left + step * i + step / 2
+      if (isMonth) {
+        const t = String(d.date || '')
+        const dd = t.split('-')[2]
+        const num = parseInt(dd || '0', 10)
+        if (!isFinite(num) || num % 2 === 0) return
+      }
       const dateStr = _formatLabel(d.date, currentType.value)
       ctx.fillText(dateStr, x, height - 10)
     }

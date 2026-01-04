@@ -187,12 +187,17 @@ Component({
 
       const placeholderTop = getY(maxBarVal)
       const baseY = getY(0)
-      const placeholderHeight = baseY - placeholderTop
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.12)'
+      let placeholderHeight = baseY - placeholderTop
+      const minPlaceholder = Math.max(32, Math.floor(chartH))
+      if (placeholderHeight < minPlaceholder) {
+        placeholderHeight = minPlaceholder
+      }
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.18)'
       data.forEach((d, i) => {
         const xCenter = padding.left + step * i + step / 2
         const x = xCenter - barWidth / 2
-        drawTopRoundedRect(ctx, x, placeholderTop, barWidth, placeholderHeight, 6)
+        const y = Math.max(padding.top, baseY - placeholderHeight)
+        drawTopRoundedRect(ctx, x, y, barWidth, placeholderHeight, 6)
       })
 
       const subBarWidth = barWidth / 2

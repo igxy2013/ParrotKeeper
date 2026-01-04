@@ -404,11 +404,22 @@ const handleFilterChange = async (filter) => {
   try {
     const res = await api.get('/admin/users/trend', { params })
     const raw = (res.data && res.data.success && Array.isArray(res.data.data)) ? res.data.data : []
-    userTrendData.value = raw.map(it => ({
+    let arr = raw.map(it => ({
       date: String(it.date || ''),
       new_users: Number(it.new_users || 0),
       total_users: typeof it.total_users === 'number' ? it.total_users : undefined
     }))
+
+    if (type === 'month' || type === 'week') {
+      const s = String(startDate || '')
+      const e = String(endDate || '')
+      arr = arr.filter(it => {
+        const ds = String(it.date || '')
+        return ds >= s && ds < e
+      })
+    }
+
+    userTrendData.value = arr
   } catch (e) {
     console.error('Fetch user trend error', e)
     userTrendData.value = []
