@@ -525,4 +525,20 @@ onMounted(async () => {
 .metric-label { font-size: 13px; color: #6b7280; margin-bottom: 6px; }
 .metric-value { font-size: 18px; font-weight: 600; color: #111827; }
 .empty-tip { color: #909399; text-align: center; padding: 20px 0; }
+
+@media (max-width: 768px) {
+  .analysis-content { 
+    flex-direction: column; 
+    gap: 12px; 
+    align-items: stretch; 
+  }
+  .trend-chart { 
+    width: 100%; 
+    height: 260px; 
+  }
+  .metrics-grid { 
+    grid-template-columns: 1fr; 
+    flex: 1 1 auto; 
+  }
+}
 </style>

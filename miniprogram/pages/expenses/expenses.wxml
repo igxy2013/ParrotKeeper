@@ -40,8 +40,14 @@
       </view>
     </view>
     
-    <!-- 趋势图表 -->
-    <expense-trend-chart data="{{trendData}}" />
+    <!-- 趋势图表（标题与切换器同行） -->
+    <expense-trend-chart 
+      data="{{trendData}}" 
+      period="{{selectedPeriod}}" 
+      headerDate="{{trendPickerDate}}"
+      bind:prev="onPrevTrendDate"
+      bind:next="onNextTrendDate"
+    />
 
     <!-- 记录工具容器：搜索框、标题、过滤器 -->
     <view class="records-toolbar card">

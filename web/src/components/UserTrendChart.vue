@@ -600,7 +600,7 @@ const _formatLabel = (s, type) => {
   font-family: sans-serif;
 }
 
- .chart-header-row {
+.chart-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -662,8 +662,9 @@ const _formatLabel = (s, type) => {
   transform: rotate(180deg);
 }
 
-.controls-row { display: flex; align-items: center; gap: 10px; }
-.date-input { width: 120px; }
+.controls-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.date-input { flex: 0 1 120px; min-width: 0; }
+.date-input :deep(.el-date-editor) { width: 100%; min-width: 0; }
 .date-input :deep(.el-input__wrapper) { height: 40px; padding: 0 8px; }
 .date-input :deep(.el-input__inner) { line-height: 40px; text-align: center; }
 
@@ -716,5 +717,15 @@ const _formatLabel = (s, type) => {
   height: 8px;
   border-radius: 2px;
   background: rgba(16, 185, 129, 0.3);
+}
+
+@media (max-width: 768px) {
+  .chart-header-row { flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .controls-row { width: 100%; justify-content: center; gap: 8px; }
+  .nav-btn { flex-shrink: 0; }
+  .date-input { flex: 1 1 120px; max-width: calc(100% - 96px); min-width: 0; }
+  .date-input :deep(.el-date-editor) { width: 100%; min-width: 0; }
+  .date-input :deep(.el-input__wrapper) { height: 36px; padding: 0 8px; }
+  .date-input :deep(.el-input__inner) { line-height: 36px; }
 }
 </style>

@@ -13,6 +13,37 @@
   padding: 32rpx; /* 与APP一致的页面左右内边距基线 */
 }
 
+/* 趋势时间切换 */
+.trend-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-radius: 32rpx;
+  padding: 12rpx 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.trend-nav .nav-btn {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  font-size: 36rpx;
+}
+
+.trend-nav .nav-display {
+  flex: 1;
+  text-align: center;
+  background: #f5f7fa;
+  border-radius: 9999rpx;
+  padding: 12rpx 24rpx;
+  color: #374151;
+  font-size: 28rpx;
+}
+
 /* 顶部时间段选择器 */
 .period-selector-card {
   display: flex;

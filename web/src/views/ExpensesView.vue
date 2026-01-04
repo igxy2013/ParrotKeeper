@@ -77,6 +77,49 @@
             <span class="card-icon"><el-icon><TrendCharts /></el-icon></span>
             <span class="card-title-text">收支趋势</span>
           </div>
+          <div class="trend-controls">
+            <div class="controls-row" v-if="selectedPeriod !== '全部'">
+              <div class="nav-btn" @click="onPrevTrendDate">
+                <img class="nav-icon left" src="/arrow-right-s-line.png" />
+              </div>
+              <el-date-picker
+                v-if="selectedPeriod === '今天' || selectedPeriod === '本周'"
+                v-model="trendPickerDate"
+                type="date"
+                :clearable="false"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                class="date-input"
+                size="large"
+                @change="onTrendDateChange"
+              />
+              <el-date-picker
+                v-else-if="selectedPeriod === '本月'"
+                v-model="trendPickerDate"
+                type="month"
+                :clearable="false"
+                format="YYYY-MM"
+                value-format="YYYY-MM"
+                class="date-input"
+                size="large"
+                @change="onTrendDateChange"
+              />
+              <el-date-picker
+                v-else-if="selectedPeriod === '本年'"
+                v-model="trendPickerDate"
+                type="year"
+                :clearable="false"
+                format="YYYY"
+                value-format="YYYY"
+                class="date-input"
+                size="large"
+                @change="onTrendDateChange"
+              />
+              <div class="nav-btn" @click="onNextTrendDate">
+                <img class="nav-icon" src="/arrow-right-s-line.png" />
+              </div>
+            </div>
+          </div>
         </div>
         <div class="analysis-content">
           <VChart
@@ -282,18 +325,128 @@ const pieColors = ['#f97373', '#fb923c', '#facc15', '#22c55e', '#2dd4bf', '#fb71
 
 const EXPENSES_CACHE_TTL = 60000
 
+const trendPickerDate = ref('')
+const trendCurrentDateObj = ref(null)
+const selectedStartDate = ref('')
+const selectedEndDate = ref('')
+
+const formatDate = (date) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+const getWeekRange = (date) => {
+  const d = new Date(date)
+  const day = d.getDay() || 7
+  const start = new Date(d)
+  start.setDate(d.getDate() - day + 1)
+  start.setHours(0,0,0,0)
+  const end = new Date(start)
+  end.setDate(start.getDate() + 7)
+  end.setHours(0,0,0,0)
+  return { start, end }
+}
+
+const setSelectedRangeByPeriod = (date) => {
+  const p = selectedPeriod.value
+  if (p === '全部') { selectedStartDate.value = ''; selectedEndDate.value = ''; return }
+  if (p === '今天') {
+    const s = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const e = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)
+    selectedStartDate.value = formatDate(s)
+    selectedEndDate.value = formatDate(e)
+    return
+  }
+  if (p === '本周') {
+    const { start, end } = getWeekRange(date)
+    selectedStartDate.value = formatDate(start)
+    selectedEndDate.value = formatDate(end)
+    return
+  }
+  if (p === '本月') {
+    const s = new Date(date.getFullYear(), date.getMonth(), 1)
+    const e = new Date(date.getFullYear(), date.getMonth() + 1, 1)
+    selectedStartDate.value = formatDate(s)
+    selectedEndDate.value = formatDate(e)
+    return
+  }
+  if (p === '本年') {
+    const s = new Date(date.getFullYear(), 0, 1)
+    const e = new Date(date.getFullYear() + 1, 0, 1)
+    selectedStartDate.value = formatDate(s)
+    selectedEndDate.value = formatDate(e)
+    return
+  }
+}
+
+const onTrendDateChange = (val) => {
+  if (!val) return
+  let date
+  if (selectedPeriod.value === '本年') { const y = parseInt(String(val)); date = new Date(y, 0, 1) }
+  else if (selectedPeriod.value === '本月') { const parts = String(val).split('-'); date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1) }
+  else { const parts = String(val).split('-'); date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2] || '1')) }
+  trendCurrentDateObj.value = date.getTime()
+  setSelectedRangeByPeriod(date)
+  loadTrend()
+  loadExpenseAnalysis()
+  page.value = 1
+  loadExpenses()
+  loadStats()
+}
+
+const onPrevTrendDate = () => {
+  const date = new Date(trendCurrentDateObj.value || Date.now())
+  if (selectedPeriod.value === '本月') date.setMonth(date.getMonth() - 1)
+  else if (selectedPeriod.value === '本年') date.setFullYear(date.getFullYear() - 1)
+  else date.setDate(date.getDate() - 7)
+  trendCurrentDateObj.value = date.getTime()
+  if (selectedPeriod.value === '本年') trendPickerDate.value = String(date.getFullYear())
+  else if (selectedPeriod.value === '本月') { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2,'0'); trendPickerDate.value = `${y}-${m}` }
+  else trendPickerDate.value = formatDate(date)
+  setSelectedRangeByPeriod(date)
+  loadTrend()
+  loadExpenseAnalysis()
+  page.value = 1
+  loadExpenses()
+  loadStats()
+}
+
+const onNextTrendDate = () => {
+  const date = new Date(trendCurrentDateObj.value || Date.now())
+  if (selectedPeriod.value === '本月') date.setMonth(date.getMonth() + 1)
+  else if (selectedPeriod.value === '本年') date.setFullYear(date.getFullYear() + 1)
+  else date.setDate(date.getDate() + 7)
+  trendCurrentDateObj.value = date.getTime()
+  if (selectedPeriod.value === '本年') trendPickerDate.value = String(date.getFullYear())
+  else if (selectedPeriod.value === '本月') { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2,'0'); trendPickerDate.value = `${y}-${m}` }
+  else trendPickerDate.value = formatDate(date)
+  setSelectedRangeByPeriod(date)
+  loadTrend()
+  loadExpenseAnalysis()
+  page.value = 1
+  loadExpenses()
+  loadStats()
+}
 const buildListCacheKey = () => {
   const period = selectedPeriod.value
   const type = recordType.value
   const category = selectedCategory.value
-  return `expenses_list|${period}|${type}|${category}|${page.value}|${perPage.value}`
+  const s = selectedStartDate.value || ''
+  const e = selectedEndDate.value || ''
+  const keyParams = (s && e) ? `${s}|${e}` : 'all'
+  return `expenses_list|${period}|${type}|${category}|${keyParams}|${page.value}|${perPage.value}`
 }
 
 const buildStatsCacheKey = () => {
   const period = selectedPeriod.value
   const type = recordType.value
   const category = selectedCategory.value
-  return `expenses_stats|${period}|${type}|${category}`
+  const s = selectedStartDate.value || ''
+  const e = selectedEndDate.value || ''
+  const keyParams = (s && e) ? `${s}|${e}` : 'all'
+  return `expenses_stats|${period}|${type}|${category}|${keyParams}`
 }
 
 const buildTrendCacheKey = (params) => {
@@ -306,7 +459,12 @@ const buildTrendCacheKey = (params) => {
 
 const buildAnalysisCacheKey = () => {
   const type = analysisType.value
-  return `expenses_analysis|${type}|months_6`
+  const dr = getDateRange()
+  const s = dr.start_date || ''
+  const e = dr.end_date || ''
+  const period = selectedPeriod.value
+  const keyParams = (s && e) ? `${s}|${e}` : 'all'
+  return `expenses_analysis|${type}|${period}|${keyParams}`
 }
 
 const incomeCategoryLabelMap = {
@@ -349,6 +507,9 @@ const getDateRange = () => {
   const now = new Date()
   let startDate
   let endDate
+  if (selectedStartDate.value && selectedEndDate.value) {
+    return { start_date: selectedStartDate.value, end_date: selectedEndDate.value }
+  }
 
   const formatLocalDate = (date) => {
     const year = date.getFullYear()
@@ -363,14 +524,11 @@ const getDateRange = () => {
       endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
       break
     case '本周': {
-      const dayOfWeek = now.getDay()
-      const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)
-      const rawWeekStart = new Date(now.getFullYear(), now.getMonth(), diff)
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-      startDate = rawWeekStart < monthStart ? monthStart : rawWeekStart
-      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-      endDate = tomorrow < monthEnd ? tomorrow : monthEnd
+      const dayOfWeek = now.getDay() // 0=周日,1=周一,...
+      const mondayOffset = dayOfWeek === 0 ? -6 : (1 - dayOfWeek)
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset)
+      endDate = new Date(startDate)
+      endDate.setDate(endDate.getDate() + 7) // 结束为下周一（独占）
       break
     }
     case '本月':
@@ -576,7 +734,28 @@ const loadTrend = async () => {
         data: xAxisData,
         axisLine: { lineStyle: { color: '#e5e7eb' } },
         axisTick: { show: false },
-        axisLabel: { color: '#6b7280' }
+        axisLabel: {
+          color: '#6b7280',
+          formatter: (value) => {
+            const period = selectedPeriod.value
+            if (period === '本年') {
+              const mm = String(value).split('-')[1] || ''
+              const m = parseInt(mm, 10)
+              return (isFinite(m) && m > 0) ? `${m}月` : value
+            }
+            if (period === '本月') {
+              const dd = String(value).split('-')[2] || ''
+              return dd || value
+            }
+            if (period === '本周') {
+              const d = new Date(String(value) + 'T00:00:00')
+              const map = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+              const idx = d.getDay()
+              return typeof idx === 'number' ? map[idx] : value
+            }
+            return value
+          }
+        }
       },
       yAxis: {
         type: 'value',
@@ -621,6 +800,8 @@ const loadTrend = async () => {
           type: 'line',
           smooth: true,
           data: netSeries,
+          showSymbol: false,
+          symbol: 'none',
           itemStyle: { color: '#10b981' },
           lineStyle: { width: 3, color: '#10b981' }
         }
@@ -731,10 +912,18 @@ const onPageChange = (p) => {
 
 const setSelectedPeriod = (p) => {
   selectedPeriod.value = p
+  selectedStartDate.value = ''
+  selectedEndDate.value = ''
+  const now = new Date()
+  trendCurrentDateObj.value = now.getTime()
+  if (p === '本年') trendPickerDate.value = String(now.getFullYear())
+  else if (p === '本月') trendPickerDate.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,'0')}`
+  else if (p === '今天' || p === '本周') trendPickerDate.value = formatDate(now)
   page.value = 1
   loadExpenses()
   loadStats()
   loadTrend()
+  loadExpenseAnalysis()
 }
 
 const refresh = () => {
@@ -807,28 +996,81 @@ const loadExpenseAnalysis = async () => {
   analysisLoading.value = true
   try {
     const isIncome = analysisType.value === '收入'
-    const url = isIncome ? '/statistics/income-analysis' : '/statistics/expense-analysis'
     const key = buildAnalysisCacheKey()
-    let rawList = []
     const cached = getCache(key, EXPENSES_CACHE_TTL)
     if (cached && Array.isArray(cached)) {
-      rawList = cached
+      const total = cached.reduce((sum, it) => sum + (Number(it.amount || it.total_amount) || 0), 0)
+      const mapped = cached.map((it, idx) => ({
+        category: it.category || 'other',
+        categoryLabel: it.categoryLabel || it.category_text || (isIncome ? incomeCategoryLabelMap[it.category] || '其他收入' : categoryMap[it.category] || '其他'),
+        amount: Number(it.amount || it.total_amount) || 0,
+        percentage: total > 0 ? ((Number(it.amount || it.total_amount) || 0) / total) * 100 : 0,
+        color: pieColors[idx % pieColors.length]
+      })).sort((a, b) => b.amount - a.amount)
+      expenseAnalysis.value = mapped
+      selectedExpenseIndex.value = -1
+      await nextTick()
+      drawExpensePieChart()
+      return
+    }
+
+    const dr = getDateRange()
+    if (dr.start_date && dr.end_date) {
+      const per = 500
+      let pageIdx = 1
+      const collected = []
+      while (pageIdx <= 20) {
+        const params = {
+          page: pageIdx,
+          per_page: per,
+          start_date: dr.start_date,
+          end_date: dr.end_date,
+          record_type: isIncome ? '收入' : '支出'
+        }
+        const res = await api.get('/expenses/transactions', { params })
+        const data = res.data?.data || {}
+        const items = Array.isArray(data.items) ? data.items : []
+        if (!items.length) break
+        collected.push(...items)
+        if (items.length < per) break
+        pageIdx += 1
+      }
+      const mapAgg = {}
+      for (let i = 0; i < collected.length; i++) {
+        const r = collected[i] || {}
+        const keyCat = r.category || 'other'
+        const labelCat = r.category_text || (isIncome ? incomeCategoryLabelMap[keyCat] || '其他收入' : categoryMap[keyCat] || '其他')
+        const amt = Number(r.amount || 0) || 0
+        if (!mapAgg[keyCat]) mapAgg[keyCat] = { category: keyCat, categoryLabel: labelCat, amount: 0 }
+        mapAgg[keyCat].amount += amt
+      }
+      const arr = Object.values(mapAgg)
+      const total = arr.reduce((s, it) => s + (it.amount || 0), 0)
+      const result = arr.map((it, idx) => ({
+        category: it.category,
+        categoryLabel: it.categoryLabel,
+        amount: it.amount,
+        percentage: total > 0 ? (it.amount / total) * 100 : 0,
+        color: pieColors[idx % pieColors.length]
+      })).sort((a, b) => b.amount - a.amount)
+      setCache(key, result)
+      expenseAnalysis.value = result
+      selectedExpenseIndex.value = -1
+      await nextTick()
+      drawExpensePieChart()
     } else {
-      const res = await api.get(url, { params: { months: 6 } })
+      const isIncome2 = isIncome
+      const url = isIncome2 ? '/statistics/income-analysis' : '/statistics/expense-analysis'
+      const res = await api.get(url, { params: {} })
       const data = res.data?.data || {}
-      rawList = isIncome
+      const rawList = isIncome2
         ? Array.isArray(data.category_incomes) ? data.category_incomes : []
         : Array.isArray(data.category_expenses) ? data.category_expenses : []
-      setCache(key, rawList)
-    }
-    const total = rawList.reduce((sum, it) => sum + (Number(it.total_amount) || 0), 0)
-    const mapped = rawList
-      .map((it, idx) => {
+      const total = rawList.reduce((sum, it) => sum + (Number(it.total_amount) || 0), 0)
+      const mapped = rawList.map((it, idx) => {
         const amount = Number(it.total_amount) || 0
         const categoryKey = it.category || 'other'
-        const label = isIncome
-          ? incomeCategoryLabelMap[categoryKey] || '其他收入'
-          : categoryMap[categoryKey] || '其他'
+        const label = isIncome2 ? incomeCategoryLabelMap[categoryKey] || '其他收入' : categoryMap[categoryKey] || '其他'
         const pct = total > 0 ? (amount / total) * 100 : 0
         return {
           category: categoryKey,
@@ -837,12 +1079,13 @@ const loadExpenseAnalysis = async () => {
           percentage: pct,
           color: pieColors[idx % pieColors.length]
         }
-      })
-      .sort((a, b) => b.amount - a.amount)
-    expenseAnalysis.value = mapped
-    selectedExpenseIndex.value = -1
-    await nextTick()
-    drawExpensePieChart()
+      }).sort((a, b) => b.amount - a.amount)
+      setCache(key, mapped)
+      expenseAnalysis.value = mapped
+      selectedExpenseIndex.value = -1
+      await nextTick()
+      drawExpensePieChart()
+    }
   } catch (e) {
     expenseAnalysis.value = []
     selectedExpenseIndex.value = -1
@@ -1004,6 +1247,9 @@ onMounted(() => {
   loadStats()
   loadExpenseAnalysis()
   loadTrend()
+  const now = new Date()
+  trendCurrentDateObj.value = now.getTime()
+  trendPickerDate.value = formatDate(now)
 })
 </script>
 
@@ -1042,6 +1288,25 @@ onMounted(() => {
 .card-icon { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; background: #ede9fe; border-radius: 50%; flex-shrink: 0; }
 .card-icon :deep(.el-icon) { font-size: 16px; color: #8b5cf6; }
 .card-title-text { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+
+.trend-controls { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.controls-row { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.nav-btn { padding: 4px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; cursor: pointer; transition: background 0.2s; }
+.nav-btn:hover { background: #f3f4f6; }
+.nav-icon { width: 20px; height: 20px; filter: invert(56%) sepia(82%) saturate(452%) hue-rotate(106deg) brightness(91%) contrast(92%); }
+.nav-icon.left { transform: rotate(180deg); }
+.date-input { flex: 0 1 140px; min-width: 0; }
+.date-input :deep(.el-date-editor) { width: 100%; min-width: 0; }
+.date-input :deep(.el-input__wrapper) { height: 36px; padding: 0 8px; }
+.date-input :deep(.el-input__inner) { line-height: 36px; text-align: center; }
+
+@media (max-width: 768px) {
+  .card-header-row { flex-wrap: wrap; gap: 8px; }
+  .trend-controls { width: 100%; justify-content: center; }
+  .controls-row { width: 100%; justify-content: center; }
+  .date-input { flex: 1 1 140px; max-width: calc(100% - 96px); }
+}
+
 
 .analysis-tabs {
   display: inline-flex;

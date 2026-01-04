@@ -1,5 +1,12 @@
 <view class="chart-container">
-  <view class="chart-header">收支趋势</view>
+  <view class="chart-header-row">
+    <view class="chart-header">收支趋势</view>
+    <view class="trend-nav">
+      <view class="nav-btn" bindtap="onPrevTap">‹</view>
+      <view class="nav-display">{{headerDate}}</view>
+      <view class="nav-btn" bindtap="onNextTap">›</view>
+    </view>
+  </view>
   <canvas
     type="2d"
     id="trendChartCanvas"

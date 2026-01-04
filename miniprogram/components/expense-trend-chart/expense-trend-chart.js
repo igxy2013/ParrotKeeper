@@ -4,6 +4,14 @@ Component({
       type: Array,
       value: [],
       observer: 'draw'
+    },
+    period: {
+      type: String,
+      value: '本月'
+    },
+    headerDate: {
+      type: String,
+      value: ''
     }
   },
 
@@ -12,6 +20,14 @@ Component({
   },
 
   methods: {
+    onPrevTap() {
+      this.triggerEvent('prev')
+    },
+
+    onNextTap() {
+      this.triggerEvent('next')
+    },
+
     draw() {
       const data = this.data.data || []
       const query = wx.createSelectorQuery().in(this)
@@ -118,10 +134,38 @@ Component({
 
       const skip = Math.ceil(data.length / 6)
 
+      const formatLabel = (val) => {
+        const p = this.properties.period || '本月'
+        if (p === '本年') {
+          const t = String(val)
+          const mm = t.split('-')[1]
+          if (mm) {
+            const m = parseInt(mm, 10)
+            if (isFinite(m) && m > 0) return m + '月'
+          }
+          const d = new Date(t + 'T00:00:00')
+          const m = d.getMonth() + 1
+          if (isFinite(m) && m > 0) return m + '月'
+          return t
+        }
+        if (p === '本月') {
+          const t = String(val)
+          const dd = t.split('-')[2]
+          return dd || t
+        }
+        if (p === '本周') {
+          const d = new Date(String(val) + 'T00:00:00')
+          const map = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+          const idx = d.getDay()
+          return typeof idx === 'number' ? map[idx] : String(val)
+        }
+        return String(val)
+      }
+
       data.forEach((d, i) => {
         const x = padding.left + step * i + step / 2
         if (i % skip === 0) {
-          const label = d.date || ''
+          const label = formatLabel(d.date || '')
           ctx.fillText(label, x, height - padding.bottom + 5)
         }
       })
@@ -181,15 +225,7 @@ Component({
         ctx.stroke()
       }
 
-      ctx.fillStyle = '#fff'
-      ctx.strokeStyle = '#10b981'
-      ctx.lineWidth = 2
-      points.forEach(p => {
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.stroke()
-      })
+      
 
       const selIndex = this.data.selectedIndex
       if (selIndex >= 0 && selIndex < data.length) {

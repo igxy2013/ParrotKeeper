@@ -93,7 +93,9 @@ Page({
     // 搜索关键字
     searchKeyword: '',
     // 趋势图数据
-    trendData: []
+    trendData: [],
+    trendCurrentDateObj: Date.now(),
+    trendPickerDate: ''
   },
 
   onLoad() {
@@ -103,6 +105,9 @@ Page({
     this.loadTrendData()
     // 初始化类别选项与默认选择
     this.updateCategoryOptions()
+    const now = new Date()
+    this.setData({ trendCurrentDateObj: now.getTime() })
+    this.setTrendPickerByPeriod()
   },
 
   onShow() {
@@ -170,7 +175,9 @@ Page({
       displayTotalCount: 0,
       loading: false
     }, () => {
-      // 在setData完成后再调用，确保selectedPeriod已更新
+      const now = new Date()
+      this.setData({ trendCurrentDateObj: now.getTime() })
+      this.setTrendPickerByPeriod()
       this.loadExpenses()
       this.loadStats()
       this.loadTrendData()
@@ -210,7 +217,7 @@ Page({
   },
 
   getDateRange() {
-    const now = new Date()
+    const base = new Date(this.data.trendCurrentDateObj || Date.now())
     let startDate, endDate
     
     // 辅助函数：将日期转换为本地日期字符串 (YYYY-MM-DD)
@@ -223,29 +230,29 @@ Page({
     
     switch (this.data.selectedPeriod) {
       case '今天':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+        startDate = new Date(base.getFullYear(), base.getMonth(), base.getDate())
+        endDate = new Date(base.getFullYear(), base.getMonth(), base.getDate() + 1)
         break
       case '本周':
         // 周一开始，限制在当月范围内，以避免跨月导致“本周”总额大于“本月”
-        const dayOfWeek = now.getDay()
-        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) // 周一开始
-        const rawWeekStart = new Date(now.getFullYear(), now.getMonth(), diff)
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        const dayOfWeek = base.getDay()
+        const diff = base.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) // 周一开始
+        const rawWeekStart = new Date(base.getFullYear(), base.getMonth(), diff)
+        const monthStart = new Date(base.getFullYear(), base.getMonth(), 1)
+        const monthEnd = new Date(base.getFullYear(), base.getMonth() + 1, 1)
         // 周起始取当周周一与当月1号的较晚者
         startDate = rawWeekStart < monthStart ? monthStart : rawWeekStart
         // 结束取“明天”与当月结束的较早者（严格小于结束日）
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+        const tomorrow = new Date(base.getFullYear(), base.getMonth(), base.getDate() + 1)
         endDate = tomorrow < monthEnd ? tomorrow : monthEnd
         break
       case '本月':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        startDate = new Date(base.getFullYear(), base.getMonth(), 1)
+        endDate = new Date(base.getFullYear(), base.getMonth() + 1, 1)
         break
       case '本年':
-        startDate = new Date(now.getFullYear(), 0, 1)
-        endDate = new Date(now.getFullYear() + 1, 0, 1)
+        startDate = new Date(base.getFullYear(), 0, 1)
+        endDate = new Date(base.getFullYear() + 1, 0, 1)
         break
       case '全部':
         // 全部时间：不传时间参数，由后端返回全量汇总与列表
@@ -258,6 +265,87 @@ Page({
       start_date: formatLocalDate(startDate),
       end_date: formatLocalDate(endDate)
     }
+  },
+
+  formatDateForPicker(date) {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  },
+
+  setTrendPickerByPeriod() {
+    const date = new Date(this.data.trendCurrentDateObj || Date.now())
+    const p = this.data.selectedPeriod
+    if (p === '本年') {
+      this.setData({ trendPickerDate: String(date.getFullYear()) })
+    } else if (p === '本月') {
+      const y = date.getFullYear()
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      this.setData({ trendPickerDate: `${y}-${m}` })
+    } else {
+      this.setData({ trendPickerDate: this.formatDateForPicker(date) })
+    }
+  },
+
+  getTrendDateRange() {
+    const date = new Date(this.data.trendCurrentDateObj || Date.now())
+    const p = this.data.selectedPeriod
+    const formatLocalDate = (d) => {
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${dd}`
+    }
+    if (p === '今天') {
+      const s = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      const e = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)
+      return { start_date: formatLocalDate(s), end_date: formatLocalDate(e) }
+    }
+    if (p === '本周') {
+      const dayOfWeek = date.getDay()
+      const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)
+      const start = new Date(date.getFullYear(), date.getMonth(), diff)
+      const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7)
+      return { start_date: formatLocalDate(start), end_date: formatLocalDate(end) }
+    }
+    if (p === '本月') {
+      const s = new Date(date.getFullYear(), date.getMonth(), 1)
+      const e = new Date(date.getFullYear(), date.getMonth() + 1, 1)
+      return { start_date: formatLocalDate(s), end_date: formatLocalDate(e) }
+    }
+    if (p === '本年') {
+      const s = new Date(date.getFullYear(), 0, 1)
+      const e = new Date(date.getFullYear() + 1, 0, 1)
+      return { start_date: formatLocalDate(s), end_date: formatLocalDate(e) }
+    }
+    return {}
+  },
+
+  onPrevTrendDate() {
+    const date = new Date(this.data.trendCurrentDateObj || Date.now())
+    const p = this.data.selectedPeriod
+    if (p === '本月') date.setMonth(date.getMonth() - 1)
+    else if (p === '本年') date.setFullYear(date.getFullYear() - 1)
+    else date.setDate(date.getDate() - 7)
+    this.setData({ trendCurrentDateObj: date.getTime() })
+    this.setTrendPickerByPeriod()
+    this.loadTrendData()
+    this.loadExpenses()
+    this.loadStats()
+  },
+
+  onNextTrendDate() {
+    const date = new Date(this.data.trendCurrentDateObj || Date.now())
+    const p = this.data.selectedPeriod
+    if (p === '本月') date.setMonth(date.getMonth() + 1)
+    else if (p === '本年') date.setFullYear(date.getFullYear() + 1)
+    else date.setDate(date.getDate() + 7)
+    this.setData({ trendCurrentDateObj: date.getTime() })
+    this.setTrendPickerByPeriod()
+    this.loadTrendData()
+    this.loadExpenses()
+    this.loadStats()
   },
 
   // 加载支出记录
@@ -386,7 +474,7 @@ Page({
   // 加载趋势数据
   async loadTrendData() {
     try {
-      const dateParams = this.getDateRange()
+      const dateParams = this.getTrendDateRange()
       const periodType = ['本年', '全部'].includes(this.data.selectedPeriod) ? 'month' : 'day'
       const params = {
         ...dateParams,
@@ -411,27 +499,65 @@ Page({
             }
           })
 
-          if (periodType === 'day' && dateParams.start_date && dateParams.end_date) {
-            const start = new Date(dateParams.start_date + 'T00:00:00')
-            const end = new Date(dateParams.end_date + 'T00:00:00')
+          if (periodType === 'day') {
             const list = []
-            for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-              const y = d.getFullYear()
-              const m = String(d.getMonth() + 1).padStart(2, '0')
-              const day = String(d.getDate()).padStart(2, '0')
-              const key = `${y}-${m}-${day}`
-              const found = map[key] || {}
-              list.push({
-                date: key,
-                income: Number(found.income || 0),
-                expense: Number(found.expense || 0),
-                net: Number(found.net || 0)
-              })
+            const base = new Date(this.data.trendCurrentDateObj || Date.now())
+            if (this.data.selectedPeriod === '本周') {
+              const dayOfWeek = base.getDay()
+              const diff = base.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)
+              const start = new Date(base.getFullYear(), base.getMonth(), diff)
+              for (let i = 0; i < 7; i++) {
+                const d = new Date(start)
+                d.setDate(start.getDate() + i)
+                const y = d.getFullYear()
+                const m = String(d.getMonth() + 1).padStart(2, '0')
+                const day = String(d.getDate()).padStart(2, '0')
+                const key = `${y}-${m}-${day}`
+                const found = map[key] || {}
+                list.push({
+                  date: key,
+                  income: Number(found.income || 0),
+                  expense: Number(found.expense || 0),
+                  net: Number(found.net || 0)
+                })
+              }
+            } else if (this.data.selectedPeriod === '本月') {
+              const y = base.getFullYear()
+              const monthIndex = base.getMonth()
+              const m = String(monthIndex + 1).padStart(2, '0')
+              const daysInMonth = new Date(y, monthIndex + 1, 0).getDate()
+              for (let dd = 1; dd <= daysInMonth; dd++) {
+                const day = String(dd).padStart(2, '0')
+                const key = `${y}-${m}-${day}`
+                const found = map[key] || {}
+                list.push({
+                  date: key,
+                  income: Number(found.income || 0),
+                  expense: Number(found.expense || 0),
+                  net: Number(found.net || 0)
+                })
+              }
+            } else {
+              const start = new Date(dateParams.start_date + 'T00:00:00')
+              const end = new Date(dateParams.end_date + 'T00:00:00')
+              for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+                const y = d.getFullYear()
+                const mm = String(d.getMonth() + 1).padStart(2, '0')
+                const day = String(d.getDate()).padStart(2, '0')
+                const key = `${y}-${mm}-${day}`
+                const found = map[key] || {}
+                list.push({
+                  date: key,
+                  income: Number(found.income || 0),
+                  expense: Number(found.expense || 0),
+                  net: Number(found.net || 0)
+                })
+              }
             }
             data = list
           } else if (periodType === 'month') {
-            const now = new Date()
-            const year = now.getFullYear()
+            const base = new Date(this.data.trendCurrentDateObj || Date.now())
+            const year = base.getFullYear()
             const list = []
             for (let m = 1; m <= 12; m++) {
               const mm = String(m).padStart(2, '0')
