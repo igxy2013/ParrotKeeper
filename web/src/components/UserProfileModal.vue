@@ -67,7 +67,12 @@ const resolveAvatar = (url) => {
   if (!url) return '/profile.png'
   const s = String(url)
   if (/^https?:\/\//.test(s)) return s
+  if (s.startsWith('/images/remix/')) {
+    const name = s.split('/').pop()
+    return name ? `/${name}` : '/profile.png'
+  }
   if (s.startsWith('/uploads/')) return s
+  if (s.startsWith('/')) return s
   return '/uploads/' + s.replace(/^\/?uploads\/?/, '')
 }
 
