@@ -736,6 +736,7 @@ const loadTrend = async () => {
         axisTick: { show: false },
         axisLabel: {
           color: '#6b7280',
+          interval: 0,
           formatter: (value) => {
             const period = selectedPeriod.value
             if (period === '本年') {
@@ -745,6 +746,8 @@ const loadTrend = async () => {
             }
             if (period === '本月') {
               const dd = String(value).split('-')[2] || ''
+              const num = parseInt(dd, 10)
+              if (isFinite(num) && num % 2 === 0) return ''
               return dd || value
             }
             if (period === '本周') {

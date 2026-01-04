@@ -132,7 +132,11 @@ Component({
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
 
-      const skip = Math.ceil(data.length / 6)
+      let skip = Math.ceil(data.length / 6)
+      const pLabel = this.properties.period || '本月'
+      if (pLabel === '本周' || pLabel === '本月' || pLabel === '本年') {
+        skip = 1
+      }
 
       const formatLabel = (val) => {
         const p = this.properties.period || '本月'
@@ -165,8 +169,19 @@ Component({
       data.forEach((d, i) => {
         const x = padding.left + step * i + step / 2
         if (i % skip === 0) {
-          const label = formatLabel(d.date || '')
-          ctx.fillText(label, x, height - padding.bottom + 5)
+          let shouldDraw = true
+          if (pLabel === '本月') {
+            const t = String(d.date || '')
+            const dd = t.split('-')[2]
+            const dayNum = parseInt(dd || '0', 10)
+            if (isFinite(dayNum) && dayNum % 2 === 0) {
+              shouldDraw = false
+            }
+          }
+          if (shouldDraw) {
+            const label = formatLabel(d.date || '')
+            ctx.fillText(label, x, height - padding.bottom + 5)
+          }
         }
       })
 
