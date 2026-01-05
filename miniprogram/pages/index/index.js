@@ -135,6 +135,9 @@ Page({
     }
   },
 
+  // 引导状态
+  onGuideShownOnce: false,
+
   onLoad(options) {
     this.setGreeting()
     this.checkLoginStatus()
@@ -236,6 +239,8 @@ Page({
       this.loadData()
       try { this.prefetchHomePagesOnce() } catch (_) {}
     }
+
+    this.checkAndShowGestureGuide()
 
     // 如有需要，在页面显示时自动弹出“添加鹦鹉”弹窗
     if (this._openAddParrotOnShow) {
@@ -1761,6 +1766,40 @@ Page({
     })
     this.setData({ myParrots: parrots })
   },
+
+  checkAndShowGestureGuide() {
+    try {
+      const shown = wx.getStorageSync('home_customize_guide_shown_v2')
+      if (shown) return
+      if (!this.data.isLogin) return
+      
+      this.setData({ showGestureGuide: true })
+      
+      // 8秒后自动消失
+      setTimeout(() => {
+        if (this.data.showGestureGuide) {
+          this.closeGestureGuide()
+        }
+      }, 8000)
+    } catch (_) {
+      this.setData({ showGestureGuide: true })
+    }
+  },
+
+  closeGestureGuide() {
+    this.setData({ showGestureGuide: false })
+    try { wx.setStorageSync('home_customize_guide_shown_v2', 1) } catch (_) {}
+  },
+
+  onGestureGuideTap() {
+    this.closeGestureGuide()
+    // 模拟长按第一个卡片的效果，进入编辑模式
+    // 但由于无法直接触发长按事件，我们直接进入编辑模式并震动
+    this.setData({ isEditMode: true })
+    wx.vibrateShort()
+  },
+
+  stopPropagation() {},
 
   // 通用：图标加载失败自动回退到 SVG
   handleIconError(e) {

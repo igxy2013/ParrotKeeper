@@ -1576,3 +1576,112 @@
   box-shadow: 0 12rpx 28rpx rgba(0,0,0,0.15);
 }
 /* 删除左滑样式，改为长按弹出ActionSheet，因此不再需要 */
+
+/* ----------------------------------
+   首页自定义引导动画样式
+   ---------------------------------- */
+
+.gesture-guide-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.02); /* 极淡的背景遮罩 */
+  overflow: visible;
+}
+
+.gesture-target-highlight {
+  position: absolute;
+  top: 20rpx; /* 假设第一个卡片大概位置 */
+  left: 20rpx;
+  width: 330rpx; /* 约半个屏幕宽度减间距 */
+  height: 180rpx;
+  border: 4rpx dashed #26A69A;
+  border-radius: 24rpx;
+  background: rgba(38, 166, 154, 0.1);
+  box-sizing: border-box;
+  animation: highlight-pulse 2s infinite;
+}
+
+.gesture-hand-wrapper {
+  position: absolute;
+  top: 110rpx; /* highlight中心附近 */
+  left: 185rpx;
+  z-index: 102;
+}
+
+.gesture-hand {
+  font-size: 64rpx;
+  line-height: 1;
+  transform-origin: center center;
+  animation: hand-press 1.5s infinite ease-in-out;
+  text-shadow: 0 4rpx 8rpx rgba(0,0,0,0.2);
+}
+
+.gesture-hand::before {
+  content: '👆';
+  display: block;
+}
+
+.gesture-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(38, 166, 154, 0.4);
+  transform: translate(-50%, -50%);
+  z-index: 101;
+  animation: ring-expand 1.5s infinite ease-out;
+}
+
+.gesture-bubble {
+  position: absolute;
+  top: 180rpx; /* 手指下方 */
+  left: 100rpx;
+  background: #374151;
+  color: #ffffff;
+  padding: 16rpx 24rpx;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.15);
+  z-index: 103;
+  width: 400rpx;
+  animation: bubble-float 3s infinite ease-in-out;
+}
+
+.gesture-bubble::after {
+  content: '';
+  position: absolute;
+  top: -12rpx;
+  left: 60rpx;
+  border-width: 0 12rpx 12rpx 12rpx;
+  border-style: solid;
+  border-color: transparent transparent #374151 transparent;
+}
+
+@keyframes hand-press {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(0.9) rotate(-10deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes ring-expand {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+@keyframes bubble-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6rpx); }
+}
+
+@keyframes highlight-pulse {
+  0%, 100% { opacity: 0.8; border-color: #26A69A; }
+  50% { opacity: 0.4; border-color: rgba(38, 166, 154, 0.5); }
+}

@@ -34,6 +34,8 @@
     bind:itemTap="handleNotificationTap"
   />
 
+
+
   <!-- 主要内容区域 -->
   <view class="main-content">
     <!-- 欢迎卡片 -->
@@ -80,6 +82,19 @@
       <!-- 编辑模式顶部工具栏 -->
       <view wx:if="{{isEditMode}}" class="edit-toolbar">
         <text class="edit-title">自定义卡片</text>
+      </view>
+
+      <!-- 动态手势引导 -->
+      <view class="gesture-guide-container" wx:if="{{showGestureGuide && !isEditMode}}" bindtap="onGestureGuideTap">
+        <view class="gesture-target-highlight"></view>
+        <view class="gesture-hand-wrapper">
+          <view class="gesture-hand"></view>
+          <view class="gesture-ring"></view>
+        </view>
+        <view class="gesture-bubble">
+          <text>长按卡片进入编辑模式
+可拖拽排序、隐藏卡片</text>
+        </view>
       </view>
       
       <!-- 现有卡片 -->
