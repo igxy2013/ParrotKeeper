@@ -198,21 +198,97 @@ const cache = require('../../utils/cache')
   // 加载支出分析
   async loadExpenseAnalysis() {
     try {
-      const force = !!this._forceRefresh
-      const cached = force ? null : cache.get('stats_expenseAnalysis')
-      if (cached && cached.category_expenses) {
-        const analysis = this.processExpenseAnalysis(cached)
-        this.setData({ expenseAnalysis: analysis, selectedExpenseIndex: -1 })
-        wx.nextTick(() => this.drawExpensePieChart())
+      const p = this.data.selectedPeriod || '本月'
+      if (p === '全部') {
+        const force = !!this._forceRefresh
+        const cached = force ? null : cache.get('stats_expenseAnalysis')
+        if (cached && cached.category_expenses) {
+          const analysis = this.processExpenseAnalysis(cached)
+          this.setData({ expenseAnalysis: analysis, selectedExpenseIndex: -1 })
+          wx.nextTick(() => this.drawExpensePieChart())
+          return
+        }
+        const res = await app.request({ url: '/api/statistics/expense-analysis', method: 'GET' })
+        if (res.success) {
+          const analysis = this.processExpenseAnalysis(res.data)
+          this.setData({ expenseAnalysis: analysis, selectedExpenseIndex: -1 })
+          cache.set('stats_expenseAnalysis', res.data, 180000)
+          wx.nextTick(() => this.drawExpensePieChart())
+        }
         return
       }
-      const res = await app.request({ url: '/api/statistics/expense-analysis', method: 'GET' })
-      if (res.success) {
-        const analysis = this.processExpenseAnalysis(res.data)
-        this.setData({ expenseAnalysis: analysis, selectedExpenseIndex: -1 })
-        cache.set('stats_expenseAnalysis', res.data, 180000)
-        wx.nextTick(() => this.drawExpensePieChart())
+
+      const now = new Date()
+      const pad2 = n => String(n).padStart(2, '0')
+      let start, end
+      if (p === '今天') {
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      } else if (p === '本周') {
+        const dow = now.getDay()
+        const diff = now.getDate() - dow + (dow === 0 ? -6 : 1)
+        start = new Date(now.getFullYear(), now.getMonth(), diff)
+        end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7)
+      } else if (p === '本月') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1)
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+      } else if (p === '本年') {
+        start = new Date(now.getFullYear(), 0, 1)
+        end = new Date(now.getFullYear() + 1, 0, 1)
+      } else {
+        start = null
+        end = null
       }
+      const fmt = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+
+      const per = 500
+      let pageIdx = 1
+      const collected = []
+      while (pageIdx <= 20) {
+        const params = {
+          page: pageIdx,
+          per_page: per,
+          record_type: '支出',
+          ...(start && end ? { start_date: fmt(start), end_date: fmt(end) } : {})
+        }
+        const res = await app.request({ url: '/api/expenses/transactions', method: 'GET', data: params })
+        const data = res && res.success && res.data ? res.data : {}
+        const items = Array.isArray(data.items) ? data.items : []
+        if (!items.length) break
+        collected.push(...items)
+        if (items.length < per) break
+        pageIdx += 1
+      }
+
+      const agg = {}
+      for (let i = 0; i < collected.length; i++) {
+        const r = collected[i] || {}
+        const key = r.category_text || r.category || '其他'
+        const amt = Number(r.amount || 0) || 0
+        agg[key] = (agg[key] || 0) + amt
+      }
+      const total = Object.values(agg).reduce((s, v) => s + (Number(v) || 0), 0)
+      const categoryColors = {
+        '食物': '#10b981',
+        '玩具': '#3b82f6',
+        '医疗': '#f59e0b',
+        '用品': '#ec4899',
+        '笼具': '#8b5cf6',
+        '幼鸟': '#06b6d4',
+        '种鸟': '#ef4444',
+        '配件': '#22c55e',
+        '美容': '#f97316',
+        '训练': '#9ca3af',
+        '其他': '#6b7280'
+      }
+      const analysis = Object.keys(agg).map((k) => ({
+        category: k,
+        amount: agg[k],
+        percentage: total > 0 ? Math.round((agg[k] / total) * 100) : 0,
+        color: categoryColors[k] || '#667eea'
+      })).sort((a, b) => b.amount - a.amount)
+      this.setData({ expenseAnalysis: analysis, selectedExpenseIndex: -1 })
+      wx.nextTick(() => this.drawExpensePieChart())
     } catch (error) {
       console.error('加载支出分析失败:', error)
     }
@@ -1043,6 +1119,7 @@ const cache = require('../../utils/cache')
     this.setData({ selectedPeriod: period, weightDays })
     this.loadWeightTrends()
     this.loadFoodPreference()
+    this.loadExpenseAnalysis()
   },
 
   // 加载体重趋势（每只鹦鹉的折线）

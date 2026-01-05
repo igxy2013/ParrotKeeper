@@ -210,12 +210,7 @@ Component({
         // Natural Week
         const { start, end } = this.getWeekRange(date)
         startStr = this.formatDate(start)
-        
-        // API seems to use Exclusive End Date (based on Month/Year logic)
-        // So we add 1 day to Sunday to get Next Monday
-        const nextMon = new Date(end)
-        nextMon.setDate(nextMon.getDate() + 1)
-        endStr = this.formatDate(nextMon)
+        endStr = this.formatDate(end)
       }
       else if (type === 'all') period = '全部'
 

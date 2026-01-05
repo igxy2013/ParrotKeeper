@@ -10,6 +10,8 @@
       <text class="tip-subtitle">登录后可查看您的真实统计数据</text>
     </view>
   </view>
+
+
   <!-- 顶部时间段选择器 -->
   <view class="period-selector-card">
     <view class="period-btn {{selectedPeriod === '今天' ? 'active' : ''}}" bindtap="setSelectedPeriod" data-period="今天">今天</view>
@@ -63,6 +65,34 @@
       </view>
       <text class="overview-value">{{avgWeight || '--'}}</text>
       <text class="overview-label">体重</text>
+    </view>
+  </view>
+
+  <!-- 品种分布（位于统计卡片下方、体重趋势上方） -->
+  <view class="species-section">
+    <view class="info-card">
+      <view class="card-header">
+        <view class="header-left">
+          <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.pieChartBlue}}" mode="widthFix" binderror="onStatIconError" data-key="pieChartBlue"/></view>
+          <text class="card-title">品种分布</text>
+        </view>
+      </view>
+      <view class="card-content">
+        <view class="species-list" wx:if="{{speciesDistribution.length > 0}}">
+          <view class="species-item" wx:for="{{speciesDistribution}}" wx:key="species">
+            <view class="species-indicator" style="background-color: {{item.color}}"></view>
+            <text class="species-name">{{item.species}}</text>
+            <view class="species-count-wrapper">
+              <text class="species-count">{{item.count}}</text>
+              <text class="species-unit">只</text>
+            </view>
+          </view>
+        </view>
+        <view class="empty-placeholder horizontal" wx:else>
+          <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.pieChartBlue}}" mode="widthFix" binderror="onStatIconError" data-key="pieChartBlue"/></view>
+          <text class="placeholder-text">暂无品种数据</text>
+        </view>
+      </view>
     </view>
   </view>
   <!-- 游客模式提示 -->
@@ -225,33 +255,6 @@
     </view>
   </view>
 
-  <!-- 品种分布 -->
-  <view class="species-section">
-    <view class="info-card">
-      <view class="card-header">
-        <view class="header-left">
-          <view class="card-icon"><image class="card-icon-img" src="{{iconPaths.pieChartBlue}}" mode="widthFix" binderror="onStatIconError" data-key="pieChartBlue"/></view>
-          <text class="card-title">品种分布</text>
-        </view>
-      </view>
-      <view class="card-content">
-        <view class="species-list" wx:if="{{speciesDistribution.length > 0}}">
-          <view class="species-item" wx:for="{{speciesDistribution}}" wx:key="species">
-            <view class="species-indicator" style="background-color: {{item.color}}"></view>
-            <text class="species-name">{{item.species}}</text>
-            <view class="species-count-wrapper">
-              <text class="species-count">{{item.count}}</text>
-              <text class="species-unit">只</text>
-            </view>
-          </view>
-        </view>
-        <view class="empty-placeholder horizontal" wx:else>
-          <view class="placeholder-icon"><image class="placeholder-icon-img" src="{{iconPaths.pieChartBlue}}" mode="widthFix" binderror="onStatIconError" data-key="pieChartBlue"/></view>
-          <text class="placeholder-text">暂无品种数据</text>
-        </view>
-      </view>
-    </view>
-  </view>
 
   <!-- 加载状态 -->
   <view class="loading-state" wx:if="{{loading}}">

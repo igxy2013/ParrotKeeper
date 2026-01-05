@@ -330,6 +330,15 @@ Page({
     else date.setDate(date.getDate() - 7)
     this.setData({ trendCurrentDateObj: date.getTime() })
     this.setTrendPickerByPeriod()
+    this.setData({
+      page: 1,
+      hasMore: true,
+      records: [],
+      filteredRecords: [],
+      totalCount: 0,
+      displayTotalCount: 0,
+      loading: false
+    })
     this.loadTrendData()
     this.loadExpenses()
     this.loadStats()
@@ -343,6 +352,15 @@ Page({
     else date.setDate(date.getDate() + 7)
     this.setData({ trendCurrentDateObj: date.getTime() })
     this.setTrendPickerByPeriod()
+    this.setData({
+      page: 1,
+      hasMore: true,
+      records: [],
+      filteredRecords: [],
+      totalCount: 0,
+      displayTotalCount: 0,
+      loading: false
+    })
     this.loadTrendData()
     this.loadExpenses()
     this.loadStats()
