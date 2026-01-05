@@ -225,7 +225,8 @@ App({
       } catch (_) {}
 
       // 各环境默认地址（可按需调整）
-      const DEFAULT_RELEASE = 'https://bimai.xyz'
+      // 直接引用 globalData 中配置的默认地址，确保统一
+      const DEFAULT_RELEASE = this.globalData.baseUrl
       const DEFAULT_TRIAL = DEFAULT_RELEASE
       // 开发环境建议填写你本机在局域网的 IP 与端口
       const DEFAULT_DEVELOP = 'http://127.0.0.1:5075'
