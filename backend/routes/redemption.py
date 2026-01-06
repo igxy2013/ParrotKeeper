@@ -158,3 +158,29 @@ def redeem_code():
     except Exception as e:
         db.session.rollback()
         return error_response(f'兑换失败: {str(e)}')
+
+@redemption_bp.route('/codes/<key>', methods=['DELETE'])
+@login_required
+def delete_code(key):
+    try:
+        user = request.current_user
+        if user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        k = (key or '').strip()
+        record = None
+        if k.isdigit():
+            record = RedemptionCode.query.get(int(k))
+        else:
+            record = RedemptionCode.query.filter_by(code=k.upper()).first()
+
+        if not record:
+            return error_response('兑换码不存在', 404)
+
+        data = { 'id': record.id, 'code': record.code }
+        db.session.delete(record)
+        db.session.commit()
+        return success_response(data, '删除成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'删除失败: {str(e)}')

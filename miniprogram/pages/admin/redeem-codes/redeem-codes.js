@@ -8,7 +8,8 @@ Page({
     createCount: 1,
     createDuration: 30,
     createTier: 'pro',
-    creating: false
+    creating: false,
+    statusFilter: 'all'
   },
 
   onShow() {
@@ -30,7 +31,7 @@ Page({
   async loadList() {
     this.setData({ loading: true })
     try {
-      const res = await app.request({ url: '/api/redemption/codes', method: 'GET' })
+      const res = await app.request({ url: '/api/redemption/codes', method: 'GET', data: { status: this.data.statusFilter } })
       if (res && res.success) {
         const data = res.data || {}
         const items = (data.items || []).map(it => {
@@ -52,6 +53,13 @@ Page({
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  onStatusFilterTap(e) {
+    const s = e.currentTarget.dataset.status
+    if (!s) return
+    this.setData({ statusFilter: s })
+    this.loadList()
   },
 
   onCountInput(e) {
@@ -112,6 +120,26 @@ Page({
     wx.setClipboardData({
       data: code,
       success: () => wx.showToast({ title: '已复制', icon: 'none' })
+    })
+  },
+
+  deleteCode(e) {
+    const id = e.currentTarget.dataset.id
+    const code = e.currentTarget.dataset.code
+    const status = e.currentTarget.dataset.status || ''
+    if (!id && !code) return
+    const content = status === 'used' ? '该兑换码已使用，删除后历史记录不可见，确定删除？' : '确定删除该兑换码吗？'
+    const url = code ? `/api/redemption/codes/${encodeURIComponent(code)}` : `/api/redemption/codes/${id}`
+    wx.showModal({
+      title: '确认删除',
+      content,
+      success: (r) => {
+        if (r.confirm) {
+          app.request({ url, method: 'DELETE' })
+            .then(() => { wx.showToast({ title: '已删除' }); this.loadList() })
+            .catch(() => wx.showToast({ title: '删除失败', icon: 'none' }))
+        }
+      }
     })
   },
 

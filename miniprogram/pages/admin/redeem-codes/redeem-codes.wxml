@@ -41,6 +41,14 @@
         <view class="section-title">
           <text>兑换码列表</text>
         </view>
+        <view class="form-row">
+          <view class="label">状态筛选</view>
+          <view class="preset-switch">
+            <view class="preset-btn {{statusFilter === 'all' ? 'active' : ''}}" data-status="all" bindtap="onStatusFilterTap">全部</view>
+            <view class="preset-btn {{statusFilter === 'active' ? 'active' : ''}}" data-status="active" bindtap="onStatusFilterTap">未使用</view>
+            <view class="preset-btn {{statusFilter === 'used' ? 'active' : ''}}" data-status="used" bindtap="onStatusFilterTap">已使用</view>
+          </view>
+        </view>
         <view wx:if="{{loading}}" class="loading">加载中...</view>
         <block wx:else>
           <view wx:if="{{!items.length}}" class="empty">暂无兑换码</view>
@@ -66,6 +74,7 @@
                   </view>
                   <view class="actions">
                     <button class="btn-secondary" size="mini" bindtap="copyCode" data-code="{{item.code}}">复制</button>
+                    <button class="btn-danger" size="mini" bindtap="deleteCode" data-id="{{item.id}}" data-code="{{item.code}}" data-status="{{item.status}}">删除</button>
                   </view>
                 </view>
               </block>
