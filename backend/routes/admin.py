@@ -418,6 +418,10 @@ def get_users_trend():
         start_date_str = (request.args.get('start_date') or '').strip()
         end_date_str = (request.args.get('end_date') or '').strip()
         period = (request.args.get('period') or 'day').strip()
+        try:
+            tz_offset_min = int(request.args.get('tz_offset_minutes') or 0)
+        except Exception:
+            tz_offset_min = 0
 
         if period not in ['day', 'month', 'year']:
             period = 'day'
@@ -445,11 +449,12 @@ def get_users_trend():
 
         # 构建分组表达式与连续桶
         if period == 'day':
-            group_expr = func.date(User.created_at)
+            shift_seconds = tz_offset_min * 60
+            group_expr = func.date(func.from_unixtime(func.unix_timestamp(User.created_at) + shift_seconds))
             q = db.session.query(group_expr.label('bucket'), func.count(User.id).label('cnt')).\
                 filter(
-                    User.created_at >= datetime.combine(start_dt, datetime.min.time()),
-                    User.created_at < datetime.combine(end_dt + timedelta(days=1), datetime.min.time())
+                    User.created_at >= (datetime.combine(start_dt, datetime.min.time()) - timedelta(minutes=tz_offset_min)),
+                    User.created_at < (datetime.combine(end_dt + timedelta(days=1), datetime.min.time()) - timedelta(minutes=tz_offset_min))
                 ).group_by('bucket').order_by('bucket')
             rows = q.all()
             daily_map = {}
@@ -462,7 +467,7 @@ def get_users_trend():
                     key = str(b)
                 daily_map[key] = int(cnt or 0)
             base_total = db.session.query(func.count(User.id)).\
-                filter(User.created_at < datetime.combine(start_dt, datetime.min.time())).scalar() or 0
+                filter(User.created_at < (datetime.combine(start_dt, datetime.min.time()) - timedelta(minutes=tz_offset_min))).scalar() or 0
             items = []
             total_running = int(base_total)
             cur = start_dt
@@ -485,17 +490,18 @@ def get_users_trend():
                 else:
                     return success_response([])
             # 分组到月份
-            group_expr = func.date_format(User.created_at, '%Y-%m')
+            shift_seconds = tz_offset_min * 60
+            group_expr = func.date_format(func.from_unixtime(func.unix_timestamp(User.created_at) + shift_seconds), '%Y-%m')
             q = db.session.query(group_expr.label('bucket'), func.count(User.id).label('cnt')).\
                 filter(
-                    User.created_at >= datetime.combine(start_dt.replace(day=1), datetime.min.time()),
-                    User.created_at < datetime.combine((end_dt.replace(day=1) + timedelta(days=32)).replace(day=1), datetime.min.time())
+                    User.created_at >= (datetime.combine(start_dt.replace(day=1), datetime.min.time()) - timedelta(minutes=tz_offset_min)),
+                    User.created_at < (datetime.combine((end_dt.replace(day=1) + timedelta(days=32)).replace(day=1), datetime.min.time()) - timedelta(minutes=tz_offset_min))
                 ).group_by('bucket').order_by('bucket')
             rows = q.all()
             month_map = {str(b): int(cnt or 0) for b, cnt in rows}
             # 基数：范围起始月之前累计总数
             base_total = db.session.query(func.count(User.id)).\
-                filter(User.created_at < datetime.combine(start_dt.replace(day=1), datetime.min.time())).scalar() or 0
+                filter(User.created_at < (datetime.combine(start_dt.replace(day=1), datetime.min.time()) - timedelta(minutes=tz_offset_min))).scalar() or 0
             # 连续月份桶
             items = []
             total_running = int(base_total)
@@ -521,16 +527,17 @@ def get_users_trend():
                     end_dt = last_row.date()
                 else:
                     return success_response([])
-            group_expr = func.year(User.created_at)
+            shift_seconds = tz_offset_min * 60
+            group_expr = func.year(func.from_unixtime(func.unix_timestamp(User.created_at) + shift_seconds))
             q = db.session.query(group_expr.label('bucket'), func.count(User.id).label('cnt')).\
                 filter(
-                    User.created_at >= datetime.combine(start_dt.replace(month=1, day=1), datetime.min.time()),
-                    User.created_at < datetime.combine(end_dt.replace(month=1, day=1).replace(year=end_dt.year + 1), datetime.min.time())
+                    User.created_at >= (datetime.combine(start_dt.replace(month=1, day=1), datetime.min.time()) - timedelta(minutes=tz_offset_min)),
+                    User.created_at < (datetime.combine(end_dt.replace(month=1, day=1).replace(year=end_dt.year + 1), datetime.min.time()) - timedelta(minutes=tz_offset_min))
                 ).group_by('bucket').order_by('bucket')
             rows = q.all()
             year_map = {int(b): int(cnt or 0) for b, cnt in rows}
             base_total = db.session.query(func.count(User.id)).\
-                filter(User.created_at < datetime.combine(start_dt.replace(month=1, day=1), datetime.min.time())).scalar() or 0
+                filter(User.created_at < (datetime.combine(start_dt.replace(month=1, day=1), datetime.min.time()) - timedelta(minutes=tz_offset_min))).scalar() or 0
             # 连续年份桶
             start_year = start_dt.year
             end_year = end_dt.year

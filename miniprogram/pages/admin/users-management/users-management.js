@@ -159,6 +159,7 @@ Page({
       const p = this.data.selectedPeriod
       let params = {}
       let chartPeriod = 'day'
+      const tz = -new Date().getTimezoneOffset()
       
       if (this.data.selectedStartDate && this.data.selectedEndDate) {
           // If component provided specific range, use it
@@ -187,6 +188,8 @@ Page({
         params = { period: 'month' }
         chartPeriod = 'month'
       }
+
+      params.tz_offset_minutes = tz
 
       const res = await app.request({ url: '/api/admin/users/trend', method: 'GET', data: params })
       const raw = (res && res.success && Array.isArray(res.data)) ? res.data : []

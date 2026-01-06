@@ -392,6 +392,7 @@ const handleFilterChange = async (filter) => {
   const { period, startDate, endDate, type } = filter
   
   let params = {}
+  const tz = -new Date().getTimezoneOffset()
   if (type === 'all') {
     params = { period: 'month' }
   } else if (type === 'year') {
@@ -400,6 +401,7 @@ const handleFilterChange = async (filter) => {
     // week or month -> period=day
     params = { start_date: startDate, end_date: endDate, period: 'day' }
   }
+  params.tz_offset_minutes = tz
   
   try {
     const res = await api.get('/admin/users/trend', { params })
