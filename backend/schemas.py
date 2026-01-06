@@ -12,6 +12,7 @@ class UserSchema(SQLAlchemyAutoSchema):
 
     username = fields.Method('get_username', dump_only=True)
     account_username = fields.Method('get_account_username', dump_only=True)
+    effective_tier = fields.Method('get_effective_tier', dump_only=True)
 
     def get_username(self, obj):
         try:
@@ -30,6 +31,16 @@ class UserSchema(SQLAlchemyAutoSchema):
             return None
         except Exception:
             return None
+
+    def get_effective_tier(self, obj):
+        try:
+            from subscription_utils import get_effective_subscription_tier
+            return get_effective_subscription_tier(obj)
+        except Exception:
+            try:
+                return getattr(obj, 'subscription_tier', 'free') or 'free'
+            except Exception:
+                return 'free'
 
 class ParrotSpeciesSchema(SQLAlchemyAutoSchema):
     class Meta:

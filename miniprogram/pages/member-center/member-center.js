@@ -99,21 +99,23 @@ Page({
           icon: 'success'
         });
         
-        const userInfo = wx.getStorageSync('userInfo') || {};
-        const newUserInfo = { ...userInfo };
+        let newUserInfo = wx.getStorageSync('userInfo') || {};
         if (res.data) {
-           newUserInfo.subscription_tier = res.data.tier;
-           newUserInfo.subscription_expire_at = res.data.expire_at;
+           newUserInfo = { ...newUserInfo, subscription_tier: res.data.tier, subscription_expire_at: res.data.expire_at };
            if (res.data.plan_label) newUserInfo.membership_label = res.data.plan_label;
            if (typeof res.data.duration_days === 'number') newUserInfo.membership_duration_days = res.data.duration_days;
         }
-        
+        try {
+          const profileRes = await app.request({ url: '/api/auth/profile', method: 'GET' });
+          if (profileRes && profileRes.success && profileRes.data) {
+            newUserInfo = profileRes.data;
+          }
+        } catch (_) {}
         wx.setStorageSync('userInfo', newUserInfo);
         if (app.globalData) {
             app.globalData.userInfo = newUserInfo;
             app.globalData.needRefresh = true;
         }
-        
         this.updateStatusFromUserInfo(newUserInfo);
         this.setData({ code: '' });
         

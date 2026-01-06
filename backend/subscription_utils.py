@@ -11,6 +11,17 @@ def get_effective_subscription_tier(user: User) -> str:
     if not user:
         return 'free'
     
+    try:
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and getattr(user, 'current_team_id', None):
+            from team_models import Team
+            team = Team.query.get(user.current_team_id)
+            if team and team.is_active and team.owner:
+                owner = team.owner
+                if owner and owner.subscription_tier == 'team':
+                    if not owner.subscription_expire_at or owner.subscription_expire_at > datetime.utcnow():
+                        return 'team'
+    except Exception:
+        pass
     if user.subscription_tier == 'free':
         return 'free'
     

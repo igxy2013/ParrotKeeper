@@ -39,8 +39,7 @@ Page({
   onLoad(options) {
     this.checkLoginStatus()
     try {
-      const userInfo = app.globalData.userInfo || {}
-      const tier = String(userInfo.subscription_tier || '').toLowerCase()
+      const tier = String(app.getEffectiveTier() || '').toLowerCase()
       const isPro = tier === 'pro' || tier === 'team'
       if (!isPro) {
         wx.showModal({

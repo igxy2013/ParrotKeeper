@@ -128,6 +128,12 @@ def redeem_code():
             user.subscription_tier = code_record.tier
             
         user.subscription_expire_at = new_expire_at
+        if code_record.tier == 'team':
+            try:
+                if getattr(user, 'user_mode', None) != 'team':
+                    user.user_mode = 'team'
+            except Exception:
+                pass
         
         # 2. 更新兑换码状态
         code_record.status = 'used'

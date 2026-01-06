@@ -960,4 +960,13 @@ App({
     if (this.isSuperAdmin()) return true
     return this.isTeamAdmin()
   }
+  ,
+  getEffectiveTier() {
+    try {
+      const userInfo = this.globalData.userInfo || {}
+      const t = String(userInfo.effective_tier || userInfo.subscription_tier || '').toLowerCase()
+      if (t === 'team' || t === 'pro') return t
+      return 'free'
+    } catch (_) { return 'free' }
+  }
 })
