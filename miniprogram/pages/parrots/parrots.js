@@ -812,8 +812,7 @@ Page({
 
   // 添加鹦鹉
   addParrot() {
-    const userInfo = app.globalData.userInfo || {}
-    const tier = String(userInfo.subscription_tier || '').toLowerCase()
+    const tier = app.getEffectiveTier()
     const isPro = tier === 'pro' || tier === 'team'
 
     const knownTotal = Number(this.data.totalParrots || 0)

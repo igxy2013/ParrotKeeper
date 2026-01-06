@@ -1972,8 +1972,7 @@ Page({
       return
     }
 
-    const userInfo = app.globalData.userInfo || {}
-    const tier = String(userInfo.subscription_tier || '').toLowerCase()
+    const tier = app.getEffectiveTier()
     const isPro = tier === 'pro' || tier === 'team'
     const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
     const limit = mode === 'team' ? 10 : 5

@@ -404,7 +404,7 @@ def list_users():
         return error_response(f'获取用户列表失败: {str(e)}')
 
 
-@admin_bp.route('/users/<int:user_id>', methods=['PUT'])
+@admin_bp.route('/users/<user_id>', methods=['PUT'])
 @login_required
 def update_user_membership(user_id):
     try:
@@ -412,14 +412,28 @@ def update_user_membership(user_id):
         if not user or user.role != 'super_admin':
             return error_response('无权限', 403)
 
-        target = User.query.get(user_id)
+        # 兼容通过 OpenID 进行用户定位
+        target = None
+        try:
+            uid_int = int(user_id)
+            target = User.query.get(uid_int)
+        except Exception:
+            target = User.query.filter_by(openid=str(user_id)).first()
         if not target:
             return error_response('用户不存在', 404)
 
         body = request.get_json() or {}
         tier = str(body.get('subscription_tier') or '').strip().lower()
         extend_days = body.get('subscription_extend_days')
-        cancel_flag = bool(body.get('subscription_cancel') or False)
+        # 兼容布尔与字符串取值
+        raw_cancel = body.get('subscription_cancel')
+        cancel_flag = False
+        if isinstance(raw_cancel, bool):
+            cancel_flag = raw_cancel
+        elif isinstance(raw_cancel, (int, float)):
+            cancel_flag = (int(raw_cancel) != 0)
+        elif isinstance(raw_cancel, str):
+            cancel_flag = raw_cancel.strip().lower() in ['1', 'true', 'yes', 'y']
 
         changed = False
         if tier in ['free', 'pro', 'team']:
