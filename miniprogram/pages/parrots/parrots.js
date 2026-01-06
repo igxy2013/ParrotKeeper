@@ -83,7 +83,8 @@ Page({
     
     // 数量限制弹窗
     showLimitModal: false,
-    limitModalCode: ''
+    limitModalCode: '',
+    limitCount: 5
   },
 
   onLoad() {
@@ -130,7 +131,7 @@ Page({
       console.log('用户已登录，开始加载鹦鹉数据');
       const storedMode = wx.getStorageSync('userMode') || ''
       const currentMode = app.globalData.userMode || storedMode || 'personal'
-      this.setData({ userMode: currentMode })
+      this.setData({ userMode: currentMode, limitCount: currentMode === 'team' ? 10 : 5 })
 
       const now = Date.now()
       const canUseListCache = Array.isArray(this.data.parrots) && this.data.parrots.length > 0 && (now - (this.data.lastParrotsLoadedAt || 0) < CACHE_TTL_MS)
@@ -817,8 +818,9 @@ Page({
 
     const knownTotal = Number(this.data.totalParrots || 0)
     const promptOrOpenForm = (total) => {
-      if (!isPro && total >= 5) {
-        this.setData({ showLimitModal: true, limitModalCode: '' })
+      const limit = this.data.userMode === 'team' ? 10 : 5
+      if (!isPro && total >= limit) {
+        this.setData({ showLimitModal: true, limitModalCode: '', limitCount: limit })
         return
       }
       const emptyForm = { id: '', name: '', type: '', weight: '', gender: '', gender_display: '', color: '', birth_date: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' }
@@ -826,7 +828,8 @@ Page({
       this.loadSpeciesListForModal()
     }
 
-    if (isPro || knownTotal >= 5) {
+    const limit = this.data.userMode === 'team' ? 10 : 5
+    if (isPro || knownTotal >= limit) {
       promptOrOpenForm(knownTotal)
       return
     }

@@ -96,13 +96,13 @@
         <view class="matrix-header">
           <text class="h-feature">功能权益</text>
           <text class="h-free">免费版</text>
-          <text class="h-pro">高级会员 (Pro)</text>
-          <text class="h-team">团队/企业版</text>
+          <text class="h-pro">个人会员</text>
+          <text class="h-team">团队会员</text>
         </view>
 
         <view class="matrix-row">
           <text class="c-feature">鹦鹉数量限制</text>
-          <text class="c-free">上限 5只</text>
+          <text class="c-free">个人上限5只/团队上限10只</text>
           <text class="c-pro">无限制</text>
           <text class="c-team">无限制</text>
         </view>
@@ -111,7 +111,7 @@
           <text class="c-feature">数据记录</text>
           <text class="c-free">基础记录（喂食/清洁/健康）</text>
           <text class="c-pro">基础记录 + 高清照片原图存储</text>
-          <text class="c-team">包含所有 Pro 功能</text>
+          <text class="c-team">包含所有个人会员功能</text>
         </view>
 
         <view class="matrix-row">

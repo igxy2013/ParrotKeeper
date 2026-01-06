@@ -334,7 +334,7 @@
 <!-- 通用“数量限制”弹窗组件 -->
 <limit-modal 
   visible="{{showLimitModal}}"
-  limitCount="5"
+  limitCount="{{limitCount}}"
   bind:cancel="closeLimitModal"
   bind:upgrade="goToMemberCenter"
   bind:redeem="onLimitRedeem"

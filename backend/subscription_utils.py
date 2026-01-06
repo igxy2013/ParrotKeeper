@@ -24,20 +24,25 @@ def get_effective_subscription_tier(user: User) -> str:
 def check_parrot_limit(user: User) -> bool:
     """
     检查用户是否可以添加更多鹦鹉。
-    免费用户限制 5 只。
+    免费用户：个人模式限制 5 只；团队模式限制 10 只。
+    付费（pro、team）无限制。
     """
     tier = get_effective_subscription_tier(user)
-    
-    # Pro 和 Team 用户无限制
+
     if tier in ['pro', 'team']:
         return True
-        
-    # 免费用户检查数量
-    current_count = Parrot.query.filter_by(user_id=user.id, is_active=True).count()
-    if current_count >= 5:
-        return False
-        
-    return True
+
+    try:
+        if hasattr(user, 'user_mode') and user.user_mode == 'team':
+            if not getattr(user, 'current_team_id', None):
+                return True
+            current_count = Parrot.query.filter_by(team_id=user.current_team_id, is_active=True).count()
+            return current_count < 10
+        else:
+            current_count = Parrot.query.filter_by(user_id=user.id, is_active=True, team_id=None).count()
+            return current_count < 5
+    except Exception:
+        return True
 
 def require_subscription(min_tier='pro'):
     """

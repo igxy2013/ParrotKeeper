@@ -100,6 +100,7 @@ Page({
     modalBottomOffsetPx: 24,
     // 通用：数量限制弹窗
     showLimitModal: false,
+    limitCount: 5,
 
     // PNG 图标路径（统一图标方案）
     iconPaths: {
@@ -1974,18 +1975,20 @@ Page({
     const userInfo = app.globalData.userInfo || {}
     const tier = String(userInfo.subscription_tier || '').toLowerCase()
     const isPro = tier === 'pro' || tier === 'team'
+    const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+    const limit = mode === 'team' ? 10 : 5
     const knownTotal = Number((this.data.overview && this.data.overview.total_parrots) || 0)
 
     const promptOrOpenForm = (total) => {
-      if (!isPro && total >= 5) {
-        this.setData({ showLimitModal: true })
+      if (!isPro && total >= limit) {
+        this.setData({ showLimitModal: true, limitCount: limit })
         return
       }
       this.setData({ showAddParrotModal: true })
       this.loadSpeciesList()
     }
 
-    if (isPro || knownTotal >= 5) {
+    if (isPro || knownTotal >= limit) {
       promptOrOpenForm(knownTotal)
       return
     }

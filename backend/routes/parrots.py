@@ -267,10 +267,11 @@ def create_parrot():
     try:
         user = request.current_user
         
-        # 检查订阅限制
+        # 检查订阅限制（根据模式动态上限）
         from subscription_utils import check_parrot_limit
         if not check_parrot_limit(user):
-             return error_response('免费用户最多只能添加5只鹦鹉，请升级会员解锁无限制添加。', 403)
+            limit = 10 if (hasattr(user, 'user_mode') and user.user_mode == 'team') else 5
+            return error_response(f'免费用户最多只能添加{limit}只鹦鹉，请升级会员解锁无限制添加。', 403)
         
         # 在团队模式下，只有管理员才能添加鹦鹉
         if hasattr(user, 'user_mode') and user.user_mode == 'team':

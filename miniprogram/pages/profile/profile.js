@@ -1026,24 +1026,6 @@ Page({
   chooseUserMode(e) {
     const mode = e.currentTarget.dataset.mode;
     if (!mode || (mode !== 'personal' && mode !== 'team')) return;
-    if (mode === 'team') {
-      try {
-        const userInfo = getApp().globalData.userInfo || {}
-        const tier = String(userInfo.subscription_tier || '').toLowerCase()
-        if (tier !== 'team') {
-          wx.showModal({
-            title: '团队功能限制',
-            content: '团队协作为团队会员功能。请升级为团队会员后使用。',
-            confirmText: '去会员中心',
-            cancelText: '稍后',
-            success: (res) => {
-              if (res.confirm) wx.navigateTo({ url: '/pages/member-center/member-center' })
-            }
-          })
-          return
-        }
-      } catch(_) {}
-    }
     const app = getApp();
     this.setData({ userMode: mode });
     app.setUserMode && app.setUserMode(mode);
