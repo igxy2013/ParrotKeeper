@@ -293,7 +293,16 @@ Page({
       return
     }
     const rawColors = config.colors.map(c => c.name)
-    const colors = rawColors.map(n => (species === '牡丹鹦鹉' && (n === '黄边桃' || String(n).includes('蓝腰黄桃'))) ? '黄边桃(蓝腰黄桃)' : n)
+    let colors = rawColors.map(n => (species === '牡丹鹦鹉' && (n === '黄边桃' || String(n).includes('蓝腰黄桃'))) ? '黄边桃(蓝腰黄桃)' : n)
+
+    if (species === '和尚鹦鹉') {
+      colors = colors.filter(n => {
+        const s = String(n || '')
+        if (s === '黄和尚' || s === '白和尚') return false
+        if (s === '灰色') return false
+        return true
+      })
+    }
     
     const splits = []
     for (const [key, gene] of Object.entries(config.loci)) {

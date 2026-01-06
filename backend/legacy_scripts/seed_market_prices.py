@@ -102,8 +102,8 @@ def seed_market_prices():
                 {'species': '和尚鹦鹉', 'color_name': '肉桂蓝', 'reference_price': 5500}, # 蓝依莎
                 {'species': '和尚鹦鹉', 'color_name': '重蓝', 'reference_price': 5500}, # 钴蓝
                 {'species': '和尚鹦鹉', 'color_name': '灰和尚', 'reference_price': 3600},
-                {'species': '和尚鹦鹉', 'color_name': '白和尚', 'reference_price': 2500}, # 蓝白化
-                {'species': '和尚鹦鹉', 'color_name': '黄和尚', 'reference_price': 3000}, # 绿白化(Lutino)
+                {'species': '和尚鹦鹉', 'color_name': '白和尚(Albino)', 'reference_price': 2500}, # 蓝白化
+                {'species': '和尚鹦鹉', 'color_name': '黄和尚(Lutino)', 'reference_price': 3000}, # 绿白化(Lutino)
 
                 # --- 小太阳鹦鹉 (Green Cheek Conure) ---
                 {'species': '小太阳鹦鹉', 'color_name': '原始绿', 'reference_price': 200},

@@ -81,8 +81,6 @@ def build_plumage_for_species(name: str):
         colors = [
             {'name': '绿和尚', 'genes': {}},
             {'name': '蓝和尚', 'genes': {'blue': 2}},
-            {'name': '黄和尚', 'genes': {'ino': 1}}, # Lutino
-            {'name': '白和尚', 'genes': {'blue': 2, 'ino': 1}}, # Albino
             {'name': '深绿和尚', 'genes': {'dark': 1}},
             {'name': '橄榄绿和尚', 'genes': {'dark': 2}},
             {'name': '钴蓝和尚', 'genes': {'blue': 2, 'dark': 1}},

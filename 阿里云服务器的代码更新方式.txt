@@ -12,3 +12,4 @@ chmod +x /opt/ParrotKeeper/start_parrotkeeper.sh
 systemctl daemon-reload
 systemctl start parrotkeeper.service
 systemctl status parrotkeeper.service
+sudo systemctl restart parrotkeeper
