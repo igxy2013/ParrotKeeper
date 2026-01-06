@@ -23,10 +23,16 @@
       <view class="nickname-display">
         <text class="user-name">{{userInfo.nickname || '鹦鹉爱好者'}}</text>
         <view class="edit-nickname-btn" bindtap="toggleNicknameEdit">
-<image class="edit-icon-img" src="{{iconPaths.editLine_white}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine_white" />
+          <image class="edit-icon-img" src="{{iconPaths.editLine_white}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine_white" />
         </view>
       </view>
-      <text class="user-role">{{roleDisplay}}</text>
+      <view class="member-tag {{isPro ? 'pro' : 'free'}}" bindtap="navigateToMemberCenter">
+        <image class="member-icon" src="{{
+          userInfo.subscription_tier === 'team' ? '/images/remix/group-line-gold.png' : (
+          userInfo.subscription_tier === 'pro' ? '/images/remix/trophy-line-orange.png' : '/images/remix/user-line.svg')
+        }}" mode="aspectFit" />
+        <text>{{ isPro ? membershipName : '普通用户' }}</text>
+      </view>
       <!-- 团队信息显示（仅团队模式） -->
       <view class="team-info-row" wx:if="{{userMode === 'team' && (currentTeamName || teamInfo.name)}}">
         <text class="team-name-label">团队：</text>
@@ -96,6 +102,18 @@
 
   <!-- 功能卡片区域 -->
   <view class="function-cards" wx:if="{{isLogin}}">
+    <!-- 会员中心卡片 -->
+    <view class="function-card member-card" bindtap="navigateToMemberCenter">
+      <view class="section-title">
+         <image class="section-icon-img" src="/images/remix/vip-crown-fill.svg" mode="aspectFit" />
+         <text>会员中心</text>
+      </view>
+      <view class="card-desc">
+        <text wx:if="{{isPro}}">有效期至 {{expireDate}}</text>
+        <text wx:else>升级解锁更多权益</text>
+        <image class="arrow-icon" src="{{iconPaths.arrowRight}}" mode="aspectFit" />
+      </view>
+    </view>
     <!-- 模式设置卡片 -->
       <view class="function-card mode-card">
         <view class="section-title">

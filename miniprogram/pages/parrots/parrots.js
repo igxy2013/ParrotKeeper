@@ -79,7 +79,11 @@ Page({
     claimCode: '',
     claimingByCode: false,
     pendingRefresh: false,
-    refreshTimer: null
+    refreshTimer: null,
+    
+    // 数量限制弹窗
+    showLimitModal: false,
+    limitModalCode: ''
   },
 
   onLoad() {
@@ -807,17 +811,91 @@ Page({
 
   // 添加鹦鹉
   addParrot() {
-    // 使用复用组件打开添加弹窗
-    const emptyForm = {
-      id: '', name: '', type: '', weight: '', gender: '', gender_display: '', color: '', birth_date: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: ''
+    const userInfo = app.globalData.userInfo || {}
+    const tier = String(userInfo.subscription_tier || '').toLowerCase()
+    const isPro = tier === 'pro' || tier === 'team'
+
+    const knownTotal = Number(this.data.totalParrots || 0)
+    const promptOrOpenForm = (total) => {
+      if (!isPro && total >= 5) {
+        this.setData({ showLimitModal: true, limitModalCode: '' })
+        return
+      }
+      const emptyForm = { id: '', name: '', type: '', weight: '', gender: '', gender_display: '', color: '', birth_date: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' }
+      this.setData({ showParrotModal: true, parrotFormMode: 'add', parrotFormTitle: '添加新鹦鹉', currentParrotForm: emptyForm })
+      this.loadSpeciesListForModal()
     }
+
+    if (isPro || knownTotal >= 5) {
+      promptOrOpenForm(knownTotal)
+      return
+    }
+
+    app.request({ url: '/api/statistics/overview', method: 'GET' })
+      .then(res => {
+        let total = 0
+        if (res && res.data && res.data.total_parrots !== undefined) {
+          total = Number(res.data.total_parrots)
+        } else {
+          // 如果获取统计失败，回退到使用列表长度（不太准确但作为兜底）
+          const listLen = Array.isArray(this.data.parrots) ? this.data.parrots.length : 0
+          total = Math.max(knownTotal, listLen)
+        }
+        promptOrOpenForm(total)
+      })
+      .catch(() => {
+        promptOrOpenForm(knownTotal)
+      })
+  },
+
+  // 关闭数量限制弹窗
+  closeLimitModal() {
     this.setData({
-      showParrotModal: true,
-      parrotFormMode: 'add',
-      parrotFormTitle: '添加新鹦鹉',
-      currentParrotForm: emptyForm
+      showLimitModal: false,
+      limitModalCode: ''
     })
-    this.loadSpeciesListForModal()
+  },
+
+  // 前往会员中心
+  goToMemberCenter() {
+    this.closeLimitModal()
+    wx.navigateTo({
+      url: '/pages/member-center/member-center'
+    })
+  },
+
+  // 通用组件回调：在弹窗中兑换
+  async onLimitRedeem(e) {
+    const code = (e && e.detail && e.detail.code) ? String(e.detail.code).trim() : ''
+    if (!code) {
+      wx.showToast({ title: '请输入兑换码', icon: 'none' })
+      return
+    }
+
+    wx.showLoading({ title: '兑换中...' })
+    try {
+      const res = await app.request({ url: '/api/redemption/redeem', method: 'POST', data: { code } })
+      wx.hideLoading()
+      if (res && res.success) {
+        wx.showToast({ title: '兑换成功', icon: 'success' })
+        this.closeLimitModal()
+        if (res.data) {
+          const newUserInfo = { ...app.globalData.userInfo }
+          newUserInfo.subscription_tier = res.data.tier
+          newUserInfo.subscription_expire_at = res.data.expire_at
+          app.globalData.userInfo = newUserInfo
+          wx.setStorageSync('userInfo', newUserInfo)
+        }
+        app.globalData.needRefresh = true
+        setTimeout(() => { this.addParrot() }, 1500)
+      } else {
+        wx.showToast({ title: res.message || '兑换失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '网络错误，请重试', icon: 'none' })
+      console.error('兑换失败:', err)
+    }
   },
 
   // 列表图标加载失败时回退为 SVG

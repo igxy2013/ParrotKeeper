@@ -1,0 +1,70 @@
+<view class="page-container">
+  <app-header title="会员管理" subtitle="查看与维护会员资格" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">该页面仅限超级管理员访问</view>
+    </block>
+    <block wx:else>
+      <view class="card">
+        <view class="section-title">
+          <text>筛选与搜索</text>
+        </view>
+        <view class="filters">
+          <input class="search-input" placeholder="按昵称或OpenID搜索" value="{{keyword}}" bindinput="onSearchInput" />
+          <picker class="tier-picker" mode="selector" range="{{tierOptions}}" value="{{tierIndex}}" bindchange="onTierChange">
+            <view class="picker-display">{{tierOptions[tierIndex]}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="section-title">
+          <text>会员列表</text>
+        </view>
+        <view wx:if="{{listLoading}}" class="loading">加载中...</view>
+        <block wx:else>
+          <view wx:if="{{!items.length}}" class="empty">暂无会员</view>
+          <block wx:else>
+            <view class="member-list">
+              <block wx:for="{{items}}" wx:key="id">
+                <view class="member-item {{item._expired ? 'is-expired' : ''}}">
+                  <view class="member-icon {{item._tier === 'team' ? 'bg-team' : 'bg-pro'}}">
+                    <image class="member-icon-img" src="/images/remix/vip-crown-line-white.png" mode="aspectFit" />
+                  </view>
+                  <view class="member-main">
+                    <view class="line1">
+                      <text class="nickname">{{item.nickname || item.username || '未命名'}}</text>
+                      <view class="tag {{item._tier === 'team' ? 'team' : 'pro'}}">
+                        {{item._tier === 'team' ? '团队版' : '专业版'}}
+                      </view>
+                      <view class="badge-expired" wx:if="{{item._expired}}">已过期</view>
+                    </view>
+                    <view class="line2">
+                      <text class="meta">到期：{{formatDate(item._expire) || '—'}}</text>
+                      <text class="meta">注册：{{formatDate(item.created_at)}}</text>
+                    </view>
+                  </view>
+                  <view class="actions" wx:if="{{canWriteAdminUsers}}">
+                    <button class="btn-secondary" size="mini" bindtap="extend" data-id="{{item.id}}" data-days="30">延长30天</button>
+                    <button class="btn-secondary" size="mini" bindtap="setTier" data-id="{{item.id}}" data-tier="pro">设为Pro</button>
+                    <button class="btn-secondary" size="mini" bindtap="setTier" data-id="{{item.id}}" data-tier="team">设为Team</button>
+                    <button class="btn-danger" size="mini" bindtap="cancel" data-id="{{item.id}}">取消会员</button>
+                  </view>
+                  <view class="actions-readonly" wx:else>
+                    <text class="hint-readonly">当前后端不支持会员写操作，列表为只读</text>
+                  </view>
+                </view>
+              </block>
+              <view class="load-more" wx:if="{{hasMore}}">
+                <button class="btn-secondary" size="mini" bindtap="loadMore" loading="{{listLoading}}">加载更多</button>
+              </view>
+              <view class="no-more" wx:if="{{!hasMore && items.length > 0}}">
+                <text>没有更多了</text>
+              </view>
+            </view>
+          </block>
+        </block>
+      </view>
+    </block>
+  </view>
+</view>

@@ -9,6 +9,11 @@ Page({
     joinDate: '',
     roleDisplay: '',
     points: 0,
+    
+    // 会员信息
+    isPro: false,
+    expireDate: '',
+    membershipName: '',
 
     // 模式
     userMode: 'personal',
@@ -101,6 +106,12 @@ Page({
     }
   },
 
+  navigateToMemberCenter() {
+    wx.navigateTo({
+      url: '/pages/member-center/member-center'
+    })
+  },
+
   // —— 后台管理导航 ——
   goAdminFeedbacks() {
     wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' })
@@ -141,6 +152,10 @@ Page({
 
   goAdminHome() {
     wx.navigateTo({ url: '/pages/admin/index/index' })
+  },
+
+  navigateToMemberCenter() {
+    wx.navigateTo({ url: '/pages/member-center/member-center' })
   },
 
   onLoad() {
@@ -672,6 +687,10 @@ Page({
       joinDate: app.formatDate(baseUser.created_at || Date.now()),
       roleDisplay: this.mapRoleDisplay(baseUser),
       points,
+      // 初始化会员信息
+      isPro: baseUser.subscription_tier === 'pro' || baseUser.subscription_tier === 'team',
+      expireDate: baseUser.subscription_expire_at ? baseUser.subscription_expire_at.substring(0, 10) : '',
+      membershipName: this.computeMembershipName(baseUser)
     });
 
     // 若已登录，则尝试从后端获取最新的用户信息（包含role等字段）
@@ -692,11 +711,48 @@ Page({
             roleDisplay: this.mapRoleDisplay(merged),
             joinDate: app.formatDate(merged.created_at || Date.now()),
             points: points,
+            // 更新会员信息
+            isPro: merged.subscription_tier === 'pro' || merged.subscription_tier === 'team',
+            expireDate: merged.subscription_expire_at ? merged.subscription_expire_at.substring(0, 10) : '',
+            membershipName: this.computeMembershipName(merged)
           });
         }
       } catch (e) {
         console.warn('刷新用户信息失败:', e);
       }
+    }
+  },
+
+  computeMembershipName(user) {
+    try {
+      const tier = String((user && user.subscription_tier) || '').toLowerCase()
+      const isPro = tier === 'pro' || tier === 'team'
+      if (!isPro) return ''
+      const prefix = tier === 'team' ? 'team' : 'pro'
+      const label = user.membership_label || ''
+      const durationDays = Number(user.membership_duration_days || 0)
+      let plan = ''
+      if (label) {
+        plan = label
+      } else if (durationDays > 0) {
+        if (durationDays >= 36500) plan = '永久会员'
+        else if (durationDays >= 365) plan = '年卡会员'
+        else if (durationDays >= 30) plan = '月卡会员'
+        else plan = '高级会员'
+      } else if (user.subscription_expire_at) {
+        const now = Date.now()
+        const exp = new Date(String(user.subscription_expire_at).replace(' ', 'T')).getTime()
+        const days = Math.round((exp - now) / (24 * 60 * 60 * 1000))
+        if (days >= 36500) plan = '永久会员'
+        else if (days >= 360) plan = '年卡会员'
+        else if (days >= 25) plan = '月卡会员'
+        else plan = '高级会员'
+      } else {
+        plan = '高级会员'
+      }
+      return `${prefix}${plan}`
+    } catch (_) {
+      return ''
     }
   },
 
@@ -970,6 +1026,24 @@ Page({
   chooseUserMode(e) {
     const mode = e.currentTarget.dataset.mode;
     if (!mode || (mode !== 'personal' && mode !== 'team')) return;
+    if (mode === 'team') {
+      try {
+        const userInfo = getApp().globalData.userInfo || {}
+        const tier = String(userInfo.subscription_tier || '').toLowerCase()
+        if (tier !== 'team') {
+          wx.showModal({
+            title: '团队功能限制',
+            content: '团队协作为团队会员功能。请升级为团队会员后使用。',
+            confirmText: '去会员中心',
+            cancelText: '稍后',
+            success: (res) => {
+              if (res.confirm) wx.navigateTo({ url: '/pages/member-center/member-center' })
+            }
+          })
+          return
+        }
+      } catch(_) {}
+    }
     const app = getApp();
     this.setData({ userMode: mode });
     app.setUserMode && app.setUserMode(mode);

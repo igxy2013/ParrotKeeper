@@ -16,6 +16,40 @@ class UserAccount(db.Model):
 
     user = db.relationship('User', backref=db.backref('account', uselist=False))
 
+class SubscriptionOrder(db.Model):
+    __tablename__ = 'subscription_orders'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    order_no = db.Column(db.String(64), unique=True, nullable=False) # 内部订单号
+    transaction_id = db.Column(db.String(64), nullable=True) # 第三方支付流水号
+    plan_id = db.Column(db.String(32), nullable=False) # 套餐ID: pro_monthly, pro_yearly 等
+    amount = db.Column(db.Numeric(10, 2), nullable=False) # 支付金额
+    status = db.Column(db.Enum('pending', 'paid', 'failed', 'refunded'), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship('User', backref=db.backref('subscription_orders', lazy=True))
+
+class RedemptionCode(db.Model):
+    __tablename__ = 'redemption_codes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(32), unique=True, nullable=False)
+    # 类型：pro_monthly, pro_yearly, pro_lifetime
+    tier = db.Column(db.Enum('pro', 'team'), default='pro', nullable=False)
+    duration_days = db.Column(db.Integer, nullable=False) # 30, 365, 36500(lifetime)
+    status = db.Column(db.Enum('active', 'used', 'expired'), default='active')
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    used_at = db.Column(db.DateTime, nullable=True)
+    used_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    used_by = db.relationship('User', foreign_keys=[used_by_user_id], backref='used_redemption_codes')
+    created_by = db.relationship('User', foreign_keys=[created_by_user_id], backref='created_redemption_codes')
+
 class User(db.Model):
     __tablename__ = 'users'
     
@@ -34,6 +68,12 @@ class User(db.Model):
     current_team_id = db.Column(db.Integer, nullable=True)  # 当前选中的团队，暂时移除外键约束
     points = db.Column(db.Integer, default=0, nullable=False)  # 用户积分
     last_checkin_date = db.Column(db.Date, nullable=True)  # 最后签到日期，用于每日签到判断
+
+    # 会员相关字段
+    subscription_tier = db.Column(db.Enum('free', 'pro', 'team'), default='free', nullable=False)
+    subscription_expire_at = db.Column(db.DateTime, nullable=True)
+    is_auto_renew = db.Column(db.Boolean, default=False)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

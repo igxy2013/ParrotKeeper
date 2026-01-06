@@ -315,3 +315,11 @@
     </view>
   </view>
 </view>
+
+<limit-modal 
+  visible="{{showLimitModal}}"
+  limitCount="5"
+  bind:cancel="closeLimitModal"
+  bind:upgrade="goToMemberCenter"
+  bind:redeem="onLimitRedeem"
+/>

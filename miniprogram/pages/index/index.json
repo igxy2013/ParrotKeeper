@@ -9,7 +9,8 @@
     "home-card-feeding-today": "/components/home-card-feeding-today/home-card-feeding-today",
     "home-card-monthly-income": "/components/home-card-monthly-income/home-card-monthly-income",
     "home-card-monthly-expense": "/components/home-card-monthly-expense/home-card-monthly-expense",
-    "home-card-weight-trend": "/components/home-card-weight-trend/home-card-weight-trend"
+    "home-card-weight-trend": "/components/home-card-weight-trend/home-card-weight-trend",
+    "limit-modal": "/components/limit-modal/limit-modal"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "鹦鹉管家AI",

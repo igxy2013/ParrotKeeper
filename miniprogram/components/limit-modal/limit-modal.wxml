@@ -1,0 +1,24 @@
+<view wx:if="{{visible}}" class="modal-overlay" bindtap="onCancel">
+  <view class="modal-content limit-modal" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">{{title || '数量限制提示'}}</text>
+      <view class="modal-close" bindtap="onCancel">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="limit-message">
+        <text>普通用户最多只能管理 {{limitCount}} 只鹦鹉。\n升级会员可解锁无限数量限制。</text>
+      </view>
+
+      <view class="limit-actions">
+        <button class="action-btn upgrade-btn" bindtap="onUpgrade"><text>查看会员权益</text></button>
+      </view>
+
+      <view class="divider-text">或者</view>
+
+      <view class="redeem-input-row">
+        <input class="modal-input" placeholder="输入兑换码" value="{{code}}" bindinput="onCodeInput" />
+        <button class="action-btn redeem-btn" bindtap="onRedeem" disabled="{{!code}}">兑换</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,5 +1,5 @@
 {
-  "usingComponents": { "app-header": "/components/app-header/app-header", "bottom-nav": "/components/bottom-nav/bottom-nav", "parrot-modal": "/components/parrot-modal/parrot-modal" },
+  "usingComponents": { "app-header": "/components/app-header/app-header", "bottom-nav": "/components/bottom-nav/bottom-nav", "parrot-modal": "/components/parrot-modal/parrot-modal", "limit-modal": "/components/limit-modal/limit-modal" },
   "navigationStyle": "custom",
   "navigationBarTitleText": "我的鹦鹉",
   "enablePullDownRefresh": true,

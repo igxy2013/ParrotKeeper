@@ -1447,9 +1447,12 @@ const app = getApp()
     const current = this.data.formData.photos.length
     const remaining = Math.max(0, 3 - current)
     if (remaining === 0) return
+    const userInfo = getApp().globalData.userInfo || {}
+    const tier = String(userInfo.subscription_tier || '').toLowerCase()
+    const isPro = tier === 'pro' || tier === 'team'
     wx.chooseImage({
       count: remaining,
-      sizeType: ['compressed'],
+      sizeType: isPro ? ['original', 'compressed'] : ['compressed'],
       sourceType: ['album', 'camera'],
       success: (res) => {
         const newPhotos = (res.tempFilePaths || [])

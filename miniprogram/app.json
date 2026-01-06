@@ -3,7 +3,8 @@
     "pages/index/index",
     "pages/login/login",
     "pages/register/register",
-    "pages/account-management/account-management"
+    "pages/account-management/account-management",
+    "pages/member-center/member-center"
   ],
   "subpackages": [
     {
@@ -17,7 +18,9 @@
         "api-configs/api-configs",
         "market-prices/market-prices",
         "invitation-codes/invitation-codes",
-        "users-management/users-management"
+        "redeem-codes/redeem-codes",
+        "users-management/users-management",
+        "members-management/members-management"
       ]
     },
     {

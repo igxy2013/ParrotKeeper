@@ -387,7 +387,9 @@ def list_users():
                 'points': u.points or 0,
                 'current_team_id': u.current_team_id,
                 'created_at': u.created_at.isoformat() if getattr(u, 'created_at', None) else None,
-                'parrot_count': int(team_counts_map.get(u.current_team_id, 0) or 0) if (u.user_mode == 'team' and u.current_team_id) else int(personal_counts_map.get(u.id, 0) or 0)
+                'parrot_count': int(team_counts_map.get(u.current_team_id, 0) or 0) if (u.user_mode == 'team' and u.current_team_id) else int(personal_counts_map.get(u.id, 0) or 0),
+                'subscription_tier': u.subscription_tier,
+                'subscription_expire_at': u.subscription_expire_at.isoformat() if getattr(u, 'subscription_expire_at', None) else None
             })
 
         return success_response({
@@ -400,6 +402,57 @@ def list_users():
         })
     except Exception as e:
         return error_response(f'获取用户列表失败: {str(e)}')
+
+
+@admin_bp.route('/users/<int:user_id>', methods=['PUT'])
+@login_required
+def update_user_membership(user_id):
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+
+        target = User.query.get(user_id)
+        if not target:
+            return error_response('用户不存在', 404)
+
+        body = request.get_json() or {}
+        tier = str(body.get('subscription_tier') or '').strip().lower()
+        extend_days = body.get('subscription_extend_days')
+        cancel_flag = bool(body.get('subscription_cancel') or False)
+
+        changed = False
+        if tier in ['free', 'pro', 'team']:
+            target.subscription_tier = tier
+            changed = True
+
+        if isinstance(extend_days, int) and extend_days > 0:
+            from datetime import datetime, timedelta
+            base = target.subscription_expire_at if target.subscription_expire_at and target.subscription_expire_at > datetime.utcnow() else datetime.utcnow()
+            target.subscription_expire_at = base + timedelta(days=int(extend_days))
+            if target.subscription_tier == 'free':
+                target.subscription_tier = 'pro'
+            changed = True
+
+        if cancel_flag:
+            target.subscription_tier = 'free'
+            target.subscription_expire_at = None
+            changed = True
+
+        if not changed:
+            return error_response('未提供有效的更新参数')
+
+        db.session.commit()
+        data = {
+            'id': target.id,
+            'subscription_tier': target.subscription_tier,
+            'subscription_expire_at': target.subscription_expire_at.isoformat() if getattr(target, 'subscription_expire_at', None) else None,
+            'expire_at': target.subscription_expire_at.isoformat() if getattr(target, 'subscription_expire_at', None) else None
+        }
+        return success_response(data, '更新成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新失败: {str(e)}')
 
 
 @admin_bp.route('/users/trend', methods=['GET'])

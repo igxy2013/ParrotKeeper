@@ -74,6 +74,8 @@ def create_app(config_name=None):
     app.register_blueprint(reports_bp)
     from routes.pairings import pairings_bp
     app.register_blueprint(pairings_bp)
+    from routes.redemption import redemption_bp
+    app.register_blueprint(redemption_bp)
     
     # 创建上传目录
     upload_folder = app.config['UPLOAD_FOLDER']

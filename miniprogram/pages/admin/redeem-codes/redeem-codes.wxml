@@ -1,0 +1,78 @@
+<view class="page-container">
+  <app-header title="会员兑换码" subtitle="生成会员权益兑换码" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">该页面仅限超级管理员访问</view>
+    </block>
+    <block wx:else>
+      <view class="card">
+        <view class="section-title">
+          <text>批量生成</text>
+        </view>
+        <view class="form-row">
+          <view class="label">生成数量</view>
+          <input class="number-input" type="number" value="{{createCount}}" bindinput="onCountInput" />
+        </view>
+        <view class="form-row">
+           <view class="label">有效天数</view>
+           <input class="number-input" type="number" value="{{createDuration}}" bindinput="onDurationInput" />
+        </view>
+        <view class="form-row">
+          <view class="label">卡片类型</view>
+          <view class="preset-switch">
+            <view class="preset-btn {{createDuration == 30 ? 'active' : ''}}" data-duration="30" bindtap="onPresetDurationTap">月卡</view>
+            <view class="preset-btn {{createDuration == 365 ? 'active' : ''}}" data-duration="365" bindtap="onPresetDurationTap">年卡</view>
+            <view class="preset-btn {{createDuration == 36500 ? 'active' : ''}}" data-duration="36500" bindtap="onPresetDurationTap">终身</view>
+          </view>
+        </view>
+        <view class="form-row">
+          <view class="label">会员类型</view>
+          <view class="tier-switch">
+            <view class="tier-btn {{createTier === 'pro' ? 'active' : ''}}" data-tier="pro" bindtap="onTierTap">个人会员</view>
+            <view class="tier-btn {{createTier === 'team' ? 'active' : ''}}" data-tier="team" bindtap="onTierTap">团队会员</view>
+          </view>
+        </view>
+        <view class="form-actions">
+           <button class="btn-primary" bindtap="createCodes" loading="{{creating}}" disabled="{{creating}}">生成兑换码</button>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="section-title">
+          <text>兑换码列表</text>
+        </view>
+        <view wx:if="{{loading}}" class="loading">加载中...</view>
+        <block wx:else>
+          <view wx:if="{{!items.length}}" class="empty">暂无兑换码</view>
+          <block wx:else>
+            <view class="code-list">
+              <block wx:for="{{items}}" wx:key="id">
+                <view class="code-item">
+                  <view class="code-main">
+                    <view class="code-line">
+                      <text class="code-text">{{item.code}}</text>
+                      <view class="tier-tag {{item._tier === 'team' ? 'team' : (item._tier === 'pro' ? 'pro' : '')}}" wx:if="{{item._tier}}">
+                        {{item._tier === 'team' ? '团队版' : '专业版'}}
+                      </view>
+                      <view class="status-tag {{item.status === 'active' ? 'active' : 'inactive'}}">
+                        {{item.status === 'active' ? '未使用' : (item.status === 'used' ? '已使用' : item.status)}}
+                      </view>
+                    </view>
+                    <view class="meta-line">
+                      <text class="meta-text">{{item.duration_days}}天会员</text>
+                      <text class="meta-time" wx:if="{{item.status === 'used'}}">使用于 {{item._used_at}}</text>
+                      <text class="meta-time" wx:else>创建于 {{item._created_at}}</text>
+                    </view>
+                  </view>
+                  <view class="actions">
+                    <button class="btn-secondary" size="mini" bindtap="copyCode" data-code="{{item.code}}">复制</button>
+                  </view>
+                </view>
+              </block>
+            </view>
+          </block>
+        </block>
+      </view>
+    </block>
+  </view>
+</view>

@@ -36,6 +36,12 @@ Component({
     },
   prepareDisplaySeries() {
       const src = Array.isArray(this.data.series) ? this.data.series : []
+      let isPro = false
+      try {
+        const app = getApp()
+        const tier = String((app.globalData && app.globalData.userInfo && app.globalData.userInfo.subscription_tier) || '').toLowerCase()
+        isPro = tier === 'pro' || tier === 'team'
+      } catch(_) {}
       const selectedId = this.data.selectedParrotId
       let autoId = null
       let autoName = ''
@@ -84,7 +90,10 @@ Component({
         parrot_id: s.parrot_id,
         parrot_name: s.parrot_name,
         color: this.palette(i),
-        points: (Array.isArray(s.points) ? s.points : []).slice().sort((a,b) => (a.date > b.date ? 1 : -1))
+        points: (Array.isArray(s.points) ? s.points : [])
+          .slice()
+          .sort((a,b) => (a.date > b.date ? 1 : -1))
+          .slice(isPro ? 0 : Math.max(0, ((Array.isArray(s.points) ? s.points.length : 0) - 30)))
       }))
 
       let weights = []

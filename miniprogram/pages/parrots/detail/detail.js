@@ -11,6 +11,7 @@ Page({
     hasFeedingRecords: false,
     loading: true,
     hasOperationPermission: false,
+    isPro: false,
     // 菜单状态
     showMenu: false,
     // 选项卡
@@ -124,6 +125,12 @@ Page({
     // 检查操作权限
     const hasOperationPermission = app.hasOperationPermission()
     this.setData({ hasOperationPermission })
+    try {
+      const userInfo = app.globalData.userInfo || {}
+      const tier = String(userInfo.subscription_tier || '').toLowerCase()
+      const isPro = tier === 'pro' || tier === 'team'
+      this.setData({ isPro })
+    } catch(_) {}
     
     if (options.id) {
       this.setData({
@@ -1325,11 +1332,14 @@ Page({
     
     if (allDates.length === 0) return
     
-    // 默认显示最近30个点，或者全部
+    // 默认显示最近30个点；免费版仅允许查看最近30个点
     const totalPoints = allDates.length
     let startIndex = 0
-    if (totalPoints > 30) {
-      startIndex = totalPoints - 30
+    const limitPoints = 30
+    if (!this.data.isPro && totalPoints > limitPoints) {
+      startIndex = totalPoints - limitPoints
+    } else if (totalPoints > limitPoints) {
+      startIndex = 0
     }
     
     this.setData({
@@ -1828,9 +1838,18 @@ Page({
         })
       }
       
-      // 更新索引
+      // 更新索引（免费版限制最大窗口为30个点）
       const startIndex = Math.floor((this.data.weightLeft / 100) * (total - 1))
       const endIndex = Math.ceil((this.data.weightRight / 100) * (total - 1))
+      if (!this.data.isPro) {
+        const maxWindow = 30
+        const windowSize = endIndex - startIndex + 1
+        if (windowSize > maxWindow) {
+          const adjustedEnd = startIndex + maxWindow - 1
+          const adjustedRight = (adjustedEnd / (total - 1 || 1)) * 100
+          this.setData({ weightRight: adjustedRight, weightWidth: adjustedRight - this.data.weightLeft })
+        }
+      }
       
       if (startIndex !== this.data.weightStartIndex || endIndex !== this.data.weightEndIndex) {
         this.setData({

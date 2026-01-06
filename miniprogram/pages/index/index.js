@@ -98,6 +98,8 @@ Page({
     // 弹窗避让参数（默认数值，避免组件收到非数字）
     modalTopOffsetPx: 24,
     modalBottomOffsetPx: 24,
+    // 通用：数量限制弹窗
+    showLimitModal: false,
 
     // PNG 图标路径（统一图标方案）
     iconPaths: {
@@ -1968,10 +1970,39 @@ Page({
       app.showError('请先登录后使用此功能')
       return
     }
-    // 直接打开首页添加鹦鹉弹窗
-    this.setData({ showAddParrotModal: true })
-    // 加载品种列表用于提交时映射 species_id
-    this.loadSpeciesList()
+
+    const userInfo = app.globalData.userInfo || {}
+    const tier = String(userInfo.subscription_tier || '').toLowerCase()
+    const isPro = tier === 'pro' || tier === 'team'
+    const knownTotal = Number((this.data.overview && this.data.overview.total_parrots) || 0)
+
+    const promptOrOpenForm = (total) => {
+      if (!isPro && total >= 5) {
+        this.setData({ showLimitModal: true })
+        return
+      }
+      this.setData({ showAddParrotModal: true })
+      this.loadSpeciesList()
+    }
+
+    if (isPro || knownTotal >= 5) {
+      promptOrOpenForm(knownTotal)
+      return
+    }
+
+    app.request({ url: '/api/statistics/overview', method: 'GET' })
+      .then(res => {
+        let total = 0
+        if (res && res.data && res.data.total_parrots !== undefined) {
+          total = Number(res.data.total_parrots)
+        } else {
+          total = knownTotal
+        }
+        promptOrOpenForm(total)
+      })
+      .catch(() => {
+        promptOrOpenForm(knownTotal)
+      })
   },
 
   // 快速添加收支记录
@@ -1979,6 +2010,50 @@ Page({
     this.setData({
       showAddExpenseModal: true
     });
+  },
+
+  // 通用数量限制弹窗：关闭
+  closeLimitModal() {
+    this.setData({ showLimitModal: false })
+  },
+
+  // 通用数量限制弹窗：前往会员中心
+  goToMemberCenter() {
+    this.closeLimitModal()
+    wx.navigateTo({ url: '/pages/member-center/member-center' })
+  },
+
+  // 通用数量限制弹窗：兑换
+  async onLimitRedeem(e) {
+    const code = (e && e.detail && e.detail.code) ? String(e.detail.code).trim() : ''
+    if (!code) {
+      wx.showToast({ title: '请输入兑换码', icon: 'none' })
+      return
+    }
+    wx.showLoading({ title: '兑换中...' })
+    try {
+      const res = await app.request({ url: '/api/redemption/redeem', method: 'POST', data: { code } })
+      wx.hideLoading()
+      if (res && res.success) {
+        wx.showToast({ title: '兑换成功', icon: 'success' })
+        this.closeLimitModal()
+        if (res.data) {
+          const newUserInfo = { ...app.globalData.userInfo }
+          newUserInfo.subscription_tier = res.data.tier
+          newUserInfo.subscription_expire_at = res.data.expire_at
+          app.globalData.userInfo = newUserInfo
+          wx.setStorageSync('userInfo', newUserInfo)
+        }
+        app.globalData.needRefresh = true
+        setTimeout(() => { this.addParrot() }, 1500)
+      } else {
+        wx.showToast({ title: res.message || '兑换失败', icon: 'none' })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '网络错误，请重试', icon: 'none' })
+      console.error('兑换失败:', err)
+    }
   },
 
   // 关闭添加收支记录弹窗

@@ -1,0 +1,147 @@
+<view class="page-container">
+  <app-header title="会员中心" subtitle="升级解锁更多权益" showBack="true"></app-header>
+  
+  <view class="content">
+    <!-- 会员状态卡片 -->
+    <view class="status-card {{isPro ? 'pro-card' : 'free-card'}}">
+      <view class="card-header">
+        <view class="title-box">
+          <text class="status-title">{{isPro ? membershipName : '普通用户'}}</text>
+          <text class="tier-tag {{tierClass}}" wx:if="{{isPro && membershipTag}}">{{membershipTag}}</text>
+        </view>
+        <image class="status-icon" src="{{isPro ? '/images/remix/trophy-line-orange.png' : '/images/remix/user-line-white.png'}}" mode="aspectFit"></image>
+      </view>
+      <view class="card-body">
+        <view class="expire-info" wx:if="{{isPro}}">
+          <text>有效期至：{{expireDate}}</text>
+        </view>
+        <view class="expire-info" wx:else>
+          <text>升级解锁无限鹦鹉管理权限</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 兑换码区域 -->
+    <view class="redeem-section">
+      <view class="section-title">兑换会员</view>
+      <view class="redeem-input-group">
+        <input class="redeem-input" placeholder="请输入兑换码" bindinput="onCodeInput" value="{{code}}" />
+        <button class="redeem-btn" bindtap="handleRedeem" disabled="{{!code}}">兑换</button>
+      </view>
+    </view>
+
+    <!-- 申请兑换码弹窗 -->
+    <view class="modal-overlay" wx:if="{{showApplyModal}}" bindtap="closeApplyModal"></view>
+    <view class="apply-modal" wx:if="{{showApplyModal}}">
+      <view class="modal-header">
+        <view class="modal-title">申请兑换码</view>
+        <view class="modal-subtitle">请联系客服：<text class="contact-id">parrotkeeper</text></view>
+      </view>
+      <view class="modal-body">
+        <view class="hint-text">复制客服ID后，通过微信进行联系。</view>
+      </view>
+      <view class="modal-actions">
+        <button class="modal-btn cancel-btn" bindtap="closeApplyModal">关闭</button>
+        <button class="modal-btn submit-btn" bindtap="copyContact">复制客服ID</button>
+      </view>
+    </view>
+
+    <!-- 价格与套餐 -->
+    <view class="pricing-section">
+      <view class="section-title">价格与套餐</view>
+      <view class="pricing-grid">
+        <view class="pricing-col">
+          <view class="pricing-header pro">个人会员</view>
+          <view class="pricing-item">
+            <text class="pricing-name">月卡</text>
+            <text class="pricing-price">¥9.9 /月</text>
+          </view>
+          <view class="pricing-item">
+            <text class="pricing-name">年卡</text>
+            <text class="pricing-price">¥99 /年</text>
+          </view>
+          <view class="pricing-item">
+            <text class="pricing-name">终身会员</text>
+            <text class="pricing-price">¥299</text>
+          </view>
+          <view class="apply-row">
+            <button class="apply-btn" bindtap="openApplyModal">申请兑换码</button>
+          </view>
+        </view>
+        <view class="pricing-col">
+          <view class="pricing-header team">团队会员</view>
+          <view class="pricing-item">
+            <text class="pricing-name">月卡</text>
+            <text class="pricing-price">¥19.9 /月</text>
+          </view>
+          <view class="pricing-item">
+            <text class="pricing-name">年卡</text>
+            <text class="pricing-price">¥199 /年</text>
+          </view>
+          <view class="pricing-item">
+            <text class="pricing-name">终身会员</text>
+            <text class="pricing-price">¥599</text>
+          </view>
+          <view class="apply-row">
+            <button class="apply-btn" bindtap="openApplyModal">申请兑换码</button>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 权益体系矩阵 -->
+    <view class="benefits-section">
+      <view class="section-title">会员权益体系</view>
+      <view class="matrix">
+        <view class="matrix-header">
+          <text class="h-feature">功能权益</text>
+          <text class="h-free">免费版</text>
+          <text class="h-pro">高级会员 (Pro)</text>
+          <text class="h-team">团队/企业版</text>
+        </view>
+
+        <view class="matrix-row">
+          <text class="c-feature">鹦鹉数量限制</text>
+          <text class="c-free">上限 5只</text>
+          <text class="c-pro">无限制</text>
+          <text class="c-team">无限制</text>
+        </view>
+
+        <view class="matrix-row">
+          <text class="c-feature">数据记录</text>
+          <text class="c-free">基础记录（喂食/清洁/健康）</text>
+          <text class="c-pro">基础记录 + 高清照片原图存储</text>
+          <text class="c-team">包含所有 Pro 功能</text>
+        </view>
+
+        <view class="matrix-row">
+          <text class="c-feature">统计分析</text>
+          <text class="c-free">基础月报</text>
+          <text class="c-pro">高级趋势分析（体重/食量/开销趋势）</text>
+          <text class="c-team">多维度营养与经营报表</text>
+        </view>
+
+        <view class="matrix-row">
+          <text class="c-feature">数据导出</text>
+          <text class="c-free">不支持</text>
+          <text class="c-pro">导出 Excel/PDF 报表</text>
+          <text class="c-team">批量导出与数据备份</text>
+        </view>
+
+        <view class="matrix-row">
+          <text class="c-feature">团队协作</text>
+          <text class="c-free">仅限单人</text>
+          <text class="c-pro">单人</text>
+          <text class="c-team">支持多角色、分权限协作管理</text>
+        </view>
+
+        <view class="matrix-row">
+          <text class="c-feature">高级功能</text>
+          <text class="c-free">可能有少量广告</text>
+          <text class="c-pro">纯净无广告</text>
+          <text class="c-team">API 接口、自定义工作流、专属客服</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -38,6 +38,26 @@ Page({
 
   onLoad(options) {
     this.checkLoginStatus()
+    try {
+      const userInfo = app.globalData.userInfo || {}
+      const tier = String(userInfo.subscription_tier || '').toLowerCase()
+      const isPro = tier === 'pro' || tier === 'team'
+      if (!isPro) {
+        wx.showModal({
+          title: '高级功能限制',
+          content: '繁殖记录为高级会员功能，请升级会员后使用。',
+          confirmText: '去会员中心',
+          cancelText: '返回',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({ url: '/pages/member-center/member-center' })
+            } else {
+              wx.navigateBack({ delta: 1 })
+            }
+          }
+        })
+      }
+    } catch(_) {}
   },
 
   onShow() {
