@@ -25,7 +25,6 @@ Component({
       birth_place_text: '',
       birth_date: '',
       notes: '',
-      parrot_number: '',
       ring_number: '',
       acquisition_date: '',
       photo_url: '',
@@ -81,7 +80,6 @@ Component({
         birth_place_text: birthPlaceText,
         birth_date: parrot.birth_date || parrot.birthDate || '',
         notes: parrot.notes || '',
-        parrot_number: parrot.parrot_number || '',
         ring_number: parrot.ring_number || '',
         acquisition_date: parrot.acquisition_date || '',
         photo_url: parrot.photo_url || parrot.avatar_url || ''
@@ -586,7 +584,6 @@ Component({
         color: f.color || '',
         weight: f.weight || '',
         notes: f.notes || '',
-        parrot_number: f.parrot_number || '',
         ring_number: f.ring_number || '',
         acquisition_date: f.acquisition_date || '',
         plumage_split_ids: this.data.plumageSplitIds || []
@@ -604,7 +601,6 @@ Component({
       Object.keys(submitData).forEach(key => {
         if (
           submitData[key] === '' &&
-          key !== 'parrot_number' &&
           key !== 'ring_number' &&
           key !== 'photo_url' &&
           !(
