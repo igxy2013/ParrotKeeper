@@ -34,13 +34,14 @@ Page({
     
     // 繁殖状态选项
     breedingStatusOptions: ['配对中', '筑巢中', '产蛋中', '孵化中', '育雏中', '已完成']
+  ,
+    canViewRecords: true
   },
 
   onLoad(options) {
     this.checkLoginStatus()
     try {
-      const userInfo = app.globalData.userInfo || {}
-      const tier = String(userInfo.subscription_tier || '').toLowerCase()
+      const tier = String(app.getEffectiveTier() || '').toLowerCase()
       const isPro = tier === 'pro' || tier === 'team'
       if (!isPro) {
         wx.showModal({
@@ -63,6 +64,30 @@ Page({
   onShow() {
     this.checkLoginStatus()
     if (this.data.isLogin) {
+      try {
+        const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+        if (mode === 'team') {
+          (async () => {
+            try {
+              const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+              const teamId = cur && cur.success && cur.data && cur.data.id
+              const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+              if (teamId && userId) {
+                const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+                if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+                  const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+                  const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+                  const canView = !!groupId
+                  this.setData({ canViewRecords: canView })
+                  if (!canView) { this.setData({ breedingRecords: [], filteredRecords: [], virtualDisplayRecords: [] }); return }
+                }
+              }
+            } catch(_) { this.setData({ canViewRecords: false }); return }
+          })()
+        } else {
+          this.setData({ canViewRecords: true })
+        }
+      } catch(_) {}
       this.loadParrotOptions()
       this.loadBreedingRecords()
     }
@@ -281,16 +306,32 @@ Page({
   },
 
   // 显示添加表单
-  showAddForm() {
+  async showAddForm() {
     if (!this.data.isLogin) {
       app.showError('请先登录后使用此功能')
       return
     }
-    
-    // 导航到添加繁殖记录页面
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=breeding'
-    })
+
+    const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+    if (mode === 'team') {
+      const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+      if (!hasOp) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+      try {
+        const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+        const teamId = cur && cur.success && cur.data && cur.data.id
+        const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+        if (teamId && userId) {
+          const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+          if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+            const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+            const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+            if (!groupId) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+          }
+        }
+      } catch (_) { wx.showToast({ title: '权限校验失败，请稍后重试', icon: 'none', duration: 3000 }) ; return }
+    }
+
+    wx.navigateTo({ url: '/pages/records/add-record/add-record?type=breeding' })
   },
 
   // 查看记录详情（跳转统一详情页）

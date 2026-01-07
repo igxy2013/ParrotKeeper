@@ -38,6 +38,7 @@ class RedemptionCode(db.Model):
     code = db.Column(db.String(32), unique=True, nullable=False)
     # 类型：pro_monthly, pro_yearly, pro_lifetime
     tier = db.Column(db.Enum('pro', 'team'), default='pro', nullable=False)
+    team_level = db.Column(db.Enum('basic', 'advanced'), nullable=True)  # 团队版细分：基础版/高级版
     duration_days = db.Column(db.Integer, nullable=False) # 30, 365, 36500(lifetime)
     status = db.Column(db.Enum('active', 'used', 'expired'), default='active')
     
@@ -152,6 +153,7 @@ class Parrot(db.Model):
     notes = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    group_id = db.Column(db.Integer, nullable=True)  # 团队分组标识：NULL表示未分组
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -190,6 +192,7 @@ class FeedingRecord(db.Model):
     image_urls = db.Column(db.Text)  # JSON 数组，记录照片URL列表
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    group_id = db.Column(db.Integer, nullable=True)  # 团队分组标识：NULL表示未分组
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 关系
@@ -216,6 +219,7 @@ class HealthRecord(db.Model):
     next_checkup_date = db.Column(db.Date)
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    group_id = db.Column(db.Integer, nullable=True)  # 团队分组标识：NULL表示未分组
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 关系
@@ -233,6 +237,7 @@ class CleaningRecord(db.Model):
     image_urls = db.Column(db.Text)  # JSON 数组，记录照片URL列表
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    group_id = db.Column(db.Integer, nullable=True)  # 团队分组标识：NULL表示未分组
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 关系
@@ -254,6 +259,7 @@ class BreedingRecord(db.Model):
     image_urls = db.Column(db.Text)  # JSON 数组，记录照片URL列表
     created_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 记录创建者
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    group_id = db.Column(db.Integer, nullable=True)  # 团队分组标识：NULL表示未分组
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -373,6 +379,7 @@ class Expense(db.Model):
     description = db.Column(db.String(255))
     expense_date = db.Column(db.Date, default=date.today)
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    group_id = db.Column(db.Integer, nullable=True)  # 团队分组标识：NULL表示未分组
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Income(db.Model):
@@ -386,6 +393,7 @@ class Income(db.Model):
     description = db.Column(db.String(255))
     income_date = db.Column(db.Date, default=date.today)
     team_id = db.Column(db.Integer, nullable=True)  # 团队标识：NULL表示个人数据，具体值表示团队数据
+    group_id = db.Column(db.Integer, nullable=True)  # 团队分组标识：NULL表示未分组
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Achievement(db.Model):

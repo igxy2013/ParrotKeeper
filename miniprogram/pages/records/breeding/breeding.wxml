@@ -19,7 +19,7 @@
     </view>
 
     <!-- 状态筛选（与健康页面的过滤器保持一致） -->
-    <view wx:if="{{isLogin}}" class="filter-section">
+    <view wx:if="{{isLogin && canViewRecords}}" class="filter-section">
       <scroll-view class="chip-scroll" scroll-x="true">
         <view 
           class="chip {{selectedStatus === item ? 'active' : ''}}"
@@ -34,7 +34,7 @@
     </view>
 
     <!-- 概览统计（与喂食页面统计卡片设计对齐） -->
-    <view wx:if="{{isLogin}}" class="summary-card rounded-3xl p-6 shadow-xl">
+    <view wx:if="{{isLogin && canViewRecords}}" class="summary-card rounded-3xl p-6 shadow-xl">
       <text class="summary-title text-lg font-bold">繁殖统计</text>
       <view class="summary-grid summary-grid-2">
         <view class="summary-metric">
@@ -50,7 +50,7 @@
 
     <!-- 繁殖记录列表 -->
     <!-- 搜索与日期筛选（与清洁页一致） -->
-    <view wx:if="{{isLogin}}" class="search-filter">
+    <view wx:if="{{isLogin && canViewRecords}}" class="search-filter">
       <input class="search-input" placeholder="搜索（配对名/状态/备注）" value="{{searchQuery}}" bindinput="onSearchInput" confirm-type="search" />
       <view class="date-filter-row">
         <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
@@ -63,7 +63,7 @@
         <view class="clear-date" bindtap="clearDateFilter">清除</view>
       </view>
     </view>
-    <view wx:if="{{isLogin}}" class="records-section">
+    <view wx:if="{{isLogin && canViewRecords}}" class="records-section">
       <scroll-view class="records-scroll" scroll-y="true" lower-threshold="50" bindscrolltolower="onListScrollLower">
       <view class="record-list" wx:if="{{filteredRecords.length > 0}}">
         <view 

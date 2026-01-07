@@ -8,6 +8,7 @@ Page({
     createCount: 1,
     createDuration: 30,
     createTier: 'pro',
+    createTeamLevel: 'basic',
     creating: false,
     statusFilter: 'all'
   },
@@ -37,9 +38,12 @@ Page({
         const items = (data.items || []).map(it => {
           const t = String((it && (it.tier || it.membership_tier || it.subscription_tier || '')) || '').toLowerCase()
           const _tier = (t === 'pro' || t === 'team') ? t : ''
+          const lvl = String(it && it.team_level || '').toLowerCase()
+          const _team_label = _tier === 'team' ? (lvl === 'advanced' ? '团队高级版' : (lvl === 'basic' ? '团队基础版' : '团队版')) : '专业版'
           return {
             ...it,
             _tier,
+            _team_label,
             _used_at: this.formatTime(it.used_at),
             _created_at: this.formatTime(it.created_at)
           }
@@ -80,6 +84,11 @@ Page({
     if (!tier) return
     this.setData({ createTier: tier })
   },
+  onTeamLevelTap(e) {
+    const lv = e.currentTarget.dataset.level
+    if (!lv) return
+    this.setData({ createTeamLevel: lv })
+  },
 
   onPresetDurationTap(e) {
     const d = parseInt(e.currentTarget.dataset.duration, 10)
@@ -98,7 +107,8 @@ Page({
         data: { 
             count: this.data.createCount,
             duration_days: this.data.createDuration,
-            tier: this.data.createTier
+            tier: this.data.createTier,
+            team_level: this.data.createTier === 'team' ? this.data.createTeamLevel : undefined
         }
       })
       if (res && res.success) {

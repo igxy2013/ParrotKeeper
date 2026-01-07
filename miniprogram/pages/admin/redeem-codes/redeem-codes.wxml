@@ -32,6 +32,13 @@
             <view class="tier-btn {{createTier === 'team' ? 'active' : ''}}" data-tier="team" bindtap="onTierTap">团队会员</view>
           </view>
         </view>
+        <view class="form-row" wx:if="{{createTier === 'team'}}">
+          <view class="label">团队版本</view>
+          <view class="tier-switch">
+            <view class="tier-btn {{createTeamLevel === 'basic' ? 'active' : ''}}" data-level="basic" bindtap="onTeamLevelTap">基础版</view>
+            <view class="tier-btn {{createTeamLevel === 'advanced' ? 'active' : ''}}" data-level="advanced" bindtap="onTeamLevelTap">高级版</view>
+          </view>
+        </view>
         <view class="form-actions">
            <button class="btn-primary" bindtap="createCodes" loading="{{creating}}" disabled="{{creating}}">生成兑换码</button>
         </view>
@@ -60,7 +67,7 @@
                     <view class="code-line">
                       <text class="code-text">{{item.code}}</text>
                       <view class="tier-tag {{item._tier === 'team' ? 'team' : (item._tier === 'pro' ? 'pro' : '')}}" wx:if="{{item._tier}}">
-                        {{item._tier === 'team' ? '团队版' : '专业版'}}
+                        {{item._team_label}}
                       </view>
                       <view class="status-tag {{item.status === 'active' ? 'active' : 'inactive'}}">
                         {{item.status === 'active' ? '未使用' : (item.status === 'used' ? '已使用' : item.status)}}

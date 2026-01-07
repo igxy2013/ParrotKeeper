@@ -13,7 +13,8 @@ Page({
     tierOptions: ['全部会员', '专业版 Pro', '团队版 Team'],
     tierValues: ['all', 'pro', 'team'],
     tierIndex: 0,
-    canWriteAdminUsers: false
+    canWriteAdminUsers: false,
+    reqSeq: 0
   },
 
   onShow() { this.initAccessAndLoad() },
@@ -39,6 +40,7 @@ Page({
   },
 
   async reloadList(reset) {
+    const seq = (this.data.reqSeq || 0) + 1
     const page = reset ? 1 : this.data.page
     const perPage = this.data.perPage
     const params = []
@@ -48,9 +50,10 @@ Page({
     params.push('page=' + page)
     params.push('per_page=' + perPage)
     const qs = params.length ? ('?' + params.join('&')) : ''
-    this.setData({ listLoading: true })
+    this.setData({ listLoading: true, reqSeq: seq, ...(reset ? { items: [], hasMore: false, page: 1 } : {}) })
     try {
       const res = await app.request({ url: '/api/admin/users' + qs, method: 'GET' })
+      if (this.data.reqSeq !== seq) { return }
       if (res && res.success && res.data) {
         const items = Array.isArray(res.data.items) ? res.data.items : []
         const tierValue = this.data.tierValues[this.data.tierIndex]
@@ -58,33 +61,42 @@ Page({
           const tier = this._getTier(it)
           const expire = this._getExpire(it)
           const expired = this._isExpired(expire)
-          return Object.assign({}, it, { _tier: tier, _expire: expire, _expired: expired })
+          const created = this._getCreatedAt(it)
+          const teamLevel = this._getTeamLevel(it)
+          const teamLevelText = teamLevel === 'advanced' ? '团队-高级版' : (teamLevel === 'basic' ? '团队-基础版' : '团队版')
+          return Object.assign({}, it, { _tier: tier, _expire: expire, _expired: expired, _created: created, _team_level: teamLevel, _team_level_text: teamLevelText })
         })
 
         // 将当前登录用户的会员信息注入列表（用于后端未返回会员字段的情况）
-        try {
-          const curUser = (app.globalData && app.globalData.userInfo) || wx.getStorageSync('userInfo') || {}
-          const curTier = this._getTier(curUser)
-          const curExpire = this._getExpire(curUser)
-          const curOpenId = String(curUser.openid || '')
-          const curId = curUser.id
-          if (curTier || curExpire) {
-            const idx = processed.findIndex(u => (String(u.openid || '') === curOpenId) || (curId && u.id === curId))
-            if (idx >= 0) {
-              processed[idx] = Object.assign({}, processed[idx], { _tier: curTier || processed[idx]._tier, _expire: curExpire || processed[idx]._expire })
-            } else {
-              processed.unshift({
-                id: curId || curOpenId,
-                openid: curOpenId,
-                nickname: curUser.nickname || curUser.nickName || '未命名',
-                created_at: curUser.created_at || curUser.registered_at || '',
-                _tier: curTier,
-                _expire: curExpire,
-                _expired: this._isExpired(curExpire)
-              })
+        // 仅在第一页注入当前登录用户，避免跨页重复
+        if (page === 1) {
+          try {
+            const curUser = (app.globalData && app.globalData.userInfo) || wx.getStorageSync('userInfo') || {}
+            const curTier = this._getTier(curUser)
+            const curExpire = this._getExpire(curUser)
+            const curOpenId = String(curUser.openid || '')
+            const curId = curUser.id
+            if (curTier || curExpire) {
+              const idx = processed.findIndex(u => (String(u.openid || '') === curOpenId) || (curId && u.id === curId))
+              if (idx >= 0) {
+                processed[idx] = Object.assign({}, processed[idx], { _tier: curTier || processed[idx]._tier, _expire: curExpire || processed[idx]._expire })
+              } else {
+                processed.unshift({
+                  id: curId || curOpenId,
+                  openid: curOpenId,
+                  nickname: curUser.nickname || curUser.nickName || '未命名',
+                  created_at: curUser.created_at || curUser.registered_at || '',
+                  _tier: curTier,
+                  _expire: curExpire,
+                  _expired: this._isExpired(curExpire),
+                  _created: this._getCreatedAt(curUser),
+                  _team_level: this._getTeamLevel(curUser),
+                  _team_level_text: (this._getTeamLevel(curUser) === 'advanced' ? '团队-高级版' : (this._getTeamLevel(curUser) === 'basic' ? '团队-基础版' : '团队版'))
+                })
+              }
             }
-          }
-        } catch (_) {}
+          } catch (_) {}
+        }
 
         const filtered = processed.filter(it => {
           const hasMembership = !!(it._tier || it._expire)
@@ -94,8 +106,9 @@ Page({
         })
         const total = res.data.pagination && typeof res.data.pagination.total === 'number' ? res.data.pagination.total : filtered.length
         const merged = reset ? filtered : (this.data.items.concat(filtered))
-        const hasMore = merged.length < total
-        this.setData({ items: merged, total, page: page, hasMore })
+        const deduped = this._uniqueByIdOrOpenId(merged)
+        const hasMore = deduped.length < total
+        this.setData({ items: deduped, total, page: page, hasMore })
       }
     } catch (_) {
     } finally {
@@ -120,6 +133,14 @@ Page({
     } catch (_) { return '' }
   },
 
+  _getTeamLevel(u) {
+    try {
+      const lv = String((u && (u.team_subscription_level || u.membership_team_level || u.subscription_level || '')) || '').toLowerCase()
+      if (lv === 'basic' || lv === 'advanced') return lv
+      return ''
+    } catch (_) { return '' }
+  },
+
   _getExpire(u) {
     try {
       const e = (u && (u.subscription_expire_at || u.expire_at || u.membership_expire_at || '')) || ''
@@ -135,6 +156,34 @@ Page({
       if (isNaN(d.getTime())) return false
       return Date.now() > d.getTime()
     } catch (_) { return false }
+  },
+
+  _getCreatedAt(u) {
+    try {
+      const c = (u && (u.created_at || u.registered_at || u.create_time || '')) || ''
+      return c
+    } catch (_) { return '' }
+  },
+
+  _uniqueByIdOrOpenId(arr) {
+    try {
+      const seen = new Set()
+      const out = []
+      for (const it of (arr || [])) {
+        const base = String(it.id || it.openid || it.user_id || '').trim()
+        let key = base
+        if (!key) {
+          const name = String(it.nickname || it.username || '').trim()
+          const created = String(it._created || it.created_at || '').trim()
+          key = name && created ? (name + '|' + created) : ''
+        }
+        if (!key) { out.push(it); continue }
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push(it)
+      }
+      return out
+    } catch (_) { return arr || [] }
   },
 
   formatDate(t) {

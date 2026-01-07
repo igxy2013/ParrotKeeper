@@ -445,6 +445,15 @@ def create_expense():
         print(f"[DEBUG] 准备创建支出记录 - 用户ID: {user.id}, 类别: {data['category']}, 金额: {amount}")
         
         # 创建支出记录
+        member_group_id = None
+        if getattr(user, 'user_mode', 'personal') == 'team' and getattr(user, 'current_team_id', None):
+            try:
+                from team_models import TeamMember
+                mm = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+                member_group_id = getattr(mm, 'group_id', None) if mm else None
+            except Exception:
+                member_group_id = None
+
         expense = Expense(
             user_id=user.id,
             parrot_id=parrot_id,
@@ -452,7 +461,8 @@ def create_expense():
             amount=amount,
             description=data.get('description', ''),
             expense_date=expense_date,
-            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
+            team_id=user.current_team_id if user.user_mode == 'team' else None,
+            group_id=member_group_id
         )
         
         print(f"[DEBUG] 支出记录对象创建成功，准备保存到数据库")
@@ -807,6 +817,15 @@ def create_income():
         print(f"[DEBUG] 准备创建收入记录 - 用户ID: {user.id}, 类别: {data['category']}, 金额: {amount}")
         
         # 创建收入记录
+        member_group_id = None
+        if getattr(user, 'user_mode', 'personal') == 'team' and getattr(user, 'current_team_id', None):
+            try:
+                from team_models import TeamMember
+                mm = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+                member_group_id = getattr(mm, 'group_id', None) if mm else None
+            except Exception:
+                member_group_id = None
+
         income = Income(
             user_id=user.id,
             parrot_id=parrot_id,
@@ -814,7 +833,8 @@ def create_income():
             amount=amount,
             description=data.get('description', ''),
             income_date=income_date,
-            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
+            team_id=user.current_team_id if user.user_mode == 'team' else None,
+            group_id=member_group_id
         )
         
         print(f"[DEBUG] 收入记录对象创建成功，准备保存到数据库")

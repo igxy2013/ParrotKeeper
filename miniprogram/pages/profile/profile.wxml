@@ -26,10 +26,10 @@
           <image class="edit-icon-img" src="{{iconPaths.editLine_white}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine_white" />
         </view>
       </view>
-      <view class="member-tag {{isPro ? 'pro' : 'free'}}" bindtap="navigateToMemberCenter">
+      <view class="member-tag {{isPro ? tierClass : 'free'}}" bindtap="navigateToMemberCenter">
         <image class="member-icon" src="{{
-          userInfo.subscription_tier === 'team' ? '/images/remix/group-line-gold.png' : (
-          userInfo.subscription_tier === 'pro' ? '/images/remix/trophy-line-orange.png' : '/images/remix/user-line.svg')
+          tierClass === 'team' ? '/images/remix/group-line-gold.png' : (
+          tierClass === 'pro' ? '/images/remix/trophy-line-orange.png' : '/images/remix/user-line.svg')
         }}" mode="aspectFit" />
         <text>{{ isPro ? membershipName : '普通用户' }}</text>
       </view>
@@ -64,7 +64,7 @@
     </view>
     
     <!-- 统计信息网格 -->
-    <view class="stats-grid" wx:if="{{isLogin}}">
+    <view class="stats-grid" wx:if="{{isLogin && canViewStats}}">
       <view class="stat-card red">
         <view class="stat-icon stat-icon-red">
           <image class="stat-icon-img" src="{{iconPaths.statHeartRed}}" mode="widthFix" binderror="onProfileIconError" data-key="statHeartRed" />
@@ -162,47 +162,13 @@
             <text class="team-stat-value invite-code-empty" wx:else>暂无</text>
           </view>
         </view>
+        <view class="info-item" wx:if="{{userGroupName}}">
+          <text class="info-label">所属分组</text>
+          <text class="info-value">{{userGroupName}}</text>
+        </view>
       </view>
 
-      <!-- 成员列表区域 -->
-      <view class="members-section-card">
-        <view class="members-section-header">
-          <text class="members-section-title">成员列表</text>
-          <text class="members-count" wx:if="{{teamInfo.members && teamInfo.members.length > 0}}">{{teamInfo.members.length}}人</text>
-        </view>
-        <block wx:if="{{teamInfo.members && teamInfo.members.length > 0}}">
-          <view class="members-list">
-            <block wx:for="{{teamInfo.members}}" wx:key="id">
-              <view class="member-card">
-                <view class="member-card-left">
-                  <image class="member-avatar-large" src="{{item.avatar_url || '/images/parrot-avatar-green.svg'}}" mode="aspectFill" />
-                  <view class="member-info-group">
-                    <view class="member-name-row">
-                      <text class="member-name-large">{{item.nickname}}</text>
-                      <view class="member-role-badge-small {{item.role === 'owner' ? 'role-owner' : (item.role === 'admin' ? 'role-admin' : 'role-member')}}">
-                        <text class="member-role-text-small">{{item.role === 'owner' ? '所有者' : (item.role === 'admin' ? '管理员' : '成员')}}</text>
-                      </view>
-                    </view>
-                  </view>
-                </view>
-                <view class="member-actions-group" wx:if="{{isTeamAdmin && item.role !== 'owner'}}">
-                  <button class="icon-btn icon-edit small" data-user-id="{{item.id}}" bindtap="changeMemberRole">
-                    <image class="icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
-                  </button>
-                  <button class="icon-btn icon-delete small" data-user-id="{{item.id}}" bindtap="removeMember">
-                    <image class="icon-img" src="/images/remix/delete-bin-line-white.png" mode="aspectFit" />
-                  </button>
-                </view>
-              </view>
-            </block>
-          </view>
-        </block>
-        <block wx:else>
-          <view class="empty-members">
-            <text class="empty-members-text">暂无成员</text>
-          </view>
-        </block>
-      </view>
+      
     </view>
     <view class="modal-footer team-modal-footer">
       <button class="btn btn-primary btn-modal" bindtap="copyInviteCode" disabled="{{!(teamInfo && teamInfo.invite_code)}}">

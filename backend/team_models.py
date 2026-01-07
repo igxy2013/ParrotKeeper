@@ -13,6 +13,7 @@ class Team(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 团队创建者
     avatar_url = db.Column(db.String(255))  # 团队头像URL
     is_active = db.Column(db.Boolean, default=True)  # 团队是否激活
+    subscription_level = db.Column(db.Enum('basic', 'advanced'), default='basic')  # 团队会员版本：基础版/高级版
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -28,6 +29,7 @@ class TeamMember(db.Model):
     team_id = db.Column(db.Integer, db.ForeignKey('teams.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     role = db.Column(db.Enum('owner', 'admin', 'member'), default='member')  # 角色
+    group_id = db.Column(db.Integer, nullable=True)  # 成员所属分组（同团队内）
     permissions = db.Column(db.JSON)  # 权限配置 JSON
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
@@ -57,6 +59,20 @@ class TeamParrot(db.Model):
     
     # 唯一约束：一个鹦鹉在一个团队中只能被分享一次
     __table_args__ = (db.UniqueConstraint('team_id', 'parrot_id', name='unique_team_parrot'),)
+
+class TeamGroup(db.Model):
+    """团队分组表"""
+    __tablename__ = 'team_groups'
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey('teams.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255))
+    permission_scope = db.Column(db.Enum('group', 'team'), default='group')
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    team = db.relationship('Team')
 
 class TeamInvitation(db.Model):
     """团队邀请表"""

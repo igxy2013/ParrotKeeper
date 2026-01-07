@@ -1,5 +1,6 @@
 // app.js
 const { notificationManager } = require('./utils/notification.js')
+const cache = require('./utils/cache')
 
 App({
   globalData: {
@@ -77,6 +78,8 @@ App({
     this.globalData.needRefresh = true
     try { wx.setStorageSync('userMode', mode) } catch(_) {}
     try { this.clearDataCache() } catch (_) {}
+    try { cache.clear('index_overview') } catch (_) {}
+    try { cache.clear('stats_overview') } catch (_) {}
 
     // 登录状态下通知后端更新用户模式（便于持久化）
     if (this.globalData.openid) {
@@ -959,5 +962,28 @@ App({
     // 超级管理员始终拥有操作权限
     if (this.isSuperAdmin()) return true
     return this.isTeamAdmin()
+  }
+  ,
+  getEffectiveTier() {
+    try {
+      const userInfo = this.globalData.userInfo || {}
+      const t = String(userInfo.effective_tier || userInfo.subscription_tier || '').toLowerCase()
+      if (t === 'team' || t === 'pro') return t
+      return 'free'
+    } catch (_) { return 'free' }
+  }
+  ,
+  getTeamLevel() {
+    try {
+      // 优先从当前团队接口数据读取
+      const cur = this.globalData.currentTeam || wx.getStorageSync('currentTeam') || {}
+      const lv = String(cur.subscription_level || '').toLowerCase()
+      if (lv === 'basic' || lv === 'advanced') return lv
+      // 其次从用户信息的衍生字段读取
+      const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+      const l2 = String(userInfo.team_subscription_level || '').toLowerCase()
+      if (l2 === 'basic' || l2 === 'advanced') return l2
+      return 'basic'
+    } catch (_) { return 'basic' }
   }
 })

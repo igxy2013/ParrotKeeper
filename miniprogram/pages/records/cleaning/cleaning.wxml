@@ -8,7 +8,7 @@
   </app-header>
 
   <!-- Content -->
-  <scroll-view class="content" scroll-y="true" bindscrolltolower="onListScrollLower" lower-threshold="50">
+  <scroll-view wx:if="{{canViewRecords}}" class="content" scroll-y="true" bindscrolltolower="onListScrollLower" lower-threshold="50">
     <!-- Filter Chips (aligned with feeding page design) -->
     <view class="filter-section">
       <scroll-view scroll-x="true" class="chip-scroll">

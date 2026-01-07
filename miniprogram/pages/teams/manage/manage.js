@@ -11,7 +11,21 @@ Page({
     currentRoleDisplay: '',
     editTeamName: '',
     editTeamDesc: '',
-    showEditModal: false
+    showEditModal: false,
+    groups: [],
+    showGroupEdit: false,
+    groupEditId: null,
+    groupEditName: '',
+    groupEditDesc: '',
+    groupEditPermission: 'group',
+    permissionOptions: ['查看/编辑本组所有信息', '查看/编辑团队所有信息'],
+    permissionIndex: 0,
+    // 分组成员选择
+    selectedGroupMembers: [],
+    showMemberDropdown: false,
+    groupMemberSearchKeyword: '',
+    filteredMemberOptions: [],
+    originalGroupMemberIds: []
   },
 
   onLoad() {
@@ -52,6 +66,8 @@ Page({
             editTeamName: d.name || this.data.editTeamName,
             editTeamDesc: d.description || this.data.editTeamDesc
           })
+          await this.loadGroups()
+          await this.loadMembersWithGroup()
         }
       }
     } catch (err) {
@@ -60,6 +76,194 @@ Page({
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  async loadMembersWithGroup() {
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    if (!teamId) return
+    try {
+      const res = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+      if (res && res.success) {
+        const members = (res.data || []).map(m => ({
+          ...m,
+          role_display: m.role === 'owner' ? '创建者' : (m.role === 'admin' ? '管理员' : '成员')
+        }))
+        this.setData({ members })
+      }
+    } catch (e) {
+      console.warn('加载成员(含分组)失败:', e)
+    }
+  },
+
+  async loadGroups() {
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    if (!teamId) return
+    try {
+      const res = await app.request({ url: `/api/teams/${teamId}/groups`, method: 'GET' })
+      if (res && res.success) {
+        this.setData({ groups: res.data || [] })
+      }
+    } catch (e) {
+      console.warn('加载分组失败:', e)
+    }
+  },
+
+  showCreateGroup() {
+    if (!this.data.isTeamOwner && !this.data.isTeamAdmin) return wx.showToast({ title: '仅创建者或管理员可操作', icon: 'none' })
+    this.setData({ showGroupEdit: true, groupEditId: null, groupEditName: '', groupEditDesc: '', groupEditPermission: 'group', permissionIndex: 0, selectedGroupMembers: [], originalGroupMemberIds: [], groupMemberSearchKeyword: '', filteredMemberOptions: [] })
+  },
+
+  showEditGroup(e) {
+    if (!this.data.isTeamOwner && !this.data.isTeamAdmin) return
+    const gid = e.currentTarget.dataset.groupId
+    const g = (this.data.groups || []).find(x => String(x.id) === String(gid))
+    if (!g) return
+    const scope = g.permission_scope || 'group'
+    // 预填该分组已有成员
+    const selected = (this.data.members || []).filter(m => m.group_id && String(m.group_id) === String(g.id))
+    this.setData({
+      showGroupEdit: true,
+      groupEditId: g.id,
+      groupEditName: g.name || '',
+      groupEditDesc: g.description || '',
+      groupEditPermission: scope,
+      permissionIndex: scope === 'team' ? 1 : 0,
+      selectedGroupMembers: selected,
+      originalGroupMemberIds: selected.map(x => x.user_id),
+      groupMemberSearchKeyword: '',
+      filteredMemberOptions: []
+    })
+  },
+
+  hideGroupEdit() { this.setData({ showGroupEdit: false }) },
+  onGroupNameInput(e) { this.setData({ groupEditName: (e.detail.value || '').trim() }) },
+  onGroupDescInput(e) { this.setData({ groupEditDesc: e.detail.value || '' }) },
+  onPermissionChange(e) {
+    const idx = Number(e.detail.value)
+    const scope = idx === 1 ? 'team' : 'group'
+    this.setData({ permissionIndex: idx, groupEditPermission: scope })
+  },
+
+  // 分组成员选择下拉
+  toggleMemberDropdown() {
+    // 计算可选成员：未分组成员（或编辑当前分组时允许其已在本组的成员在已选列表展示，不在下拉）
+    const base = (this.data.members || []).filter(m => !m.group_id)
+    const selectedIds = (this.data.selectedGroupMembers || []).map(x => x.user_id)
+    const list = base.map(m => ({ ...m, selected: selectedIds.includes(m.user_id) }))
+    this.setData({ showMemberDropdown: !this.data.showMemberDropdown, filteredMemberOptions: list, groupMemberSearchKeyword: '' })
+  },
+
+  onMemberSearchInput(e) {
+    const keyword = (e.detail.value || '').trim()
+    const base = (this.data.members || []).filter(m => !m.group_id)
+    const selectedIds = (this.data.selectedGroupMembers || []).map(x => x.user_id)
+    const filtered = base
+      .filter(m => !keyword || String(m.nickname || '').includes(keyword))
+      .map(m => ({ ...m, selected: selectedIds.includes(m.user_id) }))
+    this.setData({ groupMemberSearchKeyword: keyword, filteredMemberOptions: filtered })
+  },
+
+  clearMemberSearch() {
+    const base = (this.data.members || []).filter(m => !m.group_id)
+    const selectedIds = (this.data.selectedGroupMembers || []).map(x => x.user_id)
+    const list = base.map(m => ({ ...m, selected: selectedIds.includes(m.user_id) }))
+    this.setData({ groupMemberSearchKeyword: '', filteredMemberOptions: list })
+  },
+
+  addMemberFromDropdown(e) {
+    const uid = e.currentTarget.dataset.userId
+    const exist = (this.data.selectedGroupMembers || []).some(x => String(x.user_id) === String(uid))
+    if (exist) return
+    const m = (this.data.members || []).find(x => String(x.user_id) === String(uid))
+    if (!m) return
+    const sel = (this.data.selectedGroupMembers || []).concat([m])
+    this.setData({ selectedGroupMembers: sel, showMemberDropdown: false, groupMemberSearchKeyword: '' })
+  },
+
+  removeSelectedMember(e) {
+    const uid = e.currentTarget.dataset.userId
+    const sel = (this.data.selectedGroupMembers || []).filter(x => String(x.user_id) !== String(uid))
+    this.setData({ selectedGroupMembers: sel })
+  },
+
+  // 不在 WXML 中直接调用函数，selected 状态已在 filteredMemberOptions 中预置
+
+  async submitGroupEdit() {
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    if (!teamId) return wx.showToast({ title: '无法识别当前团队', icon: 'none' })
+    const name = this.data.groupEditName
+    const description = this.data.groupEditDesc
+    const permission_scope = this.data.groupEditPermission
+    if (!name) return wx.showToast({ title: '名称不能为空', icon: 'none' })
+    try {
+      let res
+      if (this.data.groupEditId) {
+        res = await app.request({ url: `/api/teams/${teamId}/groups/${this.data.groupEditId}`, method: 'PUT', data: { name, description, permission_scope } })
+      } else {
+        res = await app.request({ url: `/api/teams/${teamId}/groups`, method: 'POST', data: { name, description, permission_scope } })
+      }
+      if (res && res.success) {
+        const newGroupId = this.data.groupEditId || (res.data && res.data.id)
+        // 保存成员分配：仅将选中成员分配到该组；若编辑模式，移除未选成员
+        await this.syncGroupMembers(newGroupId)
+        wx.showToast({ title: '已保存', icon: 'none' })
+        this.setData({ showGroupEdit: false })
+        await this.loadGroups()
+        await this.loadMembersWithGroup()
+      } else {
+        wx.showToast({ title: (res && res.message) || '保存失败', icon: 'none' })
+      }
+    } catch (e) {
+      wx.showToast({ title: '保存失败', icon: 'none' })
+    }
+  },
+
+  async syncGroupMembers(groupId) {
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    if (!teamId || !groupId) return
+    const selectedIds = (this.data.selectedGroupMembers || []).map(x => x.user_id)
+    // 新增：将选中成员分配到该组（仅处理未分组成员）
+    for (const uid of selectedIds) {
+      try {
+        await app.request({ url: `/api/teams/${teamId}/members/${uid}/group`, method: 'PUT', data: { group_id: groupId } })
+      } catch (e) { console.warn('分配成员失败', uid, e) }
+    }
+    // 编辑模式：移除原有但未选中的成员（置为未分组）
+    if (this.data.groupEditId) {
+      const toRemove = (this.data.originalGroupMemberIds || []).filter(uid => !selectedIds.includes(uid))
+      for (const uid of toRemove) {
+        try {
+          await app.request({ url: `/api/teams/${teamId}/members/${uid}/group`, method: 'PUT', data: { group_id: null } })
+        } catch (e) { console.warn('移除成员失败', uid, e) }
+      }
+    }
+  },
+
+  async deleteGroup(e) {
+    if (!this.data.isTeamOwner && !this.data.isTeamAdmin) return
+    const gid = e.currentTarget.dataset.groupId
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    if (!gid || !teamId) return
+    wx.showModal({
+      title: '删除分组',
+      content: '确认删除该分组？',
+      confirmColor: '#ef4444',
+      success: async (d) => {
+        if (!d.confirm) return
+        try {
+          const res = await app.request({ url: `/api/teams/${teamId}/groups/${gid}`, method: 'DELETE' })
+          if (res && res.success) {
+            wx.showToast({ title: '已删除', icon: 'none' })
+            await this.loadGroups()
+            await this.init()
+          } else {
+            wx.showToast({ title: (res && res.message) || '操作失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        }
+      }
+    })
   },
 
   // 显示编辑弹窗
@@ -157,6 +361,31 @@ Page({
     })
   },
 
+  async assignMemberGroup(e) {
+    if (!this.data.isTeamOwner && !this.data.isTeamAdmin) return
+    const userId = e.currentTarget.dataset.userId
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    const groupOptions = ['未分组'].concat((this.data.groups || []).map(g => g.name))
+    wx.showActionSheet({
+      itemList: groupOptions,
+      success: async (res) => {
+        const idx = res.tapIndex
+        const gid = idx === 0 ? null : (this.data.groups[idx - 1] && this.data.groups[idx - 1].id)
+        try {
+          const r = await app.request({ url: `/api/teams/${teamId}/members/${userId}/group`, method: 'PUT', data: { group_id: gid } })
+          if (r && r.success) {
+            wx.showToast({ title: '分组已更新', icon: 'none' })
+            await this.init()
+          } else {
+            wx.showToast({ title: (r && r.message) || '更新失败', icon: 'none' })
+          }
+        } catch (err) {
+          wx.showToast({ title: '更新失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
   async removeMember(e) {
     if (!this.data.isTeamOwner) return
     const userId = e.currentTarget.dataset.userId
@@ -238,4 +467,5 @@ Page({
       }
     })
   }
+  , stopPropagation() {}
 })

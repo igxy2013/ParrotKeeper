@@ -18,6 +18,7 @@ def create_codes():
         data = request.get_json() or {}
         count = int(data.get('count', 1))
         tier = data.get('tier', 'pro')
+        team_level = (data.get('team_level') or '').strip().lower() if tier == 'team' else None
         duration_days = int(data.get('duration_days', 30))
         
         if count < 1 or count > 100:
@@ -33,6 +34,7 @@ def create_codes():
             new_code = RedemptionCode(
                 code=code_str,
                 tier=tier,
+                team_level=(team_level if team_level in ['basic', 'advanced'] else None),
                 duration_days=duration_days,
                 status='active',
                 created_by_user_id=user.id
@@ -77,6 +79,7 @@ def list_codes():
                 'id': item.id,
                 'code': item.code,
                 'tier': item.tier,
+                'team_level': item.team_level,
                 'duration_days': item.duration_days,
                 'status': item.status,
                 'created_at': item.created_at.isoformat() if item.created_at else None,
@@ -126,8 +129,49 @@ def redeem_code():
             new_expire_at = now + timedelta(days=code_record.duration_days)
             # 如果是不同等级，可能需要考虑降级/升级策略，这里简化为直接覆盖为新等级
             user.subscription_tier = code_record.tier
-            
+        
         user.subscription_expire_at = new_expire_at
+        if code_record.tier == 'team':
+            try:
+                if getattr(user, 'user_mode', None) != 'team':
+                    user.user_mode = 'team'
+            except Exception:
+                pass
+            # 更新或创建团队，并设为当前团队
+            try:
+                from team_models import Team, TeamMember
+                import random, string
+                def _gen_invite():
+                    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+                target_team_id = getattr(user, 'current_team_id', None)
+                team_obj = None
+                if target_team_id:
+                    team_obj = Team.query.get(target_team_id)
+                if not team_obj:
+                    team_obj = Team.query.filter_by(owner_id=user.id, is_active=True).first()
+                if not team_obj:
+                    # 创建一个团队作为载体
+                    team_obj = Team(
+                        name=(user.nickname or f"团队{user.id}"),
+                        description='通过兑换码创建的团队',
+                        invite_code=_gen_invite(),
+                        owner_id=user.id,
+                        is_active=True,
+                        subscription_level=(code_record.team_level if code_record.team_level in ['basic','advanced'] else 'basic')
+                    )
+                    db.session.add(team_obj)
+                    db.session.flush()
+                    # 建立所有者成员记录
+                    owner_member = TeamMember(team_id=team_obj.id, user_id=user.id, role='owner', is_active=True)
+                    db.session.add(owner_member)
+                else:
+                    # 更新团队订阅级别
+                    if code_record.team_level in ['basic', 'advanced']:
+                        team_obj.subscription_level = code_record.team_level
+                # 设为当前团队
+                user.current_team_id = team_obj.id
+            except Exception:
+                pass
         
         # 2. 更新兑换码状态
         code_record.status = 'used'
@@ -152,6 +196,7 @@ def redeem_code():
             'expire_at': user.subscription_expire_at.isoformat(),
             'duration_days': dd,
             'plan_label': plan_label,
+            'team_level': code_record.team_level,
             'message': f'成功兑换 {code_record.duration_days} 天 {code_record.tier.upper()} 会员'
         }, '兑换成功')
         

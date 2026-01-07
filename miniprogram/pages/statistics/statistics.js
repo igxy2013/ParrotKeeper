@@ -112,8 +112,41 @@ const cache = require('../../utils/cache')
   // 加载所有统计数据
   async loadAllStatistics() {
     this.setData({ loading: true })
-    
     try {
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+      if (mode === 'team' && !hasOp) {
+        try {
+          const cur = app.request ? await app.request({ url: '/api/teams/current', method: 'GET' }) : null
+          const teamId = cur && cur.success && cur.data && cur.data.id
+          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+          let noGroup = false
+          if (teamId && userId) {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+              noGroup = !groupId
+            }
+          }
+          if (noGroup) {
+            this.setData({
+              overview: {},
+              feedingTrends: [],
+              expenseAnalysis: [],
+              careFrequency: {},
+              speciesDistribution: [],
+              foodPreference: [],
+              weightSeries: [],
+              weightLegend: [],
+              selectedParrotId: null,
+              selectedParrotName: '',
+              activeWeightPoint: null
+            })
+            return
+          }
+        } catch (_) {}
+      }
       await Promise.all([
         this.loadOverview(),
         this.loadFeedingTrends(),
@@ -1070,9 +1103,7 @@ const cache = require('../../utils/cache')
         wx.hideLoading();
         
         if (res.data.success) {
-          // 后端更新成功，更新前端状态
-          app.globalData.userMode = newMode;
-          wx.setStorageSync('userMode', newMode);
+          app.setUserMode && app.setUserMode(newMode);
           
           // 更新页面数据
           that.setData({
@@ -1086,6 +1117,8 @@ const cache = require('../../utils/cache')
           });
           
           // 刷新数据
+          try { cache.clear('stats_overview') } catch (_) {}
+          try { cache.clear('index_overview') } catch (_) {}
           that.loadAllStatistics();
           
           console.log('模式切换成功:', newMode);

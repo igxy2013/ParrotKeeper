@@ -34,14 +34,17 @@
                   <view class="member-main">
                     <view class="line1">
                       <text class="nickname">{{item.nickname || item.username || '未命名'}}</text>
-                      <view class="tag {{item._tier === 'team' ? 'team' : 'pro'}}">
-                        {{item._tier === 'team' ? '团队版' : '专业版'}}
-                      </view>
+                      <block wx:if="{{item._tier === 'team'}}">
+                        <view class="tag team">{{item._team_level_text || '团队版'}}</view>
+                      </block>
+                      <block wx:else>
+                        <view class="tag pro">专业版</view>
+                      </block>
                       <view class="badge-expired" wx:if="{{item._expired}}">已过期</view>
                     </view>
                     <view class="line2">
                       <text class="meta">到期：{{formatDate(item._expire) || '—'}}</text>
-                      <text class="meta">注册：{{formatDate(item.created_at)}}</text>
+                      <text class="meta">注册：{{formatDate(item._created) || '—'}}</text>
                     </view>
                   </view>
                   <view class="actions" wx:if="{{canWriteAdminUsers}}">
@@ -55,9 +58,7 @@
                   </view>
                 </view>
               </block>
-              <view class="load-more" wx:if="{{hasMore}}">
-                <button class="btn-secondary" size="mini" bindtap="loadMore" loading="{{listLoading}}">加载更多</button>
-              </view>
+              
               <view class="no-more" wx:if="{{!hasMore && items.length > 0}}">
                 <text>没有更多了</text>
               </view>

@@ -12,6 +12,9 @@ class UserSchema(SQLAlchemyAutoSchema):
 
     username = fields.Method('get_username', dump_only=True)
     account_username = fields.Method('get_account_username', dump_only=True)
+    effective_tier = fields.Method('get_effective_tier', dump_only=True)
+    team_subscription_level = fields.Method('get_team_subscription_level', dump_only=True)
+    team_level = fields.Method('get_team_subscription_level', dump_only=True)
 
     def get_username(self, obj):
         try:
@@ -27,6 +30,27 @@ class UserSchema(SQLAlchemyAutoSchema):
             account = getattr(obj, 'account', None)
             if account and getattr(account, 'username', None):
                 return account.username
+            return None
+        except Exception:
+            return None
+
+    def get_effective_tier(self, obj):
+        try:
+            from subscription_utils import get_effective_subscription_tier
+            return get_effective_subscription_tier(obj)
+        except Exception:
+            try:
+                return getattr(obj, 'subscription_tier', 'free') or 'free'
+            except Exception:
+                return 'free'
+
+    def get_team_subscription_level(self, obj):
+        try:
+            if getattr(obj, 'user_mode', 'personal') == 'team' and getattr(obj, 'current_team_id', None):
+                from team_models import Team
+                team = Team.query.get(obj.current_team_id)
+                if team and team.subscription_level in ['basic', 'advanced']:
+                    return team.subscription_level
             return None
         except Exception:
             return None

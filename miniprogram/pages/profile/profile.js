@@ -27,6 +27,8 @@ Page({
     showTeamInfoModal: false,
     teamInfo: {},
     teamRoleDisplay: '',
+    userGroupName: '',
+    userGroupId: null,
     showJoinTeamModal: false,
     showCreateTeamModal: false,
     inviteCode: '',
@@ -48,6 +50,7 @@ Page({
     theme: 'system',
     themeDisplay: '跟随系统',
     stats: { parrotCount: 0, totalFeedings: 0, totalCheckups: 0, statsViews: 0 },
+    canViewStats: true,
     // 客服会话上下文
     contactSessionFrom: '',
     // 团队功能暂不开放，列表置空以隐藏入口
@@ -680,6 +683,9 @@ Page({
     const isLogin = !!app.globalData.openid;
     const points = (typeof baseUser.points === 'number' ? baseUser.points :
                     typeof baseUser.score === 'number' ? baseUser.score : 0);
+    const effectiveTier = app.getEffectiveTier()
+    const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+    const tierClass = (effectiveTier === 'team' && mode === 'team') ? 'team' : (effectiveTier === 'pro' && mode === 'personal') ? 'pro' : 'free'
     this.setData({
       isLogin,
       userInfo: baseUser,
@@ -687,10 +693,11 @@ Page({
       joinDate: app.formatDate(baseUser.created_at || Date.now()),
       roleDisplay: this.mapRoleDisplay(baseUser),
       points,
-      // 初始化会员信息
-      isPro: baseUser.subscription_tier === 'pro' || baseUser.subscription_tier === 'team',
+      // 初始化会员信息（按模式生效的有效等级）
+      isPro: (effectiveTier === 'pro' || effectiveTier === 'team'),
       expireDate: baseUser.subscription_expire_at ? baseUser.subscription_expire_at.substring(0, 10) : '',
-      membershipName: this.computeMembershipName(baseUser)
+      membershipName: this.computeMembershipName(baseUser),
+      tierClass
     });
 
     // 若已登录，则尝试从后端获取最新的用户信息（包含role等字段）
@@ -725,10 +732,14 @@ Page({
 
   computeMembershipName(user) {
     try {
-      const tier = String((user && user.subscription_tier) || '').toLowerCase()
+      const appInst = getApp()
+      const mode = appInst.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+      const tier = String(appInst.getEffectiveTier() || '').toLowerCase()
       const isPro = tier === 'pro' || tier === 'team'
       if (!isPro) return ''
-      const prefix = tier === 'team' ? 'team' : 'pro'
+      if (tier === 'team' && mode !== 'team') return ''
+      if (tier === 'pro' && mode !== 'personal') return ''
+      const prefix = tier === 'team' ? '团队' : '个人'
       const label = user.membership_label || ''
       const durationDays = Number(user.membership_duration_days || 0)
       let plan = ''
@@ -784,9 +795,22 @@ Page({
   async loadTeamInfoIfNeeded() {
     const app = getApp();
     const userMode = app.globalData.userMode || this.data.userMode || 'personal';
-    
-    // 只在团队模式下加载团队信息
-    if (userMode !== 'team') {
+    const isLogin = !!(app.globalData.openid && app.globalData.userInfo);
+    if (userMode !== 'team' || !isLogin) {
+      this.setData({ canViewStats: true });
+      return;
+    }
+    const userInfo = app.globalData.userInfo || {};
+    const currentTeamId = userInfo.current_team_id || null;
+    if (!currentTeamId) {
+      this.setData({
+        currentTeamName: '',
+        teamInfo: {},
+        teamRoleDisplay: '',
+        isTeamOwner: false,
+        isTeamAdmin: false,
+        canViewStats: false
+      });
       return;
     }
 
@@ -802,6 +826,26 @@ Page({
           isTeamOwner: role === 'owner',
           teamRoleDisplay: this.mapTeamRoleDisplay(role)
         });
+        // 拉取成员列表以判断当前用户是否已分组
+        const teamId = info.id;
+        const userId = (app.globalData.userInfo && app.globalData.userInfo.id) || null;
+        if (teamId && userId) {
+          try {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' });
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId));
+              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null);
+              const groupName = me && (me.group_name || '');
+              this.setData({ userGroupId: groupId, userGroupName: groupName, canViewStats: !!groupId });
+            } else {
+              this.setData({ canViewStats: false });
+            }
+          } catch (_) {
+            this.setData({ canViewStats: false });
+          }
+        } else {
+          this.setData({ canViewStats: false });
+        }
       } else {
         // 如果没有团队信息，清空显示
         this.setData({
@@ -809,7 +853,8 @@ Page({
           teamInfo: {},
           teamRoleDisplay: '',
           isTeamOwner: false,
-          isTeamAdmin: false
+          isTeamAdmin: false,
+          canViewStats: false
         });
       }
     } catch (err) {
@@ -820,7 +865,8 @@ Page({
         teamInfo: {},
         teamRoleDisplay: '',
         isTeamOwner: false,
-        isTeamAdmin: false
+        isTeamAdmin: false,
+        canViewStats: false
       });
     }
   },
@@ -1016,7 +1062,8 @@ Page({
         currentTeamName: '',
         teamInfo: {},
         isTeamOwner: false,
-        isTeamAdmin: false
+        isTeamAdmin: false,
+        canViewStats: true
       });
     }
     this.loadOverviewStats();
@@ -1040,7 +1087,8 @@ Page({
         currentTeamName: '',
         teamInfo: {},
         isTeamOwner: false,
-        isTeamAdmin: false
+        isTeamAdmin: false,
+        canViewStats: true
       });
     }
     // 切换后立即刷新统计卡片
@@ -1083,6 +1131,21 @@ Page({
             isTeamOwner: role === 'owner',
             teamRoleDisplay: this.mapTeamRoleDisplay(role)
           });
+          // 拉取成员列表以获取当前用户分组信息
+          const teamId = d.id;
+          const userId = (app.globalData.userInfo && app.globalData.userInfo.id) || null;
+          if (teamId && userId) {
+            return app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+              .then(membersRes => {
+                if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+                  const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId));
+                  const groupName = me && (me.group_name || '');
+                  const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null);
+                  this.setData({ userGroupName: groupName || '', userGroupId: groupId });
+                }
+              })
+              .catch(() => {});
+          }
         }
       })
       .catch(err => {

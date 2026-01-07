@@ -34,7 +34,8 @@ Page({
     // 虚拟列表窗口
     virtualChunkIndex: 0,
     virtualChunkSize: 25,
-    virtualDisplayRecords: []
+    virtualDisplayRecords: [],
+    canViewRecords: true
   },
 
   onLoad(options) {
@@ -57,12 +58,32 @@ Page({
   },
 
   // 检查登录状态
-  checkLoginStatus() {
+  async checkLoginStatus() {
     const isLogin = app.globalData.isLogin
     const hasOperationPermission = app.hasOperationPermission()
     this.setData({ isLogin, hasOperationPermission })
     
     if (isLogin) {
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      if (mode === 'team') {
+        try {
+          const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+          const teamId = cur && cur.success && cur.data && cur.data.id
+          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+          if (teamId && userId) {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+              const canView = !!groupId
+              this.setData({ canViewRecords: canView })
+              if (!canView) { this.setData({ healthRecords: [], displayRecords: [], virtualDisplayRecords: [], parrotsList: [] }); return }
+            }
+          }
+        } catch(_) { this.setData({ canViewRecords: false }); return }
+      } else {
+        this.setData({ canViewRecords: true })
+      }
       this.loadParrotsList()
       this.loadHealthRecords()
     }
@@ -407,9 +428,15 @@ Page({
 
   // 添加健康记录
   addHealthRecord() {
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=health'
-    })
+    const isLogin = !!(app && app.globalData && app.globalData.isLogin)
+    if (!isLogin) { app.showError && app.showError('请先登录后再添加记录'); return }
+    const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+    if (userMode === 'team' && !hasOp) {
+      wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+      return
+    }
+    wx.navigateTo({ url: '/pages/records/add-record/add-record?type=health' })
   },
 
   // 编辑记录

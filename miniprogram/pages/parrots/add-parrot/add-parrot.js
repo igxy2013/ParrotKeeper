@@ -571,7 +571,6 @@ Page({
       Object.keys(submitData).forEach(key => {
         if (
           submitData[key] === '' &&
-          key !== 'parrot_number' &&
           key !== 'ring_number' &&
           key !== 'photo_url'
         ) {

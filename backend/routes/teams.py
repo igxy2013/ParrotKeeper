@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, User, Parrot
-from team_models import Team, TeamMember, TeamParrot, TeamInvitation
+from team_models import Team, TeamMember, TeamParrot, TeamInvitation, TeamGroup
 from utils import login_required, success_response, error_response
 from datetime import datetime, timedelta
 import random
@@ -192,13 +192,20 @@ def get_team_members(team_id):
         # 获取团队成员列表
         members = []
         team_members = TeamMember.query.filter_by(team_id=team_id, is_active=True).all()
+        # 预取分组名称映射
+        group_map = {}
+        groups = TeamGroup.query.filter_by(team_id=team_id, is_active=True).all()
+        for g in groups:
+            group_map[g.id] = g.name
         for tm in team_members:
             members.append({
                 'user_id': tm.user.id,
-                'id': tm.user.id,  # 兼容前端
+                'id': tm.user.id,
                 'nickname': tm.user.nickname,
                 'avatar_url': tm.user.avatar_url,
                 'role': tm.role,
+                'group_id': tm.group_id,
+                'group_name': group_map.get(tm.group_id) if tm.group_id else None,
                 'joined_at': tm.joined_at.isoformat()
             })
         
@@ -238,8 +245,7 @@ def join_team():
             team_member = TeamMember(
                 team_id=team.id,
                 user_id=user.id,
-                role='admin',
-                permissions={'all': True}
+                role='member'
             )
             db.session.add(team_member)
         
@@ -252,7 +258,7 @@ def join_team():
         return success_response({
             'team_id': team.id,
             'team_name': team.name,
-            'role': 'admin'
+            'role': 'member'
         }, '加入团队成功')
         
     except Exception as e:
@@ -376,6 +382,137 @@ def change_member_role(team_id, user_id):
         db.session.rollback()
         return error_response(f'修改角色失败: {str(e)}')
 
+@teams_bp.route('/<int:team_id>/groups', methods=['GET'])
+@login_required
+def list_groups(team_id):
+    try:
+        user = request.current_user
+        member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not member:
+            return error_response('您不是该团队成员', 403)
+        groups = TeamGroup.query.filter_by(team_id=team_id, is_active=True).order_by(TeamGroup.created_at.desc()).all()
+        items = []
+        for g in groups:
+            items.append({
+                'id': g.id,
+                'name': g.name,
+                'description': g.description,
+                'permission_scope': getattr(g, 'permission_scope', 'group'),
+                'is_active': g.is_active,
+                'created_at': g.created_at.isoformat()
+            })
+        return success_response(items, '获取分组列表成功')
+    except Exception as e:
+        return error_response(f'获取分组列表失败: {str(e)}')
+
+@teams_bp.route('/<int:team_id>/groups', methods=['POST'])
+@login_required
+def create_group(team_id):
+    try:
+        user = request.current_user
+        member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not member:
+            return error_response('您不是该团队成员', 403)
+        if member.role not in ['owner', 'admin']:
+            return error_response('仅创建者或管理员可创建分组', 403)
+        data = request.get_json() or {}
+        name = (data.get('name') or '').strip()
+        description = data.get('description') or ''
+        permission_scope = (data.get('permission_scope') or 'group').strip()
+        if permission_scope not in ['group', 'team']:
+            return error_response('无效的分组权限')
+        if not name:
+            return error_response('分组名称不能为空')
+        group = TeamGroup(team_id=team_id, name=name, description=description, permission_scope=permission_scope, is_active=True)
+        db.session.add(group)
+        db.session.commit()
+        return success_response({'id': group.id, 'name': group.name, 'description': group.description, 'permission_scope': group.permission_scope}, '分组创建成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'创建分组失败: {str(e)}')
+
+@teams_bp.route('/<int:team_id>/groups/<int:group_id>', methods=['PUT'])
+@login_required
+def update_group(team_id, group_id):
+    try:
+        user = request.current_user
+        member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not member:
+            return error_response('您不是该团队成员', 403)
+        if member.role not in ['owner', 'admin']:
+            return error_response('仅创建者或管理员可修改分组', 403)
+        group = TeamGroup.query.filter_by(id=group_id, team_id=team_id).first()
+        if not group or not group.is_active:
+            return error_response('分组不存在', 404)
+        data = request.get_json() or {}
+        if 'name' in data:
+            name = (data.get('name') or '').strip()
+            if not name:
+                return error_response('分组名称不能为空')
+            group.name = name
+        if 'description' in data:
+            group.description = data.get('description') or ''
+        if 'permission_scope' in data:
+            scope = (data.get('permission_scope') or 'group').strip()
+            if scope not in ['group', 'team']:
+                return error_response('无效的分组权限')
+            group.permission_scope = scope
+        group.updated_at = datetime.utcnow()
+        db.session.commit()
+        return success_response({'id': group.id, 'name': group.name, 'description': group.description, 'permission_scope': group.permission_scope}, '分组更新成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新分组失败: {str(e)}')
+
+@teams_bp.route('/<int:team_id>/groups/<int:group_id>', methods=['DELETE'])
+@login_required
+def delete_group(team_id, group_id):
+    try:
+        user = request.current_user
+        member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not member:
+            return error_response('您不是该团队成员', 403)
+        if member.role not in ['owner', 'admin']:
+            return error_response('仅创建者或管理员可删除分组', 403)
+        group = TeamGroup.query.filter_by(id=group_id, team_id=team_id).first()
+        if not group or not group.is_active:
+            return error_response('分组不存在', 404)
+        group.is_active = False
+        group.updated_at = datetime.utcnow()
+        db.session.commit()
+        return success_response({'id': group_id}, '分组已删除')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'删除分组失败: {str(e)}')
+
+@teams_bp.route('/<int:team_id>/members/<int:user_id>/group', methods=['PUT'])
+@login_required
+def assign_member_group(team_id, user_id):
+    try:
+        user = request.current_user
+        operator = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not operator:
+            return error_response('您不是该团队成员', 403)
+        if operator.role not in ['owner', 'admin']:
+            return error_response('仅创建者或管理员可分配分组', 403)
+        target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
+        if not target_member:
+            return error_response('成员不存在')
+        data = request.get_json() or {}
+        group_id = data.get('group_id')
+        if group_id is None:
+            target_member.group_id = None
+        else:
+            group = TeamGroup.query.filter_by(id=group_id, team_id=team_id, is_active=True).first()
+            if not group:
+                return error_response('分组不存在')
+            target_member.group_id = group_id
+        db.session.commit()
+        return success_response({'user_id': user_id, 'group_id': target_member.group_id}, '分组分配成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'分配分组失败: {str(e)}')
+
 @teams_bp.route('/<int:team_id>/members/<int:user_id>', methods=['DELETE'])
 @login_required
 def remove_team_member(team_id, user_id):
@@ -478,6 +615,7 @@ def get_current_team():
             'id': team.id,
             'name': team.name,
             'description': team.description,
+            'subscription_level': getattr(team, 'subscription_level', None),
             'role': member.role,
             'member_count': TeamMember.query.filter_by(team_id=team.id, is_active=True).count()
         }, '获取当前团队成功')

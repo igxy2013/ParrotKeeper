@@ -112,7 +112,7 @@ Page({
     this.computeMenuRightPadding()
   },
 
-  onShow() {
+  async onShow() {
     console.log('鹦鹉页面 onShow 被调用');
     
     // 检查登录状态
@@ -131,7 +131,28 @@ Page({
       console.log('用户已登录，开始加载鹦鹉数据');
       const storedMode = wx.getStorageSync('userMode') || ''
       const currentMode = app.globalData.userMode || storedMode || 'personal'
-      this.setData({ userMode: currentMode, limitCount: currentMode === 'team' ? 10 : 5 })
+      this.setData({ userMode: currentMode, limitCount: currentMode === 'team' ? 20 : 10 })
+
+      if (currentMode === 'team' && !this.data.hasOperationPermission) {
+        try {
+          const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+          const teamId = cur && cur.success && cur.data && cur.data.id
+          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+          let noGroup = false
+          if (teamId && userId) {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+              noGroup = !groupId
+            }
+          }
+          if (noGroup) {
+            this.setData({ parrots: [], displayParrots: [], maleCount: 0, femaleCount: 0, totalParrots: 0, hasMore: false })
+            return
+          }
+        } catch(_) {}
+      }
 
       const now = Date.now()
       const canUseListCache = Array.isArray(this.data.parrots) && this.data.parrots.length > 0 && (now - (this.data.lastParrotsLoadedAt || 0) < CACHE_TTL_MS)
@@ -812,14 +833,28 @@ Page({
 
   // 添加鹦鹉
   addParrot() {
-    const userInfo = app.globalData.userInfo || {}
-    const tier = String(userInfo.subscription_tier || '').toLowerCase()
-    const isPro = tier === 'pro' || tier === 'team'
+    const isLogin = !!(app && app.globalData && app.globalData.isLogin)
+    if (!isLogin) { app.showError && app.showError('请先登录'); return }
+    const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+    if (userMode === 'team' && !hasOp) {
+      wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+      return
+    }
+    const tier = app.getEffectiveTier()
+    const teamLevel = app.getTeamLevel()
 
     const knownTotal = Number(this.data.totalParrots || 0)
     const promptOrOpenForm = (total) => {
-      const limit = this.data.userMode === 'team' ? 10 : 5
-      if (!isPro && total >= limit) {
+      let limit = 0
+      if (tier === 'free') {
+        limit = this.data.userMode === 'team' ? 10 : 5
+      } else if (tier === 'pro') {
+        limit = 100
+      } else if (tier === 'team') {
+        limit = (teamLevel === 'basic') ? 1000 : Number.MAX_SAFE_INTEGER
+      }
+      if (limit && total >= limit) {
         this.setData({ showLimitModal: true, limitModalCode: '', limitCount: limit })
         return
       }
@@ -828,8 +863,12 @@ Page({
       this.loadSpeciesListForModal()
     }
 
-    const limit = this.data.userMode === 'team' ? 10 : 5
-    if (isPro || knownTotal >= limit) {
+    // 若可能达到上限，则根据后端统计进行一次确认；团队高级版不预限制
+    let preLimit = 0
+    if (tier === 'free') preLimit = this.data.userMode === 'team' ? 10 : 5
+    else if (tier === 'pro') preLimit = 100
+    else if (tier === 'team' && teamLevel === 'basic') preLimit = 1000
+    if (preLimit && knownTotal >= preLimit) {
       promptOrOpenForm(knownTotal)
       return
     }
@@ -1407,6 +1446,20 @@ Page({
         res = await app.request({ url: mode === 'edit' ? `/api/parrots/${id}` : '/api/parrots', method: mode === 'edit' ? 'PUT' : 'POST', data })
         if (res.success) {
           app.showSuccess(mode === 'edit' ? '编辑成功' : '添加成功')
+          try {
+            const currentUserId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || ''
+            const targetOwnerId = data && data.target_owner_id
+            if (targetOwnerId && String(targetOwnerId) !== String(currentUserId)) {
+              if (mode === 'edit' && id) {
+                await app.request({ url: `/api/parrots/${id}/transfer`, method: 'POST', data: { new_owner_id: targetOwnerId } })
+              } else if (mode !== 'edit') {
+                const newId = res && res.data && (res.data.id || res.data.parrot_id)
+                if (newId) {
+                  await app.request({ url: `/api/parrots/${newId}/transfer`, method: 'POST', data: { new_owner_id: targetOwnerId } })
+                }
+              }
+            }
+          } catch (_) {}
         }
       }
 

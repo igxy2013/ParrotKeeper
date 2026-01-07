@@ -75,6 +75,14 @@ def add_feeding_record_internal(data):
     """内部函数：添加喂食记录"""
     try:
         user = request.current_user
+        member_group_id = None
+        if getattr(user, 'user_mode', 'personal') == 'team' and getattr(user, 'current_team_id', None):
+            try:
+                from team_models import TeamMember
+                mm = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+                member_group_id = getattr(mm, 'group_id', None) if mm else None
+            except Exception:
+                member_group_id = None
         parrot_ids = data.get('parrot_ids', [])
         # 标准化ID为整数，避免字符串ID与整数集合对比失败
         if isinstance(parrot_ids, list):
@@ -159,7 +167,8 @@ def add_feeding_record_internal(data):
                         feeding_time=feeding_time,
                         notes=notes,
                         created_by_user_id=user.id,
-                        team_id=parrot_team_map.get(parrot_id)
+                        team_id=parrot_team_map.get(parrot_id),
+                        group_id=member_group_id
                     )
                     # 处理照片
                     try:
@@ -179,7 +188,8 @@ def add_feeding_record_internal(data):
                     feeding_time=feeding_time,
                     notes=notes,
                     created_by_user_id=user.id,
-                    team_id=parrot_team_map.get(parrot_id)
+                    team_id=parrot_team_map.get(parrot_id),
+                    group_id=member_group_id
                 )
                 try:
                     import json
@@ -225,6 +235,14 @@ def add_health_record_internal(data):
     """内部函数：添加健康记录"""
     try:
         user = request.current_user
+        member_group_id = None
+        if getattr(user, 'user_mode', 'personal') == 'team' and getattr(user, 'current_team_id', None):
+            try:
+                from team_models import TeamMember
+                mm = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+                member_group_id = getattr(mm, 'group_id', None) if mm else None
+            except Exception:
+                member_group_id = None
         parrot_ids = data.get('parrot_ids', [])
         # 标准化ID为整数，避免字符串ID与整数集合对比失败
         if isinstance(parrot_ids, list):
@@ -305,7 +323,8 @@ def add_health_record_internal(data):
                 record_date=record_date,
                 next_checkup_date=next_checkup_date,
                 created_by_user_id=user.id,
-                team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+                team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None,
+                group_id=member_group_id
             )
             db.session.add(record)
             created_records.append(record)
@@ -343,6 +362,14 @@ def add_cleaning_record_internal(data):
     """内部函数：添加清洁记录"""
     try:
         user = request.current_user
+        member_group_id = None
+        if getattr(user, 'user_mode', 'personal') == 'team' and getattr(user, 'current_team_id', None):
+            try:
+                from team_models import TeamMember
+                mm = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+                member_group_id = getattr(mm, 'group_id', None) if mm else None
+            except Exception:
+                member_group_id = None
         parrot_ids = data.get('parrot_ids', [])
         # 标准化ID为整数，避免字符串ID与整数集合对比失败
         if isinstance(parrot_ids, list):
@@ -388,7 +415,8 @@ def add_cleaning_record_internal(data):
                     cleaning_time=cleaning_time,
                     image_urls=(__import__('json').dumps(photos, ensure_ascii=False) if isinstance(photos, list) and len(photos) > 0 else None),
                     created_by_user_id=user.id,
-                    team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
+                    team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None,
+                    group_id=member_group_id
                 )
                 db.session.add(record)
                 created_records.append(record)
@@ -419,6 +447,14 @@ def add_breeding_record_internal(data):
     """内部函数：添加繁殖记录"""
     try:
         user = request.current_user
+        member_group_id = None
+        if getattr(user, 'user_mode', 'personal') == 'team' and getattr(user, 'current_team_id', None):
+            try:
+                from team_models import TeamMember
+                mm = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+                member_group_id = getattr(mm, 'group_id', None) if mm else None
+            except Exception:
+                member_group_id = None
         male_parrot_id = data.get('male_parrot_id')
         female_parrot_id = data.get('female_parrot_id')
         # 标准化ID为整数，避免字符串ID与整数集合对比失败
@@ -525,6 +561,7 @@ def add_breeding_record_internal(data):
             image_urls=(__import__('json').dumps(photos, ensure_ascii=False) if isinstance(photos, list) and len(photos) > 0 else None),
             created_by_user_id=user.id,
             team_id=getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None,
+            group_id=member_group_id,
             created_at=created_at_dt or None
         )
         db.session.add(record)
