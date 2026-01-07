@@ -270,8 +270,8 @@ def create_parrot():
         # 检查订阅限制（根据模式动态上限）
         from subscription_utils import check_parrot_limit
         if not check_parrot_limit(user):
-            limit = 10 if (hasattr(user, 'user_mode') and user.user_mode == 'team') else 5
-            return error_response(f'免费用户最多只能添加{limit}只鹦鹉，请升级会员解锁无限制添加。', 403)
+            limit = 20 if (hasattr(user, 'user_mode') and user.user_mode == 'team') else 10
+            return error_response(f'免费用户最多只能添加{limit}只鹦鹉，请升级会员解锁更多额度。', 403)
         
         # 在团队模式下，只有管理员才能添加鹦鹉
         if hasattr(user, 'user_mode') and user.user_mode == 'team':
@@ -320,6 +320,16 @@ def create_parrot():
         if weight == '' or weight is None:
             weight = None
         
+        # 团队模式下为创建者所属分组赋值
+        group_id = None
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            try:
+                from team_models import TeamMember
+                m = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+                group_id = getattr(m, 'group_id', None) if m else None
+            except Exception:
+                group_id = None
+
         parrot = Parrot(
             user_id=user.id,
             name=data['name'],
@@ -340,7 +350,8 @@ def create_parrot():
             notes=data.get('notes'),
             parrot_number=data.get('parrot_number'),
             ring_number=data.get('ring_number'),
-            team_id=user.current_team_id if user.user_mode == 'team' else None  # 根据用户当前模式设置团队标识
+            team_id=user.current_team_id if user.user_mode == 'team' else None,
+            group_id=group_id
         )
         
         db.session.add(parrot)

@@ -1976,7 +1976,7 @@ Page({
     const teamLevel = app.getTeamLevel()
     const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
     let limit = 0
-    if (tier === 'free') limit = mode === 'team' ? 10 : 5
+    if (tier === 'free') limit = mode === 'team' ? 20 : 10
     else if (tier === 'pro') limit = 100
     else if (tier === 'team' && teamLevel === 'basic') limit = 1000
     const knownTotal = Number((this.data.overview && this.data.overview.total_parrots) || 0)

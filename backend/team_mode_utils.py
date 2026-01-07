@@ -10,9 +10,12 @@ from sqlalchemy.orm import aliased
 def filter_parrots_by_mode(user, query):
     """根据用户模式过滤鹦鹉查询"""
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        # 团队模式：只显示团队数据（team_id = current_team_id）
+        # 团队模式：仅显示当前团队数据；非管理员按分组隔离
         if user.current_team_id:
             query = query.filter(Parrot.team_id == user.current_team_id)
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                query = query.filter(Parrot.group_id == member.group_id)
         else:
             # 如果没有当前团队，返回空结果
             query = query.filter(Parrot.id == -1)
@@ -40,9 +43,14 @@ def filter_expenses_by_mode(user, query):
 def filter_records_by_mode(user, record_model, query):
     """根据用户模式过滤记录查询"""
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        # 团队模式：只显示团队数据（team_id = current_team_id）
+        # 团队模式：仅显示当前团队数据；非管理员按分组隔离
         if user.current_team_id:
             query = query.filter(record_model.team_id == user.current_team_id)
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                # 记录表包含 group_id 字段
+                if hasattr(record_model, 'group_id'):
+                    query = query.filter(getattr(record_model, 'group_id') == member.group_id)
         else:
             # 如果没有当前团队，返回空结果
             query = query.filter(record_model.id == -1)
@@ -55,12 +63,16 @@ def filter_records_by_mode(user, record_model, query):
 def get_accessible_parrot_ids_by_mode(user):
     """根据用户模式获取可访问的鹦鹉ID列表"""
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        # 团队模式：只返回团队数据的鹦鹉ID（team_id = current_team_id）
+        # 团队模式：仅返回当前团队数据；非管理员按分组隔离
         if user.current_team_id:
-            parrot_ids = db.session.query(Parrot.id).filter(
+            base_q = db.session.query(Parrot.id).filter(
                 Parrot.team_id == user.current_team_id,
                 Parrot.is_active == True
-            ).all()
+            )
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                base_q = base_q.filter(Parrot.group_id == member.group_id)
+            parrot_ids = base_q.all()
             return [pid[0] for pid in parrot_ids]
         else:
             return []
@@ -78,9 +90,11 @@ def get_accessible_expense_ids_by_mode(user):
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
         # 团队模式：只显示团队数据（team_id = current_team_id）
         if user.current_team_id:
-            expense_ids = db.session.query(Expense.id).filter(
-                Expense.team_id == user.current_team_id
-            ).all()
+            q = db.session.query(Expense.id).filter(Expense.team_id == user.current_team_id)
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                q = q.filter(Expense.group_id == member.group_id)
+            expense_ids = q.all()
         else:
             # 如果没有当前团队，返回空列表
             return []
@@ -103,9 +117,11 @@ def get_accessible_income_ids_by_mode(user):
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
         # 团队模式：只显示团队数据（team_id = current_team_id）
         if user.current_team_id:
-            income_ids = db.session.query(Income.id).filter(
-                Income.team_id == user.current_team_id
-            ).all()
+            q = db.session.query(Income.id).filter(Income.team_id == user.current_team_id)
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                q = q.filter(Income.group_id == member.group_id)
+            income_ids = q.all()
         else:
             # 如果没有当前团队，返回空列表
             return []
@@ -126,11 +142,15 @@ def get_accessible_income_ids_by_mode(user):
 def get_accessible_feeding_record_ids_by_mode(user):
     """根据用户模式获取可访问的喂食记录ID列表"""
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        # 团队模式：只显示团队数据（team_id = current_team_id）
+        # 团队模式：仅显示当前团队数据；非管理员按分组隔离
         if user.current_team_id:
-            record_ids = db.session.query(FeedingRecord.id).filter(
+            q = db.session.query(FeedingRecord.id).filter(
                 FeedingRecord.team_id == user.current_team_id
-            ).all()
+            )
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                q = q.filter(FeedingRecord.group_id == member.group_id)
+            record_ids = q.all()
         else:
             # 如果没有当前团队，返回空列表
             return []
@@ -158,11 +178,15 @@ def get_accessible_feeding_record_ids_by_mode(user):
 def get_accessible_health_record_ids_by_mode(user):
     """根据用户模式获取可访问的健康记录ID列表"""
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        # 团队模式：只显示团队数据（team_id = current_team_id）
+        # 团队模式：仅显示当前团队数据；非管理员按分组隔离
         if user.current_team_id:
-            record_ids = db.session.query(HealthRecord.id).filter(
+            q = db.session.query(HealthRecord.id).filter(
                 HealthRecord.team_id == user.current_team_id
-            ).all()
+            )
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                q = q.filter(HealthRecord.group_id == member.group_id)
+            record_ids = q.all()
         else:
             # 如果没有当前团队，返回空列表
             return []
@@ -189,11 +213,15 @@ def get_accessible_health_record_ids_by_mode(user):
 def get_accessible_cleaning_record_ids_by_mode(user):
     """根据用户模式获取可访问的清洁记录ID列表"""
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        # 团队模式：只显示团队数据（team_id = current_team_id）
+        # 团队模式：仅显示当前团队数据；非管理员按分组隔离
         if user.current_team_id:
-            record_ids = db.session.query(CleaningRecord.id).filter(
+            q = db.session.query(CleaningRecord.id).filter(
                 CleaningRecord.team_id == user.current_team_id
-            ).all()
+            )
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                q = q.filter(CleaningRecord.group_id == member.group_id)
+            record_ids = q.all()
         else:
             # 如果没有当前团队，返回空列表
             return []
@@ -220,11 +248,15 @@ def get_accessible_cleaning_record_ids_by_mode(user):
 def get_accessible_breeding_record_ids_by_mode(user):
     """根据用户模式获取可访问的繁殖记录ID列表"""
     if hasattr(user, 'user_mode') and user.user_mode == 'team':
-        # 团队模式：只显示团队数据（team_id = current_team_id）
+        # 团队模式：仅显示当前团队数据；非管理员按分组隔离
         if user.current_team_id:
-            record_ids = db.session.query(BreedingRecord.id).filter(
+            q = db.session.query(BreedingRecord.id).filter(
                 BreedingRecord.team_id == user.current_team_id
-            ).all()
+            )
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
+                q = q.filter(BreedingRecord.group_id == member.group_id)
+            record_ids = q.all()
         else:
             # 如果没有当前团队，返回空列表
             return []

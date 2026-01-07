@@ -77,11 +77,12 @@ Page({
     try {
       // 调用创建团队API
       const response = await new Promise((resolve, reject) => {
+        const app = getApp();
         wx.request({
-          url: `${getApp().globalData.baseUrl}/api/teams/create`,
+          url: `${app.globalData.baseUrl}/api/teams`,
           method: 'POST',
           header: {
-            'Authorization': `Bearer ${wx.getStorageSync('token')}`,
+            'X-OpenID': app.globalData.openid,
             'Content-Type': 'application/json'
           },
           data: {

@@ -131,7 +131,7 @@ Page({
       console.log('用户已登录，开始加载鹦鹉数据');
       const storedMode = wx.getStorageSync('userMode') || ''
       const currentMode = app.globalData.userMode || storedMode || 'personal'
-      this.setData({ userMode: currentMode, limitCount: currentMode === 'team' ? 10 : 5 })
+      this.setData({ userMode: currentMode, limitCount: currentMode === 'team' ? 20 : 10 })
 
       const now = Date.now()
       const canUseListCache = Array.isArray(this.data.parrots) && this.data.parrots.length > 0 && (now - (this.data.lastParrotsLoadedAt || 0) < CACHE_TTL_MS)

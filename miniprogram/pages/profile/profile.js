@@ -680,6 +680,9 @@ Page({
     const isLogin = !!app.globalData.openid;
     const points = (typeof baseUser.points === 'number' ? baseUser.points :
                     typeof baseUser.score === 'number' ? baseUser.score : 0);
+    const effectiveTier = app.getEffectiveTier()
+    const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+    const tierClass = (effectiveTier === 'team' && mode === 'team') ? 'team' : (effectiveTier === 'pro' && mode === 'personal') ? 'pro' : 'free'
     this.setData({
       isLogin,
       userInfo: baseUser,
@@ -687,10 +690,11 @@ Page({
       joinDate: app.formatDate(baseUser.created_at || Date.now()),
       roleDisplay: this.mapRoleDisplay(baseUser),
       points,
-      // 初始化会员信息
-      isPro: baseUser.subscription_tier === 'pro' || baseUser.subscription_tier === 'team',
+      // 初始化会员信息（按模式生效的有效等级）
+      isPro: (effectiveTier === 'pro' || effectiveTier === 'team'),
       expireDate: baseUser.subscription_expire_at ? baseUser.subscription_expire_at.substring(0, 10) : '',
-      membershipName: this.computeMembershipName(baseUser)
+      membershipName: this.computeMembershipName(baseUser),
+      tierClass
     });
 
     // 若已登录，则尝试从后端获取最新的用户信息（包含role等字段）
@@ -725,10 +729,14 @@ Page({
 
   computeMembershipName(user) {
     try {
-      const tier = String((user && user.subscription_tier) || '').toLowerCase()
+      const appInst = getApp()
+      const mode = appInst.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+      const tier = String(appInst.getEffectiveTier() || '').toLowerCase()
       const isPro = tier === 'pro' || tier === 'team'
       if (!isPro) return ''
-      const prefix = tier === 'team' ? 'team' : 'pro'
+      if (tier === 'team' && mode !== 'team') return ''
+      if (tier === 'pro' && mode !== 'personal') return ''
+      const prefix = tier === 'team' ? '团队' : '个人'
       const label = user.membership_label || ''
       const durationDays = Number(user.membership_duration_days || 0)
       let plan = ''
@@ -784,9 +792,20 @@ Page({
   async loadTeamInfoIfNeeded() {
     const app = getApp();
     const userMode = app.globalData.userMode || this.data.userMode || 'personal';
-    
-    // 只在团队模式下加载团队信息
-    if (userMode !== 'team') {
+    const isLogin = !!(app.globalData.openid && app.globalData.userInfo);
+    if (userMode !== 'team' || !isLogin) {
+      return;
+    }
+    const userInfo = app.globalData.userInfo || {};
+    const currentTeamId = userInfo.current_team_id || null;
+    if (!currentTeamId) {
+      this.setData({
+        currentTeamName: '',
+        teamInfo: {},
+        teamRoleDisplay: '',
+        isTeamOwner: false,
+        isTeamAdmin: false
+      });
       return;
     }
 

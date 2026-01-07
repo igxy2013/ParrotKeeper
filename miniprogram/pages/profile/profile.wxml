@@ -26,10 +26,10 @@
           <image class="edit-icon-img" src="{{iconPaths.editLine_white}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine_white" />
         </view>
       </view>
-      <view class="member-tag {{isPro ? 'pro' : 'free'}}" bindtap="navigateToMemberCenter">
+      <view class="member-tag {{isPro ? tierClass : 'free'}}" bindtap="navigateToMemberCenter">
         <image class="member-icon" src="{{
-          userInfo.subscription_tier === 'team' ? '/images/remix/group-line-gold.png' : (
-          userInfo.subscription_tier === 'pro' ? '/images/remix/trophy-line-orange.png' : '/images/remix/user-line.svg')
+          tierClass === 'team' ? '/images/remix/group-line-gold.png' : (
+          tierClass === 'pro' ? '/images/remix/trophy-line-orange.png' : '/images/remix/user-line.svg')
         }}" mode="aspectFit" />
         <text>{{ isPro ? membershipName : '普通用户' }}</text>
       </view>

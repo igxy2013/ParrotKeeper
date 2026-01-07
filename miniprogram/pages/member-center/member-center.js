@@ -25,14 +25,16 @@ Page({
   },
   
   updateStatusFromUserInfo(userInfo) {
-      const isPro = userInfo.subscription_tier === 'pro' || userInfo.subscription_tier === 'team'
+      const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+      const effectiveTier = app.getEffectiveTier()
+      const isPro = effectiveTier === 'pro' || effectiveTier === 'team'
       const expireStr = userInfo.subscription_expire_at || ''
       const durationDays = Number(userInfo.membership_duration_days || 0)
       let membershipName = ''
       let membershipTag = ''
       let tierClass = ''
       if (isPro) {
-        if (userInfo.subscription_tier === 'team') {
+        if (effectiveTier === 'team' && mode === 'team') {
           const teamLevel = this._getUserTeamLevel(userInfo)
           if (teamLevel === 'advanced') {
             membershipTag = '团队-高级版'
@@ -42,7 +44,7 @@ Page({
             membershipTag = '团队'
           }
           tierClass = 'team'
-        } else if (userInfo.subscription_tier === 'pro') {
+        } else if (effectiveTier === 'pro' && mode === 'personal') {
           membershipTag = '个人'
           tierClass = 'pro'
         }
@@ -77,7 +79,7 @@ Page({
           membershipTag,
           tierClass
       });
-      if (isPro && userInfo.subscription_tier === 'team' && (!membershipTag || membershipTag === '团队')) {
+      if (isPro && effectiveTier === 'team' && mode === 'team' && (!membershipTag || membershipTag === '团队')) {
         this.ensureTeamLevelTag()
       }
   },

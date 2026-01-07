@@ -5,72 +5,78 @@ from models import User, Parrot
 
 def get_effective_subscription_tier(user: User) -> str:
     """
-    获取用户的有效会员等级。
-    检查过期时间，如果已过期则视为 free。
+    获取用户的有效会员等级（按模式生效）。
+    - 团队会员仅在团队模式下有效
+    - 个人会员仅在个人模式下有效
+    过期视为 free。
     """
     if not user:
         return 'free'
-    
-    try:
-        if hasattr(user, 'user_mode') and user.user_mode == 'team' and getattr(user, 'current_team_id', None):
+
+    now = datetime.utcnow()
+    mode = getattr(user, 'user_mode', 'personal')
+
+    # 团队模式：团队订阅等级（basic/advanced）即视为有效团队会员
+    if mode == 'team' and getattr(user, 'current_team_id', None):
+        try:
             from team_models import Team
             team = Team.query.get(user.current_team_id)
-            if team and team.is_active and team.owner:
-                owner = team.owner
-                if owner and owner.subscription_tier == 'team':
-                    if not owner.subscription_expire_at or owner.subscription_expire_at > datetime.utcnow():
-                        return 'team'
+            if team and team.is_active:
+                if getattr(team, 'subscription_level', None) in ['basic', 'advanced']:
+                    return 'team'
+        except Exception:
+            pass
+        return 'free'
+
+    # 个人模式：仅判断个人会员是否有效
+    try:
+        if user.subscription_tier == 'pro':
+            if not user.subscription_expire_at or user.subscription_expire_at > now:
+                return 'pro'
     except Exception:
         pass
-    if user.subscription_tier == 'free':
-        return 'free'
-    
-    # 如果是 pro 或 team，检查是否过期
-    if user.subscription_expire_at:
-        if user.subscription_expire_at < datetime.utcnow():
-            return 'free'
-            
-    return user.subscription_tier
+    return 'free'
 
 def check_parrot_limit(user: User) -> bool:
     """
     检查用户是否可以添加更多鹦鹉。
-    免费用户：个人模式限制 5 只；团队模式限制 10 只。
-    付费（pro、team）无限制。
+    免费用户：个人模式限制 10 只；团队模式限制 20 只。
+    付费：
+    - 个人会员（pro，个人模式下）：100
+    - 团队会员（team，团队模式下）：根据团队订阅版本（basic 1000，advanced 不限）
     """
     tier = get_effective_subscription_tier(user)
 
-    # 新版限制：
-    # free: 个人5 / 团队10
-    # pro: 100
-    # team: 基础版1000 / 高级版无限制
-    if tier == 'pro':
-        try:
-            current_count = Parrot.query.filter_by(user_id=user.id, is_active=True, team_id=None).count()
-            return current_count < 100
-        except Exception:
-            return True
-
     try:
+        # 团队模式
         if hasattr(user, 'user_mode') and user.user_mode == 'team':
             if not getattr(user, 'current_team_id', None):
                 return True
-            # 团队版：根据团队订阅版本限制
+
+            from team_models import Team
             team_level = 'basic'
             try:
-                from team_models import Team
                 team = Team.query.get(user.current_team_id)
                 if team and team.subscription_level in ['basic', 'advanced']:
                     team_level = team.subscription_level
             except Exception:
                 pass
+
             current_count = Parrot.query.filter_by(team_id=user.current_team_id, is_active=True).count()
-            if team_level == 'advanced':
-                return True
-            return current_count < 1000
+
+            if tier == 'team':
+                if team_level == 'advanced':
+                    return True
+                return current_count < 1000
+            else:
+                return current_count < 20
+
+        # 个人模式
         else:
             current_count = Parrot.query.filter_by(user_id=user.id, is_active=True, team_id=None).count()
-            return current_count < 5
+            if tier == 'pro':
+                return current_count < 100
+            return current_count < 10
     except Exception:
         return True
 
