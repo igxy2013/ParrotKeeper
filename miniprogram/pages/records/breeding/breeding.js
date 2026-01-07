@@ -34,6 +34,8 @@ Page({
     
     // 繁殖状态选项
     breedingStatusOptions: ['配对中', '筑巢中', '产蛋中', '孵化中', '育雏中', '已完成']
+  ,
+    canViewRecords: true
   },
 
   onLoad(options) {
@@ -62,6 +64,30 @@ Page({
   onShow() {
     this.checkLoginStatus()
     if (this.data.isLogin) {
+      try {
+        const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+        if (mode === 'team') {
+          (async () => {
+            try {
+              const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+              const teamId = cur && cur.success && cur.data && cur.data.id
+              const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+              if (teamId && userId) {
+                const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+                if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+                  const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+                  const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+                  const canView = !!groupId
+                  this.setData({ canViewRecords: canView })
+                  if (!canView) { this.setData({ breedingRecords: [], filteredRecords: [], virtualDisplayRecords: [] }); return }
+                }
+              }
+            } catch(_) { this.setData({ canViewRecords: false }); return }
+          })()
+        } else {
+          this.setData({ canViewRecords: true })
+        }
+      } catch(_) {}
       this.loadParrotOptions()
       this.loadBreedingRecords()
     }

@@ -31,6 +31,13 @@ Component({
       photo_url: '',
       photo_preview: ''
     },
+    // 饲养人选择
+    keeperOptions: [],
+    filteredKeeperOptions: [],
+    selectedKeeperId: '',
+    selectedKeeperName: '',
+    showKeeperDropdown: false,
+    keeperSearchKeyword: '',
     regionValue: ['', '', ''],
     typeIndex: 0,
     createMode: 'form',
@@ -46,6 +53,11 @@ Component({
     plumageLocalSplits: []
   },
   observers: {
+    'visible': function(visible) {
+      if (visible) {
+        this.initKeeper()
+      }
+    },
     'parrot, parrotTypes, speciesList': function(parrot, types, speciesList) {
       if (!parrot) return
       // 初始化表单
@@ -99,6 +111,83 @@ Component({
     }
   },
   methods: {
+    // 初始化饲养人默认选择为当前用户，并加载可选成员列表
+    async initKeeper() {
+      try {
+        const ui = (app.globalData && app.globalData.userInfo) || {}
+        const curId = ui && ui.id ? String(ui.id) : ''
+        const curName = ui.nickname || ui.username || ui.name || ui.display_name || ''
+        this.setData({ selectedKeeperId: curId, selectedKeeperName: curName })
+        await this.loadKeeperOptions()
+        const src = Array.isArray(this.data.keeperOptions) ? this.data.keeperOptions : []
+        this.setData({ filteredKeeperOptions: src })
+      } catch(_) {
+        const ui = (app.globalData && app.globalData.userInfo) || {}
+        const curId = ui && ui.id ? String(ui.id) : ''
+        const curName = ui.nickname || ui.username || ui.name || ui.display_name || ''
+        this.setData({ selectedKeeperId: curId, selectedKeeperName: curName, filteredKeeperOptions: [{ id: curId, name: curName }] })
+      }
+    },
+    async loadKeeperOptions() {
+      try {
+        const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+        const ui = (app.globalData && app.globalData.userInfo) || {}
+        const curId = ui && ui.id ? String(ui.id) : ''
+        const curName = ui.nickname || ui.username || ui.name || ui.display_name || ''
+        let options = []
+        if (mode === 'team') {
+          const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+          const teamId = cur && cur.success && cur.data && cur.data.id
+          if (teamId) {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              options = membersRes.data.map(m => {
+                const id = String(m.user_id != null ? m.user_id : (m.id != null ? m.id : ''))
+                const name = m.nickname || m.username || m.name || m.display_name || ''
+                return { id, name }
+              }).filter(it => it.id)
+            }
+          }
+        }
+        if (!Array.isArray(options) || options.length === 0) {
+          options = [{ id: curId, name: curName }].filter(it => it.id)
+        }
+        // 确保当前用户在列表中且置顶
+        const exists = options.some(it => String(it.id) === String(curId))
+        if (!exists && curId) options.unshift({ id: curId, name: curName })
+        // 去重
+        const dedup = []
+        const seen = new Set()
+        options.forEach(it => {
+          const key = `${String(it.id)}|${String(it.name)}`
+          if (!seen.has(key)) { dedup.push(it); seen.add(key) }
+        })
+        this.setData({ keeperOptions: dedup })
+      } catch (_) {
+        const ui = (app.globalData && app.globalData.userInfo) || {}
+        const curId = ui && ui.id ? String(ui.id) : ''
+        const curName = ui.nickname || ui.username || ui.name || ui.display_name || ''
+        this.setData({ keeperOptions: [{ id: curId, name: curName }] })
+      }
+    },
+    toggleKeeperDropdown() {
+      this.setData({ showKeeperDropdown: !this.data.showKeeperDropdown })
+    },
+    onKeeperSearchInput(e) {
+      const kw = String((e && e.detail && e.detail.value) || '').trim().toLowerCase()
+      const src = Array.isArray(this.data.keeperOptions) ? this.data.keeperOptions : []
+      const filtered = kw ? src.filter(p => String(p.name || '').toLowerCase().includes(kw)) : src
+      this.setData({ keeperSearchKeyword: kw, filteredKeeperOptions: filtered })
+    },
+    clearKeeperSearch() {
+      const src = Array.isArray(this.data.keeperOptions) ? this.data.keeperOptions : []
+      this.setData({ keeperSearchKeyword: '', filteredKeeperOptions: src })
+    },
+    selectKeeper(e) {
+      const id = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id
+      const name = e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.name
+      this.setData({ selectedKeeperId: id ? String(id) : '', selectedKeeperName: name || '', showKeeperDropdown: false })
+    },
     sanitizeRegionPart(v) {
       const s = String(v == null ? '' : v).trim()
       if (!s) return ''
@@ -501,6 +590,10 @@ Component({
         ring_number: f.ring_number || '',
         acquisition_date: f.acquisition_date || '',
         plumage_split_ids: this.data.plumageSplitIds || []
+      }
+
+      if (this.data.selectedKeeperId) {
+        submitData.target_owner_id = this.data.selectedKeeperId
       }
 
       if (this.data.photoTouched) {

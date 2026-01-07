@@ -1446,6 +1446,20 @@ Page({
         res = await app.request({ url: mode === 'edit' ? `/api/parrots/${id}` : '/api/parrots', method: mode === 'edit' ? 'PUT' : 'POST', data })
         if (res.success) {
           app.showSuccess(mode === 'edit' ? '编辑成功' : '添加成功')
+          try {
+            const currentUserId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || ''
+            const targetOwnerId = data && data.target_owner_id
+            if (targetOwnerId && String(targetOwnerId) !== String(currentUserId)) {
+              if (mode === 'edit' && id) {
+                await app.request({ url: `/api/parrots/${id}/transfer`, method: 'POST', data: { new_owner_id: targetOwnerId } })
+              } else if (mode !== 'edit') {
+                const newId = res && res.data && (res.data.id || res.data.parrot_id)
+                if (newId) {
+                  await app.request({ url: `/api/parrots/${newId}/transfer`, method: 'POST', data: { new_owner_id: targetOwnerId } })
+                }
+              }
+            }
+          } catch (_) {}
         }
       }
 

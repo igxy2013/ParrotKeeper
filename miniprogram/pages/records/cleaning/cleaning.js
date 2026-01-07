@@ -33,7 +33,8 @@ Page({
     virtualChunkSize: 25,
     virtualDisplayRecords: [],
 
-    menuRightPadding: 0
+    menuRightPadding: 0,
+    canViewRecords: true
   },
 
 
@@ -66,7 +67,7 @@ Page({
     this.setData({ isLogin, isTeamMode, hasOperationPermission })
 
     if (isLogin) {
-      if (isTeamMode && !hasOperationPermission) {
+      if (isTeamMode) {
         try {
           const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
           const teamId = cur && cur.success && cur.data && cur.data.id
@@ -76,10 +77,14 @@ Page({
             if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
               const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
               const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-              if (!groupId) { this.setData({ cleaningRecords: [], displayRecords: [], virtualDisplayRecords: [], stats: { weeklyCount: 0, uniqueTypes: 0, lastTimeText: '' } }); return }
+              const canView = !!groupId
+              this.setData({ canViewRecords: canView })
+              if (!canView) { this.setData({ cleaningRecords: [], displayRecords: [], virtualDisplayRecords: [], stats: { weeklyCount: 0, uniqueTypes: 0, lastTimeText: '' } }); return }
             }
           }
-        } catch(_) {}
+        } catch(_) { this.setData({ canViewRecords: false }); return }
+      } else {
+        this.setData({ canViewRecords: true })
       }
       try {
         await this.loadParrotsList()
@@ -88,7 +93,7 @@ Page({
       }
       this.loadCleaningRecords(true)
     } else {
-      this.setData({ cleaningRecords: [], displayRecords: [], stats: { weeklyCount: 0, uniqueTypes: 0, lastTimeText: '' } })
+      this.setData({ cleaningRecords: [], displayRecords: [], stats: { weeklyCount: 0, uniqueTypes: 0, lastTimeText: '' }, canViewRecords: true })
     }
   },
 

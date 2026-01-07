@@ -1154,6 +1154,14 @@ Page({
       if (res.success) {
         app.hideLoading()
         app.showSuccess('编辑成功')
+        try {
+          const currentUserId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || ''
+          const targetOwnerId = data && data.target_owner_id
+          const pid = id || this.data.parrotId
+          if (targetOwnerId && String(targetOwnerId) !== String(currentUserId) && pid) {
+            await app.request({ url: `/api/parrots/${pid}/transfer`, method: 'POST', data: { new_owner_id: targetOwnerId } })
+          }
+        } catch (_) {}
         this.setData({ showParrotModal: false, currentParrotForm: null })
 
         if (data && Object.prototype.hasOwnProperty.call(data, 'photo_url')) {

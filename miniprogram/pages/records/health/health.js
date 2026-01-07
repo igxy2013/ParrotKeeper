@@ -34,7 +34,8 @@ Page({
     // 虚拟列表窗口
     virtualChunkIndex: 0,
     virtualChunkSize: 25,
-    virtualDisplayRecords: []
+    virtualDisplayRecords: [],
+    canViewRecords: true
   },
 
   onLoad(options) {
@@ -64,9 +65,9 @@ Page({
     
     if (isLogin) {
       const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
-      if (mode === 'team' && !hasOperationPermission) {
+      if (mode === 'team') {
         try {
-          const cur = app.request ? await app.request({ url: '/api/teams/current', method: 'GET' }) : null
+          const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
           const teamId = cur && cur.success && cur.data && cur.data.id
           const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
           if (teamId && userId) {
@@ -74,10 +75,14 @@ Page({
             if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
               const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
               const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-              if (!groupId) { this.setData({ healthRecords: [], recentRecords: [], parrotsList: [] }); return }
+              const canView = !!groupId
+              this.setData({ canViewRecords: canView })
+              if (!canView) { this.setData({ healthRecords: [], displayRecords: [], virtualDisplayRecords: [], parrotsList: [] }); return }
             }
           }
-        } catch(_) {}
+        } catch(_) { this.setData({ canViewRecords: false }); return }
+      } else {
+        this.setData({ canViewRecords: true })
       }
       this.loadParrotsList()
       this.loadHealthRecords()

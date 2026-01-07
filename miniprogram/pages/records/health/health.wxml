@@ -14,7 +14,7 @@
     </view>
 
     <!-- 已登录内容 -->
-    <view wx:if="{{isLogin}}">
+    <view wx:if="{{isLogin && canViewRecords}}">
       <!-- 筛选：鹦鹉标签 -->
       <view class="filter-section">
         <scroll-view scroll-x="true" class="chip-scroll" show-scrollbar="false">
