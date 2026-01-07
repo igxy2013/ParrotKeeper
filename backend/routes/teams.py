@@ -313,22 +313,26 @@ def join_team():
     """通过邀请码加入团队"""
     try:
         user = request.current_user
-        data = request.get_json()
+        data = request.get_json() or {}
         
-        invite_code = data.get('invite_code')
+        invite_code = (data.get('invite_code') or '').strip().upper()
         if not invite_code:
-            return error_response('邀请码不能为空')
+            return error_response('邀请码不能为空', 200)
         
         # 查找团队
         team = Team.query.filter_by(invite_code=invite_code, is_active=True).first()
         if not team:
-            return error_response('邀请码无效')
+            return error_response('邀请码无效', 200)
         
         # 检查是否已经是团队成员
         existing_member = TeamMember.query.filter_by(team_id=team.id, user_id=user.id).first()
         if existing_member:
             if existing_member.is_active:
-                return error_response('您已经是该团队成员')
+                return success_response({
+                    'team_id': team.id,
+                    'team_name': team.name,
+                    'role': existing_member.role
+                }, '您已经是该团队成员')
             else:
                 # 重新激活成员资格
                 existing_member.is_active = True
