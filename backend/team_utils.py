@@ -50,7 +50,7 @@ def team_admin_required(f):
             is_active=True
         ).first()
         
-        if not member or member.role not in ['owner', 'admin', 'member']:
+        if not member or member.role not in ['owner', 'admin']:
             return error_response('您没有管理员权限', 403)
         
         # 将团队成员信息添加到请求上下文
@@ -130,7 +130,7 @@ def get_team_admin_parrots(user, permission='view'):
     admin_members = TeamMember.query.filter_by(
         team_id=user.current_team_id,
         is_active=True
-    ).filter(TeamMember.role.in_(['owner', 'admin', 'member'])).all()
+    ).filter(TeamMember.role.in_(['owner', 'admin'])).all()
     
     admin_user_ids = [member.user_id for member in admin_members]
     

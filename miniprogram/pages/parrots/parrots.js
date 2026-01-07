@@ -135,21 +135,13 @@ Page({
 
       if (currentMode === 'team' && !this.data.hasOperationPermission) {
         try {
-          const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
-          const teamId = cur && cur.success && cur.data && cur.data.id
-          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
-          let noGroup = false
-          if (teamId && userId) {
-            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
-            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
-              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
-              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-              noGroup = !groupId
+          if (app && typeof app.ensureEffectivePermissions === 'function') {
+            const mp = await app.ensureEffectivePermissions()
+            const canView = !!(mp && mp['parrot.view'])
+            if (!canView) {
+              this.setData({ parrots: [], displayParrots: [], maleCount: 0, femaleCount: 0, totalParrots: 0, hasMore: false })
+              return
             }
-          }
-          if (noGroup) {
-            this.setData({ parrots: [], displayParrots: [], maleCount: 0, femaleCount: 0, totalParrots: 0, hasMore: false })
-            return
           }
         } catch(_) {}
       }

@@ -26,7 +26,8 @@ App({
     pendingForms: [],
     imageCacheTTL: 604800000,
     dataCacheTTL: 120000,
-    forceRefreshUntil: 0
+    forceRefreshUntil: 0,
+    effectivePermissions: null
   },
 
   // 初始化小程序版本号（优先使用微信官方版本号）
@@ -961,7 +962,16 @@ App({
   hasOperationPermission() {
     // 超级管理员始终拥有操作权限
     if (this.isSuperAdmin()) return true
-    return this.isTeamAdmin()
+    if (this.isTeamAdmin()) return true
+    const mode = this.globalData.userMode
+    if (mode !== 'team') return true
+    const mp = this.globalData.effectivePermissions || wx.getStorageSync('effectivePermissions') || null
+    if (!mp || typeof mp !== 'object') return false
+    const keys = ['parrot.create','record.create','parrot.edit','record.edit','parrot.delete','record.delete']
+    for (let i = 0; i < keys.length; i++) {
+      if (mp[keys[i]]) return true
+    }
+    return false
   }
   ,
   getEffectiveTier() {
@@ -985,5 +995,26 @@ App({
       if (l2 === 'basic' || l2 === 'advanced') return l2
       return 'basic'
     } catch (_) { return 'basic' }
+  },
+  ensureEffectivePermissions() {
+    try {
+      const mode = this.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+      if (mode !== 'team') { this.globalData.effectivePermissions = null; wx.removeStorageSync('effectivePermissions'); return Promise.resolve(null) }
+      const user = this.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+      const uid = user && user.id
+      if (!uid) return Promise.resolve(null)
+      return this.request({ url: '/api/teams/current', method: 'GET' }).then(res => {
+        const tid = res && res.success && res.data && res.data.id
+        if (!tid) return null
+        return this.request({ url: `/api/teams/${tid}/members/${uid}/effective-permissions`, method: 'GET' }).then(r => {
+          if (r && r.success && r.data && typeof r.data === 'object') {
+            this.globalData.effectivePermissions = r.data
+            try { wx.setStorageSync('effectivePermissions', r.data) } catch (_) {}
+            return r.data
+          }
+          return null
+        })
+      })
+    } catch (_) { return Promise.resolve(null) }
   }
 })

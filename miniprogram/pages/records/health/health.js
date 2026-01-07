@@ -67,18 +67,11 @@ Page({
       const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
       if (mode === 'team') {
         try {
-          const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
-          const teamId = cur && cur.success && cur.data && cur.data.id
-          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
-          if (teamId && userId) {
-            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
-            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
-              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
-              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-              const canView = !!groupId
-              this.setData({ canViewRecords: canView })
-              if (!canView) { this.setData({ healthRecords: [], displayRecords: [], virtualDisplayRecords: [], parrotsList: [] }); return }
-            }
+          if (app && typeof app.ensureEffectivePermissions === 'function') {
+            const mp = await app.ensureEffectivePermissions()
+            const canView = !!(mp && mp['record.view'])
+            this.setData({ canViewRecords: canView })
+            if (!canView) { this.setData({ healthRecords: [], displayRecords: [], virtualDisplayRecords: [], parrotsList: [] }); return }
           }
         } catch(_) { this.setData({ canViewRecords: false }); return }
       } else {

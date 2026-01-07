@@ -61,6 +61,37 @@ PERMISSIONS_CATALOG = [
     }
 ]
 
+def _all_permission_keys():
+    keys = []
+    for grp in PERMISSIONS_CATALOG:
+        for ch in grp.get('children', []):
+            k = ch.get('key')
+            if k:
+                keys.append(k)
+    return keys
+
+def _compute_effective_permissions(team_id, user_id):
+    member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
+    if not member:
+        return {}
+    all_keys = _all_permission_keys()
+    result = {k: False for k in all_keys}
+    if member.role in ['owner', 'admin']:
+        for k in all_keys:
+            result[k] = True
+        return result
+    personal = member.permissions or {}
+    for k, v in (personal.items() if isinstance(personal, dict) else []):
+        if k in result:
+            result[k] = bool(v)
+    if member.group_id:
+        grp = TeamGroup.query.filter_by(id=member.group_id, team_id=team_id, is_active=True).first()
+        if grp and isinstance(grp.permissions, dict):
+            for k, v in grp.permissions.items():
+                if k in result and bool(v):
+                    result[k] = True
+    return result
+
 @teams_bp.route('/<int:team_id>/permissions/catalog', methods=['GET'])
 @login_required
 def get_permissions_catalog(team_id):
@@ -87,6 +118,22 @@ def get_member_permissions(team_id, user_id):
         return success_response(target_member.permissions or {}, '获取成员权限成功')
     except Exception as e:
         return error_response(f'获取成员权限失败: {str(e)}')
+
+@teams_bp.route('/<int:team_id>/members/<int:user_id>/effective-permissions', methods=['GET'])
+@login_required
+def get_member_effective_permissions(team_id, user_id):
+    try:
+        user = request.current_user
+        operator = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not operator:
+            return error_response('您不是该团队成员', 403)
+        target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
+        if not target_member:
+            return error_response('成员不存在')
+        perms = _compute_effective_permissions(team_id, user_id)
+        return success_response(perms, '获取有效权限成功')
+    except Exception as e:
+        return error_response(f'获取有效权限失败: {str(e)}')
 
 @teams_bp.route('/<int:team_id>/members/<int:user_id>/permissions', methods=['PUT'])
 @login_required
