@@ -26,6 +26,20 @@ Page({
   },
 
   onLoad() {
+    this.checkAccessAndInit()
+  },
+
+  async checkAccessAndInit(){
+    try{
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      if (mode === 'team'){
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}
+        const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+        const canManage = !!(mp && (mp['finance.category.manage'] || mp['all']))
+        const isAdmin = !!(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())
+        if (!canManage && !isAdmin){ wx.showToast({ title: '无权限管理收支类别', icon: 'none' }); this.setData({ categories: [] }); return }
+      }
+    }catch(_){}
     this.fetchCategories()
   },
 
@@ -73,6 +87,12 @@ Page({
   },
 
   showAddModal() {
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team'){
+      const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+      const isAdmin = !!(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())
+      if (!(mp && (mp['finance.category.manage'] || mp['all'])) && !isAdmin){ wx.showToast({ title: '无权限管理收支类别', icon: 'none' }); return }
+    }
     this.setData({ showModal: true, newCategoryName: '' })
   },
 
@@ -92,6 +112,12 @@ Page({
     if (!this.data.newCategoryName.trim()) {
       wx.showToast({ title: '请输入名称', icon: 'none' })
       return
+    }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team'){
+      const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+      const isAdmin = !!(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())
+      if (!(mp && (mp['finance.category.manage'] || mp['all'])) && !isAdmin){ wx.showToast({ title: '无权限管理收支类别', icon: 'none' }); return }
     }
     
     app.request({
@@ -114,6 +140,12 @@ Page({
 
   deleteCategory(e) {
     const id = e.currentTarget.dataset.id
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team'){
+      const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+      const isAdmin = !!(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())
+      if (!(mp && (mp['finance.category.manage'] || mp['all'])) && !isAdmin){ wx.showToast({ title: '无权限管理收支类别', icon: 'none' }); return }
+    }
     wx.showModal({
       title: '提示',
       content: '确定要删除该类别吗？',

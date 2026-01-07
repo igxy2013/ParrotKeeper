@@ -41,6 +41,19 @@ def get_transaction_categories():
 @login_required
 def add_transaction_category():
     user = request.current_user
+    if getattr(user, 'user_mode', 'personal') == 'team':
+        tid = getattr(user, 'current_team_id', None)
+        if not tid:
+            return error_response('请先选择团队', 400)
+        from team_models import TeamMember
+        member = TeamMember.query.filter_by(team_id=tid, user_id=user.id, is_active=True).first()
+        if not member:
+            return error_response('只有团队成员可以管理类别', 403)
+        if member.role not in ['owner', 'admin']:
+            from team_utils import compute_effective_permissions
+            perms = compute_effective_permissions(tid, user.id)
+            if not (perms.get('finance.category.manage') or perms.get('all')):
+                return error_response('无权限管理收支类别', 403)
     data = request.get_json()
     
     name = data.get('name')
@@ -77,6 +90,19 @@ def add_transaction_category():
 @login_required
 def delete_transaction_category(id):
     user = request.current_user
+    if getattr(user, 'user_mode', 'personal') == 'team':
+        tid = getattr(user, 'current_team_id', None)
+        if not tid:
+            return error_response('请先选择团队', 400)
+        from team_models import TeamMember
+        member = TeamMember.query.filter_by(team_id=tid, user_id=user.id, is_active=True).first()
+        if not member:
+            return error_response('只有团队成员可以管理类别', 403)
+        if member.role not in ['owner', 'admin']:
+            from team_utils import compute_effective_permissions
+            perms = compute_effective_permissions(tid, user.id)
+            if not (perms.get('finance.category.manage') or perms.get('all')):
+                return error_response('无权限管理收支类别', 403)
     cat = TransactionCategory.query.filter_by(id=id, user_id=user.id).first()
     
     if not cat:

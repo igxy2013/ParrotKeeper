@@ -114,38 +114,27 @@ const cache = require('../../utils/cache')
     this.setData({ loading: true })
     try {
       const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
-      const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
-      if (mode === 'team' && !hasOp) {
-        try {
-          const cur = app.request ? await app.request({ url: '/api/teams/current', method: 'GET' }) : null
-          const teamId = cur && cur.success && cur.data && cur.data.id
-          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
-          let noGroup = false
-          if (teamId && userId) {
-            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
-            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
-              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
-              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-              noGroup = !groupId
-            }
-          }
-          if (noGroup) {
-            this.setData({
-              overview: {},
-              feedingTrends: [],
-              expenseAnalysis: [],
-              careFrequency: {},
-              speciesDistribution: [],
-              foodPreference: [],
-              weightSeries: [],
-              weightLegend: [],
-              selectedParrotId: null,
-              selectedParrotName: '',
-              activeWeightPoint: null
-            })
-            return
-          }
-        } catch (_) {}
+      if (mode === 'team') {
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}
+        const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+        const canViewStats = !!(mp && (mp['stats.view'] || mp['all']))
+        if (!canViewStats && !(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())) {
+          this.setData({
+            overview: {},
+            feedingTrends: [],
+            expenseAnalysis: [],
+            careFrequency: {},
+            speciesDistribution: [],
+            foodPreference: [],
+            weightSeries: [],
+            weightLegend: [],
+            selectedParrotId: null,
+            selectedParrotName: '',
+            activeWeightPoint: null
+          })
+          wx.showToast({ title: '无统计查看权限，请联系管理员', icon: 'none' })
+          return
+        }
       }
       await Promise.all([
         this.loadOverview(),

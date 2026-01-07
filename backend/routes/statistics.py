@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from models import db, Parrot, ParrotSpecies, FeedingRecord, HealthRecord, CleaningRecord, Expense, Income, UserStatistics
 from utils import login_required, success_response, error_response, add_user_points
 from team_utils import get_accessible_parrots
+from team_utils import compute_effective_permissions
 from team_mode_utils import get_accessible_parrot_ids_by_mode, get_accessible_expense_ids_by_mode, get_accessible_income_ids_by_mode
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_
@@ -14,6 +15,18 @@ def get_overview():
     """获取总览统计"""
     try:
         user = request.current_user
+        if getattr(user, 'user_mode', 'personal') == 'team':
+            tid = getattr(user, 'current_team_id', None)
+            if not tid:
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=tid, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                perms = compute_effective_permissions(tid, user.id)
+                if not (perms.get('stats.view') or perms.get('all')):
+                    return error_response('无统计查看权限', 403)
         
         # 记录统计页面查看次数并增加访问积分
         team_id = getattr(user, 'current_team_id', None) if getattr(user, 'user_mode', 'personal') == 'team' else None
@@ -329,6 +342,18 @@ def get_expense_analysis():
     """获取支出分析"""
     try:
         user = request.current_user
+        if getattr(user, 'user_mode', 'personal') == 'team':
+            tid = getattr(user, 'current_team_id', None)
+            if not tid:
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=tid, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                perms = compute_effective_permissions(tid, user.id)
+                if not (perms.get('stats.view') or perms.get('all')):
+                    return error_response('无统计查看权限', 403)
         months = request.args.get('months', 6, type=int)
         
         # 根据用户模式获取可访问的支出ID
@@ -431,6 +456,18 @@ def get_expense_analysis():
 def get_income_analysis():
     try:
         user = request.current_user
+        if getattr(user, 'user_mode', 'personal') == 'team':
+            tid = getattr(user, 'current_team_id', None)
+            if not tid:
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=tid, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                perms = compute_effective_permissions(tid, user.id)
+                if not (perms.get('stats.view') or perms.get('all')):
+                    return error_response('无统计查看权限', 403)
         months = request.args.get('months', 6, type=int)
 
         income_ids = get_accessible_income_ids_by_mode(user)

@@ -447,6 +447,19 @@ def add_breeding_record_internal(data):
     """内部函数：添加繁殖记录"""
     try:
         user = request.current_user
+        if getattr(user, 'user_mode', 'personal') == 'team':
+            tid = getattr(user, 'current_team_id', None)
+            if not tid:
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=tid, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(tid, user.id)
+                if not (perms.get('record.create') or perms.get('all')):
+                    return error_response('无新增记录权限', 403)
         member_group_id = None
         if getattr(user, 'user_mode', 'personal') == 'team' and getattr(user, 'current_team_id', None):
             try:
