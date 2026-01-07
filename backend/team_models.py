@@ -13,6 +13,7 @@ class Team(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # 团队创建者
     avatar_url = db.Column(db.String(255))  # 团队头像URL
     is_active = db.Column(db.Boolean, default=True)  # 团队是否激活
+    subscription_level = db.Column(db.Enum('basic', 'advanced'), default='basic')  # 团队会员版本：基础版/高级版
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

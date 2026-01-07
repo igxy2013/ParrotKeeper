@@ -38,6 +38,7 @@ class RedemptionCode(db.Model):
     code = db.Column(db.String(32), unique=True, nullable=False)
     # 类型：pro_monthly, pro_yearly, pro_lifetime
     tier = db.Column(db.Enum('pro', 'team'), default='pro', nullable=False)
+    team_level = db.Column(db.Enum('basic', 'advanced'), nullable=True)  # 团队版细分：基础版/高级版
     duration_days = db.Column(db.Integer, nullable=False) # 30, 365, 36500(lifetime)
     status = db.Column(db.Enum('active', 'used', 'expired'), default='active')
     

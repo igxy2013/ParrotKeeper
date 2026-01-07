@@ -478,6 +478,7 @@ def get_current_team():
             'id': team.id,
             'name': team.name,
             'description': team.description,
+            'subscription_level': getattr(team, 'subscription_level', None),
             'role': member.role,
             'member_count': TeamMember.query.filter_by(team_id=team.id, is_active=True).count()
         }, '获取当前团队成功')

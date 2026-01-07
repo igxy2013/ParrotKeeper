@@ -969,4 +969,18 @@ App({
       return 'free'
     } catch (_) { return 'free' }
   }
+  ,
+  getTeamLevel() {
+    try {
+      // 优先从当前团队接口数据读取
+      const cur = this.globalData.currentTeam || wx.getStorageSync('currentTeam') || {}
+      const lv = String(cur.subscription_level || '').toLowerCase()
+      if (lv === 'basic' || lv === 'advanced') return lv
+      // 其次从用户信息的衍生字段读取
+      const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+      const l2 = String(userInfo.team_subscription_level || '').toLowerCase()
+      if (l2 === 'basic' || l2 === 'advanced') return l2
+      return 'basic'
+    } catch (_) { return 'basic' }
+  }
 })

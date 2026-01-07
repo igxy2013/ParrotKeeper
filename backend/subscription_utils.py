@@ -40,15 +40,34 @@ def check_parrot_limit(user: User) -> bool:
     """
     tier = get_effective_subscription_tier(user)
 
-    if tier in ['pro', 'team']:
-        return True
+    # 新版限制：
+    # free: 个人5 / 团队10
+    # pro: 100
+    # team: 基础版1000 / 高级版无限制
+    if tier == 'pro':
+        try:
+            current_count = Parrot.query.filter_by(user_id=user.id, is_active=True, team_id=None).count()
+            return current_count < 100
+        except Exception:
+            return True
 
     try:
         if hasattr(user, 'user_mode') and user.user_mode == 'team':
             if not getattr(user, 'current_team_id', None):
                 return True
+            # 团队版：根据团队订阅版本限制
+            team_level = 'basic'
+            try:
+                from team_models import Team
+                team = Team.query.get(user.current_team_id)
+                if team and team.subscription_level in ['basic', 'advanced']:
+                    team_level = team.subscription_level
+            except Exception:
+                pass
             current_count = Parrot.query.filter_by(team_id=user.current_team_id, is_active=True).count()
-            return current_count < 10
+            if team_level == 'advanced':
+                return True
+            return current_count < 1000
         else:
             current_count = Parrot.query.filter_by(user_id=user.id, is_active=True, team_id=None).count()
             return current_count < 5

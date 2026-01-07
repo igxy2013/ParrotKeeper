@@ -80,7 +80,7 @@
   box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.05);
 }
 
-.pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; }
+.pricing-grid { display: grid; grid-template-columns: 1fr; gap: 20rpx; }
 .pricing-col { background: #f9fafb; border: 1rpx solid #eef2f7; border-radius: 20rpx; padding: 20rpx; }
 .pricing-header { font-size: 28rpx; font-weight: 700; margin-bottom: 16rpx; }
 .pricing-header.pro { color: #b45309; }

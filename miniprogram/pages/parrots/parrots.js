@@ -813,12 +813,19 @@ Page({
   // 添加鹦鹉
   addParrot() {
     const tier = app.getEffectiveTier()
-    const isPro = tier === 'pro' || tier === 'team'
+    const teamLevel = app.getTeamLevel()
 
     const knownTotal = Number(this.data.totalParrots || 0)
     const promptOrOpenForm = (total) => {
-      const limit = this.data.userMode === 'team' ? 10 : 5
-      if (!isPro && total >= limit) {
+      let limit = 0
+      if (tier === 'free') {
+        limit = this.data.userMode === 'team' ? 10 : 5
+      } else if (tier === 'pro') {
+        limit = 100
+      } else if (tier === 'team') {
+        limit = (teamLevel === 'basic') ? 1000 : Number.MAX_SAFE_INTEGER
+      }
+      if (limit && total >= limit) {
         this.setData({ showLimitModal: true, limitModalCode: '', limitCount: limit })
         return
       }
@@ -827,8 +834,12 @@ Page({
       this.loadSpeciesListForModal()
     }
 
-    const limit = this.data.userMode === 'team' ? 10 : 5
-    if (isPro || knownTotal >= limit) {
+    // 若可能达到上限，则根据后端统计进行一次确认；团队高级版不预限制
+    let preLimit = 0
+    if (tier === 'free') preLimit = this.data.userMode === 'team' ? 10 : 5
+    else if (tier === 'pro') preLimit = 100
+    else if (tier === 'team' && teamLevel === 'basic') preLimit = 1000
+    if (preLimit && knownTotal >= preLimit) {
       promptOrOpenForm(knownTotal)
       return
     }

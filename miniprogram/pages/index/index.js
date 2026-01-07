@@ -1973,13 +1973,16 @@ Page({
     }
 
     const tier = app.getEffectiveTier()
-    const isPro = tier === 'pro' || tier === 'team'
+    const teamLevel = app.getTeamLevel()
     const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
-    const limit = mode === 'team' ? 10 : 5
+    let limit = 0
+    if (tier === 'free') limit = mode === 'team' ? 10 : 5
+    else if (tier === 'pro') limit = 100
+    else if (tier === 'team' && teamLevel === 'basic') limit = 1000
     const knownTotal = Number((this.data.overview && this.data.overview.total_parrots) || 0)
 
     const promptOrOpenForm = (total) => {
-      if (!isPro && total >= limit) {
+      if (limit && total >= limit) {
         this.setData({ showLimitModal: true, limitCount: limit })
         return
       }
@@ -1987,7 +1990,7 @@ Page({
       this.loadSpeciesList()
     }
 
-    if (isPro || knownTotal >= limit) {
+    if (!limit || knownTotal >= limit) {
       promptOrOpenForm(knownTotal)
       return
     }

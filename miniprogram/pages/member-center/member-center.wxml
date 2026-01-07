@@ -54,15 +54,11 @@
           <view class="pricing-header pro">个人会员</view>
           <view class="pricing-item">
             <text class="pricing-name">月卡</text>
-            <text class="pricing-price">¥9.9 /月</text>
+            <text class="pricing-price">¥9.9/月</text>
           </view>
           <view class="pricing-item">
             <text class="pricing-name">年卡</text>
-            <text class="pricing-price">¥99 /年</text>
-          </view>
-          <view class="pricing-item">
-            <text class="pricing-name">终身会员</text>
-            <text class="pricing-price">¥299</text>
+            <text class="pricing-price">¥99/年</text>
           </view>
           <view class="apply-row">
             <button class="apply-btn" bindtap="openApplyModal">申请兑换码</button>
@@ -71,16 +67,20 @@
         <view class="pricing-col">
           <view class="pricing-header team">团队会员</view>
           <view class="pricing-item">
-            <text class="pricing-name">月卡</text>
-            <text class="pricing-price">¥19.9 /月</text>
+            <text class="pricing-name">月卡基础版</text>
+            <text class="pricing-price">¥29.9/月</text>
           </view>
           <view class="pricing-item">
-            <text class="pricing-name">年卡</text>
-            <text class="pricing-price">¥199 /年</text>
+            <text class="pricing-name">月卡高级版</text>
+            <text class="pricing-price">¥59.9/月</text>
           </view>
           <view class="pricing-item">
-            <text class="pricing-name">终身会员</text>
-            <text class="pricing-price">¥599</text>
+            <text class="pricing-name">年卡基础版</text>
+            <text class="pricing-price">¥299/年</text>
+          </view>
+          <view class="pricing-item">
+            <text class="pricing-name">年卡高级版</text>
+            <text class="pricing-price">¥599/年</text>
           </view>
           <view class="apply-row">
             <button class="apply-btn" bindtap="openApplyModal">申请兑换码</button>
@@ -103,8 +103,8 @@
         <view class="matrix-row">
           <text class="c-feature">鹦鹉数量限制</text>
           <text class="c-free">个人上限5只/团队上限10只</text>
-          <text class="c-pro">无限制</text>
-          <text class="c-team">无限制</text>
+          <text class="c-pro">100只</text>
+          <text class="c-team">基础版1000只/高级版无限制</text>
         </view>
 
         <view class="matrix-row">
