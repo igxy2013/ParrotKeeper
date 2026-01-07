@@ -150,6 +150,10 @@ def set_member_permissions(team_id, user_id):
             return error_response('成员不存在')
         data = request.get_json() or {}
         # 允许设置为 JSON（权限清单的勾选结果）
+        # 保护：如果是member角色，不允许设置 'all' 权限
+        if target_member.role == 'member' and data.get('all'):
+            data.pop('all')
+            
         target_member.permissions = data or {}
         db.session.commit()
         return success_response(target_member.permissions or {}, '成员权限已更新')
@@ -515,6 +519,14 @@ def change_member_role(team_id, user_id):
         
         # 修改角色
         target_member.role = new_role
+        
+        # 如果降级为 member，清理可能存在的 'all' 权限
+        if new_role == 'member':
+            if target_member.permissions and target_member.permissions.get('all'):
+                perms = dict(target_member.permissions)
+                perms.pop('all')
+                target_member.permissions = perms
+                
         db.session.commit()
         
         return success_response({
