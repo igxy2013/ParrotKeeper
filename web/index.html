@@ -146,6 +146,24 @@
         background: #fff;
       }
 
+      .hover-qr { position: relative; }
+      .qr-tooltip {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        padding: 12px;
+        background: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: var(--shadow-lg);
+        width: 220px;
+        display: none;
+        z-index: 2000;
+      }
+      .hover-qr:hover .qr-tooltip { display: block; }
+      .qr-tooltip img { width: 200px; height: auto; border-radius: 8px; }
+      .qr-tooltip .qr-tip { text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 8px; }
+
       /* Hero Section */
       .hero {
         padding: 140px 0 80px;
@@ -297,6 +315,44 @@
         line-height: 1.6;
       }
 
+      .miniapp-promo {
+        padding: 40px 0 0;
+      }
+      .miniapp-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        align-items: center;
+      }
+      @media (min-width: 768px) {
+        .miniapp-card { grid-template-columns: 0.6fr 0.4fr; }
+      }
+      .miniapp-left {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .miniapp-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .miniapp-desc { color: var(--text-muted); }
+      .miniapp-right { justify-self: center; }
+      .miniapp-qrcode {
+        width: 180px;
+        height: auto;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+      }
+
       /* CTA Section */
       .cta {
         padding: 100px 0;
@@ -319,17 +375,36 @@
         margin-right: auto;
       }
 
+      .social-promo { padding: 20px 0 60px; }
+      .promo-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+      }
+      .promo-title { text-align: center; font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 16px; }
+      .promo-grid { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
+      @media (min-width: 768px) { .promo-grid { grid-template-columns: 1fr 1fr; } }
+      .qrcode-block { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+      .qrcode-img { width: 180px; height: auto; border-radius: 12px; border: 1px solid var(--border-color); background: #fff; box-shadow: var(--shadow-sm); }
+      .qrcode-tip { color: var(--text-muted); font-size: 14px; }
+
       /* Footer */
       .footer {
         padding: 40px 0;
         border-top: 1px solid var(--border-color);
-        text-align: center;
         color: var(--text-muted);
         font-size: 14px;
         background: #fff;
       }
-
-      .footer p { margin: 8px 0; }
+      .footer-inner { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px; }
+      .footer-left { text-align: center; grid-column: 2; }
+      .footer-left p { margin: 8px 0; }
+      .footer-right { display: flex; gap: 16px; align-items: center; justify-self: end; grid-column: 3; }
+      .footer-qr { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+      .footer-qr img { width: 110px; height: auto; border-radius: 10px; border: 1px solid var(--border-color); background: #fff; box-shadow: var(--shadow-sm); }
+      @media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr; } .footer-right { justify-self: center; grid-column: auto; } }
     </style>
     <script type="application/ld+json">
       {
@@ -353,7 +428,14 @@
           <img src="/logo.png" alt="鹦鹉管家 Logo" />
           <span>鹦鹉管家</span>
         </a>
-        <div class="nav-actions">
+        <div class="nav-actions" style="display:flex; gap:12px;">
+          <div class="hover-qr">
+            <a class="btn btn-outline" href="/xcx.jpg" target="_blank" rel="noopener">微信小程序</a>
+            <div class="qr-tooltip">
+              <img src="/xcx.jpg" alt="微信小程序二维码" />
+              <div class="qr-tip">微信扫码打开小程序</div>
+            </div>
+          </div>
           <a class="btn btn-primary" href="/app.html">进入应用</a>
         </div>
       </div>
@@ -373,6 +455,24 @@
           </div>
           <div class="hero-image">
             <img src="/web06.png" alt="鹦鹉管家仪表盘界面" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="miniapp-promo">
+      <div class="container">
+        <div class="miniapp-card">
+          <div class="miniapp-left">
+            <div class="miniapp-title">微信小程序 · 即刻体验</div>
+            <div class="miniapp-desc">使用微信扫码打开「鹦鹉管家」小程序，手机端随时记录喂食、体重与护理信息。</div>
+            <div>
+              <a class="btn btn-outline" href="/app.html">也可使用网页版</a>
+            </div>
+          </div>
+          <div class="miniapp-right">
+            <img class="miniapp-qrcode" src="/xcx.jpg" alt="微信小程序码" />
           </div>
         </div>
       </div>
@@ -455,11 +555,24 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <div class="container">
-        <p>© 2025 鹦鹉管家. All rights reserved.</p>
-        <p>Designed for Parrot Lovers.</p>
-        <p><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">蜀ICP备2024115225号-5</a></p>
+      <div class="container footer-inner">
+        <div class="footer-left">
+          <p>© 2025 鹦鹉管家. All rights reserved.</p>
+          <p>Designed for Parrot Lovers.</p>
+          <p><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">蜀ICP备2024115225号-5</a></p>
+        </div>
+        <div class="footer-right">
+          <div class="footer-qr">
+            <img src="/qrcode.jpg" alt="微信公众号二维码" />
+            <div class="qr-tip">微信公众号</div>
+          </div>
+          <div class="footer-qr">
+            <img src="/WXcode.png" alt="微信客服二维码" />
+            <div class="qr-tip">微信客服</div>
+          </div>
+        </div>
       </div>
     </footer>
+
   </body>
 </html>

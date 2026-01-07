@@ -3,3 +3,5 @@
 本项目小程序端的数字键盘采用通用数字键盘组件，组件路径为：`/components/numeric-keyboard/numeric-keyboard`
 本项目小程序端弹窗样式均参考添加新鹦鹉弹窗的样式，弹窗组件路径为：`/components/parrot-modal/parrot-modal`
 本项目小程序端按钮的样式均参考添加新鹦鹉弹窗的按钮样式
+
+web端编辑完成后你不用帮我构建项目
