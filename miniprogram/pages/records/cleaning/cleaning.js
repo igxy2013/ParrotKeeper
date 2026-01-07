@@ -333,6 +333,10 @@ Page({
       app.showError('请先登录后再添加记录')
       return
     }
+    if (this.data.isTeamMode && !this.data.hasOperationPermission) {
+      wx.showToast({ title: '无操作权限，请联系管理员分配权限；', icon: 'none', duration: 3000 })
+      return
+    }
     wx.navigateTo({ url: '/pages/records/add-record/add-record?type=cleaning' })
   },
 

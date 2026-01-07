@@ -1070,9 +1070,7 @@ const cache = require('../../utils/cache')
         wx.hideLoading();
         
         if (res.data.success) {
-          // 后端更新成功，更新前端状态
-          app.globalData.userMode = newMode;
-          wx.setStorageSync('userMode', newMode);
+          app.setUserMode && app.setUserMode(newMode);
           
           // 更新页面数据
           that.setData({
@@ -1086,6 +1084,8 @@ const cache = require('../../utils/cache')
           });
           
           // 刷新数据
+          try { cache.clear('stats_overview') } catch (_) {}
+          try { cache.clear('index_overview') } catch (_) {}
           that.loadAllStatistics();
           
           console.log('模式切换成功:', newMode);

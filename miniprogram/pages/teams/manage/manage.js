@@ -190,7 +190,7 @@ Page({
 
   async submitGroupEdit() {
     const teamId = this.data.teamInfo && this.data.teamInfo.id
-    if (!teamId) return
+    if (!teamId) return wx.showToast({ title: '无法识别当前团队', icon: 'none' })
     const name = this.data.groupEditName
     const description = this.data.groupEditDesc
     const permission_scope = this.data.groupEditPermission

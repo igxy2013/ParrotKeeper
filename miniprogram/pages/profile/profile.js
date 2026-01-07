@@ -27,6 +27,8 @@ Page({
     showTeamInfoModal: false,
     teamInfo: {},
     teamRoleDisplay: '',
+    userGroupName: '',
+    userGroupId: null,
     showJoinTeamModal: false,
     showCreateTeamModal: false,
     inviteCode: '',
@@ -1102,6 +1104,21 @@ Page({
             isTeamOwner: role === 'owner',
             teamRoleDisplay: this.mapTeamRoleDisplay(role)
           });
+          // 拉取成员列表以获取当前用户分组信息
+          const teamId = d.id;
+          const userId = (app.globalData.userInfo && app.globalData.userInfo.id) || null;
+          if (teamId && userId) {
+            return app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+              .then(membersRes => {
+                if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+                  const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId));
+                  const groupName = me && (me.group_name || '');
+                  const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null);
+                  this.setData({ userGroupName: groupName || '', userGroupId: groupId });
+                }
+              })
+              .catch(() => {});
+          }
         }
       })
       .catch(err => {

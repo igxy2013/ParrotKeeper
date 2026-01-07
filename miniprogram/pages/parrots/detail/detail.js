@@ -190,6 +190,21 @@ Page({
       })
     }
     try {
+      let keeperName = ''
+      const ownerObj = rawParrot.owner || rawParrot.user || rawParrot.owner_user
+      if (ownerObj) {
+        keeperName = ownerObj.nickname || ownerObj.name || ownerObj.username || ownerObj.display_name || ''
+      }
+      if (!keeperName) {
+        keeperName = rawParrot.owner_name || rawParrot.owner_username || rawParrot.owner_nickname || ''
+      }
+      if (!keeperName) {
+        const uiUser = (app && app.globalData && app.globalData.userInfo) || {}
+        keeperName = uiUser.nickname || uiUser.username || uiUser.name || ''
+      }
+      parrot.keeper_name = keeperName
+    } catch(_) {}
+    try {
       const photoThumb = parrot.photo_url ? app.getThumbnailUrl(parrot.photo_url, 160) : ''
       const avatarThumb = parrot.avatar_url ? app.getThumbnailUrl(parrot.avatar_url, 128) : ''
       parrot.photo_thumb = photoThumb

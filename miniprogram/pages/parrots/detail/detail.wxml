@@ -170,9 +170,9 @@
             <view class="info-grid-item number-info">
               <view class="grid-label-wrap">
                 <image class="grid-icon" src="/images/remix/ri-information-fill-amber.png" />
-                <text class="grid-label">鹦鹉编号</text>
+                <text class="grid-label">饲养人</text>
               </view>
-              <view class="grid-value">{{parrot.parrot_number || '未设置'}}</view>
+              <view class="grid-value">{{parrot.keeper_name || '未设置'}}</view>
             </view>
             <view class="info-grid-item ring-info">
               <view class="grid-label-wrap">

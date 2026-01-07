@@ -41,7 +41,7 @@
           <image class="search-icon-img" src="{{iconPaths.searchGray}}" mode="widthFix" binderror="onListIconError" data-key="searchGray" lazy-load="true"/>
       <input 
         class="search-input" 
-        placeholder="搜索鹦鹉名称、编号或脚环号..." 
+        placeholder="搜索鹦鹉名称、饲养人或脚环号..." 
         value="{{searchKeyword}}"
         bindinput="onSearchInput"
         bindconfirm="onSearch"

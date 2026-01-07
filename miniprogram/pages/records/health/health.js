@@ -407,9 +407,15 @@ Page({
 
   // 添加健康记录
   addHealthRecord() {
-    wx.navigateTo({
-      url: '/pages/records/add-record/add-record?type=health'
-    })
+    const isLogin = !!(app && app.globalData && app.globalData.isLogin)
+    if (!isLogin) { app.showError && app.showError('请先登录后再添加记录'); return }
+    const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+    if (userMode === 'team' && !hasOp) {
+      wx.showToast({ title: '无操作权限，请联系管理员分配权限；', icon: 'none', duration: 3000 })
+      return
+    }
+    wx.navigateTo({ url: '/pages/records/add-record/add-record?type=health' })
   },
 
   // 编辑记录
