@@ -120,7 +120,7 @@
             </block>
             
             <view wx:if="{{isEditMode}}" class="remove-btn" bindtap="removeWidget" data-widget="{{item}}">
-              <image src="/images/icons/close-white.png" class="remove-icon" />
+              <image src="/images/remix/close-line-white.png" class="remove-icon" />
             </view>
           </view>
         </view>
@@ -147,7 +147,7 @@
             </block>
             
             <view wx:if="{{isEditMode}}" class="remove-btn" bindtap="removeWidget" data-widget="{{item}}">
-              <image src="/images/icons/close-white.png" class="remove-icon" />
+              <image src="/images/remix/close-line-white.png" class="remove-icon" />
             </view>
           </view>
         </view>

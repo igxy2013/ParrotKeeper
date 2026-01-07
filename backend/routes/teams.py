@@ -17,6 +17,99 @@ def generate_invitation_code(length=32):
     """生成邀请链接码"""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
+# 权限清单（集中管理，面向中文用户）
+# key 为后端判定用的权限键；label 为前端展示文案；children 为分组子项
+PERMISSIONS_CATALOG = [
+    {
+        'key': 'team', 'label': '团队管理', 'children': [
+            {'key': 'team.update', 'label': '修改团队信息'},
+            {'key': 'team.invite', 'label': '邀请成员加入'},
+            {'key': 'team.remove_member', 'label': '移除成员'},
+            {'key': 'team.group.manage', 'label': '管理分组'},
+        ]
+    },
+    {
+        'key': 'parrot', 'label': '鹦鹉', 'children': [
+            {'key': 'parrot.view', 'label': '查看鹦鹉'},
+            {'key': 'parrot.create', 'label': '新增鹦鹉'},
+            {'key': 'parrot.edit', 'label': '编辑鹦鹉'},
+            {'key': 'parrot.delete', 'label': '删除鹦鹉'},
+            {'key': 'parrot.share', 'label': '分享到团队'},
+        ]
+    },
+    {
+        'key': 'record', 'label': '记录', 'children': [
+            {'key': 'record.view', 'label': '查看记录'},
+            {'key': 'record.create', 'label': '新增记录'},
+            {'key': 'record.edit', 'label': '编辑记录'},
+            {'key': 'record.delete', 'label': '删除记录'},
+        ]
+    },
+    {
+        'key': 'stats', 'label': '统计', 'children': [
+            {'key': 'stats.view', 'label': '查看统计'}
+        ]
+    },
+    {
+        'key': 'finance', 'label': '收支', 'children': [
+            {'key': 'finance.view', 'label': '查看收支'},
+            {'key': 'finance.create', 'label': '新增收支'},
+            {'key': 'finance.edit', 'label': '编辑收支'},
+            {'key': 'finance.delete', 'label': '删除收支'},
+            {'key': 'finance.category.manage', 'label': '管理收支类别'},
+        ]
+    }
+]
+
+@teams_bp.route('/<int:team_id>/permissions/catalog', methods=['GET'])
+@login_required
+def get_permissions_catalog(team_id):
+    try:
+        user = request.current_user
+        member = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not member:
+            return error_response('您不是该团队成员', 403)
+        return success_response(PERMISSIONS_CATALOG, '获取权限清单成功')
+    except Exception as e:
+        return error_response(f'获取权限清单失败: {str(e)}')
+
+@teams_bp.route('/<int:team_id>/members/<int:user_id>/permissions', methods=['GET'])
+@login_required
+def get_member_permissions(team_id, user_id):
+    try:
+        user = request.current_user
+        operator = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not operator:
+            return error_response('您不是该团队成员', 403)
+        target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
+        if not target_member:
+            return error_response('成员不存在')
+        return success_response(target_member.permissions or {}, '获取成员权限成功')
+    except Exception as e:
+        return error_response(f'获取成员权限失败: {str(e)}')
+
+@teams_bp.route('/<int:team_id>/members/<int:user_id>/permissions', methods=['PUT'])
+@login_required
+def set_member_permissions(team_id, user_id):
+    try:
+        user = request.current_user
+        operator = TeamMember.query.filter_by(team_id=team_id, user_id=user.id, is_active=True).first()
+        if not operator:
+            return error_response('您不是该团队成员', 403)
+        if operator.role not in ['owner', 'admin']:
+            return error_response('仅创建者或管理员可设置成员权限', 403)
+        target_member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
+        if not target_member:
+            return error_response('成员不存在')
+        data = request.get_json() or {}
+        # 允许设置为 JSON（权限清单的勾选结果）
+        target_member.permissions = data or {}
+        db.session.commit()
+        return success_response(target_member.permissions or {}, '成员权限已更新')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'设置成员权限失败: {str(e)}')
+
 @teams_bp.route('', methods=['GET'])
 @login_required
 def get_user_teams():
@@ -398,6 +491,7 @@ def list_groups(team_id):
                 'name': g.name,
                 'description': g.description,
                 'permission_scope': getattr(g, 'permission_scope', 'group'),
+                'permissions': getattr(g, 'permissions', None),
                 'is_active': g.is_active,
                 'created_at': g.created_at.isoformat()
             })
@@ -423,10 +517,10 @@ def create_group(team_id):
             return error_response('无效的分组权限')
         if not name:
             return error_response('分组名称不能为空')
-        group = TeamGroup(team_id=team_id, name=name, description=description, permission_scope=permission_scope, is_active=True)
+        group = TeamGroup(team_id=team_id, name=name, description=description, permission_scope=permission_scope, permissions=(data.get('permissions') or None), is_active=True)
         db.session.add(group)
         db.session.commit()
-        return success_response({'id': group.id, 'name': group.name, 'description': group.description, 'permission_scope': group.permission_scope}, '分组创建成功')
+        return success_response({'id': group.id, 'name': group.name, 'description': group.description, 'permission_scope': group.permission_scope, 'permissions': group.permissions}, '分组创建成功')
     except Exception as e:
         db.session.rollback()
         return error_response(f'创建分组失败: {str(e)}')
@@ -457,9 +551,12 @@ def update_group(team_id, group_id):
             if scope not in ['group', 'team']:
                 return error_response('无效的分组权限')
             group.permission_scope = scope
+        if 'permissions' in data:
+            perms = data.get('permissions') or None
+            group.permissions = perms
         group.updated_at = datetime.utcnow()
         db.session.commit()
-        return success_response({'id': group.id, 'name': group.name, 'description': group.description, 'permission_scope': group.permission_scope}, '分组更新成功')
+        return success_response({'id': group.id, 'name': group.name, 'description': group.description, 'permission_scope': group.permission_scope, 'permissions': group.permissions}, '分组更新成功')
     except Exception as e:
         db.session.rollback()
         return error_response(f'更新分组失败: {str(e)}')

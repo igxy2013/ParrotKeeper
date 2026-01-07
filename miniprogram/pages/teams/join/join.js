@@ -35,9 +35,9 @@ Page({
   joinTeam() {
     const { inviteCode, isJoining } = this.data;
     
-    if (!inviteCode || inviteCode.length !== 6) {
+    if (!inviteCode || inviteCode.length !== 8) {
       wx.showToast({
-        title: '请输入6位邀请码',
+        title: '请输入8位邀请码',
         icon: 'none'
       });
       return;

@@ -1441,9 +1441,13 @@ Page({
     }
 
     const app = getApp();
-    const code = (this.data.inviteCode || '').trim();
+    let code = (this.data.inviteCode || '').trim();
     if (!code) {
       return wx.showToast({ title: '请输入邀请码', icon: 'none' });
+    }
+    code = code.toUpperCase();
+    if (code.length !== 8) {
+      return wx.showToast({ title: '请输入8位邀请码', icon: 'none' });
     }
 
     app.showLoading('正在加入团队...');

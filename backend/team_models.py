@@ -68,6 +68,7 @@ class TeamGroup(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255))
     permission_scope = db.Column(db.Enum('group', 'team'), default='group')
+    permissions = db.Column(db.JSON)  # 权限清单（JSON，集中管理）
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

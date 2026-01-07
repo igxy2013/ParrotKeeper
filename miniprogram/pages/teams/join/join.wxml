@@ -20,24 +20,24 @@
           <input 
             class="invite-code-input" 
             type="text" 
-            placeholder="请输入6位邀请码" 
+            placeholder="请输入8位邀请码" 
             value="{{inviteCode}}"
             bindinput="onInviteCodeInput"
-            maxlength="6"
+            maxlength="8"
             auto-focus="{{true}}"
           />
           <view class="input-clear" wx:if="{{inviteCode}}" bindtap="clearInviteCode">
             <text class="clear-icon">✕</text>
           </view>
         </view>
-        <view class="input-hint">邀请码由6位字母和数字组成</view>
+        <view class="input-hint">邀请码由8位字母和数字组成</view>
       </view>
 
       <view class="form-actions">
         <button 
-          class="join-btn {{inviteCode.length === 6 ? 'active' : 'disabled'}}" 
+          class="join-btn {{inviteCode.length === 8 ? 'active' : 'disabled'}}" 
           bindtap="joinTeam"
-          disabled="{{inviteCode.length !== 6 || isJoining}}"
+          disabled="{{inviteCode.length !== 8 || isJoining}}"
         >
           <text class="btn-text">{{isJoining ? '加入中...' : '加入团队'}}</text>
         </button>
@@ -62,7 +62,7 @@
       </view>
       <view class="help-item">
         <view class="help-step">3</view>
-        <text class="help-text">输入6位邀请码即可加入团队</text>
+        <text class="help-text">输入8位邀请码即可加入团队</text>
       </view>
     </view>
   </view>

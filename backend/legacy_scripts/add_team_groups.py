@@ -33,6 +33,7 @@ def migrate():
                   name VARCHAR(100) NOT NULL,
                   description VARCHAR(255) NULL,
                   permission_scope ENUM('group','team') DEFAULT 'group',
+                  permissions JSON NULL,
                   is_active TINYINT(1) DEFAULT 1,
                   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -64,6 +65,27 @@ def migrate():
                     print('ℹ️ team_groups.permission_scope 已存在，跳过')
             except Exception as e:
                 print(f'ℹ️ 检查/添加 permission_scope 字段失败: {e}')
+
+            # 若已有表但缺少 permissions(JSON)，则补齐
+            try:
+                check_sql = text("""
+                    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'team_groups'
+                      AND COLUMN_NAME = 'permissions'
+                """)
+                exists = db.session.execute(check_sql).fetchone()
+                if not exists:
+                    db.session.execute(text("""
+                        ALTER TABLE team_groups
+                        ADD COLUMN permissions JSON NULL
+                    """))
+                    db.session.commit()
+                    print('✅ 为 team_groups 添加 permissions(JSON) 字段')
+                else:
+                    print('ℹ️ team_groups.permissions 已存在，跳过')
+            except Exception as e:
+                print(f'ℹ️ 检查/添加 permissions 字段失败: {e}')
 
             # 2) team_members 添加 group_id
             try:

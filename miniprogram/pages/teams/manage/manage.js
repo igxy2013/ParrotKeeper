@@ -26,6 +26,11 @@ Page({
     groupMemberSearchKeyword: '',
     filteredMemberOptions: [],
     originalGroupMemberIds: []
+    ,
+    // 分组权限清单
+    permissionCatalog: [],
+    permissionSelections: {},
+    permissionCollapsed: {}
   },
 
   onLoad() {
@@ -108,9 +113,75 @@ Page({
     }
   },
 
+  async showGroupPermissions(e) {
+    if (!this.data.isTeamOwner && !this.data.isTeamAdmin) return
+    const gid = e.currentTarget.dataset.groupId
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    if (!gid || !teamId) return
+    try {
+      const catalogRes = await app.request({ url: `/api/teams/${teamId}/permissions/catalog`, method: 'GET' })
+      const groupsRes = await app.request({ url: `/api/teams/${teamId}/groups`, method: 'GET' })
+      let catalog = []
+      if (catalogRes && catalogRes.success) catalog = catalogRes.data || []
+      const g = (groupsRes && groupsRes.success ? (groupsRes.data || []).find(x => String(x.id) === String(gid)) : null)
+      const current = (g && g.permissions) || {}
+      this.setData({ showPermissionEdit: true, permissionCatalog: catalog, permissionEditGroupId: gid, permissionSelections: current || {} })
+    } catch (_) {
+      wx.showToast({ title: '加载权限失败', icon: 'none' })
+    }
+  },
+
+  hidePermissionEdit() { this.setData({ showPermissionEdit: false, permissionEditGroupId: null }) },
+
+  togglePermissionItem(e) {
+    const key = e.currentTarget.dataset.key
+    if (!key) return
+    const selections = { ...(this.data.permissionSelections || {}) }
+    selections[key] = !selections[key]
+    this.setData({ permissionSelections: selections })
+  },
+
+  async submitPermissionEdit() {
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    const gid = this.data.permissionEditGroupId
+    if (!teamId || !gid) return wx.showToast({ title: '无法识别分组', icon: 'none' })
+    try {
+      const res = await app.request({ url: `/api/teams/${teamId}/groups/${gid}`, method: 'PUT', data: { permissions: this.data.permissionSelections || {} } })
+      if (res && res.success) {
+        wx.showToast({ title: '权限已保存', icon: 'none' })
+        this.setData({ showPermissionEdit: false })
+        await this.loadGroups()
+      } else {
+        wx.showToast({ title: (res && res.message) || '保存失败', icon: 'none' })
+      }
+    } catch (e) {
+      wx.showToast({ title: '保存失败', icon: 'none' })
+    }
+  },
+
   showCreateGroup() {
     if (!this.data.isTeamOwner && !this.data.isTeamAdmin) return wx.showToast({ title: '仅创建者或管理员可操作', icon: 'none' })
     this.setData({ showGroupEdit: true, groupEditId: null, groupEditName: '', groupEditDesc: '', groupEditPermission: 'group', permissionIndex: 0, selectedGroupMembers: [], originalGroupMemberIds: [], groupMemberSearchKeyword: '', filteredMemberOptions: [] })
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    if (teamId) {
+      app.request({ url: `/api/teams/${teamId}/permissions/catalog`, method: 'GET' }).then(res => {
+        let catalog = []
+        if (res && res.success) {
+          catalog = res.data || []
+        }
+        if (!catalog || !catalog.length) {
+          catalog = this.getFallbackCatalog()
+        }
+        const defaults = this.buildDefaultGroupPermissions(catalog)
+        const collapsed = this.buildDefaultCollapsed(catalog)
+        this.setData({ permissionCatalog: catalog, permissionSelections: defaults, permissionCollapsed: collapsed })
+      }).catch(() => {
+        const catalog = this.getFallbackCatalog()
+        const defaults = this.buildDefaultGroupPermissions(catalog)
+        const collapsed = this.buildDefaultCollapsed(catalog)
+        this.setData({ permissionCatalog: catalog, permissionSelections: defaults, permissionCollapsed: collapsed })
+      })
+    }
   },
 
   showEditGroup(e) {
@@ -133,6 +204,26 @@ Page({
       groupMemberSearchKeyword: '',
       filteredMemberOptions: []
     })
+    // 加载权限清单并预填当前分组权限
+    const teamId = this.data.teamInfo && this.data.teamInfo.id
+    if (teamId) {
+      app.request({ url: `/api/teams/${teamId}/permissions/catalog`, method: 'GET' }).then(res => {
+        let catalog = (res && res.success) ? (res.data || []) : []
+        if (!catalog || !catalog.length) catalog = this.getFallbackCatalog()
+        const current = g.permissions || {}
+        const defaults = this.buildDefaultGroupPermissions(catalog)
+        const selections = (current && Object.keys(current).length) ? current : defaults
+        const collapsed = this.buildDefaultCollapsed(catalog)
+        this.setData({ permissionCatalog: catalog, permissionSelections: selections, permissionCollapsed: collapsed })
+      }).catch(() => {
+        const catalog = this.getFallbackCatalog()
+        const current = g.permissions || {}
+        const defaults = this.buildDefaultGroupPermissions(catalog)
+        const selections = (current && Object.keys(current).length) ? current : defaults
+        const collapsed = this.buildDefaultCollapsed(catalog)
+        this.setData({ permissionCatalog: catalog, permissionSelections: selections, permissionCollapsed: collapsed })
+      })
+    }
   },
 
   hideGroupEdit() { this.setData({ showGroupEdit: false }) },
@@ -142,6 +233,83 @@ Page({
     const idx = Number(e.detail.value)
     const scope = idx === 1 ? 'team' : 'group'
     this.setData({ permissionIndex: idx, groupEditPermission: scope })
+  },
+
+  // 勾选分组权限清单项
+  togglePermissionItem(e) {
+    const key = e.currentTarget.dataset.key
+    if (!key) return
+    const cur = { ...(this.data.permissionSelections || {}) }
+    cur[key] = !cur[key]
+    this.setData({ permissionSelections: cur })
+  },
+
+  buildDefaultGroupPermissions(catalog) {
+    const result = {}
+    const list = Array.isArray(catalog) ? catalog : []
+    list.forEach(group => {
+      const isTeam = String(group.key) === 'team'
+      const children = group.children || []
+      children.forEach(ch => {
+        const k = ch && ch.key
+        if (!k) return
+        result[k] = !isTeam
+      })
+    })
+    return result
+  },
+
+  buildDefaultCollapsed(catalog) {
+    const map = {}
+    const list = Array.isArray(catalog) ? catalog : []
+    list.forEach(grp => {
+      const key = grp && grp.key
+      if (!key) return
+      map[key] = true
+    })
+    return map
+  },
+
+  togglePermissionGroup(e) {
+    const key = e.currentTarget.dataset.groupKey
+    if (!key) return
+    const collapsed = { ...(this.data.permissionCollapsed || {}) }
+    collapsed[key] = !collapsed[key]
+    this.setData({ permissionCollapsed: collapsed })
+  },
+
+  getFallbackCatalog() {
+    return [
+      { key: 'team', label: '团队管理', children: [
+        { key: 'team.update', label: '修改团队信息' },
+        { key: 'team.invite', label: '邀请成员加入' },
+        { key: 'team.remove_member', label: '移除成员' },
+        { key: 'team.group.manage', label: '管理分组' }
+      ]},
+      { key: 'parrot', label: '鹦鹉', children: [
+        { key: 'parrot.view', label: '查看鹦鹉' },
+        { key: 'parrot.create', label: '新增鹦鹉' },
+        { key: 'parrot.edit', label: '编辑鹦鹉' },
+        { key: 'parrot.delete', label: '删除鹦鹉' },
+        { key: 'parrot.share', label: '分享到团队' }
+      ]},
+      { key: 'record', label: '记录', children: [
+        { key: 'record.view', label: '查看记录' },
+        { key: 'record.create', label: '新增记录' },
+        { key: 'record.edit', label: '编辑记录' },
+        { key: 'record.delete', label: '删除记录' }
+      ]},
+      { key: 'stats', label: '统计', children: [
+        { key: 'stats.view', label: '查看统计' }
+      ]},
+      { key: 'finance', label: '收支', children: [
+        { key: 'finance.view', label: '查看收支' },
+        { key: 'finance.create', label: '新增收支' },
+        { key: 'finance.edit', label: '编辑收支' },
+        { key: 'finance.delete', label: '删除收支' },
+        { key: 'finance.category.manage', label: '管理收支类别' }
+      ]}
+    ]
   },
 
   // 分组成员选择下拉
@@ -198,9 +366,9 @@ Page({
     try {
       let res
       if (this.data.groupEditId) {
-        res = await app.request({ url: `/api/teams/${teamId}/groups/${this.data.groupEditId}`, method: 'PUT', data: { name, description, permission_scope } })
+        res = await app.request({ url: `/api/teams/${teamId}/groups/${this.data.groupEditId}`, method: 'PUT', data: { name, description, permission_scope, permissions: this.data.permissionSelections || {} } })
       } else {
-        res = await app.request({ url: `/api/teams/${teamId}/groups`, method: 'POST', data: { name, description, permission_scope } })
+        res = await app.request({ url: `/api/teams/${teamId}/groups`, method: 'POST', data: { name, description, permission_scope, permissions: this.data.permissionSelections || {} } })
       }
       if (res && res.success) {
         const newGroupId = this.data.groupEditId || (res.data && res.data.id)

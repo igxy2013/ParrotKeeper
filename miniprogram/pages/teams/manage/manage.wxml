@@ -88,7 +88,7 @@
               <text class="desc">{{item.description || '—'}}</text>
               <text class="meta">权限：{{item.permission_scope === 'team' ? '查看/编辑团队所有信息' : '查看/编辑本组所有信息'}}</text>
           </view>
-            <view class="group-actions">
+          <view class="group-actions">
               <button class="icon-btn icon-edit small" bindtap="showEditGroup" data-group-id="{{item.id}}" disabled="{{!(isTeamOwner || isTeamAdmin)}}">
                 <image class="icon-img" src="/images/remix/edit-line-white.png" mode="aspectFit" />
               </button>
@@ -156,6 +156,27 @@
           </view>
         </view>
         <view class="form-item">
+          <text class="form-label">分组权限清单</text>
+          <block wx:for="{{permissionCatalog}}" wx:key="key" wx:for-item="grp">
+            <view class="form-item">
+              <view class="picker-display" bindtap="togglePermissionGroup" data-group-key="{{grp.key}}">
+                <text>{{grp.label}}</text>
+                <image class="picker-arrow" src="/images/remix/arrow-down-s-line-gray.png" mode="aspectFit" />
+              </view>
+              <view wx:if="{{!permissionCollapsed[grp.key]}}">
+                <block wx:for="{{grp.children}}" wx:key="key" wx:for-item="child">
+                  <view style="display:flex; align-items:center; justify-content:space-between; padding:16rpx 20rpx; border-bottom:1rpx solid #f3f4f6;">
+                    <text style="font-size:26rpx; color:#374151;">{{child.label}}</text>
+                    <view class="icon-btn small" bindtap="togglePermissionItem" data-key="{{child.key}}" style="background: {{permissionSelections[child.key] ? '#10b981' : '#e5e7eb'}};">
+                      <text style="color:#fff; font-size:28rpx;">{{permissionSelections[child.key] ? '✓' : ''}}</text>
+                    </view>
+                  </view>
+                </block>
+              </view>
+            </view>
+          </block>
+        </view>
+        <view class="form-item">
           <text class="form-label">分组成员</text>
           <view class="picker-display" catchtap="toggleMemberDropdown">
             <view class="item-line">
@@ -205,3 +226,5 @@
     </view>
   </view>
 </view>
+
+<!-- 已将分组权限清单整合到分组编辑弹窗 -->
