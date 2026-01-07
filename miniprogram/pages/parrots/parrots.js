@@ -828,6 +828,7 @@ Page({
     const isLogin = !!(app && app.globalData && app.globalData.isLogin)
     if (!isLogin) { app.showError && app.showError('请先登录'); return }
     const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    try { if (userMode === 'team' && app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
     const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
     if (userMode === 'team' && !hasOp) {
       wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })

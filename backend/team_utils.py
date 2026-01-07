@@ -4,6 +4,27 @@ from models import User, Parrot
 from team_models import Team, TeamMember, TeamParrot
 from utils import error_response
 
+def compute_effective_permissions(team_id, user_id):
+    member = TeamMember.query.filter_by(team_id=team_id, user_id=user_id, is_active=True).first()
+    if not member:
+        return {}
+    result = {}
+    if member.role in ['owner', 'admin']:
+        result['all'] = True
+        return result
+    if isinstance(member.permissions, dict):
+        for k, v in member.permissions.items():
+            if v:
+                result[k] = True
+    if member.group_id:
+        from team_models import TeamGroup
+        grp = TeamGroup.query.filter_by(id=member.group_id, team_id=team_id, is_active=True).first()
+        if grp and isinstance(grp.permissions, dict):
+            for k, v in grp.permissions.items():
+                if v:
+                    result[k] = True
+    return result
+
 def team_required(f):
     """需要团队权限的装饰器"""
     @wraps(f)

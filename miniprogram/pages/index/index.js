@@ -249,6 +249,7 @@ Page({
     if (this._openAddParrotOnShow) {
       this._openAddParrotOnShow = false
       if (this.data.isLogin) {
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
         this.addParrot()
       } else {
         app.showError('请先登录后添加鹦鹉')

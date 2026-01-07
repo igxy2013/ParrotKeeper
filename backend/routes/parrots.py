@@ -273,12 +273,10 @@ def create_parrot():
             limit = 20 if (hasattr(user, 'user_mode') and user.user_mode == 'team') else 10
             return error_response(f'免费用户最多只能添加{limit}只鹦鹉，请升级会员解锁更多额度。', 403)
         
-        # 在团队模式下，只有管理员才能添加鹦鹉
         if hasattr(user, 'user_mode') and user.user_mode == 'team':
             if not user.current_team_id:
                 return error_response('请先选择团队', 400)
             
-            # 检查用户是否是团队管理员
             from team_models import TeamMember
             member = TeamMember.query.filter_by(
                 team_id=user.current_team_id, 
@@ -286,8 +284,13 @@ def create_parrot():
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin', 'member']:
-                return error_response('只有团队成员才能添加鹦鹉', 403)
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('parrot.create') or perms.get('all')):
+                    return error_response('您没有新增鹦鹉权限', 403)
         
         data = request.get_json()
         
