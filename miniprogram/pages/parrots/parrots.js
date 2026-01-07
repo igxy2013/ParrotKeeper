@@ -112,7 +112,7 @@ Page({
     this.computeMenuRightPadding()
   },
 
-  onShow() {
+  async onShow() {
     console.log('鹦鹉页面 onShow 被调用');
     
     // 检查登录状态
@@ -132,6 +132,27 @@ Page({
       const storedMode = wx.getStorageSync('userMode') || ''
       const currentMode = app.globalData.userMode || storedMode || 'personal'
       this.setData({ userMode: currentMode, limitCount: currentMode === 'team' ? 20 : 10 })
+
+      if (currentMode === 'team' && !this.data.hasOperationPermission) {
+        try {
+          const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+          const teamId = cur && cur.success && cur.data && cur.data.id
+          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+          let noGroup = false
+          if (teamId && userId) {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+              noGroup = !groupId
+            }
+          }
+          if (noGroup) {
+            this.setData({ parrots: [], displayParrots: [], maleCount: 0, femaleCount: 0, totalParrots: 0, hasMore: false })
+            return
+          }
+        } catch(_) {}
+      }
 
       const now = Date.now()
       const canUseListCache = Array.isArray(this.data.parrots) && this.data.parrots.length > 0 && (now - (this.data.lastParrotsLoadedAt || 0) < CACHE_TTL_MS)
@@ -817,7 +838,7 @@ Page({
     const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
     const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
     if (userMode === 'team' && !hasOp) {
-      wx.showToast({ title: '无操作权限，请联系管理员分配权限；', icon: 'none', duration: 3000 })
+      wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
       return
     }
     const tier = app.getEffectiveTier()

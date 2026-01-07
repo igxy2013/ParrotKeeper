@@ -50,6 +50,7 @@ Page({
     theme: 'system',
     themeDisplay: '跟随系统',
     stats: { parrotCount: 0, totalFeedings: 0, totalCheckups: 0, statsViews: 0 },
+    canViewStats: true,
     // 客服会话上下文
     contactSessionFrom: '',
     // 团队功能暂不开放，列表置空以隐藏入口
@@ -796,6 +797,7 @@ Page({
     const userMode = app.globalData.userMode || this.data.userMode || 'personal';
     const isLogin = !!(app.globalData.openid && app.globalData.userInfo);
     if (userMode !== 'team' || !isLogin) {
+      this.setData({ canViewStats: true });
       return;
     }
     const userInfo = app.globalData.userInfo || {};
@@ -806,7 +808,8 @@ Page({
         teamInfo: {},
         teamRoleDisplay: '',
         isTeamOwner: false,
-        isTeamAdmin: false
+        isTeamAdmin: false,
+        canViewStats: false
       });
       return;
     }
@@ -823,6 +826,26 @@ Page({
           isTeamOwner: role === 'owner',
           teamRoleDisplay: this.mapTeamRoleDisplay(role)
         });
+        // 拉取成员列表以判断当前用户是否已分组
+        const teamId = info.id;
+        const userId = (app.globalData.userInfo && app.globalData.userInfo.id) || null;
+        if (teamId && userId) {
+          try {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' });
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId));
+              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null);
+              const groupName = me && (me.group_name || '');
+              this.setData({ userGroupId: groupId, userGroupName: groupName, canViewStats: !!groupId });
+            } else {
+              this.setData({ canViewStats: false });
+            }
+          } catch (_) {
+            this.setData({ canViewStats: false });
+          }
+        } else {
+          this.setData({ canViewStats: false });
+        }
       } else {
         // 如果没有团队信息，清空显示
         this.setData({
@@ -830,7 +853,8 @@ Page({
           teamInfo: {},
           teamRoleDisplay: '',
           isTeamOwner: false,
-          isTeamAdmin: false
+          isTeamAdmin: false,
+          canViewStats: false
         });
       }
     } catch (err) {
@@ -841,7 +865,8 @@ Page({
         teamInfo: {},
         teamRoleDisplay: '',
         isTeamOwner: false,
-        isTeamAdmin: false
+        isTeamAdmin: false,
+        canViewStats: false
       });
     }
   },
@@ -1037,7 +1062,8 @@ Page({
         currentTeamName: '',
         teamInfo: {},
         isTeamOwner: false,
-        isTeamAdmin: false
+        isTeamAdmin: false,
+        canViewStats: true
       });
     }
     this.loadOverviewStats();
@@ -1061,7 +1087,8 @@ Page({
         currentTeamName: '',
         teamInfo: {},
         isTeamOwner: false,
-        isTeamAdmin: false
+        isTeamAdmin: false,
+        canViewStats: true
       });
     }
     // 切换后立即刷新统计卡片

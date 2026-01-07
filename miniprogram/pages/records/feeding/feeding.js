@@ -37,7 +37,24 @@ Page({
     this.loadFeedingRecords();
   },
 
-  onShow() {
+  async onShow() {
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    const isAdmin = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+    if (mode === 'team' && !isAdmin) {
+      try {
+        const cur = wx.canIUse && app.request ? await app.request({ url: '/api/teams/current', method: 'GET' }) : null
+        const teamId = cur && cur.success && cur.data && cur.data.id
+        const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+        if (teamId && userId) {
+          const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+          if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+            const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+            const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+            if (!groupId) { this.setData({ feedingRecords: [], filteredRecords: [], virtualDisplayRecords: [] }); return }
+          }
+        }
+      } catch(_) {}
+    }
     // 先加载鹦鹉列表与食物类型，确保头像与类型名可用，再加载记录
     Promise.all([this.loadParrots(), this.loadFoodTypes()])
       .then(() => {
@@ -542,7 +559,7 @@ Page({
     const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
     const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
     if (userMode === 'team' && !hasOp) {
-      wx.showToast({ title: '无操作权限，请联系管理员分配权限；', icon: 'none', duration: 3000 })
+      wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
       return
     }
     wx.navigateTo({ url: '/pages/records/add-record/add-record?type=feeding' })

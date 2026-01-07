@@ -414,6 +414,34 @@ Page({
   // 加载数据
   async loadData() {
     try {
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      const isAdmin = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+      if (mode === 'team' && !isAdmin) {
+        try {
+          const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+          const teamId = cur && cur.success && cur.data && cur.data.id
+          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+          let noGroup = false
+          if (teamId && userId) {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+              noGroup = !groupId
+            }
+          }
+          if (noGroup) {
+            this.setData({
+              overview: { total_parrots: 0, today_records: { feeding: 0 }, monthly_income: 0, monthly_expense: 0 },
+              overview_status_text: '0只鹦鹉状态良好',
+              myParrots: [],
+              recentRecords: [],
+              homeWeightSeries: []
+            })
+            return
+          }
+        } catch(_) {}
+      }
       await Promise.all([
         this.loadOverview(),
         this.loadRecentRecords(),
@@ -1966,7 +1994,7 @@ Page({
   },
 
   // 添加鹦鹉
-  addParrot() {
+  async addParrot() {
     if (!this.data.isLogin) {
       app.showError('请先登录后使用此功能')
       return
@@ -1975,6 +2003,23 @@ Page({
     const tier = app.getEffectiveTier()
     const teamLevel = app.getTeamLevel()
     const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+    if (mode === 'team') {
+      const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+      if (!hasOp) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+      try {
+        const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+        const teamId = cur && cur.success && cur.data && cur.data.id
+        const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+        if (teamId && userId) {
+          const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+          if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+            const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+            const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+            if (!groupId) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+          }
+        }
+      } catch (_) {}
+    }
     let limit = 0
     if (tier === 'free') limit = mode === 'team' ? 20 : 10
     else if (tier === 'pro') limit = 100
@@ -2011,10 +2056,27 @@ Page({
   },
 
   // 快速添加收支记录
-  quickExpense() {
-    this.setData({
-      showAddExpenseModal: true
-    });
+  async quickExpense() {
+    if (!this.data.isLogin) { app.showError && app.showError('请先登录后使用此功能'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+      if (!hasOp) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+      try {
+        const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+        const teamId = cur && cur.success && cur.data && cur.data.id
+        const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+        if (teamId && userId) {
+          const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+          if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+            const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+            const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+            if (!groupId) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+          }
+        }
+      } catch (_) {}
+    }
+    this.setData({ showAddExpenseModal: true })
   },
 
   // 通用数量限制弹窗：关闭

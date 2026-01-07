@@ -64,7 +64,7 @@
     </view>
     
     <!-- 统计信息网格 -->
-    <view class="stats-grid" wx:if="{{isLogin}}">
+    <view class="stats-grid" wx:if="{{isLogin && canViewStats}}">
       <view class="stat-card red">
         <view class="stat-icon stat-icon-red">
           <image class="stat-icon-img" src="{{iconPaths.statHeartRed}}" mode="widthFix" binderror="onProfileIconError" data-key="statHeartRed" />

@@ -57,12 +57,28 @@ Page({
   },
 
   // 检查登录状态
-  checkLoginStatus() {
+  async checkLoginStatus() {
     const isLogin = app.globalData.isLogin
     const hasOperationPermission = app.hasOperationPermission()
     this.setData({ isLogin, hasOperationPermission })
     
     if (isLogin) {
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      if (mode === 'team' && !hasOperationPermission) {
+        try {
+          const cur = app.request ? await app.request({ url: '/api/teams/current', method: 'GET' }) : null
+          const teamId = cur && cur.success && cur.data && cur.data.id
+          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+          if (teamId && userId) {
+            const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+            if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+              const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+              const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+              if (!groupId) { this.setData({ healthRecords: [], recentRecords: [], parrotsList: [] }); return }
+            }
+          }
+        } catch(_) {}
+      }
       this.loadParrotsList()
       this.loadHealthRecords()
     }
@@ -412,7 +428,7 @@ Page({
     const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
     const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
     if (userMode === 'team' && !hasOp) {
-      wx.showToast({ title: '无操作权限，请联系管理员分配权限；', icon: 'none', duration: 3000 })
+      wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
       return
     }
     wx.navigateTo({ url: '/pages/records/add-record/add-record?type=health' })

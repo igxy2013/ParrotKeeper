@@ -88,6 +88,29 @@ Component({
         return
       }
 
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      if (mode === 'team') {
+        const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
+        if (!hasOp) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+        try {
+          const cur = app.request({ url: '/api/teams/current', method: 'GET' })
+          const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
+          Promise.resolve(cur).then(res => {
+            const teamId = res && res.success && res.data && res.data.id
+            if (teamId && userId) {
+              return app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
+                .then(membersRes => {
+                  if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
+                    const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
+                    const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
+                    if (!groupId) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); throw new Error('no_group') }
+                  }
+                })
+            }
+          }).catch(() => {})
+        } catch (_) {}
+      }
+
       // 检查当前是否已有鹦鹉
       app.request({
         url: '/api/parrots',
