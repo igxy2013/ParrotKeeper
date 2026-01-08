@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Parrot, ParrotSpecies, User, ParrotTransferCode
+from models import db, Parrot, ParrotSpecies, User, ParrotTransferCode, UserAccount
 from schemas import parrot_schema, parrots_schema, parrot_species_list_schema
 from utils import login_required, success_response, error_response, paginate_query, save_uploaded_file
 from team_utils import parrot_access_required
@@ -187,12 +187,14 @@ def get_parrots():
         # 搜索过滤
         search = request.args.get('search')
         if search:
-            # 支持同时搜索名称、编号和脚环号
+            query = query.outerjoin(User, Parrot.user_id == User.id).outerjoin(UserAccount, UserAccount.user_id == User.id)
             query = query.filter(
                 db.or_(
                     Parrot.name.contains(search),
                     Parrot.parrot_number.contains(search),
-                    Parrot.ring_number.contains(search)
+                    Parrot.ring_number.contains(search),
+                    User.nickname.contains(search),
+                    UserAccount.username.contains(search)
                 )
             )
             print(f"[DEBUG] 应用多字段搜索过滤: {search}")

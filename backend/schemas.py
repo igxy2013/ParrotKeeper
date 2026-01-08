@@ -76,6 +76,8 @@ class ParrotSchema(SQLAlchemyAutoSchema):
     photo_thumb = fields.Method('get_photo_thumb', dump_only=True)
     avatar_thumb = fields.Method('get_avatar_thumb', dump_only=True)
     plumage_split_ids = fields.Method('get_plumage_split_ids', dump_only=True)
+    owner_name = fields.Method('get_owner_name', dump_only=True)
+    owner = fields.Method('get_owner', dump_only=True)
     
     def get_species_name(self, obj):
         return obj.species.name if obj.species else None
@@ -129,6 +131,27 @@ class ParrotSchema(SQLAlchemyAutoSchema):
             return data if isinstance(data, list) else []
         except Exception:
             return []
+
+    def get_owner_name(self, obj):
+        try:
+            u = User.query.get(getattr(obj, 'user_id', None))
+            if not u:
+                return None
+            account = getattr(u, 'account', None)
+            if account and getattr(account, 'username', None):
+                return account.username
+            return getattr(u, 'nickname', None)
+        except Exception:
+            return None
+
+    def get_owner(self, obj):
+        try:
+            u = User.query.get(getattr(obj, 'user_id', None))
+            if not u:
+                return None
+            return UserSchema(only=('id','nickname','username','account_username')).dump(u)
+        except Exception:
+            return None
 
 class FeedTypeSchema(SQLAlchemyAutoSchema):
     class Meta:

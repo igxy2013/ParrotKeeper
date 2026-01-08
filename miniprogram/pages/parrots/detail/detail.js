@@ -193,16 +193,14 @@ Page({
     }
     try {
       let keeperName = ''
-      const ownerObj = rawParrot.owner || rawParrot.user || rawParrot.owner_user
-      if (ownerObj) {
-        keeperName = ownerObj.nickname || ownerObj.name || ownerObj.username || ownerObj.display_name || ''
+      if (rawParrot && rawParrot.owner_name) {
+        keeperName = rawParrot.owner_name || ''
       }
       if (!keeperName) {
-        keeperName = rawParrot.owner_name || rawParrot.owner_username || rawParrot.owner_nickname || ''
-      }
-      if (!keeperName) {
-        const uiUser = (app && app.globalData && app.globalData.userInfo) || {}
-        keeperName = uiUser.nickname || uiUser.username || uiUser.name || ''
+        const ownerObj = rawParrot && rawParrot.owner
+        if (ownerObj) {
+          keeperName = ownerObj.nickname || ownerObj.account_username || ownerObj.username || ''
+        }
       }
       parrot.keeper_name = keeperName
     } catch(_) {}
