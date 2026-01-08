@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from models import db, Announcement, SystemSetting, InvitationCode, User, Parrot
+from models import db, Announcement, SystemSetting, InvitationCode, User, Parrot, PasswordResetRequest, UserAccount
 from team_models import TeamMember, Team
 from sqlalchemy import func
 from utils import login_required, success_response, error_response
@@ -289,6 +289,53 @@ def get_users_stats():
         })
     except Exception as e:
         return error_response(f'获取用户统计失败: {str(e)}')
+
+@admin_bp.route('/reset-requests', methods=['GET'])
+@login_required
+def list_reset_requests():
+    """查询账号的最近一次密码重置请求，客服用于人工核验并通知验证码"""
+    try:
+        user = request.current_user
+        if not user or user.role not in ['super_admin', 'admin']:
+            return error_response('无权限', 403)
+
+        username = (request.args.get('username') or '').strip()
+        if not username:
+            return error_response('请输入用户名')
+
+        account = UserAccount.query.filter_by(username=username).first()
+        if not account:
+            return error_response('账号不存在', 404)
+
+        req = PasswordResetRequest.query.filter_by(account_id=account.id).order_by(PasswordResetRequest.id.desc()).first()
+        if not req:
+            return success_response({'request': None}, '暂无重置请求')
+
+        # 掩码手机号
+        masked_phone = None
+        try:
+            u = account.user
+            if u and u.phone:
+                p = u.phone.strip()
+                if len(p) >= 7:
+                    masked_phone = p[:3] + '****' + p[-4:]
+                else:
+                    masked_phone = p
+        except Exception:
+            masked_phone = None
+
+        data = {
+            'id': req.id,
+            'username': account.username,
+            'code': req.code,
+            'expire_at': req.expire_at.isoformat() if req.expire_at else None,
+            'used': bool(req.used),
+            'created_at': req.created_at.isoformat() if req.created_at else None,
+            'masked_phone': masked_phone
+        }
+        return success_response({'request': data})
+    except Exception as e:
+        return error_response(f'查询失败: {str(e)}')
 
 
 @admin_bp.route('/users', methods=['GET'])

@@ -68,6 +68,20 @@
           <el-form-item>
             <el-input v-model="resetForm.phone" placeholder="绑定手机号（如已绑定）" />
           </el-form-item>
+          <div class="service-tip">
+            <div>未绑定手机号？请联系微信客服获取验证码：</div>
+            <div class="service-row">
+              <span class="service-id">parrotkeeper</span>
+              <el-popover placement="top" :width="200" trigger="hover">
+                <template #reference>
+                  <span class="tip-text">查看客服二维码</span>
+                </template>
+                <div class="qrcode-container">
+                  <img src="/WXcode.png" alt="微信客服二维码" style="width: 100%;" />
+                </div>
+              </el-popover>
+            </div>
+          </div>
           <el-button type="primary" class="w-100" :loading="sendingCode" @click="sendResetCode">获取验证码</el-button>
         </el-form>
       </div>
@@ -326,6 +340,23 @@ const submitReset = async () => {
   margin-top: 8px;
   font-size: 12px;
   color: #9ca3af;
+}
+
+.service-tip {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 8px 0 12px;
+}
+
+.service-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.service-id {
+  font-weight: 600;
+  color: #111827;
 }
 
 /* 覆盖 Element Plus 样式 */

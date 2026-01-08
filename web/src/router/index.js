@@ -21,6 +21,7 @@ import AdminAnnouncementsView from '../views/admin/AdminAnnouncementsView.vue'
 import AdminApiConfigsView from '../views/admin/AdminApiConfigsView.vue'
 import AdminInvitationCodesView from '../views/admin/AdminInvitationCodesView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
+import AdminResetRequestsView from '../views/admin/AdminResetRequestsView.vue'
 import SettingsNotificationView from '../views/settings/SettingsNotificationView.vue'
 import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
 import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
@@ -119,7 +120,8 @@ const router = createRouter({
         { path: 'admin/announcements', name: 'admin-announcements', component: AdminAnnouncementsView },
         { path: 'admin/api-configs', name: 'admin-api-configs', component: AdminApiConfigsView },
         { path: 'admin/invitation-codes', name: 'admin-invitation-codes', component: AdminInvitationCodesView },
-        { path: 'admin/users', name: 'admin-users', component: AdminUsersView }
+        { path: 'admin/users', name: 'admin-users', component: AdminUsersView },
+        { path: 'admin/reset-requests', name: 'admin-reset-requests', component: AdminResetRequestsView }
       ]
     }
   ]

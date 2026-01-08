@@ -87,6 +87,15 @@
             </div>
             <el-icon class="arrow-icon"><ArrowRight /></el-icon>
           </div>
+
+          <div class="menu-item" @click="go('/admin/reset-requests')">
+            <div class="menu-item-icon bg-gray"><el-icon><Notification /></el-icon></div>
+            <div class="menu-item-content">
+              <div class="menu-item-title">密码重置核验</div>
+              <div class="menu-item-desc">查询并通知验证码</div>
+            </div>
+            <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+          </div>
         </div>
       </el-card>
     </div>

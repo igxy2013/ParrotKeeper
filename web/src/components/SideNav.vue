@@ -226,8 +226,9 @@ const menuItems = computed(() => [
        { path: '/admin/market-prices', label: '参考价格', icon: TrendCharts },
        { path: '/admin/parrot-species', label: '品种管理', icon: Files },
        { path: '/admin/announcements', label: '系统公告', icon: Notification },
-       { path: '/admin/api-configs', label: 'API配置', icon: Setting },
-       { path: '/admin/invitation-codes', label: '邀请码管理', icon: Setting },
+      { path: '/admin/api-configs', label: 'API配置', icon: Setting },
+      { path: '/admin/invitation-codes', label: '邀请码管理', icon: Setting },
+      { path: '/admin/reset-requests', label: '密码重置核验', icon: Notification },
     ]
   },
 ])
