@@ -30,6 +30,7 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1rpx solid #f3f4f6;
+  position: relative;
 }
 
 .modal-title {
@@ -38,13 +39,20 @@
   color: #1f2937;
 }
 
-.modal-close {
+.modal-close-btn {
   position: absolute;
-  top: 20rpx;
-  right: 30rpx;
-  font-size: 40rpx;
-  color: #999;
+  top: 16rpx;
+  right: 20rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  z-index: 10;
 }
+.modal-close-icon-img { width: 36rpx; height: 36rpx; }
 
 .modal-body {
   padding: 0 40rpx 40rpx;

@@ -2,7 +2,9 @@
   <view class="modal-content limit-modal" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">{{title || (mode === 'limit' ? '数量限制提示' : '提示')}}</text>
-      <view class="modal-close" bindtap="onCancel">×</view>
+      <view class="modal-close-btn" bindtap="onCancel">
+        <image class="modal-close-icon-img" src="/images/remix/close-line.png" mode="aspectFit" />
+      </view>
     </view>
     <view class="modal-body">
       <block wx:if="{{mode === 'limit'}}">

@@ -48,7 +48,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-label">鹦鹉总数</div>
-              <div class="stat-value">{{ total }}</div>
+              <div class="stat-value">{{ overviewStats.total_parrots || 0 }}</div>
             </div>
           </div>
         </el-card>
@@ -61,8 +61,8 @@
             <div class="stat-info">
               <div class="stat-label">性别分布</div>
               <div class="stat-value">
-                <span class="pill pill-male">公 {{ stats.male }}</span>
-                <span class="pill pill-female">母 {{ stats.female }}</span>
+                <span class="pill pill-male">公 {{ overviewStats.gender_counts?.male || 0 }}</span>
+                <span class="pill pill-female">母 {{ overviewStats.gender_counts?.female || 0 }}</span>
               </div>
             </div>
           </div>
@@ -76,9 +76,9 @@
             <div class="stat-info">
               <div class="stat-label">健康状况</div>
               <div class="stat-value" style="display: flex; gap: 4px; flex-wrap: wrap;">
-                <span class="pill pill-healthy">健康 {{ stats.healthy }}</span>
-                <span class="pill pill-sick">生病 {{ stats.sick }}</span>
-                <span class="pill pill-recovering">康复 {{ stats.recovering }}</span>
+                <span class="pill pill-healthy">健康 {{ overviewStats.health_status?.healthy || 0 }}</span>
+                <span class="pill pill-sick">生病 {{ overviewStats.health_status?.sick || 0 }}</span>
+                <span class="pill pill-recovering">康复 {{ overviewStats.health_status?.recovering || 0 }}</span>
               </div>
             </div>
           </div>
@@ -91,7 +91,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-label">平均体重</div>
-              <div class="stat-value">{{ stats.avgWeight }}</div>
+              <div class="stat-value">{{ formatAvgWeight(overviewStats.avg_weight) }}</div>
             </div>
           </div>
         </el-card>
@@ -234,6 +234,8 @@ const selectedStatus = ref('')
 const selectedSort = ref('created_desc')
 const viewMode = ref('card')
 
+const overviewStats = ref({})
+
 const PARROTS_CACHE_KEY = 'parrots_list_default'
 const PARROTS_CACHE_TTL = 60000
 
@@ -251,6 +253,7 @@ onMounted(() => {
   initViewMode()
   fetchParrots()
   // ... other onMounted logic if any
+  fetchOverview()
 })
 
 // Watch for user mode changes via storage event or other mechanism if needed
@@ -312,6 +315,15 @@ const fetchParrots = async (withLoading = true) => {
   } finally {
     if (withLoading) loading.value = false
   }
+}
+
+const fetchOverview = async () => {
+  try {
+    const res = await api.get('/statistics/overview')
+    if (res.data && res.data.success) {
+      overviewStats.value = res.data.data || {}
+    }
+  } catch (_) {}
 }
 
 const handleAdd = () => {
@@ -438,6 +450,12 @@ const formatWeight = (w) => {
   const n = typeof w === 'number' ? w : parseFloat(String(w))
   if (isNaN(n) || !isFinite(n)) return ''
   return `${Math.round(n * 10) / 10} g`
+}
+
+const formatAvgWeight = (n) => {
+  const v = typeof n === 'number' ? n : parseFloat(String(n || ''))
+  if (!v || !isFinite(v)) return '未知'
+  return `${Math.round(v * 10) / 10} g`
 }
 
 const formatDate = (d) => {

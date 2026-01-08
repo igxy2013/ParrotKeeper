@@ -52,6 +52,23 @@ def get_overview():
         
         # 鹦鹉总数
         total_parrots = len([pid for pid in parrot_ids if Parrot.query.get(pid) and Parrot.query.get(pid).is_active])
+
+        # 性别分布统计
+        gender_counts = {g: 0 for g in ['male', 'female', 'unknown']}
+        gender_rows = db.session.query(Parrot.gender, func.count(Parrot.id)).filter(
+            Parrot.id.in_(parrot_ids),
+            Parrot.is_active == True
+        ).group_by(Parrot.gender).all()
+        for g, c in gender_rows:
+            if g in gender_counts:
+                gender_counts[g] = c or 0
+        
+        # 平均体重（按 Parrot 表的当前体重字段）
+        avg_weight_val = db.session.query(func.avg(Parrot.weight)).filter(
+            Parrot.id.in_(parrot_ids),
+            Parrot.is_active == True,
+            Parrot.weight.isnot(None)
+        ).scalar() or 0
         
         # 健康状态统计（统一：按每只鹦鹉最近健康记录的 health_status 计算；无记录视为 healthy）
         # 子查询：每只鹦鹉最近一条健康记录的日期
@@ -188,6 +205,7 @@ def get_overview():
         
         return success_response({
             'total_parrots': total_parrots,
+            'gender_counts': gender_counts,
             'health_status': health_status,
             'monthly_expense': float(monthly_expense),
             'monthly_income': float(monthly_income),
@@ -199,7 +217,8 @@ def get_overview():
             'today_records': {
                 'feeding': today_feeding,
                 'cleaning': today_cleaning
-            }
+            },
+            'avg_weight': float(avg_weight_val) if avg_weight_val else 0.0
         })
         
     except Exception as e:

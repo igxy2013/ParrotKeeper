@@ -2207,7 +2207,12 @@ Page({
       }
     } catch (e) {
       wx.hideLoading()
-      wx.showToast({ title: '网络错误，请重试', icon: 'none' })
+      try {
+        const msg = (e && e.message) ? String(e.message) : ''
+        wx.showToast({ title: msg || '开通失败', icon: 'none' })
+      } catch(_) {
+        wx.showToast({ title: '开通失败', icon: 'none' })
+      }
     }
   },
 
