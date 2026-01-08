@@ -33,7 +33,7 @@ Page({
     try{
       const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
       if (mode === 'team'){
-        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}}
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}
         const mp = (app && app.globalData && app.globalData.effectivePermissions) || null
         const canManage = !!(mp && (mp['finance.category.manage'] || mp['all']))
         const isAdmin = !!(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())
@@ -86,10 +86,11 @@ Page({
     return map[name] || name
   },
 
-  showAddModal() {
+  async showAddModal() {
     const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
     if (mode === 'team'){
-      const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}
+      const mp = (app && app.globalData && app.globalData.effectivePermissions) || null
       const isAdmin = !!(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())
       if (!(mp && (mp['finance.category.manage'] || mp['all'])) && !isAdmin){ wx.showToast({ title: '无权限管理收支类别', icon: 'none' }); return }
     }
@@ -108,14 +109,15 @@ Page({
     this.setData({ newCategoryName: e.detail.value })
   },
 
-  addCategory() {
+  async addCategory() {
     if (!this.data.newCategoryName.trim()) {
       wx.showToast({ title: '请输入名称', icon: 'none' })
       return
     }
     const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
     if (mode === 'team'){
-      const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}
+      const mp = (app && app.globalData && app.globalData.effectivePermissions) || null
       const isAdmin = !!(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())
       if (!(mp && (mp['finance.category.manage'] || mp['all'])) && !isAdmin){ wx.showToast({ title: '无权限管理收支类别', icon: 'none' }); return }
     }
