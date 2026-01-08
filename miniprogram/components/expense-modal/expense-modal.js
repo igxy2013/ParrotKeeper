@@ -337,8 +337,14 @@ Component({
       this.setData({ selectedParrotId: selId, selectedParrotName: selName, selectedParrotNumber: num || '', selectedRingNumber: ring || '', showParrotDropdown: false })
     },
 
-    // 提交收支记录
-    async onSubmit() {
+  // 提交收支记录
+  async onSubmit() {
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      if (mode === 'team') {
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}
+        const canCreateFinance = app && typeof app.hasPermission === 'function' ? app.hasPermission('finance.create') : true
+        if (!canCreateFinance) { app.showError('您没有新增收支的权限'); return }
+      }
       const f = this.data.formData
       if (!f || !f.amount || Number(f.amount) <= 0) {
         app.showError('请输入有效金额')

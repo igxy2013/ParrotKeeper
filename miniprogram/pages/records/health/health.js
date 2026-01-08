@@ -434,6 +434,15 @@ Page({
 
   // 编辑记录
   editRecord(e) {
+    const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (userMode === 'team') {
+       try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+       const hasPerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.edit') : true
+       if (!hasPerm) {
+         wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+         return
+       }
+    }
     const { id } = e.currentTarget.dataset;
     const url = `/pages/records/add-record/add-record?mode=edit&type=health&id=${encodeURIComponent(id)}`;
     wx.navigateTo({ url });

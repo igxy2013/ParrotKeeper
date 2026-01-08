@@ -2068,21 +2068,8 @@ Page({
     const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
     if (mode === 'team') {
       try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
-      const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
-      if (!hasOp) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增收支的权限，请联系管理员分配权限' }); return }
-      try {
-        const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
-        const teamId = cur && cur.success && cur.data && cur.data.id
-        const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
-        if (teamId && userId) {
-          const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
-          if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
-            const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
-            const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-            if (!groupId) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增收支的权限，请联系管理员分配权限' }); return }
-          }
-        }
-      } catch (_) {}
+      const canCreateFinance = app && typeof app.hasPermission === 'function' ? app.hasPermission('finance.create') : true
+      if (!canCreateFinance) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增收支的权限，请联系管理员分配权限' }); return }
     }
     this.setData({ showAddExpenseModal: true })
   },
