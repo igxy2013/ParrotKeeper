@@ -2093,8 +2093,8 @@ Page({
     const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
     if (mode === 'team') {
       try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
-      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
-      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+      const canView = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.view') : true
+      if (!canView) { this.setData({ showPermissionModal: true, permissionMessage: '您没有查看记录的权限，请联系管理员分配权限' }); return }
     }
     wx.navigateTo({ url: '/pages/records/cleaning/cleaning' })
   },
@@ -2105,8 +2105,8 @@ Page({
     const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
     if (mode === 'team') {
       try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
-      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
-      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+      const canView = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.view') : true
+      if (!canView) { this.setData({ showPermissionModal: true, permissionMessage: '您没有查看记录的权限，请联系管理员分配权限' }); return }
     }
     wx.navigateTo({ url: '/pages/records/health/health' })
   },
@@ -2117,8 +2117,8 @@ Page({
     const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
     if (mode === 'team') {
       try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
-      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
-      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+      const canView = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.view') : true
+      if (!canView) { this.setData({ showPermissionModal: true, permissionMessage: '您没有查看记录的权限，请联系管理员分配权限' }); return }
     }
     wx.navigateTo({ url: '/pages/records/breeding/breeding' })
   },
