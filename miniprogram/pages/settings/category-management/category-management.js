@@ -33,8 +33,8 @@ Page({
     try{
       const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
       if (mode === 'team'){
-        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}
-        const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}}
+        const mp = (app && app.globalData && app.globalData.effectivePermissions) || null
         const canManage = !!(mp && (mp['finance.category.manage'] || mp['all']))
         const isAdmin = !!(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())
         if (!canManage && !isAdmin){ wx.showToast({ title: '无权限管理收支类别', icon: 'none' }); this.setData({ categories: [] }); return }

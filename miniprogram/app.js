@@ -965,7 +965,7 @@ App({
     if (this.isTeamAdmin()) return true
     const mode = this.globalData.userMode
     if (mode !== 'team') return true
-    const mp = this.globalData.effectivePermissions || wx.getStorageSync('effectivePermissions') || null
+    const mp = this.globalData.effectivePermissions || null
     if (!mp || typeof mp !== 'object') return false
     const keys = ['parrot.create','record.create','parrot.edit','record.edit','parrot.delete','record.delete']
     for (let i = 0; i < keys.length; i++) {
@@ -980,7 +980,7 @@ App({
     if (this.isTeamAdmin()) return true
     const mode = this.globalData.userMode
     if (mode !== 'team') return true
-    const mp = this.globalData.effectivePermissions || wx.getStorageSync('effectivePermissions') || null
+    const mp = this.globalData.effectivePermissions || null
     if (!mp || typeof mp !== 'object') return false
     return !!mp[key]
   }
@@ -1020,7 +1020,7 @@ App({
         return this.request({ url: `/api/teams/${tid}/members/${uid}/effective-permissions`, method: 'GET' }).then(r => {
           if (r && r.success && r.data && typeof r.data === 'object') {
             this.globalData.effectivePermissions = r.data
-            try { wx.setStorageSync('effectivePermissions', r.data) } catch (_) {}
+            try { wx.removeStorageSync('effectivePermissions') } catch (_) {}
             return r.data
           }
           return null

@@ -115,8 +115,8 @@ const cache = require('../../utils/cache')
     try {
       const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
       if (mode === 'team') {
-        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}
-        const mp = (app && app.globalData && app.globalData.effectivePermissions) || wx.getStorageSync('effectivePermissions') || null
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){}}
+        const mp = (app && app.globalData && app.globalData.effectivePermissions) || null
         const canViewStats = !!(mp && (mp['stats.view'] || mp['all']))
         if (!canViewStats && !(app && typeof app.isTeamAdmin === 'function' && app.isTeamAdmin())) {
           this.setData({
