@@ -737,16 +737,14 @@ Page({
       const tier = String(appInst.getEffectiveTier() || '').toLowerCase()
       const isPro = tier === 'pro' || tier === 'team'
       if (!isPro) return ''
-      if (tier === 'team' && mode !== 'team') return ''
+      // 团队会员在任意模式下都按团队订阅展示
       if (tier === 'pro' && mode !== 'personal') return ''
       const prefix = tier === 'team' ? '团队' : '个人'
       const label = user.membership_label || ''
       const durationDays = Number(user.membership_duration_days || 0)
       let plan = ''
       if (tier === 'team') {
-        if (label) {
-          plan = label
-        } else {
+        {
           const cur = (appInst.globalData && appInst.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
           const expStr = cur.subscription_expire_at || cur.expire_at || user.subscription_expire_at || ''
           if (expStr) {
@@ -1564,6 +1562,17 @@ Page({
               isTeamAdmin: false
             });
             app.setUserMode && app.setUserMode('personal');
+            try { wx.removeStorageSync('currentTeam'); wx.removeStorageSync('effectivePermissions'); } catch(_) {}
+            if (app && app.globalData) { app.globalData.currentTeam = null; app.globalData.effectivePermissions = null }
+            try {
+              const prof = await app.request({ url: '/api/auth/profile', method: 'GET' });
+              if (prof && prof.success && prof.data) {
+                const old = wx.getStorageSync('userInfo') || {}
+                const merged = Object.assign({}, old, prof.data)
+                try { wx.setStorageSync('userInfo', merged) } catch(_) {}
+                if (app && app.globalData) { app.globalData.userInfo = merged }
+              }
+            } catch(_) {}
             wx.showToast({ title: '已退出团队', icon: 'none' });
           } else {
             wx.showToast({ title: (resp && resp.message) || '退出团队失败', icon: 'none' });

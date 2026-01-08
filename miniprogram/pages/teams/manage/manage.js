@@ -598,6 +598,18 @@ Page({
           const res = await app.request({ url: `/api/teams/${teamId}/leave`, method: 'POST' })
           if (res && res.success) {
             wx.showToast({ title: '已离开团队', icon: 'none' })
+            try { wx.removeStorageSync('currentTeam'); wx.removeStorageSync('effectivePermissions'); } catch(_) {}
+            if (app && app.globalData) { app.globalData.currentTeam = null; app.globalData.effectivePermissions = null }
+            app.setUserMode && app.setUserMode('personal')
+            try {
+              const prof = await app.request({ url: '/api/auth/profile', method: 'GET' })
+              if (prof && prof.success && prof.data) {
+                const old = wx.getStorageSync('userInfo') || {}
+                const merged = Object.assign({}, old, prof.data)
+                try { wx.setStorageSync('userInfo', merged) } catch(_) {}
+                if (app && app.globalData) { app.globalData.userInfo = merged }
+              }
+            } catch(_) {}
             setTimeout(() => { wx.navigateBack({ delta: 1 }) }, 800)
           } else {
             wx.showToast({ title: (res && res.message) || '操作失败', icon: 'none' })

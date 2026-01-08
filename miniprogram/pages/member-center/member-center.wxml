@@ -6,14 +6,14 @@
     <view class="status-card {{isPro ? 'pro-card' : 'free-card'}}">
       <view class="card-header">
         <view class="title-box">
-          <text class="status-title">{{isPro ? membershipName : '普通用户'}}</text>
-          <text class="tier-tag {{tierClass}}" wx:if="{{isPro && membershipTag}}">{{membershipTag}}</text>
+          <text class="status-title">{{hasMembership ? membershipName : '普通用户'}}</text>
+          <text class="tier-tag {{tierClass}}" wx:if="{{hasMembership && membershipTag}}">{{membershipTag}}</text>
         </view>
         <image class="status-icon" src="{{isPro ? '/images/remix/trophy-line-orange.png' : '/images/remix/user-line-white.png'}}" mode="aspectFit"></image>
       </view>
       <view class="card-body">
-        <view class="expire-info" wx:if="{{isPro}}">
-          <text>有效期至：{{expireDate}}</text>
+        <view class="expire-info" wx:if="{{hasMembership}}">
+          <text>有效期至：{{expireDate || '—'}} </text>
         </view>
         <view class="expire-info" wx:else>
           <text>升级解锁无限鹦鹉管理权限</text>

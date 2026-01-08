@@ -473,6 +473,9 @@
   transition: all 0.3s ease;
 }
 
+.member-card.gold-theme .section-title text { color: #D4AF37; font-weight: 800; }
+.member-card.gold-theme .section-icon-img { width: 40rpx; height: 40rpx; filter: drop-shadow(0 6rpx 10rpx rgba(212, 175, 55, 0.35)); }
+
 .function-card:active {
   transform: scale(0.98);
   background: #ffffff;

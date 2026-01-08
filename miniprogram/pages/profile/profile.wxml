@@ -26,13 +26,7 @@
           <image class="edit-icon-img" src="{{iconPaths.editLine_white}}" mode="aspectFit" binderror="onProfileIconError" data-key="editLine_white" />
         </view>
       </view>
-      <view class="member-tag {{isPro ? tierClass : 'free'}}" bindtap="navigateToMemberCenter">
-        <image class="member-icon" src="{{
-          tierClass === 'team' ? '/images/remix/group-line-gold.png' : (
-          tierClass === 'pro' ? '/images/remix/trophy-line-orange.png' : '/images/remix/user-line.svg')
-        }}" mode="aspectFit" />
-        <text>{{ isPro ? membershipName : '普通用户' }}</text>
-      </view>
+      
       <!-- 团队信息显示（仅团队模式） -->
       <view class="team-info-row" wx:if="{{userMode === 'team' && (currentTeamName || teamInfo.name)}}">
         <text class="team-name-label">团队：</text>
@@ -103,9 +97,9 @@
   <!-- 功能卡片区域 -->
   <view class="function-cards" wx:if="{{isLogin}}">
     <!-- 会员中心卡片 -->
-    <view class="function-card member-card" bindtap="navigateToMemberCenter">
+    <view class="function-card member-card gold-theme" bindtap="navigateToMemberCenter">
       <view class="section-title">
-         <image class="section-icon-img" src="/images/remix/vip-crown-fill.svg" mode="aspectFit" />
+         <image class="section-icon-img" src="/images/remix/trophy-line-orange.png" mode="aspectFit" />
          <text>会员中心</text>
       </view>
       <view class="card-desc">

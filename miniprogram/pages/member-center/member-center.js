@@ -9,7 +9,8 @@ Page({
     showApplyModal: false,
     membershipName: '',
     membershipTag: '',
-    tierClass: ''
+    tierClass: '',
+    hasMembership: false
   },
 
   onShow() {
@@ -27,14 +28,15 @@ Page({
   updateStatusFromUserInfo(userInfo) {
       const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
       const effectiveTier = app.getEffectiveTier()
-      const isPro = effectiveTier === 'pro' || effectiveTier === 'team'
+      let isPro = effectiveTier === 'pro' || effectiveTier === 'team'
       const expireStr = userInfo.subscription_expire_at || ''
       const durationDays = Number(userInfo.membership_duration_days || 0)
       let membershipName = ''
       let membershipTag = ''
       let tierClass = ''
+      let hasMembership = false
       if (isPro) {
-        if (effectiveTier === 'team' && mode === 'team') {
+        if (effectiveTier === 'team') {
           const teamLevel = this._getUserTeamLevel(userInfo)
           if (teamLevel === 'advanced') {
             membershipTag = '团队-高级版'
@@ -48,22 +50,7 @@ Page({
           membershipTag = '个人'
           tierClass = 'pro'
         }
-        if (effectiveTier === 'team' && mode === 'team') {
-          if (userInfo.membership_label) {
-            membershipName = userInfo.membership_label
-          } else if (expireStr) {
-            try {
-              const now = Date.now()
-              const exp = new Date(String(expireStr).replace(' ', 'T')).getTime()
-              const days = Math.round((exp - now) / (24 * 60 * 60 * 1000))
-              if (days >= 360) membershipName = '年卡会员'
-              else if (days >= 25) membershipName = '月卡会员'
-              else membershipName = '高级会员'
-            } catch (_) {
-              membershipName = ''
-            }
-          }
-        } else {
+        if (effectiveTier !== 'team') {
           if (userInfo.membership_label) {
             membershipName = userInfo.membership_label
           } else if (durationDays > 0) {
@@ -88,15 +75,57 @@ Page({
           }
         }
       }
+
+      try {
+        const cur = (app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+        const hasTeam = !!(cur && cur.id)
+        const teamExp = hasTeam && (cur.subscription_expire_at || cur.expire_at)
+        const teamCycle = hasTeam && (cur.subscription_cycle || cur.plan || cur.subscription_plan)
+        if (!isPro && hasTeam && (teamExp || teamCycle)) {
+          isPro = true
+          tierClass = 'team'
+          const lv = this._normalizeTeamLevel(cur && cur.subscription_level)
+          if (lv === 'advanced') membershipTag = '团队-高级版'
+          else if (lv === 'basic') membershipTag = '团队-基础版'
+          if (teamExp) {
+            try {
+              const now = Date.now()
+              const t = new Date(String(teamExp).replace(' ', 'T')).getTime()
+              const d = Math.round((t - now) / (24 * 60 * 60 * 1000))
+              if (d >= 360) membershipName = '年卡会员'
+              else if (d >= 25) membershipName = '月卡会员'
+            } catch(_) {}
+          }
+          if (!membershipName && teamCycle) {
+            const s = String(teamCycle).toLowerCase()
+            if (s.indexOf('year') >= 0 || s.indexOf('年') >= 0) membershipName = '年卡会员'
+            else if (s.indexOf('month') >= 0 || s.indexOf('月') >= 0) membershipName = '月卡会员'
+          }
+        }
+      } catch(_) {}
+
+      hasMembership = isPro || !!expireStr || durationDays > 0
       this.setData({
           userInfo: userInfo,
           isPro,
-          expireDate: expireStr ? expireStr.substring(0, 10) : '',
+          expireDate: (() => {
+            if (effectiveTier === 'team') {
+              try {
+                const cur = (app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+                if (cur && cur.id) {
+                  const exp = cur.subscription_expire_at || cur.expire_at || expireStr || ''
+                  return exp ? String(exp).substring(0, 10) : ''
+                }
+              } catch(_) { return '' }
+            }
+            return expireStr ? expireStr.substring(0, 10) : ''
+          })(),
           membershipName,
           membershipTag,
-          tierClass
+          tierClass,
+          hasMembership
       });
-      if (isPro && effectiveTier === 'team' && mode === 'team') {
+      if (isPro && effectiveTier === 'team') {
         if (!membershipTag || membershipTag === '团队') {
           this.ensureTeamLevelTag()
         }
@@ -217,6 +246,14 @@ Page({
         if (old.team_subscription_level && !merged.team_subscription_level) merged.team_subscription_level = old.team_subscription_level
         try { wx.setStorageSync('userInfo', merged) } catch(_) {}
         if (app && app.globalData) { app.globalData.userInfo = merged }
+        try {
+          const ctId = merged && merged.current_team_id
+          if (!ctId) {
+            wx.removeStorageSync('currentTeam')
+            if (app && app.globalData) { app.globalData.currentTeam = null; app.globalData.effectivePermissions = null }
+            wx.removeStorageSync('effectivePermissions')
+          }
+        } catch(_) {}
         this.updateStatusFromUserInfo(merged)
       }
     } catch(_) {}
@@ -271,7 +308,7 @@ Page({
         }
       }
       if (!name) name = '团队会员'
-      const expireDate = exp ? String(exp).substring(0, 10) : this.data.expireDate
+      const expireDate = exp ? String(exp).substring(0, 10) : (this.data.expireDate || '—')
       this.setData({ membershipName: name, expireDate })
     } catch(_) {}
   },
