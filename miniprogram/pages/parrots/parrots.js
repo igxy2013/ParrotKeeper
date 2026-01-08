@@ -873,29 +873,19 @@ Page({
       }
     } catch(_) {}
 
+    let currentTeam = (app && app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+    if (userMode === 'team' && (!currentTeam || !currentTeam.id)) {
+      try {
+        const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+        if (cur && cur.success && cur.data) {
+          currentTeam = cur.data
+          try { wx.setStorageSync('currentTeam', cur.data) } catch(_) {}
+          if (app && app.globalData) { app.globalData.currentTeam = cur.data }
+        }
+      } catch(_) {}
+    }
     let tier = app.getEffectiveTier()
     const teamLevel = app.getTeamLevel()
-    let currentTeam = (app && app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
-    // 若tier来自旧值，结合到期信息与团队ID进行降级
-    try {
-      const now = Date.now()
-      const u = (app && app.globalData && app.globalData.userInfo) || wx.getStorageSync('userInfo') || {}
-      if (tier === 'pro') {
-        const expStr = u && u.subscription_expire_at
-        if (!expStr) { tier = 'free' } else {
-          const t = new Date(String(expStr).replace(' ', 'T')).getTime()
-          if (isFinite(t) && t <= now) tier = 'free'
-        }
-      } else if (tier === 'team') {
-        if (!currentTeam || !currentTeam.id) { tier = 'free' } else {
-          const expStr = currentTeam.subscription_expire_at || currentTeam.expire_at || ''
-          if (!expStr) { tier = 'free' } else {
-            const t = new Date(String(expStr).replace(' ', 'T')).getTime()
-            if (isFinite(t) && t <= now) tier = 'free'
-          }
-        }
-      }
-    } catch(_) {}
 
     const knownTotal = Number(this.data.totalParrots || 0)
     const promptOrOpenForm = (total) => {
@@ -973,10 +963,29 @@ Page({
       if (res && res.success) {
         const info = wx.getStorageSync('userInfo') || {}
         const next = { ...info }
-        next.subscription_tier = 'pro'
+        next.subscription_tier = (res && res.data && res.data.tier) ? String(res.data.tier) : 'pro'
         if (res.data && res.data.expire_at) next.subscription_expire_at = res.data.expire_at
         app.globalData.userInfo = next
         wx.setStorageSync('userInfo', next)
+        try {
+          const prof = await app.request({ url: '/api/auth/profile', method: 'GET' })
+          if (prof && prof.success && prof.data) {
+            const merged = Object.assign({}, next, prof.data)
+            try { wx.setStorageSync('userInfo', merged) } catch(_) {}
+            if (app && app.globalData) { app.globalData.userInfo = merged }
+          }
+        } catch(_) {}
+        try {
+          const tier = String(next.subscription_tier || '').toLowerCase()
+          if (tier === 'team') {
+            const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+            if (cur && cur.success && cur.data) {
+              try { wx.setStorageSync('currentTeam', cur.data) } catch(_) {}
+              if (app && app.globalData) { app.globalData.currentTeam = cur.data }
+            }
+          }
+        } catch(_) {}
+        if (app && app.globalData) { app.globalData.needRefresh = true }
         wx.showToast({ title: '试用已开通', icon: 'success' })
         this.closeLimitModal()
         wx.navigateTo({ url: '/pages/member-center/member-center' })

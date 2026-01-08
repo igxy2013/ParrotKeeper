@@ -155,8 +155,13 @@ Page({
       }
       if (t === 'team') {
         const hasTeam = !!(currentTeam && currentTeam.id)
-        if (!hasTeam) return 'free'
-        const expStr = currentTeam.subscription_expire_at || currentTeam.expire_at || ''
+        if (!hasTeam) {
+          const userExp = userInfo && userInfo.subscription_expire_at
+          if (!userExp) return 'free'
+          const tsUser = new Date(String(userExp).replace(' ', 'T')).getTime()
+          return (isFinite(tsUser) && tsUser > now) ? 'team' : 'free'
+        }
+        const expStr = currentTeam.subscription_expire_at || currentTeam.expire_at || (userInfo && userInfo.subscription_expire_at) || ''
         if (!expStr) return 'free'
         const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
         return (isFinite(ts) && ts > now) ? 'team' : 'free'

@@ -98,5 +98,5 @@
 .redeem-input-row { display: flex; gap: 16rpx; }
 .modal-input { flex: 1; height: 80rpx; background: #F3F4F6; border-radius: 40rpx; padding: 0 32rpx; font-size: 28rpx; color: #374151; }
 .redeem-btn { width: 160rpx !important; height: 80rpx; background: #10B981; color: white; border-radius: 40rpx; font-size: 28rpx; padding: 0; margin: 0; }
-.redeem-btn[disabled] { background: #E5E7EB; color: #9CA3AF; }
+.redeem-btn.is-disabled { background: #E5E7EB; color: #9CA3AF; }
 

@@ -16,8 +16,15 @@ def get_effective_subscription_tier(user: User) -> str:
     now = datetime.utcnow()
     mode = getattr(user, 'user_mode', 'personal')
 
-    # 团队模式：团队订阅等级（basic/advanced）即视为有效团队会员
+    # 团队模式：优先使用用户团队试用，其次团队订阅等级
     if mode == 'team' and getattr(user, 'current_team_id', None):
+        try:
+            # 团队试用：用户维度的 team 订阅在未过期时生效
+            if user.subscription_tier == 'team':
+                if not user.subscription_expire_at or user.subscription_expire_at > now:
+                    return 'team'
+        except Exception:
+            pass
         try:
             from team_models import Team
             team = Team.query.get(user.current_team_id)
