@@ -2016,9 +2016,21 @@ Page({
       return
     }
 
-    const tier = app.getEffectiveTier()
+    // 刷新最新资料，避免取消会员后仍沿用旧tier
+    try {
+      const prof = await app.request({ url: '/api/auth/profile', method: 'GET' })
+      if (prof && prof.success && prof.data) {
+        const old = wx.getStorageSync('userInfo') || {}
+        const merged = Object.assign({}, old, prof.data)
+        try { wx.setStorageSync('userInfo', merged) } catch(_) {}
+        if (app && app.globalData) { app.globalData.userInfo = merged }
+      }
+    } catch(_) {}
+
+    let tier = app.getEffectiveTier()
     const teamLevel = app.getTeamLevel()
     const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+    let currentTeam = (app && app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
     if (mode === 'team') {
       try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
       const hasCreatePerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.create') : true
@@ -2027,8 +2039,31 @@ Page({
         return
       }
     }
+    // 结合到期信息与团队ID进行tier降级
+    try {
+      const now = Date.now()
+      const u = (app && app.globalData && app.globalData.userInfo) || wx.getStorageSync('userInfo') || {}
+      if (tier === 'pro') {
+        const expStr = u && u.subscription_expire_at
+        if (!expStr) { tier = 'free' } else {
+          const t = new Date(String(expStr).replace(' ', 'T')).getTime()
+          if (isFinite(t) && t <= now) tier = 'free'
+        }
+      } else if (tier === 'team') {
+        if (!currentTeam || !currentTeam.id) { tier = 'free' } else {
+          const expStr = currentTeam.subscription_expire_at || currentTeam.expire_at || ''
+          if (!expStr) { tier = 'free' } else {
+            const t = new Date(String(expStr).replace(' ', 'T')).getTime()
+            if (isFinite(t) && t <= now) tier = 'free'
+          }
+        }
+      }
+    } catch(_) {}
     let limit = 0
-    if (tier === 'free') limit = mode === 'team' ? 20 : 10
+    if (tier === 'free') {
+      const hasTeamContext = !!(currentTeam && currentTeam.id)
+      limit = (mode === 'team' && hasTeamContext) ? 20 : 10
+    }
     else if (tier === 'pro') limit = 100
     else if (tier === 'team' && teamLevel === 'basic') limit = 1000
     const knownTotal = Number((this.data.overview && this.data.overview.total_parrots) || 0)

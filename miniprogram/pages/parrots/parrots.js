@@ -862,14 +862,47 @@ Page({
       this.setData({ showPermissionModal: true, permissionMessage: '您没有新增鹦鹉的权限，请联系管理员分配权限' })
       return
     }
-    const tier = app.getEffectiveTier()
+    // 同步最新资料，避免取消会员后仍使用旧tier
+    try {
+      const prof = await app.request({ url: '/api/auth/profile', method: 'GET' })
+      if (prof && prof.success && prof.data) {
+        const old = wx.getStorageSync('userInfo') || {}
+        const merged = Object.assign({}, old, prof.data)
+        try { wx.setStorageSync('userInfo', merged) } catch(_) {}
+        if (app && app.globalData) { app.globalData.userInfo = merged }
+      }
+    } catch(_) {}
+
+    let tier = app.getEffectiveTier()
     const teamLevel = app.getTeamLevel()
+    let currentTeam = (app && app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+    // 若tier来自旧值，结合到期信息与团队ID进行降级
+    try {
+      const now = Date.now()
+      const u = (app && app.globalData && app.globalData.userInfo) || wx.getStorageSync('userInfo') || {}
+      if (tier === 'pro') {
+        const expStr = u && u.subscription_expire_at
+        if (!expStr) { tier = 'free' } else {
+          const t = new Date(String(expStr).replace(' ', 'T')).getTime()
+          if (isFinite(t) && t <= now) tier = 'free'
+        }
+      } else if (tier === 'team') {
+        if (!currentTeam || !currentTeam.id) { tier = 'free' } else {
+          const expStr = currentTeam.subscription_expire_at || currentTeam.expire_at || ''
+          if (!expStr) { tier = 'free' } else {
+            const t = new Date(String(expStr).replace(' ', 'T')).getTime()
+            if (isFinite(t) && t <= now) tier = 'free'
+          }
+        }
+      }
+    } catch(_) {}
 
     const knownTotal = Number(this.data.totalParrots || 0)
     const promptOrOpenForm = (total) => {
       let limit = 0
       if (tier === 'free') {
-        limit = this.data.userMode === 'team' ? 10 : 5
+        const hasTeamContext = !!(currentTeam && currentTeam.id)
+        limit = (userMode === 'team' && hasTeamContext) ? 20 : 10
       } else if (tier === 'pro') {
         limit = 100
       } else if (tier === 'team') {
@@ -886,7 +919,10 @@ Page({
 
     // 若可能达到上限，则根据后端统计进行一次确认；团队高级版不预限制
     let preLimit = 0
-    if (tier === 'free') preLimit = this.data.userMode === 'team' ? 10 : 5
+    if (tier === 'free') {
+      const hasTeamContext = !!(currentTeam && currentTeam.id)
+      preLimit = (userMode === 'team' && hasTeamContext) ? 20 : 10
+    }
     else if (tier === 'pro') preLimit = 100
     else if (tier === 'team' && teamLevel === 'basic') preLimit = 1000
     if (preLimit && knownTotal >= preLimit) {

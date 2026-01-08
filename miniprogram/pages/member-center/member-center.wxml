@@ -3,7 +3,7 @@
   
   <view class="content">
     <!-- 会员状态卡片 -->
-    <view class="status-card {{isPro ? 'pro-card' : 'free-card'}}">
+    <view class="status-card {{isInactive ? 'inactive-card' : (isPro ? 'pro-card' : 'free-card')}}">
       <view class="card-header">
         <view class="title-box">
           <text class="status-title">{{hasMembership ? membershipName : '普通用户'}}</text>

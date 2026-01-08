@@ -29,6 +29,12 @@
   box-shadow: 0 12rpx 32rpx rgba(63, 43, 150, 0.3);
 }
 
+.inactive-card {
+  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+  box-shadow: 0 12rpx 32rpx rgba(17, 24, 39, 0.12);
+  color: #111827;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;

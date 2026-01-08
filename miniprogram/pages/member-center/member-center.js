@@ -3,6 +3,7 @@ const app = getApp()
 Page({
   data: {
     isPro: false,
+    isInactive: false,
     expireDate: '',
     code: '',
     userInfo: null,
@@ -35,6 +36,7 @@ Page({
       let membershipTag = ''
       let tierClass = ''
       let hasMembership = false
+      let isExpired = false
       if (isPro) {
         if (effectiveTier === 'team') {
           const teamLevel = this._getUserTeamLevel(userInfo)
@@ -67,6 +69,7 @@ Page({
               else if (days >= 360) membershipName = '年卡会员'
               else if (days >= 25) membershipName = '月卡会员'
               else membershipName = '高级会员'
+              if (exp <= now) isExpired = true
             } catch (_) {
               membershipName = '高级会员'
             }
@@ -94,6 +97,7 @@ Page({
               const d = Math.round((t - now) / (24 * 60 * 60 * 1000))
               if (d >= 360) membershipName = '年卡会员'
               else if (d >= 25) membershipName = '月卡会员'
+              if (t <= now) isExpired = true
             } catch(_) {}
           }
           if (!membershipName && teamCycle) {
@@ -105,9 +109,11 @@ Page({
       } catch(_) {}
 
       hasMembership = isPro || !!expireStr || durationDays > 0
+      const isInactive = (!isPro) || !!isExpired
       this.setData({
           userInfo: userInfo,
           isPro,
+          isInactive,
           expireDate: (() => {
             if (effectiveTier === 'team') {
               try {
