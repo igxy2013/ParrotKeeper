@@ -1,7 +1,8 @@
 {
   "usingComponents": {
     "parrot-modal": "/components/parrot-modal/parrot-modal",
-    "app-header": "/components/app-header/app-header"
+    "app-header": "/components/app-header/app-header",
+    "limit-modal": "/components/limit-modal/limit-modal"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "鹦鹉详情",

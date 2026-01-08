@@ -244,12 +244,13 @@ Page({
   },
 
   // 打开通过过户码添加弹窗
-  openClaimByCodeModal() {
+  async openClaimByCodeModal() {
     if (!this.data.isLogin) {
       app.showError('请先登录')
       return
     }
 
+    try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_) {}
     if (!app.hasPermission('parrot.create')) {
       app.showError('您没有添加鹦鹉的权限')
       return
@@ -342,6 +343,19 @@ Page({
       return;
     }
     
+    // 团队模式下无查看权限时直接返回空列表
+    try {
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      if (mode === 'team') {
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_) {}
+        const canView = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.view') : true
+        if (!canView) {
+          this.setData({ parrots: [], displayParrots: [], maleCount: 0, femaleCount: 0, totalParrots: 0, loading: false, page: 1, hasMore: false })
+          return
+        }
+      }
+    } catch (_) {}
+
     this.setData({ loading: true })
     
     try {
@@ -832,11 +846,11 @@ Page({
   },
 
   // 添加鹦鹉
-  addParrot() {
+  async addParrot() {
     const isLogin = !!(app && app.globalData && app.globalData.isLogin)
     if (!isLogin) { app.showError && app.showError('请先登录'); return }
     const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
-    try { if (userMode === 'team' && app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+    try { if (userMode === 'team' && app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
     
     // 检查是否有新增鹦鹉权限
     const hasCreatePerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.create') : true

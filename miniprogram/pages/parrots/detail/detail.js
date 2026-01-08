@@ -99,7 +99,9 @@ Page({
     transferCode: '',
     transferCodeGenerating: false
     ,
-    suppressPullDownUntil: 0
+    suppressPullDownUntil: 0,
+    showPermissionModal: false,
+    permissionMessage: ''
   },
 
   formatBirthPlaceDisplay(p) {
@@ -851,14 +853,28 @@ Page({
   },
 
   // 快速喂食
-  quickFeeding() {
+  async quickFeeding() {
+    if (!this.data.parrotId) { app.showError('数据未加载，请稍后重试'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
+      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
+      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+    }
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=feeding${pid ? `&parrot_ids=${pid}` : ''}`
     wx.navigateTo({ url })
   },
 
   // 快速健康检查
-  quickHealthCheck() {
+  async quickHealthCheck() {
+    if (!this.data.parrotId) { app.showError('数据未加载，请稍后重试'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
+      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
+      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+    }
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=health${pid ? `&parrot_ids=${pid}` : ''}`
     wx.navigateTo({ url })
@@ -867,18 +883,35 @@ Page({
   
 
   // 快速清洁（保留原有功能）
-  quickCleaning() {
+  async quickCleaning() {
+    if (!this.data.parrotId) { app.showError('数据未加载，请稍后重试'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
+      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
+      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+    }
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=cleaning${pid ? `&parrot_ids=${pid}` : ''}`
     wx.navigateTo({ url })
   },
 
   // 快速繁殖记录
-  quickBreeding() {
-    // 跳转到繁殖记录新页面
+  async quickBreeding() {
+    if (!this.data.parrotId) { app.showError('数据未加载，请稍后重试'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
+      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
+      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+    }
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=breeding${pid ? `&parrot_ids=${pid}` : ''}`
     wx.navigateTo({ url })
+  },
+
+  closePermissionModal() {
+    this.setData({ showPermissionModal: false, permissionMessage: '' })
   },
 
   // 照片加载失败时回退为默认头像
