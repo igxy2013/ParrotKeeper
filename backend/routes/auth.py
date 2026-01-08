@@ -1,9 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, InvitationCode
 from schemas import user_schema
 from utils import get_wechat_session, success_response, error_response, login_required
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+import secrets
 import re
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -541,6 +542,78 @@ def change_password():
     except Exception as e:
         db.session.rollback()
         return error_response(f'修改密码失败: {str(e)}')
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    try:
+        data = request.get_json() or {}
+        username = (data.get('username') or '').strip()
+        phone = (data.get('phone') or '').strip()
+        if not username:
+            return error_response('请输入用户名')
+        from models import UserAccount, PasswordResetRequest
+        account = UserAccount.query.filter_by(username=username).first()
+        if not account:
+            return error_response('账号不存在')
+        user = account.user
+        if user and user.phone:
+            if not phone:
+                return error_response('请输入绑定手机号')
+            if user.phone.strip() != phone:
+                return error_response('手机号不匹配')
+        code = f"{secrets.randbelow(1000000):06d}"
+        token = secrets.token_hex(32)
+        expire_at = datetime.utcnow() + timedelta(minutes=10)
+        req = PasswordResetRequest(account_id=account.id, code=code, token=token, expire_at=expire_at)
+        db.session.add(req)
+        db.session.commit()
+        masked = None
+        if user and user.phone:
+            p = user.phone.strip()
+            if len(p) >= 7:
+                masked = p[:3] + '****' + p[-4:]
+            else:
+                masked = p
+        resp = {'masked_phone': masked}
+        if current_app.config.get('DEBUG'):
+            resp['debug_code'] = code
+        return success_response(resp, '验证码已发送')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'发送失败: {str(e)}')
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    try:
+        data = request.get_json() or {}
+        username = (data.get('username') or '').strip()
+        code = (data.get('code') or '').strip()
+        new_password = (data.get('new_password') or '').strip()
+        if not username:
+            return error_response('请输入用户名')
+        if not code:
+            return error_response('请输入验证码')
+        if not new_password:
+            return error_response('请输入新密码')
+        if len(new_password) < 6:
+            return error_response('新密码长度至少6位')
+        from models import UserAccount, PasswordResetRequest
+        account = UserAccount.query.filter_by(username=username).first()
+        if not account:
+            return error_response('账号不存在')
+        now = datetime.utcnow()
+        req = PasswordResetRequest.query.filter_by(account_id=account.id, code=code, used=False).order_by(PasswordResetRequest.id.desc()).first()
+        if not req:
+            return error_response('验证码无效')
+        if req.expire_at < now:
+            return error_response('验证码已过期')
+        account.password_hash = generate_password_hash(new_password)
+        req.used = True
+        db.session.commit()
+        return success_response({'updated': True}, '密码重置成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'重置失败: {str(e)}')
 
 
 @auth_bp.route('/unbind-credentials', methods=['POST'])

@@ -16,6 +16,19 @@ class UserAccount(db.Model):
 
     user = db.relationship('User', backref=db.backref('account', uselist=False))
 
+class PasswordResetRequest(db.Model):
+    __tablename__ = 'password_reset_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('user_accounts.id'), nullable=False)
+    code = db.Column(db.String(10), nullable=False)
+    token = db.Column(db.String(64), nullable=False)
+    expire_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    account = db.relationship('UserAccount')
+
 class SubscriptionOrder(db.Model):
     __tablename__ = 'subscription_orders'
     

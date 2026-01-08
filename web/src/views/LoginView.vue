@@ -16,6 +16,9 @@
             <el-form-item>
               <el-input v-model="loginForm.password" type="password" placeholder="密码" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
             </el-form-item>
+            <div class="extra-row">
+              <span class="forgot-link" @click="openResetDialog">忘记密码？</span>
+            </div>
             <el-button type="primary" :loading="loading" class="w-100" @click="handleLogin">登录</el-button>
           </el-form>
         </el-tab-pane>
@@ -55,6 +58,35 @@
         </el-tab-pane>
       </el-tabs>
     </el-card>
+
+    <el-dialog v-model="showResetDialog" title="重置密码" width="420px" :close-on-click-modal="false">
+      <div v-if="resetStep === 1">
+        <el-form :model="resetForm" label-width="0">
+          <el-form-item>
+            <el-input v-model="resetForm.username" placeholder="账号用户名" />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="resetForm.phone" placeholder="绑定手机号（如已绑定）" />
+          </el-form-item>
+          <el-button type="primary" class="w-100" :loading="sendingCode" @click="sendResetCode">获取验证码</el-button>
+        </el-form>
+      </div>
+      <div v-else>
+        <el-form :model="resetForm" label-width="0">
+          <el-form-item>
+            <el-input v-model="resetForm.code" placeholder="验证码" />
+            <div v-if="debugCode" class="debug-tip">验证码（测试环境）：{{ debugCode }}</div>
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="resetForm.new_password" type="password" placeholder="新密码" show-password />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="resetForm.confirm_password" type="password" placeholder="确认新密码" show-password />
+          </el-form-item>
+          <el-button type="primary" class="w-100" :loading="resetting" @click="submitReset">重置密码</el-button>
+        </el-form>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -71,6 +103,19 @@ const router = useRouter()
 const route = useRoute()
 const activeTab = ref('login')
 const loading = ref(false)
+const showResetDialog = ref(false)
+const resetStep = ref(1)
+const sendingCode = ref(false)
+const resetting = ref(false)
+const debugCode = ref('')
+
+const resetForm = reactive({
+  username: '',
+  phone: '',
+  code: '',
+  new_password: '',
+  confirm_password: ''
+})
 
 onMounted(() => {
   if (route.query.tab === 'register') {
@@ -140,6 +185,75 @@ const handleRegister = async () => {
     loading.value = false
   }
 }
+
+const openResetDialog = () => {
+  showResetDialog.value = true
+  resetStep.value = 1
+  resetForm.username = loginForm.username || ''
+  resetForm.phone = ''
+  resetForm.code = ''
+  resetForm.new_password = ''
+  resetForm.confirm_password = ''
+  debugCode.value = ''
+}
+
+const sendResetCode = async () => {
+  if (!resetForm.username) {
+    ElMessage.warning('请输入账号用户名')
+    return
+  }
+  sendingCode.value = true
+  try {
+    const resp = await api.post('/auth/forgot-password', { username: resetForm.username, phone: resetForm.phone })
+    if (resp.data.success) {
+      resetStep.value = 2
+      debugCode.value = resp.data.data?.debug_code || ''
+      ElMessage.success(resp.data.message || '验证码已发送')
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '发送失败')
+  } finally {
+    sendingCode.value = false
+  }
+}
+
+const submitReset = async () => {
+  if (!resetForm.code) {
+    ElMessage.warning('请输入验证码')
+    return
+  }
+  if (!resetForm.new_password) {
+    ElMessage.warning('请输入新密码')
+    return
+  }
+  if (resetForm.new_password.length < 6) {
+    ElMessage.warning('新密码长度至少6位')
+    return
+  }
+  if (resetForm.new_password !== resetForm.confirm_password) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  resetting.value = true
+  try {
+    const resp = await api.post('/auth/reset-password', {
+      username: resetForm.username,
+      code: resetForm.code,
+      new_password: resetForm.new_password
+    })
+    if (resp.data.success) {
+      ElMessage.success('密码重置成功，请登录')
+      showResetDialog.value = false
+      loginForm.username = resetForm.username
+      loginForm.password = resetForm.new_password
+      activeTab.value = 'login'
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '重置失败')
+  } finally {
+    resetting.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -191,6 +305,27 @@ const handleRegister = async () => {
   margin-top: 16px;
   border-radius: 12px;
   height: 44px;
+}
+
+.extra-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -8px;
+  margin-bottom: 8px;
+}
+
+.forgot-link {
+  font-size: 13px;
+  color: var(--primary-color);
+  cursor: pointer;
+}
+
+.forgot-link:hover { opacity: 0.8; }
+
+.debug-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9ca3af;
 }
 
 /* 覆盖 Element Plus 样式 */
