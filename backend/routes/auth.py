@@ -334,7 +334,7 @@ def get_profile():
         if not user and openid.startswith('account_'):
             try:
                 user_id = int(openid.replace('account_', ''))
-                user = User.query.filter_by(id=user_id, login_type='account').first()
+                user = User.query.filter_by(id=user_id).first()
             except ValueError:
                 pass
         
@@ -364,7 +364,7 @@ def update_profile():
         if not user and openid.startswith('account_'):
             try:
                 user_id = int(openid.replace('account_', ''))
-                user = User.query.filter_by(id=user_id, login_type='account').first()
+                user = User.query.filter_by(id=user_id).first()
             except ValueError:
                 pass
         
@@ -627,7 +627,7 @@ def unbind_credentials():
         if not user and openid.startswith('account_'):
             try:
                 user_id = int(openid.replace('account_', ''))
-                user = User.query.filter_by(id=user_id, login_type='account').first()
+                user = User.query.filter_by(id=user_id).first()
             except ValueError:
                 user = None
 

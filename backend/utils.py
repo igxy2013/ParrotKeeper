@@ -365,7 +365,7 @@ def login_required(f):
         if not user and openid.startswith('account_'):
             try:
                 user_id = int(openid.replace('account_', ''))
-                user = User.query.filter_by(id=user_id, login_type='account').first()
+                user = User.query.filter_by(id=user_id).first()
             except ValueError:
                 pass
         
