@@ -972,6 +972,17 @@ App({
       if (mp[keys[i]]) return true
     }
     return false
+  },
+
+  // 检查是否有特定权限
+  hasPermission(key) {
+    if (this.isSuperAdmin()) return true
+    if (this.isTeamAdmin()) return true
+    const mode = this.globalData.userMode
+    if (mode !== 'team') return true
+    const mp = this.globalData.effectivePermissions || wx.getStorageSync('effectivePermissions') || null
+    if (!mp || typeof mp !== 'object') return false
+    return !!mp[key]
   }
   ,
   getEffectiveTier() {

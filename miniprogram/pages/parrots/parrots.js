@@ -84,7 +84,9 @@ Page({
     // 数量限制弹窗
     showLimitModal: false,
     limitModalCode: '',
-    limitCount: 5
+    limitCount: 5,
+    showPermissionModal: false,
+    permissionMessage: ''
   },
 
   onLoad() {
@@ -247,6 +249,12 @@ Page({
       app.showError('请先登录')
       return
     }
+
+    if (!app.hasPermission('parrot.create')) {
+      app.showError('您没有添加鹦鹉的权限')
+      return
+    }
+
     this.setData({
       showClaimByCodeModal: true,
       claimCode: '',
@@ -829,9 +837,11 @@ Page({
     if (!isLogin) { app.showError && app.showError('请先登录'); return }
     const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
     try { if (userMode === 'team' && app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
-    const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
-    if (userMode === 'team' && !hasOp) {
-      wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+    
+    // 检查是否有新增鹦鹉权限
+    const hasCreatePerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.create') : true
+    if (userMode === 'team' && !hasCreatePerm) {
+      this.setData({ showPermissionModal: true, permissionMessage: '您没有新增鹦鹉的权限，请联系管理员分配权限' })
       return
     }
     const tier = app.getEffectiveTier()
@@ -933,6 +943,10 @@ Page({
     }
   },
 
+  closePermissionModal() {
+    this.setData({ showPermissionModal: false, permissionMessage: '' })
+  },
+
   // 列表图标加载失败时回退为 SVG
   onListIconError(e) {
     try {
@@ -973,6 +987,14 @@ Page({
   // 编辑鹦鹉（如在列表页需要）
   editParrot(e) {
     if (e && e.stopPropagation) { e.stopPropagation() }
+
+    const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    const hasEditPerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.edit') : true
+    if (userMode === 'team' && !hasEditPerm) {
+      wx.showToast({ title: '无操作权限', icon: 'none' })
+      return
+    }
+
     const id = e.currentTarget.dataset.id
     const parrot = (this.data.parrots || []).find(p => p.id === id)
     if (!parrot) return
@@ -1423,6 +1445,20 @@ Page({
   async onParrotModalSubmit(e) {
     if (!this.data.isLogin) { app.showError('请先登录后使用此功能'); return }
     const { id, data, mode } = e.detail
+
+    // 权限检查
+    if (mode === 'claim' || (mode !== 'edit' && !id)) {
+      if (!app.hasPermission('parrot.create')) {
+        app.showError('您没有添加鹦鹉的权限')
+        return
+      }
+    } else if (mode === 'edit') {
+      if (!app.hasPermission('parrot.edit')) {
+        app.showError('您没有编辑鹦鹉档案的权限')
+        return
+      }
+    }
+
     try {
       let res
       if (mode === 'claim') {

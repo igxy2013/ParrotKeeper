@@ -323,3 +323,12 @@
   bind:upgrade="goToMemberCenter"
   bind:redeem="onLimitRedeem"
 />
+
+<limit-modal 
+  visible="{{showPermissionModal}}"
+  mode="info"
+  title="无权限提示"
+  message="{{permissionMessage}}"
+  cancelText="我知道了"
+  bind:cancel="closePermissionModal"
+/>

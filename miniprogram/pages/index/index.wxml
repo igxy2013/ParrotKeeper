@@ -340,6 +340,16 @@
   bind:redeem="onLimitRedeem"
 />
 
+<!-- 通用“无权限信息”弹窗组件 -->
+<limit-modal 
+  visible="{{showPermissionModal}}"
+  mode="info"
+  title="无权限提示"
+  message="{{permissionMessage}}"
+  cancelText="我知道了"
+  bind:cancel="closePermissionModal"
+/>
+
     <!-- 登录提示 -->
     <view class="login-prompt-card" wx:if="{{!isLogin}}">
       <view class="login-content">

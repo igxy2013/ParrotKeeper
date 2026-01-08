@@ -441,6 +441,15 @@ Page({
 
   // 删除记录
   deleteRecord(e) {
+    const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (userMode === 'team') {
+       try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+       const hasPerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.delete') : true
+       if (!hasPerm) {
+         wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+         return
+       }
+    }
     const { id } = e.currentTarget.dataset;
     
     wx.showModal({

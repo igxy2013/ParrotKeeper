@@ -1077,6 +1077,12 @@ Page({
 
   // 编辑鹦鹉（打开弹窗）
   editParrot() {
+    if (!app.hasPermission('parrot.edit')) {
+      this.setData({ showMenu: false })
+      app.showError('您没有编辑鹦鹉档案的权限')
+      return
+    }
+
     this.setData({ showMenu: false })
     const p = this.data.parrot || {}
     const form = {
@@ -1144,6 +1150,12 @@ Page({
   // 组件事件：提交编辑
   async onParrotModalSubmit(e) {
     const { id, data } = e.detail || {}
+    
+    if (!app.hasPermission('parrot.edit')) {
+      app.showError('您没有编辑鹦鹉档案的权限')
+      return
+    }
+
     if (!id) {
       app.showError('缺少鹦鹉ID，无法提交')
       return
@@ -1198,6 +1210,16 @@ Page({
   deleteParrot() {
     this.setData({ showMenu: false }) // 关闭菜单
     
+    const mode = (app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+       try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+       const hasPerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.delete') : true
+       if (!hasPerm) {
+         wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+         return
+       }
+    }
+
     // 检查parrotId是否存在
     if (!this.data.parrotId) {
       app.showError('鹦鹉ID不存在，无法删除')

@@ -177,8 +177,8 @@ Page({
 
   editRecord() {
     try {
-      if (!this.data.hasOperationPermission) {
-        app.showError('您没有操作权限');
+      if (!app.hasPermission('record.edit')) {
+        app.showError('您没有编辑记录的权限');
         return;
       }
       const type = this.data.recordType;
@@ -191,8 +191,8 @@ Page({
 
   async deleteRecord() {
     try {
-      if (!this.data.hasOperationPermission) {
-        app.showError('您没有操作权限');
+      if (!app.hasPermission('record.delete')) {
+        app.showError('您没有删除记录的权限');
         return;
       }
       const type = this.data.recordType;

@@ -102,6 +102,10 @@ Page({
     showLimitModal: false,
     limitCount: 5,
 
+    // 通用：无权限提示弹窗
+    showPermissionModal: false,
+    permissionMessage: '',
+
     // PNG 图标路径（统一图标方案）
     iconPaths: {
       headerNotification: '/images/remix/ri-notification-3-line-white.png',
@@ -2005,21 +2009,12 @@ Page({
     const teamLevel = app.getTeamLevel()
     const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
     if (mode === 'team') {
-      const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
-      if (!hasOp) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
-      try {
-        const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
-        const teamId = cur && cur.success && cur.data && cur.data.id
-        const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
-        if (teamId && userId) {
-          const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
-          if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
-            const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
-            const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-            if (!groupId) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
-          }
-        }
-      } catch (_) {}
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+      const hasCreatePerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.create') : true
+      if (!hasCreatePerm) {
+        this.setData({ showPermissionModal: true, permissionMessage: '您没有新增鹦鹉的权限，请联系管理员分配权限' })
+        return
+      }
     }
     let limit = 0
     if (tier === 'free') limit = mode === 'team' ? 20 : 10
@@ -2062,7 +2057,7 @@ Page({
     const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
     if (mode === 'team') {
       const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
-      if (!hasOp) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+      if (!hasOp) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增收支的权限，请联系管理员分配权限' }); return }
       try {
         const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
         const teamId = cur && cur.success && cur.data && cur.data.id
@@ -2072,12 +2067,77 @@ Page({
           if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
             const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
             const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-            if (!groupId) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
+            if (!groupId) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增收支的权限，请联系管理员分配权限' }); return }
           }
         }
       } catch (_) {}
     }
     this.setData({ showAddExpenseModal: true })
+  },
+
+  // 快速清洁
+  quickCleaning() {
+    if (!this.data.isLogin) { app.showError('请先登录后使用此功能'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
+      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+    }
+    wx.navigateTo({ url: '/pages/records/cleaning/cleaning' })
+  },
+
+  // 快速健康检查
+  quickHealth() {
+    if (!this.data.isLogin) { app.showError('请先登录后使用此功能'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
+      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+    }
+    wx.navigateTo({ url: '/pages/records/health/health' })
+  },
+
+  // 快速繁殖记录
+  quickBreeding() {
+    if (!this.data.isLogin) { app.showError('请先登录后使用此功能'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+      const canCreate = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
+      if (!canCreate) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增记录的权限，请联系管理员分配权限' }); return }
+    }
+    wx.navigateTo({ url: '/pages/records/breeding/breeding' })
+  },
+
+  // 查看喂食记录列表
+  navigateToFeedingRecords() {
+    if (!this.data.isLogin) { app.showError('请先登录后使用此功能'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+      const canView = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.view') : true
+      if (!canView) { this.setData({ showPermissionModal: true, permissionMessage: '您没有查看记录的权限，请联系管理员分配权限' }); return }
+    }
+    wx.navigateTo({ url: '/pages/records/feeding/feeding' })
+  },
+
+  // 收支管理
+  goToExpenseManagement() {
+    if (!this.data.isLogin) { app.showError('请先登录后使用此功能'); return }
+    const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+      const canViewFinance = app && typeof app.hasPermission === 'function' ? app.hasPermission('finance.view') : true
+      if (!canViewFinance) { this.setData({ showPermissionModal: true, permissionMessage: '您没有查看收支的权限，请联系管理员分配权限' }); return }
+    }
+    wx.navigateTo({ url: '/pages/records/add-record/add-record' })
+  },
+
+  // 关闭权限提示弹窗
+  closePermissionModal() {
+    this.setData({ showPermissionModal: false, permissionMessage: '' })
   },
 
   // 通用数量限制弹窗：关闭

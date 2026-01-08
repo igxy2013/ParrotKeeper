@@ -1686,6 +1686,15 @@ const app = getApp()
   // 提交表单
   submitForm: async function() {
     if (!this.data.canSubmit || this.data.submitting) return
+
+    // 权限检查
+    const isEdit = this.data.mode === 'edit'
+    const permissionKey = isEdit ? 'record.edit' : 'record.create'
+    if (!app.hasPermission(permissionKey)) {
+      app.showError(`您没有${isEdit ? '编辑' : '新增'}记录的权限`)
+      return
+    }
+
     this.setData({ submitting: true })
     // 无网络：按类型构造离线队列项（含本地照片），网络恢复后自动上传并提交
     if (!app.globalData.networkConnected) {

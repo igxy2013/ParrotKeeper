@@ -314,21 +314,12 @@ Page({
 
     const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
     if (mode === 'team') {
-      const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
-      if (!hasOp) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
-      try {
-        const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
-        const teamId = cur && cur.success && cur.data && cur.data.id
-        const userId = (app.globalData && app.globalData.userInfo && app.globalData.userInfo.id) || null
-        if (teamId && userId) {
-          const membersRes = await app.request({ url: `/api/teams/${teamId}/members`, method: 'GET' })
-          if (membersRes && membersRes.success && Array.isArray(membersRes.data)) {
-            const me = membersRes.data.find(m => String(m.user_id || m.id) === String(userId))
-            const groupId = me && (typeof me.group_id !== 'undefined' ? me.group_id : null)
-            if (!groupId) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
-          }
-        }
-      } catch (_) { wx.showToast({ title: '权限校验失败，请稍后重试', icon: 'none', duration: 3000 }) ; return }
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+      const hasPerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.create') : true
+      if (!hasPerm) {
+        wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+        return
+      }
     }
 
     wx.navigateTo({ url: '/pages/records/add-record/add-record?type=breeding' })
@@ -398,6 +389,15 @@ Page({
 
   // 编辑记录
   editRecord(e) {
+    const mode = (app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+       try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+       const hasPerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.edit') : true
+       if (!hasPerm) {
+         wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+         return
+       }
+    }
     const { id } = e.currentTarget.dataset;
     const url = `/pages/records/add-record/add-record?mode=edit&type=breeding&id=${encodeURIComponent(id)}`;
     wx.navigateTo({ url });
@@ -405,6 +405,15 @@ Page({
 
   // 删除记录
   deleteRecord(e) {
+    const mode = (app.globalData && app.globalData.userMode) || 'personal'
+    if (mode === 'team') {
+       try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+       const hasPerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('record.delete') : true
+       if (!hasPerm) {
+         wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 })
+         return
+       }
+    }
     const { id } = e.currentTarget.dataset;
     
     wx.showModal({
