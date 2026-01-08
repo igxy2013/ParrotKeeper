@@ -337,6 +337,7 @@
   limitCount="{{limitCount}}"
   bind:cancel="closeLimitModal"
   bind:upgrade="goToMemberCenter"
+  bind:trial="onLimitTrial"
   bind:redeem="onLimitRedeem"
 />
 

@@ -10,6 +10,7 @@
           <text>普通用户最多只能管理 {{limitCount}} 只鹦鹉。\n升级会员可解锁无限数量限制。</text>
         </view>
         <view class="limit-actions">
+          <button wx:if="{{showTrial}}" class="action-btn trial-btn" bindtap="onTrial"><text>试用会员30天</text></button>
           <button wx:if="{{showUpgrade}}" class="action-btn upgrade-btn" bindtap="onUpgrade"><text>查看会员权益</text></button>
         </view>
         <view wx:if="{{showRedeem}}" class="divider-text">或者</view>

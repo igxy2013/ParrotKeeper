@@ -963,6 +963,32 @@ Page({
     })
   },
 
+  async onLimitTrial() {
+    const isLogin = !!(app && app.globalData && app.globalData.isLogin)
+    if (!isLogin) { wx.showToast({ title: '请先登录', icon: 'none' }); return }
+    wx.showLoading({ title: '开通试用中...' })
+    try {
+      const res = await app.request({ url: '/api/auth/trial', method: 'POST' })
+      wx.hideLoading()
+      if (res && res.success) {
+        const info = wx.getStorageSync('userInfo') || {}
+        const next = { ...info }
+        next.subscription_tier = 'pro'
+        if (res.data && res.data.expire_at) next.subscription_expire_at = res.data.expire_at
+        app.globalData.userInfo = next
+        wx.setStorageSync('userInfo', next)
+        wx.showToast({ title: '试用已开通', icon: 'success' })
+        this.closeLimitModal()
+        wx.navigateTo({ url: '/pages/member-center/member-center' })
+      } else {
+        wx.showToast({ title: (res && res.message) || '开通失败', icon: 'none' })
+      }
+    } catch (e) {
+      wx.hideLoading()
+      wx.showToast({ title: '网络错误，请重试', icon: 'none' })
+    }
+  },
+
   // 通用组件回调：在弹窗中兑换
   async onLimitRedeem(e) {
     const code = (e && e.detail && e.detail.code) ? String(e.detail.code).trim() : ''

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, InvitationCode
+from models import db, User, InvitationCode, UserSetting
 from schemas import user_schema
 from utils import get_wechat_session, success_response, error_response, login_required
 from datetime import date, datetime, timedelta
@@ -651,3 +651,40 @@ def unbind_credentials():
     except Exception as e:
         db.session.rollback()
         return error_response(f'解除账号绑定失败: {str(e)}')
+
+
+@auth_bp.route('/trial', methods=['POST'])
+@login_required
+def start_trial():
+    try:
+        user = request.current_user
+        if not user:
+            return error_response('未登录', 401)
+
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+
+        team_id = None
+        setting = UserSetting.query.filter_by(user_id=user.id, team_id=team_id, key='trial_pro_30_used').first()
+        if setting:
+            return error_response('已使用过试用', 400)
+
+        if user.subscription_tier == 'pro' and user.subscription_expire_at and user.subscription_expire_at > now:
+            return error_response('当前已是会员，无需试用', 400)
+
+        user.subscription_tier = 'pro'
+        user.subscription_expire_at = now + timedelta(days=30)
+
+        record = UserSetting(user_id=user.id, team_id=team_id, key='trial_pro_30_used', value='{"days":30}')
+        db.session.add(record)
+        db.session.commit()
+
+        data = {
+            'tier': 'pro',
+            'expire_at': user.subscription_expire_at.isoformat() if user.subscription_expire_at else None,
+            'duration_days': 30
+        }
+        return success_response(data, '试用已开通')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'开通试用失败: {str(e)}')
