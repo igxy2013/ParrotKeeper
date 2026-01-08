@@ -956,6 +956,34 @@ Page({
   async onLimitTrial() {
     const isLogin = !!(app && app.globalData && app.globalData.isLogin)
     if (!isLogin) { wx.showToast({ title: '请先登录', icon: 'none' }); return }
+    try {
+      const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+      const userInfo = wx.getStorageSync('userInfo') || app.globalData.userInfo || {}
+      const tier = String(userInfo.subscription_tier || '').toLowerCase()
+      const expStr = userInfo.subscription_expire_at || ''
+      let activePro = false
+      try {
+        if (tier === 'pro' && expStr) {
+          const t = new Date(String(expStr).replace(' ', 'T')).getTime()
+          activePro = isFinite(t) && t > Date.now()
+        }
+      } catch(_) { activePro = false }
+      const curTeam = (app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+      const tryingTeamTrial = mode === 'team' && !!(curTeam && curTeam.id)
+      if (activePro && tryingTeamTrial) {
+        const proceed = await new Promise(resolve => {
+          wx.showModal({
+            title: '提示',
+            content: '开启团队试用后，个人版会员将失效。是否继续？',
+            confirmText: '继续试用',
+            cancelText: '取消',
+            success: (res) => resolve(!!res.confirm),
+            fail: () => resolve(false)
+          })
+        })
+        if (!proceed) return
+      }
+    } catch(_) {}
     wx.showLoading({ title: '开通试用中...' })
     try {
       const res = await app.request({ url: '/api/auth/trial', method: 'POST' })

@@ -112,7 +112,7 @@ Page({
         }
       } catch(_) {}
 
-      hasMembership = isPro || !!expireStr || durationDays > 0
+      hasMembership = (effectiveTier === 'pro') || (effectiveTier === 'team' && mode === 'team')
       const isInactive = (!isPro) || !!isExpired
       this.setData({
           userInfo: userInfo,
@@ -120,6 +120,7 @@ Page({
           isInactive,
           expireDate: (() => {
             if (effectiveTier === 'team') {
+              if (mode !== 'team') return ''
               try {
                 const cur = (app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
                 if (cur && cur.id) {
@@ -128,7 +129,10 @@ Page({
                 }
               } catch(_) { return '' }
             }
-            return expireStr ? expireStr.substring(0, 10) : ''
+            if (effectiveTier === 'pro' && mode === 'personal') {
+              return expireStr ? expireStr.substring(0, 10) : ''
+            }
+            return ''
           })(),
           membershipName,
           membershipTag,

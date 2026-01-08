@@ -238,6 +238,16 @@ Page({
           // 重置刷新标志并重新加载统计概览
           appInst.globalData.needRefresh = false;
           this.loadOverviewStats();
+          try {
+            const baseUser = appInst.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+            const eff = appInst.getEffectiveTier()
+            const exp = this._computeExpireDate(baseUser, currentMode, eff)
+            this.setData({
+              isPro: (eff === 'pro' || eff === 'team'),
+              expireDate: exp,
+              membershipName: this.computeMembershipName(baseUser)
+            })
+          } catch (_) {}
         }
       }
     } catch (_) {}
@@ -683,9 +693,9 @@ Page({
     const isLogin = !!app.globalData.openid;
     const points = (typeof baseUser.points === 'number' ? baseUser.points :
                     typeof baseUser.score === 'number' ? baseUser.score : 0);
-    const effectiveTier = app.getEffectiveTier()
     const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
-    const tierClass = (effectiveTier === 'team' && mode === 'team') ? 'team' : (effectiveTier === 'pro' && mode === 'personal') ? 'pro' : 'free'
+    const adjustedTier = this._computeAdjustedTier(app.getEffectiveTier(), baseUser, (app.globalData.currentTeam || wx.getStorageSync('currentTeam') || {}))
+    const tierClass = (adjustedTier === 'team' && mode === 'team') ? 'team' : (adjustedTier === 'pro' && mode === 'personal') ? 'pro' : 'free'
     this.setData({
       isLogin,
       userInfo: baseUser,
@@ -694,8 +704,8 @@ Page({
       roleDisplay: this.mapRoleDisplay(baseUser),
       points,
       // 初始化会员信息（按模式生效的有效等级）
-      isPro: (effectiveTier === 'pro' || effectiveTier === 'team'),
-      expireDate: baseUser.subscription_expire_at ? baseUser.subscription_expire_at.substring(0, 10) : '',
+      isPro: (adjustedTier === 'pro' || adjustedTier === 'team'),
+      expireDate: this._computeExpireDate(baseUser, mode, adjustedTier),
       membershipName: this.computeMembershipName(baseUser),
       tierClass
     });
@@ -712,15 +722,16 @@ Page({
           try { wx.setStorageSync('userInfo', merged); } catch (_) {}
           // 更新页面显示
           const points = typeof merged.points === 'number' ? merged.points : (typeof serverUser.points === 'number' ? serverUser.points : this.data.points || 0);
+          const eff2 = this._computeAdjustedTier(app.getEffectiveTier(), merged, (app.globalData.currentTeam || wx.getStorageSync('currentTeam') || {}))
+          const mode2 = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
           this.setData({
             userInfo: merged,
             isSuperAdmin: (merged.role === 'super_admin'),
             roleDisplay: this.mapRoleDisplay(merged),
             joinDate: app.formatDate(merged.created_at || Date.now()),
             points: points,
-            // 更新会员信息
-            isPro: merged.subscription_tier === 'pro' || merged.subscription_tier === 'team',
-            expireDate: merged.subscription_expire_at ? merged.subscription_expire_at.substring(0, 10) : '',
+            isPro: (eff2 === 'pro' || eff2 === 'team'),
+            expireDate: this._computeExpireDate(merged, mode2, eff2),
             membershipName: this.computeMembershipName(merged)
           });
         }
@@ -788,6 +799,52 @@ Page({
     } catch (_) {
       return ''
     }
+  },
+
+  _computeExpireDate(user, mode, effectiveTier) {
+    try {
+      const appInst = getApp()
+      const m = mode || (appInst.globalData.userMode || wx.getStorageSync('userMode') || 'personal')
+      const t = String(effectiveTier || '').toLowerCase()
+      if (t === 'team' && m === 'team') {
+        const cur = (appInst.globalData && appInst.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+        const exp = cur.subscription_expire_at || cur.expire_at || user.subscription_expire_at || ''
+        return exp ? String(exp).substring(0, 10) : ''
+      }
+      if (t === 'pro' && m === 'personal') {
+        const exp = user && user.subscription_expire_at
+        return exp ? String(exp).substring(0, 10) : ''
+      }
+      return ''
+    } catch (_) { return '' }
+  },
+
+  _computeAdjustedTier(rawTier, userInfo, currentTeam) {
+    try {
+      const now = Date.now()
+      const t = String(rawTier || '').toLowerCase()
+      const mode = getApp().globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+      if (t === 'pro') {
+        const expStr = userInfo && userInfo.subscription_expire_at
+        if (!expStr) return 'free'
+        const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+        return (isFinite(ts) && ts > now) && mode === 'personal' ? 'pro' : 'free'
+      }
+      if (t === 'team') {
+        const hasTeam = !!(currentTeam && currentTeam.id)
+        if (!hasTeam) {
+          const userExp = userInfo && userInfo.subscription_expire_at
+          if (!userExp) return 'free'
+          const tsUser = new Date(String(userExp).replace(' ', 'T')).getTime()
+          return (isFinite(tsUser) && tsUser > now) && mode === 'team' ? 'team' : 'free'
+        }
+        const expStr = currentTeam.subscription_expire_at || currentTeam.expire_at || (userInfo && userInfo.subscription_expire_at) || ''
+        if (!expStr) return 'free'
+        const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+        return (isFinite(ts) && ts > now) && mode === 'team' ? 'team' : 'free'
+      }
+      return 'free'
+    } catch(_) { return 'free' }
   },
 
   // 将后端角色枚举映射为展示文案
@@ -1090,6 +1147,16 @@ Page({
       });
     }
     this.loadOverviewStats();
+    try {
+      const baseUser = app.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+      const eff = app.getEffectiveTier()
+      const exp = this._computeExpireDate(baseUser, mode, eff)
+      this.setData({
+        isPro: (eff === 'pro' || eff === 'team'),
+        expireDate: exp,
+        membershipName: this.computeMembershipName(baseUser)
+      })
+    } catch (_) {}
   },
 
   // 胶囊按钮即时模式切换
@@ -1116,6 +1183,16 @@ Page({
     }
     // 切换后立即刷新统计卡片
     this.loadOverviewStats();
+    try {
+      const baseUser = app.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+      const eff = app.getEffectiveTier()
+      const exp = this._computeExpireDate(baseUser, mode, eff)
+      this.setData({
+        isPro: (eff === 'pro' || eff === 'team'),
+        expireDate: exp,
+        membershipName: this.computeMembershipName(baseUser)
+      })
+    } catch (_) {}
   },
 
   // 团队相关占位
