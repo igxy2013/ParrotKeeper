@@ -2,14 +2,19 @@
 const app = getApp()
 Page({
   data: {
-    isSuperAdmin: false
+    isSuperAdmin: false,
+    isAdminOrSuper: false
   },
   onLoad() {
     try {
       const userInfo = (app.globalData && app.globalData.userInfo) || {}
-      this.setData({ isSuperAdmin: String(userInfo.role || '') === 'super_admin' })
+      const role = String(userInfo.role || '')
+      this.setData({
+        isSuperAdmin: role === 'super_admin',
+        isAdminOrSuper: role === 'super_admin' || role === 'admin'
+      })
     } catch (_) {
-      this.setData({ isSuperAdmin: false })
+      this.setData({ isSuperAdmin: false, isAdminOrSuper: false })
     }
   },
   goAdminFeedbacks() { wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' }) },
@@ -64,6 +69,16 @@ Page({
     wx.navigateTo({ url: '/pages/admin/members-management/members-management' })
   },
   
+  goAdminResetRequests() {
+    const userInfo = (app.globalData && app.globalData.userInfo) || {}
+    const role = String(userInfo.role || '')
+    if (!(role === 'admin' || role === 'super_admin')) {
+      app.showError && app.showError('仅管理员或超级管理员可进入')
+      return
+    }
+    wx.navigateTo({ url: '/pages/admin/reset-requests/reset-requests' })
+  },
+
   goAdminUsersManagement() {
     const userInfo = (app.globalData && app.globalData.userInfo) || {}
     if (String(userInfo.role || '') !== 'super_admin') {

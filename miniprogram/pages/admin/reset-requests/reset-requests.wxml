@@ -1,0 +1,65 @@
+<view class="page-container">
+  <app-header title="密码重置核验" subtitle="查询并通知验证码" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isAdminOrSuper}}">
+      <view class="no-access">仅管理员或超级管理员可访问该页面</view>
+    </block>
+    <block wx:else>
+      <view class="card">
+        <view class="section-title">
+          <text>查询重置请求</text>
+        </view>
+        <view class="form-row">
+          <view class="label">账号用户名</view>
+          <input class="text-input" placeholder="输入账号用户名" value="{{username}}" bindinput="onUsernameInput" />
+          <view class="controls">
+            <button class="btn-primary" size="mini" loading="{{loading}}" bindtap="fetchRequest">查询</button>
+            <button class="btn-secondary" size="mini" bindtap="clear">清空</button>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="section-title">
+          <text>查询结果</text>
+        </view>
+        <block wx:if="{{!request}}">
+          <view class="empty">暂无重置请求</view>
+        </block>
+        <block wx:else>
+          <view class="result-grid">
+            <view class="result-item">
+              <view class="label">用户名</view>
+              <view class="value">{{request.username}}</view>
+            </view>
+            <view class="result-item">
+              <view class="label">验证码</view>
+              <view class="code-row">
+                <text class="value code code-badge">{{request.code || '—'}}</text>
+              </view>
+              <view class="copy-row" wx:if="{{!!request.code}}">
+                <button class="btn-copy" size="mini" bindtap="copyCode">复制验证码</button>
+              </view>
+            </view>
+            <view class="result-item">
+              <view class="label">绑定手机号</view>
+              <view class="value">{{request.masked_phone || '未绑定'}}</view>
+            </view>
+            <view class="result-item">
+              <view class="label">过期时间</view>
+              <view class="value">{{request.expire_at || '—'}}</view>
+            </view>
+            <view class="result-item">
+              <view class="label">已使用</view>
+              <view class="value">{{request.used ? '是' : '否'}}</view>
+            </view>
+            <view class="result-item">
+              <view class="label">创建时间</view>
+              <view class="value">{{request.created_at || '—'}}</view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </block>
+  </view>
+</view>

@@ -20,7 +20,8 @@
         "invitation-codes/invitation-codes",
         "redeem-codes/redeem-codes",
         "users-management/users-management",
-        "members-management/members-management"
+        "members-management/members-management",
+        "reset-requests/reset-requests"
       ]
     },
     {
