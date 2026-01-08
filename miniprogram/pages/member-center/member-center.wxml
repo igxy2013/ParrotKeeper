@@ -54,11 +54,19 @@
           <view class="pricing-header pro">个人会员</view>
           <view class="pricing-item">
             <text class="pricing-name">月卡</text>
-            <text class="pricing-price">¥9.9/月</text>
+            <view class="price-box">
+              <text class="original-price">¥19.9/月</text>
+              <view class="sale-badge">限时特惠</view>
+              <text class="sale-price">¥9.9/月</text>
+            </view>
           </view>
           <view class="pricing-item">
             <text class="pricing-name">年卡</text>
-            <text class="pricing-price">¥99/年</text>
+            <view class="price-box">
+              <text class="original-price">¥199/年</text>
+              <view class="sale-badge">限时特惠</view>
+              <text class="sale-price">¥99/年</text>
+            </view>
           </view>
           <view class="apply-row">
             <button class="apply-btn" bindtap="openApplyModal">申请兑换码</button>
@@ -68,19 +76,35 @@
           <view class="pricing-header team">团队会员</view>
           <view class="pricing-item">
             <text class="pricing-name">月卡基础版</text>
-            <text class="pricing-price">¥29.9/月</text>
+            <view class="price-box">
+              <text class="original-price">¥59.9/月</text>
+              <view class="sale-badge">限时特惠</view>
+              <text class="sale-price">¥29.9/月</text>
+            </view>
           </view>
           <view class="pricing-item">
             <text class="pricing-name">月卡高级版</text>
-            <text class="pricing-price">¥59.9/月</text>
+            <view class="price-box">
+              <text class="original-price">¥99.9/月</text>
+              <view class="sale-badge">限时特惠</view>
+              <text class="sale-price">¥59.9/月</text>
+            </view>
           </view>
           <view class="pricing-item">
             <text class="pricing-name">年卡基础版</text>
-            <text class="pricing-price">¥299/年</text>
+            <view class="price-box">
+              <text class="original-price">¥599/年</text>
+              <view class="sale-badge">限时特惠</view>
+              <text class="sale-price">¥299/年</text>
+            </view>
           </view>
           <view class="pricing-item">
             <text class="pricing-name">年卡高级版</text>
-            <text class="pricing-price">¥599/年</text>
+            <view class="price-box">
+              <text class="original-price">¥999/年</text>
+              <view class="sale-badge">限时特惠</view>
+              <text class="sale-price">¥599/年</text>
+            </view>
           </view>
           <view class="apply-row">
             <button class="apply-btn" bindtap="openApplyModal">申请兑换码</button>

@@ -48,27 +48,44 @@ Page({
           membershipTag = '个人'
           tierClass = 'pro'
         }
-        if (userInfo.membership_label) {
-          membershipName = userInfo.membership_label
-        } else if (durationDays > 0) {
-          if (durationDays >= 36500) membershipName = '永久会员'
-          else if (durationDays >= 365) membershipName = '年卡会员'
-          else if (durationDays >= 30) membershipName = '月卡会员'
-          else membershipName = '高级会员'
-        } else if (expireStr) {
-          try {
-            const now = Date.now()
-            const exp = new Date(String(expireStr).replace(' ', 'T')).getTime()
-            const days = Math.round((exp - now) / (24 * 60 * 60 * 1000))
-            if (days >= 36500) membershipName = '永久会员'
-            else if (days >= 360) membershipName = '年卡会员'
-            else if (days >= 25) membershipName = '月卡会员'
-            else membershipName = '高级会员'
-          } catch (_) {
-            membershipName = '高级会员'
+        if (effectiveTier === 'team' && mode === 'team') {
+          if (userInfo.membership_label) {
+            membershipName = userInfo.membership_label
+          } else if (expireStr) {
+            try {
+              const now = Date.now()
+              const exp = new Date(String(expireStr).replace(' ', 'T')).getTime()
+              const days = Math.round((exp - now) / (24 * 60 * 60 * 1000))
+              if (days >= 360) membershipName = '年卡会员'
+              else if (days >= 25) membershipName = '月卡会员'
+              else membershipName = '高级会员'
+            } catch (_) {
+              membershipName = ''
+            }
           }
         } else {
-          membershipName = '高级会员'
+          if (userInfo.membership_label) {
+            membershipName = userInfo.membership_label
+          } else if (durationDays > 0) {
+            if (durationDays >= 36500) membershipName = '永久会员'
+            else if (durationDays >= 365) membershipName = '年卡会员'
+            else if (durationDays >= 30) membershipName = '月卡会员'
+            else membershipName = '高级会员'
+          } else if (expireStr) {
+            try {
+              const now = Date.now()
+              const exp = new Date(String(expireStr).replace(' ', 'T')).getTime()
+              const days = Math.round((exp - now) / (24 * 60 * 60 * 1000))
+              if (days >= 36500) membershipName = '永久会员'
+              else if (days >= 360) membershipName = '年卡会员'
+              else if (days >= 25) membershipName = '月卡会员'
+              else membershipName = '高级会员'
+            } catch (_) {
+              membershipName = '高级会员'
+            }
+          } else {
+            membershipName = '高级会员'
+          }
         }
       }
       this.setData({
@@ -79,8 +96,11 @@ Page({
           membershipTag,
           tierClass
       });
-      if (isPro && effectiveTier === 'team' && mode === 'team' && (!membershipTag || membershipTag === '团队')) {
-        this.ensureTeamLevelTag()
+      if (isPro && effectiveTier === 'team' && mode === 'team') {
+        if (!membershipTag || membershipTag === '团队') {
+          this.ensureTeamLevelTag()
+        }
+        this.ensureTeamPlanAndExpire()
       }
   },
 
@@ -217,6 +237,42 @@ Page({
       }
       if (level === 'basic') { this.setData({ membershipTag: '团队-基础版', tierClass: 'team' }) }
       else if (level === 'advanced') { this.setData({ membershipTag: '团队-高级版', tierClass: 'team' }) }
+    } catch(_) {}
+  },
+  async ensureTeamPlanAndExpire() {
+    try {
+      let cur = app.globalData && app.globalData.currentTeam
+      if (!cur) {
+        const res = await app.request({ url: '/api/teams/current', method: 'GET' })
+        if (res && res.success && res.data) {
+          cur = res.data
+          try { wx.setStorageSync('currentTeam', cur) } catch(_) {}
+          if (app && app.globalData) { app.globalData.currentTeam = cur }
+        }
+      }
+      if (!cur || !cur.id) return
+      const exp = cur.subscription_expire_at || cur.expire_at || ''
+      let name = this.data.membershipName || ''
+      if (exp) {
+        try {
+          const now = Date.now()
+          const t = new Date(String(exp).replace(' ', 'T')).getTime()
+          const days = Math.round((t - now) / (24 * 60 * 60 * 1000))
+          if (days >= 360) name = '年卡会员'
+          else if (days >= 25) name = '月卡会员'
+          else name = '高级会员'
+        } catch(_) {}
+      }
+      if (!name) {
+        const s = String(cur.subscription_cycle || cur.plan || cur.subscription_plan || '').toLowerCase()
+        if (s) {
+          if (s.indexOf('year') >= 0 || s.indexOf('年') >= 0) name = '年卡会员'
+          else if (s.indexOf('month') >= 0 || s.indexOf('月') >= 0) name = '月卡会员'
+        }
+      }
+      if (!name) name = '团队会员'
+      const expireDate = exp ? String(exp).substring(0, 10) : this.data.expireDate
+      this.setData({ membershipName: name, expireDate })
     } catch(_) {}
   },
   openApplyModal() {

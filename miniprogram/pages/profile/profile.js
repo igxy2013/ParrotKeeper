@@ -743,23 +743,48 @@ Page({
       const label = user.membership_label || ''
       const durationDays = Number(user.membership_duration_days || 0)
       let plan = ''
-      if (label) {
-        plan = label
-      } else if (durationDays > 0) {
-        if (durationDays >= 36500) plan = '永久会员'
-        else if (durationDays >= 365) plan = '年卡会员'
-        else if (durationDays >= 30) plan = '月卡会员'
-        else plan = '高级会员'
-      } else if (user.subscription_expire_at) {
-        const now = Date.now()
-        const exp = new Date(String(user.subscription_expire_at).replace(' ', 'T')).getTime()
-        const days = Math.round((exp - now) / (24 * 60 * 60 * 1000))
-        if (days >= 36500) plan = '永久会员'
-        else if (days >= 360) plan = '年卡会员'
-        else if (days >= 25) plan = '月卡会员'
-        else plan = '高级会员'
+      if (tier === 'team') {
+        if (label) {
+          plan = label
+        } else {
+          const cur = (appInst.globalData && appInst.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+          const expStr = cur.subscription_expire_at || cur.expire_at || user.subscription_expire_at || ''
+          if (expStr) {
+            try {
+              const now = Date.now()
+              const exp = new Date(String(expStr).replace(' ', 'T')).getTime()
+              const days = Math.round((exp - now) / (24 * 60 * 60 * 1000))
+              if (days >= 360) plan = '年卡会员'
+              else if (days >= 25) plan = '月卡会员'
+              else plan = '高级会员'
+            } catch(_) {}
+          }
+          if (!plan) {
+            const s = String(cur.subscription_cycle || cur.plan || cur.subscription_plan || '').toLowerCase()
+            if (s.indexOf('year') >= 0 || s.indexOf('年') >= 0) plan = '年卡会员'
+            else if (s.indexOf('month') >= 0 || s.indexOf('月') >= 0) plan = '月卡会员'
+          }
+          if (!plan) plan = '高级会员'
+        }
       } else {
-        plan = '高级会员'
+        if (label) {
+          plan = label
+        } else if (durationDays > 0) {
+          if (durationDays >= 36500) plan = '永久会员'
+          else if (durationDays >= 365) plan = '年卡会员'
+          else if (durationDays >= 30) plan = '月卡会员'
+          else plan = '高级会员'
+        } else if (user.subscription_expire_at) {
+          const now = Date.now()
+          const exp = new Date(String(user.subscription_expire_at).replace(' ', 'T')).getTime()
+          const days = Math.round((exp - now) / (24 * 60 * 60 * 1000))
+          if (days >= 36500) plan = '永久会员'
+          else if (days >= 360) plan = '年卡会员'
+          else if (days >= 25) plan = '月卡会员'
+          else plan = '高级会员'
+        } else {
+          plan = '高级会员'
+        }
       }
       return `${prefix}${plan}`
     } catch (_) {
