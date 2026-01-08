@@ -28,7 +28,9 @@ Page({
   
   updateStatusFromUserInfo(userInfo) {
       const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
-      const effectiveTier = app.getEffectiveTier()
+      const effectiveTierRaw = app.getEffectiveTier()
+      const curTeam = (app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+      const effectiveTier = this._computeAdjustedTier(effectiveTierRaw, userInfo, curTeam)
       let isPro = effectiveTier === 'pro' || effectiveTier === 'team'
       const expireStr = userInfo.subscription_expire_at || ''
       const durationDays = Number(userInfo.membership_duration_days || 0)
@@ -85,25 +87,27 @@ Page({
         const teamExp = hasTeam && (cur.subscription_expire_at || cur.expire_at)
         const teamCycle = hasTeam && (cur.subscription_cycle || cur.plan || cur.subscription_plan)
         if (!isPro && hasTeam && (teamExp || teamCycle)) {
-          isPro = true
-          tierClass = 'team'
-          const lv = this._normalizeTeamLevel(cur && cur.subscription_level)
-          if (lv === 'advanced') membershipTag = '团队-高级版'
-          else if (lv === 'basic') membershipTag = '团队-基础版'
+          const now = Date.now()
+          let validTeamSub = false
           if (teamExp) {
             try {
-              const now = Date.now()
+              const t = new Date(String(teamExp).replace(' ', 'T')).getTime()
+              validTeamSub = isFinite(t) && t > now
+            } catch(_) { validTeamSub = false }
+          }
+          // 仅在订阅未过期时按团队展示
+          if (validTeamSub) {
+            isPro = true
+            tierClass = 'team'
+            const lv = this._normalizeTeamLevel(cur && cur.subscription_level)
+            if (lv === 'advanced') membershipTag = '团队-高级版'
+            else if (lv === 'basic') membershipTag = '团队-基础版'
+            try {
               const t = new Date(String(teamExp).replace(' ', 'T')).getTime()
               const d = Math.round((t - now) / (24 * 60 * 60 * 1000))
               if (d >= 360) membershipName = '年卡会员'
               else if (d >= 25) membershipName = '月卡会员'
-              if (t <= now) isExpired = true
             } catch(_) {}
-          }
-          if (!membershipName && teamCycle) {
-            const s = String(teamCycle).toLowerCase()
-            if (s.indexOf('year') >= 0 || s.indexOf('年') >= 0) membershipName = '年卡会员'
-            else if (s.indexOf('month') >= 0 || s.indexOf('月') >= 0) membershipName = '月卡会员'
           }
         }
       } catch(_) {}
@@ -137,6 +141,28 @@ Page({
         }
         this.ensureTeamPlanAndExpire()
       }
+  },
+
+  _computeAdjustedTier(rawTier, userInfo, currentTeam) {
+    try {
+      const now = Date.now()
+      const t = String(rawTier || '').toLowerCase()
+      if (t === 'pro') {
+        const expStr = userInfo && userInfo.subscription_expire_at
+        if (!expStr) return 'free'
+        const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+        return (isFinite(ts) && ts > now) ? 'pro' : 'free'
+      }
+      if (t === 'team') {
+        const hasTeam = !!(currentTeam && currentTeam.id)
+        if (!hasTeam) return 'free'
+        const expStr = currentTeam.subscription_expire_at || currentTeam.expire_at || ''
+        if (!expStr) return 'free'
+        const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+        return (isFinite(ts) && ts > now) ? 'team' : 'free'
+      }
+      return 'free'
+    } catch(_) { return 'free' }
   },
 
   onCodeInput(e) {
