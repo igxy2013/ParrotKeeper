@@ -1275,6 +1275,8 @@ Page({
             if (result.success) {
               app.hideLoading() // 先隐藏loading，避免覆盖showSuccess
               app.showSuccess('删除成功')
+              try { const c = require('../../../utils/cache'); c.clear && c.clear('parrots_list_default_v2'); c.clear && c.clear('parrots_list_default_raw') } catch(_) {}
+              try { if (app && app.globalData) { app.globalData.needRefresh = true } } catch(_) {}
               
               // 返回上一页并刷新
               setTimeout(() => {

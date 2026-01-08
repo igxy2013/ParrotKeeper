@@ -430,6 +430,7 @@ Page({
               })
               const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
               const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 128) : ''
+              const keeperName = p.owner_name || ((p.owner && (p.owner.nickname || p.owner.account_username || p.owner.username)) || '')
               let weightDisplay = ''
               try {
                 const w = p.weight
@@ -454,7 +455,8 @@ Page({
                 avatar_url: avatarUrl,
                 photo_thumb: photoThumb,
                 avatar_thumb: avatarThumb,
-                species_name_short: this.formatSpeciesName(speciesName)
+                species_name_short: this.formatSpeciesName(speciesName),
+                keeper_name: keeperName
               }
             })
             const maleCount = newParrots.filter(parrot => parrot.gender === 'male').length
@@ -511,6 +513,7 @@ Page({
           })
           const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
           const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 128) : ''
+          const keeperName = p.owner_name || ((p.owner && (p.owner.nickname || p.owner.account_username || p.owner.username)) || '')
           // 预计算体重展示，避免 WXML 表达式出现 undefinedg
           let weightDisplay = ''
           try {
@@ -538,7 +541,8 @@ Page({
             avatar_url: avatarUrl,
             photo_thumb: photoThumb,
             avatar_thumb: avatarThumb,
-            species_name_short: this.formatSpeciesName(speciesName)
+            species_name_short: this.formatSpeciesName(speciesName),
+            keeper_name: keeperName
           }
         })
         

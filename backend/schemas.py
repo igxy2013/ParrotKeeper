@@ -137,10 +137,14 @@ class ParrotSchema(SQLAlchemyAutoSchema):
             u = User.query.get(getattr(obj, 'user_id', None))
             if not u:
                 return None
+            # 显示昵称优先；无昵称时回退到账号用户名
+            nick = getattr(u, 'nickname', None)
+            if nick:
+                return nick
             account = getattr(u, 'account', None)
             if account and getattr(account, 'username', None):
                 return account.username
-            return getattr(u, 'nickname', None)
+            return None
         except Exception:
             return None
 
