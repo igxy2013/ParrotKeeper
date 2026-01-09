@@ -121,7 +121,7 @@
       <view class="card-content">
         <view class="btn-row">
           <button class="btn btn-secondary wide short" bindtap="confirmLeaveTeam" disabled="{{isTeamOwner}}">离开团队</button>
-          <button class="btn btn-danger wide short" bindtap="confirmDissolveTeam" wx:if="{{isSuperAdmin}}">解散团队</button>
+          <button class="btn btn-danger wide short" bindtap="confirmDissolveTeam">解散团队</button>
         </view>
       </view>
     </view>
