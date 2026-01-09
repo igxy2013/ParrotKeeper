@@ -302,6 +302,18 @@ Page({
     this.setData({ editingId: null, title: '', content: '', statusIndex: 0, scheduledDate: '', scheduledTime: '', imageUrls: [], rawImageUrls: [] })
   },
 
+  useAnnouncementAsTemplate(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id) return
+    const item = (this.data.announcements || []).find(a => a.id === id)
+    if (!item) return
+    const rawArr = Array.isArray(item.image_urls) ? item.image_urls : []
+    const raws = rawArr.map(u => String(u))
+    const imgs = raws.map(u => app.resolveUploadUrl(u))
+    this.setData({ editingId: null, title: item.title || '', content: item.content || '', statusIndex: 0, scheduledDate: '', scheduledTime: '', imageUrls: imgs, rawImageUrls: raws })
+    try { wx.showToast({ title: '已载入模板', icon: 'none' }) } catch (_) {}
+  },
+
   async deleteAnnouncement(e) {
     const id = e.currentTarget.dataset.id
     if (!id) return

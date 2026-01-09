@@ -68,6 +68,7 @@
 }
 .edit-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
 .delete-btn { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.template-btn { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
 .action-btn:active { transform: scale(0.95); box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15); }
 .action-icon-img { width: 32rpx; height: 32rpx; }
 

@@ -86,6 +86,9 @@
                     <image src="/images/remix/edit-line-white.png" class="action-icon-img" mode="aspectFit" />
                   </view>
                 </block>
+                <view class="action-btn template-btn" bindtap="useAnnouncementAsTemplate" data-id="{{item.id}}">
+                  <image src="/images/remix/magic-line-white.png" class="action-icon-img" mode="aspectFit" />
+                </view>
                 <view class="action-btn delete-btn" bindtap="deleteAnnouncement" data-id="{{item.id}}">
                   <image src="/images/remix/delete-bin-line-white.png" class="action-icon-img" mode="aspectFit" />
                 </view>
