@@ -22,6 +22,7 @@
         "redeem-codes/redeem-codes",
         "users-management/users-management",
         "members-management/members-management",
+        "backup-status/backup-status",
         "reset-requests/reset-requests"
       ]
     },
