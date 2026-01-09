@@ -74,9 +74,7 @@ def _fetch_rows(table_name):
 
 def _truncate_remote_table(conn, table_name):
     cur = conn.cursor()
-    cur.execute(f"SET FOREIGN_KEY_CHECKS=0")
     cur.execute(f"DROP TABLE IF EXISTS `{table_name}`")
-    cur.execute(f"SET FOREIGN_KEY_CHECKS=1")
     cur.close()
 
 def _create_remote_table(conn, create_sql):
