@@ -4,6 +4,7 @@ import json
 from team_models import TeamMember, Team
 from sqlalchemy import func
 from utils import login_required, success_response, error_response
+from datetime import datetime, timezone
 from backup import backup_database_to_remote, sync_database_to_remote
 from models import BackupLog, SystemSetting
 
@@ -211,14 +212,24 @@ def list_backup_logs():
         items = BackupLog.query.order_by(BackupLog.started_at.desc()).limit(limit).all()
         data = []
         for it in items:
+            def to_local(dt):
+                if not dt:
+                    return None
+                try:
+                    return dt.replace(tzinfo=timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
+                except Exception:
+                    try:
+                        return dt.isoformat()
+                    except Exception:
+                        return None
             data.append({
                 'id': it.id,
                 'op_type': it.op_type,
                 'status': it.status,
                 'target_db': it.target_db,
                 'message': it.message or '',
-                'started_at': it.started_at.isoformat() if it.started_at else None,
-                'finished_at': it.finished_at.isoformat() if it.finished_at else None
+                'started_at': to_local(it.started_at),
+                'finished_at': to_local(it.finished_at)
             })
         return success_response({'logs': data})
     except Exception as e:
@@ -235,15 +246,25 @@ def backup_status():
         last_sync = BackupLog.query.filter_by(op_type='sync').order_by(BackupLog.started_at.desc()).first()
         row = SystemSetting.query.filter_by(key='REMOTE_SYNC_LAST_TS').first()
         sync_ts = row.value if row and row.value else None
+        def to_local(dt):
+            if not dt:
+                return None
+            try:
+                return dt.replace(tzinfo=timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
+            except Exception:
+                try:
+                    return dt.isoformat()
+                except Exception:
+                    return None
         return success_response({
             'last_backup': {
                 'status': (last_backup.status if last_backup else None),
-                'time': (last_backup.finished_at.isoformat() if last_backup and last_backup.finished_at else None),
+                'time': (to_local(last_backup.finished_at) if last_backup and last_backup.finished_at else None),
                 'target_db': (last_backup.target_db if last_backup else None)
             },
             'last_sync': {
                 'status': (last_sync.status if last_sync else None),
-                'time': (last_sync.finished_at.isoformat() if last_sync and last_sync.finished_at else None)
+                'time': (to_local(last_sync.finished_at) if last_sync and last_sync.finished_at else None)
             },
             'last_sync_ts': sync_ts
         })
