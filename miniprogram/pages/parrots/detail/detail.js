@@ -102,6 +102,11 @@ Page({
     suppressPullDownUntil: 0,
     showPermissionModal: false,
     permissionMessage: ''
+    ,
+    // 团队模式及分组显示
+    userMode: 'personal',
+    teamGroups: [],
+    groupName: ''
   },
 
   formatBirthPlaceDisplay(p) {
@@ -134,7 +139,12 @@ Page({
       this.setData({ isPro })
     } catch(_) {}
     
-    if (options.id) {
+    try {
+      const storedMode = wx.getStorageSync('userMode') || ''
+      const currentMode = app.globalData.userMode || storedMode || 'personal'
+      this.setData({ userMode: currentMode })
+    } catch(_) {}
+      if (options.id) {
       this.setData({
         parrotId: options.id
       })
@@ -481,6 +491,19 @@ Page({
           plumageSplitsText: this.computePlumageSplitsText(parrot)
         })
         wx.setNavigationBarTitle({ title: parrot.name })
+
+        // 团队模式下加载分组名称
+        if (this.data.userMode === 'team') {
+          try {
+            await this.loadTeamGroups()
+            const name = this.getGroupNameForParrot(this.data.parrot)
+            this.setData({ groupName: name || '' })
+          } catch(_) {
+            this.setData({ groupName: '' })
+          }
+        } else {
+          this.setData({ groupName: '' })
+        }
       }
       
       // 先处理最近记录，便于计算"距上次喂食"
@@ -862,6 +885,29 @@ Page({
     const pid = encodeURIComponent(String(this.data.parrotId || ''))
     const url = `/pages/records/add-record/add-record?type=feeding${pid ? `&parrot_ids=${pid}` : ''}`
     wx.navigateTo({ url })
+  },
+
+  async loadTeamGroups() {
+    try {
+      const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+      const teamId = (cur && cur.success && cur.data && cur.data.id) ? cur.data.id : (app.globalData && app.globalData.teamId)
+      if (!teamId) { this.setData({ teamGroups: [] }); return }
+      const res = await app.request({ url: `/api/teams/${teamId}/groups`, method: 'GET' })
+      const groups = (res && res.success) ? (res.data || []) : []
+      this.setData({ teamGroups: groups })
+    } catch (_) {
+      this.setData({ teamGroups: [] })
+    }
+  },
+
+  getGroupNameForParrot(p) {
+    try {
+      if (!p || p.group_id == null) return ''
+      const gid = String(p.group_id)
+      const list = this.data.teamGroups || []
+      const g = list.find(it => String(it.id) === gid)
+      return (g && (g.name || '')) || ''
+    } catch(_) { return '' }
   },
 
   // 快速健康检查

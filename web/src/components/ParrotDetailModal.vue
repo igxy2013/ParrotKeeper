@@ -22,7 +22,7 @@
           </div>
           <div class="extra-row">
             <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
-            <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
+            <span v-if="getOwnerName(parrot)" class="info-item">饲养人：{{ getOwnerName(parrot) }}</span>
             <span v-if="parrot.ring_number" class="info-item">脚环号：{{ parrot.ring_number }}</span>
             <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
           </div>
@@ -43,7 +43,8 @@
             <div class="basic-item"><span class="label">出生日期</span><span class="value">{{ formatDate(parrot.birth_date) || '-' }}</span></div>
             <div class="basic-item"><span class="label">出生地</span><span class="value">{{ birthPlaceDisplay || '-' }}</span></div>
             <div class="basic-item"><span class="label">入住日期</span><span class="value">{{ formatDate(parrot.acquisition_date) || '-' }}</span></div>
-            <div class="basic-item"><span class="label">编号</span><span class="value">{{ parrot.parrot_number || '-' }}</span></div>
+            <div class="basic-item"><span class="label">饲养人</span><span class="value">{{ getOwnerName(parrot) || '-' }}</span></div>
+            <div class="basic-item" v-if="authStore.user?.user_mode === 'team'"><span class="label">分组</span><span class="value">{{ groupName || '-' }}</span></div>
             <div class="basic-item"><span class="label">脚环号</span><span class="value">{{ parrot.ring_number || '-' }}</span></div>
             <div class="basic-item span-2"><span class="label">备注</span><span class="value">{{ parrot.notes || '-' }}</span></div>
           </div>
@@ -135,6 +136,7 @@ import { ref, watch, computed } from 'vue'
 import { Male, Female } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -144,7 +146,7 @@ const emit = defineEmits(['update:modelValue'])
 
 const visible = ref(false)
 watch(() => props.modelValue, v => { visible.value = !!v; if (v) init() })
-watch(visible, v => emit('update:modelValue', v))
+watch(visible, async v => { emit('update:modelValue', v); if (v) await loadTeamGroups() })
 
 const loading = ref(false)
 const recordsLoading = ref(false)
@@ -162,6 +164,16 @@ const transferTargetOpenid = ref('')
 const transferTargetUsername = ref('')
 const transferTargetPhone = ref('')
 const transferSubmitting = ref(false)
+
+const authStore = useAuthStore()
+const teamGroups = ref([])
+const groupName = computed(() => {
+  const gid = parrot.value && parrot.value.group_id
+  if (!gid) return ''
+  const list = teamGroups.value || []
+  const g = list.find(it => String(it.id) === String(gid))
+  return g && (g.name || '') || ''
+})
 
 const genderText = computed(() => {
   const g = parrot.value.gender
@@ -242,6 +254,19 @@ const fetchTabRecords = async () => {
   } catch (e) {} finally { recordsLoading.value = false }
 }
 
+const loadTeamGroups = async () => {
+  try {
+    const teamId = authStore.user && authStore.user.current_team_id
+    if (!teamId) { teamGroups.value = []; return }
+    const r = await api.get(`/teams/${teamId}/groups`)
+    const data = r.data && (r.data.data || r.data)
+    const arr = (data && (data.groups || data.items)) || (Array.isArray(data) ? data : [])
+    teamGroups.value = Array.isArray(arr) ? arr : []
+  } catch (_) {
+    teamGroups.value = []
+  }
+}
+
 const calculateAge = (birthDate) => {
   if (!birthDate) return '年龄未知'
   const birth = new Date(birthDate)
@@ -274,7 +299,7 @@ const formatWeight = (w) => {
   return `${Math.round(n * 10) / 10} g`
 }
 
-const formatDate = (d) => {
+  const formatDate = (d) => {
   if (!d) return ''
   const t = new Date(d)
   if (isNaN(t.getTime())) return ''
@@ -330,6 +355,12 @@ const onAvatarError = (e) => {
 const formatFeedTypes = (types) => {
   if (Array.isArray(types)) return types.map(t => t.name || t).join('、')
   return String(types || '')
+}
+
+const getOwnerName = (p) => {
+  if (!p) return ''
+  const o = p.owner || {}
+  return p.owner_name || o.nickname || o.username || o.account_username || ''
 }
 
 const generateTransferCode = async () => {

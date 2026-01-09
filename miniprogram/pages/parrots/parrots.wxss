@@ -384,6 +384,8 @@
 
 /* 新增扩展字段列宽 */
 .col-number { width: 160rpx; }
+.col-number-full { white-space: normal; overflow: visible; text-overflow: clip; word-break: break-word; }
+.col-group { width: 160rpx; }
 .col-health { width: 120rpx; }
 .col-lastfeed { width: 180rpx; }
 

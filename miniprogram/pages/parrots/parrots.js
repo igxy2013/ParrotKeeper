@@ -87,6 +87,10 @@ Page({
     limitCount: 5,
     showPermissionModal: false,
     permissionMessage: ''
+    ,
+    // 团队分组
+    teamGroups: [],
+    groupMap: {}
   },
 
   onLoad() {
@@ -175,6 +179,11 @@ Page({
       }
 
       this.setData({ lastUserMode: currentMode });
+
+      // 团队模式加载分组列表以映射显示名称
+      if (currentMode === 'team') {
+        try { await this.loadTeamGroups() } catch(_) {}
+      }
       
       // 检查是否需要刷新数据（模式切换后）
       if (app.globalData.needRefresh) {
@@ -544,7 +553,8 @@ Page({
             photo_thumb: photoThumb,
             avatar_thumb: avatarThumb,
             species_name_short: this.formatSpeciesName(speciesName),
-            keeper_name: keeperName
+            keeper_name: keeperName,
+            group_name: this.data.groupMap && p.group_id != null ? (this.data.groupMap[String(p.group_id)] || '') : ''
           }
         })
         
@@ -590,6 +600,10 @@ Page({
         })
 
       this.applyGenderFilter()
+      // 分组名称可能在列表加载后到达，这里再尝试补全
+      if (this.data.userMode === 'team') {
+        this.updateGroupNamesForParrots()
+      }
 
         // 根据当前用户的鹦鹉列表生成品种筛选项（仅显示用户所养品种）
         this.updateSpeciesOptionsFromParrots(updatedParrots)
@@ -668,6 +682,34 @@ Page({
       }
       const names = ['全部品种', ...speciesList.map(s => s.name)]
       this.setData({ speciesList, speciesPickerRange: names })
+    } catch (_) {}
+  },
+
+  // 加载团队分组并构建映射
+  async loadTeamGroups() {
+    try {
+      const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
+      const teamId = (cur && cur.success && cur.data && cur.data.id) ? cur.data.id : (app.globalData && app.globalData.teamId)
+      if (!teamId) { this.setData({ teamGroups: [], groupMap: {} }); return }
+      const res = await app.request({ url: `/api/teams/${teamId}/groups`, method: 'GET' })
+      const groups = (res && res.success) ? (res.data || []) : []
+      const map = {}
+      groups.forEach(g => { if (g && g.id != null) map[String(g.id)] = g.name || '' })
+      this.setData({ teamGroups: groups, groupMap: map })
+      this.updateGroupNamesForParrots()
+    } catch (_) {
+      this.setData({ teamGroups: [], groupMap: {} })
+    }
+  },
+
+  // 根据分组映射为现有列表填充 group_name
+  updateGroupNamesForParrots() {
+    try {
+      const list = Array.isArray(this.data.parrots) ? this.data.parrots : []
+      if (!list.length) return
+      const map = this.data.groupMap || {}
+      const updated = list.map(p => ({ ...p, group_name: (p.group_id != null) ? (map[String(p.group_id)] || '') : '' }))
+      this.setData({ parrots: updated }, () => { this.applyGenderFilter() })
     } catch (_) {}
   },
 

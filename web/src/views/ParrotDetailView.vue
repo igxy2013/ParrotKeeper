@@ -33,7 +33,7 @@
           </div>
           <div class="extra-row">
             <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
-            <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
+            <span v-if="getOwnerName(parrot)" class="info-item">饲养人：{{ getOwnerName(parrot) }}</span>
             <span v-if="parrot.ring_number" class="info-item">脚环号：{{ parrot.ring_number }}</span>
             <span v-if="parrot.color" class="info-item">羽色：{{ decorateColorForDisplay(parrot.species_name || parrot.species?.name, parrot.color) }}</span>
             <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
@@ -50,7 +50,8 @@
             <div class="basic-item"><span class="label">出生日期</span><span class="value">{{ formatDate(parrot.birth_date) || '-' }}</span></div>
             <div class="basic-item"><span class="label">出生地</span><span class="value">{{ birthPlaceDisplay || '-' }}</span></div>
             <div class="basic-item"><span class="label">入住日期</span><span class="value">{{ formatDate(parrot.acquisition_date) || '-' }}</span></div>
-            <div class="basic-item"><span class="label">编号</span><span class="value">{{ parrot.parrot_number || '-' }}</span></div>
+            <div class="basic-item"><span class="label">饲养人</span><span class="value">{{ getOwnerName(parrot) || '-' }}</span></div>
+            <div class="basic-item" v-if="authStore.user?.user_mode === 'team'"><span class="label">分组</span><span class="value">{{ groupName || '-' }}</span></div>
             <div class="basic-item"><span class="label">脚环号</span><span class="value">{{ parrot.ring_number || '-' }}</span></div>
             <div class="basic-item span-2"><span class="label">备注</span><span class="value">{{ parrot.notes || '-' }}</span></div>
           </div>
@@ -223,6 +224,7 @@ import { Male, Female } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import ParrotModal from '../components/ParrotModal.vue'
 import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const id = route.params.id
@@ -244,6 +246,16 @@ const transferSubmitting = ref(false)
 const feedingRecords = ref([])
 const healthRecords = ref([])
 const breedingRecords = ref([])
+
+const authStore = useAuthStore()
+const teamGroups = ref([])
+const groupName = computed(() => {
+  const gid = parrot.value && parrot.value.group_id
+  if (!gid) return ''
+  const list = teamGroups.value || []
+  const g = list.find(it => String(it.id) === String(gid))
+  return g && (g.name || '') || ''
+})
 
 const detailDialogVisible = ref(false)
 const detailDialogTitle = computed(() => '记录详情')
@@ -304,6 +316,25 @@ const decorateColorForDisplay = (speciesName, name) => {
     if (n === '黄边桃' || n.includes('蓝腰黄桃')) return '黄边桃(蓝腰黄桃)'
   }
   return n
+}
+
+const loadTeamGroups = async () => {
+  try {
+    const teamId = authStore.user && authStore.user.current_team_id
+    if (!teamId) { teamGroups.value = []; return }
+    const r = await api.get(`/teams/${teamId}/groups`)
+    const data = r.data && (r.data.data || r.data)
+    const arr = (data && (data.groups || data.items)) || (Array.isArray(data) ? data : [])
+    teamGroups.value = Array.isArray(arr) ? arr : []
+  } catch (_) {
+    teamGroups.value = []
+  }
+}
+
+const getOwnerName = (p) => {
+  if (!p) return ''
+  const o = p.owner || {}
+  return p.owner_name || o.nickname || o.username || o.account_username || ''
 }
 
 const reload = async () => {
@@ -493,6 +524,7 @@ const fetchTabRecords = async () => {
 onMounted(async () => {
   await fetchParrot()
   await fetchTabRecords()
+  await loadTeamGroups()
 })
 
 const calculateAge = (birthDate) => {

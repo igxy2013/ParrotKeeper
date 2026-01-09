@@ -10,7 +10,7 @@
     <div class="toolbar">
       <el-input 
         v-model="searchKeyword" 
-        placeholder="按名称/编号/脚环号搜索" 
+        placeholder="按名称/饲养人/脚环号搜索" 
         clearable 
         :prefix-icon="Search"
         class="search-input"
@@ -104,41 +104,44 @@
 
     <div v-else class="parrot-list" :class="`view-${viewMode}`">
       <template v-if="viewMode === 'list'">
-        <el-table :data="parrots" border stripe size="small" class="parrots-table">
-          <el-table-column label="名称" min-width="160">
+        <el-table :data="parrots" border stripe size="small" class="parrots-table" @row-click="onListRowClick">
+          <el-table-column :key="'name'" label="名称" min-width="160">
             <template #default="{ row }">
               <span class="parrot-name">{{ row.name }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="性别" min-width="140">
+          <el-table-column :key="'gender'" label="性别" min-width="140">
             <template #default="{ row }">
               <span>{{ getGenderLabel(row.gender) }}</span>
               <el-icon v-if="row.gender === 'male'" class="gender-icon male"><Male /></el-icon>
               <el-icon v-else-if="row.gender === 'female'" class="gender-icon female"><Female /></el-icon>
             </template>
           </el-table-column>
-          <el-table-column label="品种" min-width="140">
+          <el-table-column :key="'species'" label="品种" min-width="140">
             <template #default="{ row }">{{ row.species?.name || '未知品种' }}</template>
           </el-table-column>
-          <el-table-column label="羽色" min-width="160">
+          <el-table-column :key="'color'" label="羽色" min-width="160">
             <template #default="{ row }">{{ decorateColorForDisplay(row.species?.name || row.species_name, row.color) || '-' }}</template>
           </el-table-column>
-          <el-table-column label="年龄" min-width="120">
+          <el-table-column :key="'age'" label="年龄" min-width="120">
             <template #default="{ row }">{{ calculateAge(row.birth_date) }}</template>
           </el-table-column>
-          <el-table-column label="体重" min-width="100">
+          <el-table-column :key="'weight'" label="体重" min-width="100">
             <template #default="{ row }">{{ formatWeight(row.weight) || '-' }}</template>
           </el-table-column>
-          <el-table-column label="编号" min-width="120">
-            <template #default="{ row }">{{ row.parrot_number || '-' }}</template>
+          <el-table-column :key="'owner'" label="饲养人" min-width="140">
+            <template #default="{ row }">{{ getOwnerName(row) || '-' }}</template>
           </el-table-column>
-          <el-table-column label="脚环号" min-width="120">
+          <el-table-column v-if="authStore.user?.user_mode === 'team'" :key="'group'" label="分组" min-width="120">
+            <template #default="{ row }">{{ getGroupName(row) || '-' }}</template>
+          </el-table-column>
+          <el-table-column :key="'ring'" label="脚环号" min-width="120">
             <template #default="{ row }">{{ row.ring_number || '-' }}</template>
           </el-table-column>
-          <el-table-column label="状态" min-width="120">
+          <el-table-column :key="'status'" label="状态" min-width="120">
             <template #default="{ row }">{{ getHealthLabel(row.health_status) }}</template>
           </el-table-column>
-          <el-table-column label="操作" min-width="120" fixed="right">
+          <el-table-column :key="'actions'" label="操作" min-width="120" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" size="small" class="view-btn" @click.stop="openDetailModal(row)">
                 查看
@@ -169,7 +172,7 @@
             </div>
           <div class="parrot-extra-info">
             <span v-if="formatWeight(parrot.weight)" class="info-item">体重：{{ formatWeight(parrot.weight) }}</span>
-            <span v-if="parrot.parrot_number" class="info-item">编号：{{ parrot.parrot_number }}</span>
+            <span v-if="getOwnerName(parrot)" class="info-item">饲养人：{{ getOwnerName(parrot) }}</span>
             <span v-if="parrot.ring_number" class="info-item">脚环号：{{ parrot.ring_number }}</span>
             <span v-if="parrot.color" class="info-item">羽色：{{ decorateColorForDisplay(parrot.species?.name || parrot.species_name, parrot.color) }}</span>
             <span v-if="formatDate(parrot.acquisition_date)" class="info-item">入住：{{ formatDate(parrot.acquisition_date) }}</span>
@@ -254,6 +257,7 @@ onMounted(() => {
   fetchParrots()
   // ... other onMounted logic if any
   fetchOverview()
+  loadTeamGroups()
 })
 
 // Watch for user mode changes via storage event or other mechanism if needed
@@ -348,11 +352,16 @@ const handleDeleted = async () => {
   await handleParrotsChanged()
 }
 
-const handleEditFromDetail = (p) => {
-  selectedParrot.value = p || null
-  showDetailModal.value = false
-  showModal.value = true
-}
+  const handleEditFromDetail = (p) => {
+    selectedParrot.value = p || null
+    showDetailModal.value = false
+    showModal.value = true
+  }
+
+  const onListRowClick = (row) => {
+    if (!row || !row.id) return
+    openDetailModal(row)
+  }
 
 const handlePageChange = (page) => {
   currentPage.value = page
@@ -413,6 +422,33 @@ const getGenderLabel = (g) => {
   }
   return map[g] || '未知'
 }
+
+  const getOwnerName = (p) => {
+    if (!p) return ''
+    const o = p.owner || {}
+    return p.owner_name || o.nickname || o.username || o.account_username || ''
+  }
+
+  const teamGroups = ref([])
+  const getGroupName = (p) => {
+    if (!p || !p.group_id) return ''
+    const gid = String(p.group_id)
+    const g = (teamGroups.value || []).find(it => String(it.id) === gid)
+    return g && (g.name || '') || ''
+  }
+
+  const loadTeamGroups = async () => {
+    try {
+      const teamId = authStore.user && authStore.user.current_team_id
+      if (!teamId) { teamGroups.value = []; return }
+      const r = await api.get(`/teams/${teamId}/groups`)
+      const data = r.data && (r.data.data || r.data)
+      const arr = (data && (data.groups || data.items)) || (Array.isArray(data) ? data : [])
+      teamGroups.value = Array.isArray(arr) ? arr : []
+    } catch (_) {
+      teamGroups.value = []
+    }
+  }
 
 const getRandomAvatar = (id) => {
   const avatars = [
