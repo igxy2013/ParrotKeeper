@@ -27,6 +27,7 @@ import AdminBackupView from '../views/admin/AdminBackupView.vue'
 import AdminMembershipModeView from '../views/admin/AdminMembershipModeView.vue'
 import AdminMembersManagementView from '../views/admin/AdminMembersManagementView.vue'
 import AdminRedeemCodesView from '../views/admin/AdminRedeemCodesView.vue'
+import MembershipCenterView from '../views/MembershipCenterView.vue'
 import SettingsNotificationView from '../views/settings/SettingsNotificationView.vue'
 import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
 import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
@@ -56,6 +57,11 @@ const router = createRouter({
           path: 'parrots',
           name: 'parrots',
           component: ParrotsView
+        },
+        {
+          path: 'membership',
+          name: 'membership-center',
+          component: MembershipCenterView
         },
         {
           path: 'parrots/:id',

@@ -139,6 +139,7 @@ const authStore = useAuthStore()
 
 const currentMode = ref(localStorage.getItem('user_mode') || 'personal')
 const messageCount = ref(0)
+const membershipEnabled = ref(true)
 const expandedMenus = ref([]) // Default empty
 
 const calculateMessageCount = (announcements) => {
@@ -205,6 +206,7 @@ const menuItems = computed(() => [
   { path: '/pairing', label: '配对计算器', icon: Connection },
   {path: '/reports',label: '报表导出',icon: Download},
   { path: '/announcements', label: '公告中心', icon: Bell, badge: messageCount.value > 0 ? (messageCount.value > 99 ? '99+' : messageCount.value) : null, badgeColor: 'green' },
+  ...(membershipEnabled.value ? [{ path: '/membership', label: '会员中心', icon: User }] : []),
   {path: '/about',label: '关于我们',icon: InfoFilled},
   ...(currentMode.value === 'team' ? [
     {
@@ -278,6 +280,10 @@ onMounted(async () => {
       const list = r2.data.data || []
       hasTeam.value = list.length > 0
     }
+  } catch (_) {}
+  try {
+    const t = await api.get('/admin/membership-toggle')
+    if (t.data && t.data.success) membershipEnabled.value = !!t.data.data.enabled
   } catch (_) {}
 })
 </script>

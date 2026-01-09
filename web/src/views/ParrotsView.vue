@@ -207,6 +207,24 @@
       @deleted="handleDeleted"
       @edit="handleEditFromDetail"
     />
+
+    <el-dialog v-model="showLimitDialog" width="460px" class="limit-dialog" :show-close="false">
+      <template #header>
+        <div class="limit-header-gradient">
+          <div class="limit-header-row">
+            <span class="limit-title">数量限制</span>
+          </div>
+        </div>
+      </template>
+      <div class="limit-body">
+        <div class="limit-tip">已达到当前版本可添加的鹦鹉数量上限</div>
+        <div class="limit-count-pill">当前上限：{{ limitCount }} 只</div>
+        <div class="limit-hint">升级会员或切换高级团队后可继续添加</div>
+      </div>
+      <template #footer>
+        <el-button class="limit-btn" @click="showLimitDialog = false">我知道了</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -238,6 +256,8 @@ const selectedSort = ref('created_desc')
 const viewMode = ref('card')
 
 const overviewStats = ref({})
+const showLimitDialog = ref(false)
+const limitCount = ref(0)
 
 const PARROTS_CACHE_KEY = 'parrots_list_default'
 const PARROTS_CACHE_TTL = 60000
@@ -330,10 +350,57 @@ const fetchOverview = async () => {
   } catch (_) {}
 }
 
-const handleAdd = () => {
-	selectedParrot.value = null
-	initialModalMode.value = 'form'
-	showModal.value = true
+const handleAdd = async () => {
+  selectedParrot.value = null
+  initialModalMode.value = 'form'
+
+  const u = authStore.user || {}
+  const membershipEnabled = (u.membership_enabled !== false)
+  if (!membershipEnabled) { showModal.value = true; return }
+
+  try { await (authStore.refreshProfile && authStore.refreshProfile()) } catch(_) {}
+  const tier = String((authStore.user || {}).subscription_tier || 'free').toLowerCase()
+  const mode = localStorage.getItem('user_mode') || 'personal'
+  const teamLevel = String((authStore.user || {}).team_level || '').toLowerCase()
+
+  let limits = { free_personal: 10, free_team: 20, pro_personal: 100, team_basic: 1000, team_advanced: 0 }
+  try {
+    const r = await api.get('/membership/limits')
+    if (r.data && r.data.success) {
+      const d = r.data.data || {}
+      limits = {
+        free_personal: Number(d.free_personal || 10),
+        free_team: Number(d.free_team || 20),
+        pro_personal: Number(d.pro_personal || 100),
+        team_basic: Number(d.team_basic || 1000),
+        team_advanced: Number(d.team_advanced || 0)
+      }
+    }
+  } catch(_) {}
+
+  let limit = 0
+  if (tier === 'free') limit = (mode === 'team') ? limits.free_team : limits.free_personal
+  else if (tier === 'pro') limit = limits.pro_personal
+  else if (tier === 'team') limit = (teamLevel === 'basic' ? limits.team_basic : (limits.team_advanced || 0))
+
+  let totalKnown = Number(overviewStats.value.total_parrots || 0)
+  if (!totalKnown) {
+    try {
+      const res = await api.get('/statistics/overview')
+      if (res.data && res.data.success) totalKnown = Number((res.data.data || {}).total_parrots || 0)
+      else totalKnown = Math.max(Number(total.value || 0), Array.isArray(parrots.value) ? parrots.value.length : 0)
+    } catch(_) {
+      totalKnown = Math.max(Number(total.value || 0), Array.isArray(parrots.value) ? parrots.value.length : 0)
+    }
+  }
+
+  if (limit && totalKnown >= limit) {
+    limitCount.value = limit
+    showLimitDialog.value = true
+    return
+  }
+
+  showModal.value = true
 }
 
 
@@ -898,4 +965,17 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
 .parrot-list.view-list .parrot-action {
   margin-left: 12px;
 }
+
+.limit-dialog :deep(.el-dialog) { border-radius: 12px; overflow: hidden; }
+.limit-dialog :deep(.el-dialog__header) { padding: 0; margin: 0; }
+.limit-dialog :deep(.el-dialog__body) { padding: 0; }
+.limit-dialog :deep(.el-dialog__footer) { padding: 16px 24px; border-top: 1px solid #f3f4f6; }
+.limit-header-gradient { background: linear-gradient(135deg, #4CAF50 0%, #26A69A 50%, #00BCD4 100%); padding: 16px 20px; }
+.limit-header-row { display: flex; align-items: center; justify-content: space-between; }
+.limit-title { color: #ffffff; font-size: 16px; font-weight: 700; }
+.limit-body { padding: 20px 24px; text-align: center; }
+.limit-tip { font-size: 15px; font-weight: 600; color: #1f2937; margin-bottom: 10px; }
+.limit-count-pill { display: inline-block; padding: 6px 12px; border-radius: 9999px; background: #f0fdf4; color: #16a34a; font-weight: 700; margin: 8px 0 12px; }
+.limit-hint { font-size: 13px; color: #6b7280; }
+.limit-btn { background: var(--primary-gradient); border: none; color: #ffffff; border-radius: 12px; }
 </style>

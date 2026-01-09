@@ -450,7 +450,16 @@ const updateSpeciesData = (idx) => {
     plumageConfig.value = config
     
     // Extract Colors
-    colorOptions.value = config.colors.map(c => decorateColorForDisplay(species.name, c.name))
+    let colors = config.colors.map(c => decorateColorForDisplay(species.name, c.name))
+    if (species.name === '和尚鹦鹉') {
+      colors = colors.filter(n => {
+        const s = String(n || '')
+        if (s === '黄和尚' || s === '白和尚') return false
+        if (s === '灰色') return false
+        return true
+      })
+    }
+    colorOptions.value = colors
     
     // Extract Splits
     const splits = []

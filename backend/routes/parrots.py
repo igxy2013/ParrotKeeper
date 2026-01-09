@@ -11,11 +11,31 @@ import string
 
 parrots_bp = Blueprint('parrots', __name__, url_prefix='/api/parrots')
 
+def sanitize_plumage_json(species_name: str, raw_json: str):
+    try:
+        name = (species_name or '').strip()
+        data = json.loads(raw_json) if raw_json else None
+        if not isinstance(data, dict):
+            return raw_json
+        colors = data.get('colors') or []
+        if '和尚' in name or 'Monk' in name or 'Quaker' in name:
+            block = set(['黄和尚', '白和尚', '灰色'])
+            filtered = [c for c in colors if not (isinstance(c, dict) and (c.get('name') in block))]
+            data['colors'] = filtered
+        return json.dumps(data, ensure_ascii=False)
+    except Exception:
+        return raw_json
+
 @parrots_bp.route('/species', methods=['GET'])
 def get_species():
     """获取鹦鹉品种列表（游客模式可访问）"""
     try:
         species = ParrotSpecies.query.all()
+        for s in species:
+            try:
+                s.plumage_json = sanitize_plumage_json(s.name, s.plumage_json)
+            except Exception:
+                pass
         return success_response(parrot_species_list_schema.dump(species))
     except Exception as e:
         return error_response(f'获取品种列表失败: {str(e)}')
@@ -73,7 +93,7 @@ def create_species():
             reference_weight_g=data.get('reference_weight_g'),
             reference_weight_min_g=reference_weight_min_g,
             reference_weight_max_g=reference_weight_max_g,
-            plumage_json=data.get('plumage_json') or data.get('plumage')
+            plumage_json=sanitize_plumage_json(name, (data.get('plumage_json') or data.get('plumage')))
         )
         db.session.add(species)
         db.session.commit()
@@ -121,7 +141,7 @@ def update_species(species_id):
         if 'reference_weight_max_g' in data:
             species.reference_weight_max_g = data.get('reference_weight_max_g')
         if 'plumage_json' in data or 'plumage' in data:
-            species.plumage_json = data.get('plumage_json') or data.get('plumage')
+            species.plumage_json = sanitize_plumage_json(species.name, (data.get('plumage_json') or data.get('plumage')))
         db.session.commit()
         from schemas import ParrotSpeciesSchema
         return success_response(ParrotSpeciesSchema().dump(species), '更新成功')
