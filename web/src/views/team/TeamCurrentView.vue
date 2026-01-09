@@ -3,8 +3,8 @@
     <div class="page-header">
       <h2>我的团队</h2>
       <div class="header-actions" v-if="teams.length > 0">
-        <el-button type="primary" @click="goCreate" :disabled="hasAnyTeam">创建新团队</el-button>
-        <el-button plain @click="goJoin" :disabled="hasAnyTeam">加入团队</el-button>
+        <el-button type="primary" @click="goCreate">创建新团队</el-button>
+        <el-button plain @click="goJoin">加入团队</el-button>
       </div>
     </div>
     
@@ -97,6 +97,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Check } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
 import api from '@/api/axios'
 
 const router = useRouter()
@@ -162,8 +163,35 @@ const fetchTeams = async () => {
 }
 
 const goManage = () => router.push('/team/manage')
-const goJoin = () => router.push('/team/join')
-const goCreate = () => router.push('/team/create')
+const goCreate = async () => {
+  if (hasAnyTeam.value) {
+    try {
+      await ElMessageBox.confirm(
+        '您当前已加入团队，如需创建新团队，请先退出当前团队。是否前往管理页退出？',
+        '已加入团队',
+        { confirmButtonText: '前往管理', cancelButtonText: '取消', type: 'warning' }
+      )
+      router.push('/team/manage')
+    } catch (_) {}
+    return
+  }
+  router.push('/team/create')
+}
+
+const goJoin = async () => {
+  if (hasAnyTeam.value) {
+    try {
+      await ElMessageBox.confirm(
+        '您当前已加入团队，如需加入其他团队，请先退出当前团队。是否前往管理页退出？',
+        '已加入团队',
+        { confirmButtonText: '前往管理', cancelButtonText: '取消', type: 'warning' }
+      )
+      router.push('/team/manage')
+    } catch (_) {}
+    return
+  }
+  router.push('/team/join')
+}
 
 const switchTo = async (id) => {
   if (team.value && team.value.id === id) return
