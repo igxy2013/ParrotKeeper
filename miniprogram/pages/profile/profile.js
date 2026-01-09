@@ -1113,7 +1113,8 @@ Page({
     wx.showModal({
       title: '关于我们',
       content: contentText,
-      showCancel: false
+      showCancel: false,
+      confirmText: '我知道了'
     })
   },
   showHelp() {},
