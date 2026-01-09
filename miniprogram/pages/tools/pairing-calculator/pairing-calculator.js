@@ -395,9 +395,8 @@ Page({
 
   startCalculation() {
     try {
-      const membershipEnabled = (app.getMembershipEnabled && app.getMembershipEnabled())
       const tier = String(app.getEffectiveTier && app.getEffectiveTier() || 'free').toLowerCase()
-      if (membershipEnabled && tier === 'free') {
+      if (tier === 'free') {
         this.setData({ showLimitModal: true })
         return
       }

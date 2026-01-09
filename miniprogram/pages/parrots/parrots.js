@@ -934,22 +934,58 @@ Page({
         }
       } catch(_) {}
     }
-    let tier = app.getEffectiveTier()
+    const storedUser = wx.getStorageSync('userInfo') || (app && app.globalData && app.globalData.userInfo) || {}
+    const rawTier = String(app.getEffectiveTier && app.getEffectiveTier() || 'free').toLowerCase()
+    let tier = 'free'
+    try {
+      const now = Date.now()
+      if (rawTier === 'pro') {
+        const expStr = storedUser && storedUser.subscription_expire_at
+        if (expStr) {
+          const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+          tier = (isFinite(ts) && ts > now && userMode === 'personal') ? 'pro' : 'free'
+        } else { tier = 'free' }
+      } else if (rawTier === 'team') {
+        const hasTeam = !!(currentTeam && currentTeam.id)
+        if (!hasTeam) {
+          const expStr = storedUser && storedUser.subscription_expire_at
+          if (expStr) {
+            const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+            tier = (isFinite(ts) && ts > now && userMode === 'team') ? 'team' : 'free'
+          } else { tier = 'free' }
+        } else {
+          const expStr = currentTeam.subscription_expire_at || currentTeam.expire_at || (storedUser && storedUser.subscription_expire_at) || ''
+          if (expStr) {
+            const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+            tier = (isFinite(ts) && ts > now && userMode === 'team') ? 'team' : 'free'
+          } else { tier = 'free' }
+        }
+      } else { tier = 'free' }
+    } catch(_) { tier = 'free' }
+
     const teamLevel = app.getTeamLevel()
+
+    let limits = { free_personal: 10, free_team: 20, pro_personal: 100, team_basic: 1000, team_advanced: 0 }
+    try {
+      const lr = await app.request({ url: '/api/membership/limits', method: 'GET' })
+      if (lr && lr.success && lr.data) {
+        const d = lr.data
+        limits = {
+          free_personal: Number(d.free_personal || 10),
+          free_team: Number(d.free_team || 20),
+          pro_personal: Number(d.pro_personal || 100),
+          team_basic: Number(d.team_basic || 1000),
+          team_advanced: Number(d.team_advanced || 0)
+        }
+      }
+    } catch(_) {}
 
     const knownTotal = Number(this.data.totalParrots || 0)
     const promptOrOpenForm = (total) => {
       let limit = 0
-      if (tier === 'free') {
-        const hasTeamContext = !!(currentTeam && currentTeam.id)
-        const freePersonal = typeof app.getFreeLimitPersonal === 'function' ? app.getFreeLimitPersonal() : 10
-        const freeTeam = typeof app.getFreeLimitTeam === 'function' ? app.getFreeLimitTeam() : 20
-        limit = (userMode === 'team' && hasTeamContext) ? freeTeam : freePersonal
-      } else if (tier === 'pro') {
-        limit = 100
-      } else if (tier === 'team') {
-        limit = (teamLevel === 'basic') ? 1000 : Number.MAX_SAFE_INTEGER
-      }
+      if (tier === 'free') { limit = (userMode === 'team') ? limits.free_team : limits.free_personal }
+      else if (tier === 'pro') { limit = limits.pro_personal }
+      else if (tier === 'team') { limit = (teamLevel === 'basic') ? limits.team_basic : (limits.team_advanced || 0) }
       if (limit && total >= limit) {
         this.setData({ showLimitModal: true, limitModalCode: '', limitCount: limit })
         return
@@ -961,36 +997,45 @@ Page({
 
     // 若可能达到上限，则根据后端统计进行一次确认；团队高级版不预限制
     let preLimit = 0
-    if (tier === 'free') {
-      const hasTeamContext = !!(currentTeam && currentTeam.id)
-      const freePersonal = typeof app.getFreeLimitPersonal === 'function' ? app.getFreeLimitPersonal() : 10
-      const freeTeam = typeof app.getFreeLimitTeam === 'function' ? app.getFreeLimitTeam() : 20
-      preLimit = (userMode === 'team' && hasTeamContext) ? freeTeam : freePersonal
-    }
-    else if (tier === 'pro') preLimit = 100
-    else if (tier === 'team' && teamLevel === 'basic') preLimit = 1000
+    if (tier === 'free') preLimit = (userMode === 'team') ? limits.free_team : limits.free_personal
+    else if (tier === 'pro') preLimit = limits.pro_personal
+    else if (tier === 'team') preLimit = (teamLevel === 'basic') ? limits.team_basic : (limits.team_advanced || 0)
     if (preLimit && knownTotal >= preLimit) {
       promptOrOpenForm(knownTotal)
       return
     }
 
-    app.request({ url: '/api/statistics/overview', method: 'GET' })
-      .then(res => {
-        let total = 0
-        if (res && res.data && res.data.total_parrots !== undefined) {
-          total = Number(res.data.total_parrots)
-        } else {
-          // 如果获取统计失败，回退到使用列表长度（不太准确但作为兜底）
-          const listLen = Array.isArray(this.data.parrots) ? this.data.parrots.length : 0
-          total = Math.max(knownTotal, listLen)
-        }
-        promptOrOpenForm(total)
-      })
-      .catch(() => {
-        promptOrOpenForm(knownTotal)
-      })
+    if (userMode === 'team') {
+      app.request({ url: '/api/parrots', method: 'GET', data: { page: 1, per_page: 1 } })
+        .then(r => {
+          let total = knownTotal
+          if (r && r.success) {
+            if (r.data && typeof r.data.total === 'number') {
+              total = Number(r.data.total)
+            } else if (Array.isArray(r.data && r.data.parrots)) {
+              const listLen = r.data.parrots.length
+              total = Math.max(knownTotal, listLen)
+            }
+          }
+          promptOrOpenForm(total)
+        })
+        .catch(() => { promptOrOpenForm(knownTotal) })
+    } else {
+      app.request({ url: '/api/statistics/overview', method: 'GET' })
+        .then(res => {
+          let total = 0
+          if (res && res.data && res.data.total_parrots !== undefined) {
+            total = Number(res.data.total_parrots)
+          } else {
+            const listLen = Array.isArray(this.data.parrots) ? this.data.parrots.length : 0
+            total = Math.max(knownTotal, listLen)
+          }
+          promptOrOpenForm(total)
+        })
+        .catch(() => { promptOrOpenForm(knownTotal) })
+    }
   },
-
+  
   // 关闭数量限制弹窗
   closeLimitModal() {
     this.setData({

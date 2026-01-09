@@ -142,7 +142,7 @@ const props = defineProps({
   modelValue: { type: Boolean, default: false },
   parrotId: { type: [String, Number], default: '' }
 })
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'edit', 'deleted'])
 
 const visible = ref(false)
 watch(() => props.modelValue, v => { visible.value = !!v; if (v) init() })
