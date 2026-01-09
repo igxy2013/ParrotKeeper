@@ -1271,6 +1271,8 @@ Page({
         }
 
         this.scheduleSilentRefresh(1000)
+        try { const c = require('../../../utils/cache'); c.clear && c.clear('parrots_list_default'); c.clear && c.clear('parrots_list_default_v2'); c.clear && c.clear('parrots_list_default_raw'); c.clear && c.clear('index_myParrots') } catch(_) {}
+        try { if (app && app.globalData) { app.globalData.needRefresh = true } } catch(_) {}
       } else {
         app.hideLoading()
         app.showError(res.message || '编辑失败')

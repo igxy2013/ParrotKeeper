@@ -647,6 +647,7 @@ const loadSpecies = async () => {
 const handleParrotsChanged = async () => {
   await fetchParrots()
   await loadSpecies()
+  await fetchOverview()
 }
 
 watch(searchKeyword, () => {

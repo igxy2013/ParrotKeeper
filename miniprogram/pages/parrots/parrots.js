@@ -395,12 +395,16 @@ Page({
           updatedParrots = updatedParrots.map(p => {
             const copy = { ...p }
             if (copy.original_photo_url) {
-              copy.photo_url = app.resolveUploadUrl(copy.original_photo_url)
-              copy.photo_thumb = copy.photo_url ? app.getThumbnailUrl(copy.photo_url, 160) : ''
+              const base = app.resolveUploadUrl(copy.original_photo_url)
+              const vurl = this.appendV(base)
+              copy.photo_url = vurl
+              copy.photo_thumb = vurl ? app.getThumbnailUrl(vurl, 160) : ''
             }
             if (copy.original_avatar_url) {
-              copy.avatar_url = app.resolveUploadUrl(copy.original_avatar_url)
-              copy.avatar_thumb = copy.avatar_url ? app.getThumbnailUrl(copy.avatar_url, 128) : ''
+              const base = app.resolveUploadUrl(copy.original_avatar_url)
+              const vurl = this.appendV(base)
+              copy.avatar_url = vurl
+              copy.avatar_thumb = vurl ? app.getThumbnailUrl(vurl, 128) : ''
             }
             return copy
           })
@@ -433,12 +437,14 @@ Page({
             const parrots = rawCached.parrots || []
             const newParrots = parrots.map(p => {
               const speciesName = p.species && p.species.name ? p.species.name : (p.species_name || '')
-              const photoUrl = app.resolveUploadUrl(p.photo_url)
-              const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
+              const photoUrlBase = app.resolveUploadUrl(p.photo_url)
+              const photoUrl = this.appendV(photoUrlBase)
+              const avatarUrlBase = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
                 gender: p.gender,
                 species_name: speciesName,
                 name: p.name
               })
+              const avatarUrl = this.appendV(avatarUrlBase)
               const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
               const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 128) : ''
               const keeperName = p.owner_name || ((p.owner && (p.owner.nickname || p.owner.account_username || p.owner.username)) || '')
@@ -516,12 +522,14 @@ Page({
         
         const newParrots = parrots.map(p => {
           const speciesName = p.species && p.species.name ? p.species.name : (p.species_name || '')
-          const photoUrl = app.resolveUploadUrl(p.photo_url)
-          const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
+          const photoUrlBase = app.resolveUploadUrl(p.photo_url)
+          const photoUrl = this.appendV(photoUrlBase)
+          const avatarUrlBase = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
             gender: p.gender,
             species_name: speciesName,
             name: p.name
           })
+          const avatarUrl = this.appendV(avatarUrlBase)
           const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
           const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 128) : ''
           const keeperName = p.owner_name || ((p.owner && (p.owner.nickname || p.owner.account_username || p.owner.username)) || '')
@@ -883,6 +891,19 @@ Page({
   // 阻止事件冒泡
   stopPropagation() {
     // 阻止点击模态框内容时关闭模态框
+  },
+
+  appendV(u) {
+    try {
+      if (!u) return ''
+      const s = String(u)
+      if (/^(wxfile|ttfile|file):\/\//.test(s)) return s
+      if (/^\/?images\//.test(s)) return s
+      const v = Date.now()
+      return s.includes('?') ? `${s}&v=${v}` : `${s}?v=${v}`
+    } catch (_) {
+      return u || ''
+    }
   },
 
   // 查看鹦鹉详情
@@ -1715,7 +1736,8 @@ Page({
 
       if (res && res.success) {
         this.setData({ showParrotModal: false, currentParrotForm: null })
-        try { cache.clear('parrots_list_default') } catch (_) {}
+        try { cache.clear('parrots_list_default'); cache.clear('parrots_list_default_v2'); cache.clear('parrots_list_default_raw'); cache.clear('index_myParrots') } catch (_) {}
+        try { if (app && app.globalData) { app.globalData.needRefresh = true } } catch(_) {}
         this.loadParrots(true)
       } else if (res) {
         const msg = res.message || (mode === 'edit' ? '编辑失败' : (mode === 'claim' ? '认领失败' : '添加失败'))

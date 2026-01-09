@@ -768,6 +768,18 @@ Page({
   },
 
   // 新增：加载首页-我的鹦鹉（横向展示全部）
+  appendV(u) {
+    try {
+      if (!u) return ''
+      const s = String(u)
+      if (/^(wxfile|ttfile|file):\/\//.test(s)) return s
+      if (/^\/?images\//.test(s)) return s
+      const v = Date.now()
+      return s.includes('?') ? `${s}&v=${v}` : `${s}?v=${v}`
+    } catch (_) {
+      return u || ''
+    }
+  },
   async loadMyParrots() {
     try {
       const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
@@ -824,12 +836,14 @@ Page({
       if (res.success) {
         const parrotsRaw = (res.data.parrots || []).map(p => {
           const speciesName = p.species && p.species.name ? p.species.name : (p.species_name || '')
-          const photoUrl = app.resolveUploadUrl(p.photo_url)
-          const avatarUrl = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
+          const photoUrlBase = app.resolveUploadUrl(p.photo_url)
+          const photoUrl = this.appendV(photoUrlBase)
+          const avatarUrlBase = p.avatar_url ? app.resolveUploadUrl(p.avatar_url) : app.getDefaultAvatarForParrot({
             gender: p.gender,
             species_name: speciesName,
             name: p.name
           })
+          const avatarUrl = this.appendV(avatarUrlBase)
           const photoThumb = photoUrl ? app.getThumbnailUrl(photoUrl, 160) : ''
           const avatarThumb = avatarUrl ? app.getThumbnailUrl(avatarUrl, 128) : ''
           return {
