@@ -24,6 +24,9 @@ import AdminInvitationCodesView from '../views/admin/AdminInvitationCodesView.vu
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
 import AdminResetRequestsView from '../views/admin/AdminResetRequestsView.vue'
 import AdminBackupView from '../views/admin/AdminBackupView.vue'
+import AdminMembershipModeView from '../views/admin/AdminMembershipModeView.vue'
+import AdminMembersManagementView from '../views/admin/AdminMembersManagementView.vue'
+import AdminRedeemCodesView from '../views/admin/AdminRedeemCodesView.vue'
 import SettingsNotificationView from '../views/settings/SettingsNotificationView.vue'
 import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
 import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
@@ -152,6 +155,9 @@ const router = createRouter({
         { path: 'admin/announcements', name: 'admin-announcements', component: AdminAnnouncementsView },
         { path: 'admin/api-configs', name: 'admin-api-configs', component: AdminApiConfigsView },
         { path: 'admin/invitation-codes', name: 'admin-invitation-codes', component: AdminInvitationCodesView },
+        { path: 'admin/membership-mode', name: 'admin-membership-mode', component: AdminMembershipModeView },
+        { path: 'admin/members-management', name: 'admin-members-management', component: AdminMembersManagementView },
+        { path: 'admin/redeem-codes', name: 'admin-redeem-codes', component: AdminRedeemCodesView },
         { path: 'admin/users', name: 'admin-users', component: AdminUsersView },
         { path: 'admin/reset-requests', name: 'admin-reset-requests', component: AdminResetRequestsView }
       ]

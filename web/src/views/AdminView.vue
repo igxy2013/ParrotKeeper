@@ -92,6 +92,15 @@
             <el-icon class="arrow-icon"><ArrowRight /></el-icon>
           </div>
 
+          <div class="menu-item" @click="go('/admin/membership-mode')">
+            <div class="menu-item-icon bg-orange"><el-icon><Setting /></el-icon></div>
+            <div class="menu-item-content">
+              <div class="menu-item-title">会员模式管理</div>
+              <div class="menu-item-desc">订阅开关、兑换码与会员管理</div>
+            </div>
+            <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+          </div>
+
           <div class="menu-item" @click="go('/admin/reset-requests')">
             <div class="menu-item-icon bg-gray"><el-icon><Notification /></el-icon></div>
             <div class="menu-item-content">

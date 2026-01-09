@@ -519,8 +519,10 @@ def _llm_generate_advice(parrot: Parrot, metrics: dict, knowledge: dict, season:
                     providers.append({
                         'api_key': str((it or {}).get('api_key') or ''),
                         'base_url': str((it or {}).get('base_url') or ''),
-                        'model': str((it or {}).get('model') or '')
+                        'model': str((it or {}).get('model') or ''),
+                        'is_top': bool((it or {}).get('is_top') or False)
                     })
+                providers.sort(key=lambda x: (0 if x.get('is_top') else 1))
     except Exception:
         providers = []
     if not providers:

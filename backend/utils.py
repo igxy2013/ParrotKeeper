@@ -147,8 +147,10 @@ def remove_background(image_path):
                     for it in arr:
                         providers.append({
                             'api_key': str((it or {}).get('api_key') or ''),
-                            'api_url': str((it or {}).get('api_url') or '') or 'https://api.remove.bg/v1.0/removebg'
+                            'api_url': str((it or {}).get('api_url') or '') or 'https://api.remove.bg/v1.0/removebg',
+                            'is_top': bool((it or {}).get('is_top') or False)
                         })
+                    providers.sort(key=lambda x: (0 if x.get('is_top') else 1))
         except Exception:
             providers = []
         if not providers:

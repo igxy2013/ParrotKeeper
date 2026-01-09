@@ -247,6 +247,9 @@ const menuItems = computed(() => [
       { path: '/admin/api-configs', label: 'API配置', icon: Setting },
       { path: '/admin/backup', label: '备份与同步', icon: Setting },
       { path: '/admin/invitation-codes', label: '邀请码管理', icon: Setting },
+      { path: '/admin/membership-mode', label: '会员模式管理', icon: Setting },
+      { path: '/admin/redeem-codes', label: '会员兑换码', icon: Setting },
+      { path: '/admin/members-management', label: '会员管理', icon: Setting },
       { path: '/admin/reset-requests', label: '密码重置核验', icon: Notification },
     ]
   },

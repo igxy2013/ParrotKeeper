@@ -430,6 +430,7 @@ def get_api_configs():
                         api_key = str(it.get('api_key') or '')
                         url = str(it.get('api_url') or '')
                         tag = str(it.get('tag') or '')
+                        is_top = bool(it.get('is_top') or False)
                         mk = ('*' * max(0, len(api_key) - 4)) + (api_key[-4:] if api_key else '')
                         mu = url
                         rem = 50
@@ -439,7 +440,7 @@ def get_api_configs():
                             rem = max(0, 50 - used)
                         except Exception:
                             rem = 50
-                        remove_list.append({'api_key_masked': mk, 'api_url': mu, 'tag': tag, 'api_key': api_key, 'remaining_quota': rem})
+                        remove_list.append({'api_key_masked': mk, 'api_url': mu, 'tag': tag, 'api_key': api_key, 'remaining_quota': rem, 'is_top': is_top})
         except Exception:
             pass
         try:
@@ -453,8 +454,9 @@ def get_api_configs():
                         base_url = str(it.get('base_url') or '')
                         model = str(it.get('model') or '')
                         tag = str(it.get('tag') or '')
+                        is_top = bool(it.get('is_top') or False)
                         mk = ('*' * max(0, len(api_key) - 4)) + (api_key[-4:] if api_key else '')
-                        aliyun_list.append({'api_key_masked': mk, 'base_url': base_url, 'model': model, 'tag': tag, 'api_key': api_key})
+                        aliyun_list.append({'api_key_masked': mk, 'base_url': base_url, 'model': model, 'tag': tag, 'api_key': api_key, 'is_top': is_top})
         except Exception:
             pass
         return success_response({'configs': items, 'lists': {'remove_bg_list': remove_list, 'aliyun_list': aliyun_list}})
