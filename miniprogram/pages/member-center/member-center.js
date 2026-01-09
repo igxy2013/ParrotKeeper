@@ -11,7 +11,8 @@ Page({
     membershipName: '',
     membershipTag: '',
     tierClass: '',
-    hasMembership: false
+    hasMembership: false,
+    limits: { free_personal: 10, free_team: 20, pro_personal: 100, team_basic: 1000, team_advanced: 0 }
   },
 
   onShow() {
@@ -24,6 +25,16 @@ Page({
         this.updateStatusFromUserInfo(userInfo);
     }
     this.refreshProfile()
+    this.loadMembershipLimits()
+  },
+  async loadMembershipLimits() {
+    try {
+      const res = await app.request({ url: '/api/membership/limits', method: 'GET' })
+      if (res && res.success && res.data) {
+        const d = res.data
+        this.setData({ limits: d })
+      }
+    } catch (_) {}
   },
   
   updateStatusFromUserInfo(userInfo) {

@@ -18,6 +18,7 @@
         "api-configs/api-configs",
         "market-prices/market-prices",
         "invitation-codes/invitation-codes",
+        "membership-mode/membership-mode",
         "redeem-codes/redeem-codes",
         "users-management/users-management",
         "members-management/members-management",

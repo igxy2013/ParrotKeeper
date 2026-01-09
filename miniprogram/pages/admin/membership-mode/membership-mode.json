@@ -1,0 +1,11 @@
+{
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header",
+    "numeric-keyboard": "/components/numeric-keyboard/numeric-keyboard"
+  },
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "会员模式管理",
+  "enablePullDownRefresh": false,
+  "backgroundColor": "#f8f9fa",
+  "backgroundTextStyle": "dark"
+}

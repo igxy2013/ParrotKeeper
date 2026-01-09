@@ -133,7 +133,9 @@ Page({
       console.log('用户已登录，开始加载鹦鹉数据');
       const storedMode = wx.getStorageSync('userMode') || ''
       const currentMode = app.globalData.userMode || storedMode || 'personal'
-      this.setData({ userMode: currentMode, limitCount: currentMode === 'team' ? 20 : 10 })
+      const freePersonal = typeof app.getFreeLimitPersonal === 'function' ? app.getFreeLimitPersonal() : 10
+      const freeTeam = typeof app.getFreeLimitTeam === 'function' ? app.getFreeLimitTeam() : 20
+      this.setData({ userMode: currentMode, limitCount: currentMode === 'team' ? freeTeam : freePersonal })
 
       if (currentMode === 'team' && !this.data.hasOperationPermission) {
         try {
@@ -853,6 +855,12 @@ Page({
   async addParrot() {
     const isLogin = !!(app && app.globalData && app.globalData.isLogin)
     if (!isLogin) { app.showError && app.showError('请先登录'); return }
+    if (!app.getMembershipEnabled()) {
+      const emptyForm = { id: '', name: '', type: '', weight: '', gender: '', gender_display: '', color: '', birth_date: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' }
+      this.setData({ showParrotModal: true, parrotFormMode: 'add', parrotFormTitle: '添加新鹦鹉', currentParrotForm: emptyForm })
+      this.loadSpeciesListForModal()
+      return
+    }
     const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
     try { if (userMode === 'team' && app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
     
@@ -892,7 +900,9 @@ Page({
       let limit = 0
       if (tier === 'free') {
         const hasTeamContext = !!(currentTeam && currentTeam.id)
-        limit = (userMode === 'team' && hasTeamContext) ? 20 : 10
+        const freePersonal = typeof app.getFreeLimitPersonal === 'function' ? app.getFreeLimitPersonal() : 10
+        const freeTeam = typeof app.getFreeLimitTeam === 'function' ? app.getFreeLimitTeam() : 20
+        limit = (userMode === 'team' && hasTeamContext) ? freeTeam : freePersonal
       } else if (tier === 'pro') {
         limit = 100
       } else if (tier === 'team') {
@@ -911,7 +921,9 @@ Page({
     let preLimit = 0
     if (tier === 'free') {
       const hasTeamContext = !!(currentTeam && currentTeam.id)
-      preLimit = (userMode === 'team' && hasTeamContext) ? 20 : 10
+      const freePersonal = typeof app.getFreeLimitPersonal === 'function' ? app.getFreeLimitPersonal() : 10
+      const freeTeam = typeof app.getFreeLimitTeam === 'function' ? app.getFreeLimitTeam() : 20
+      preLimit = (userMode === 'team' && hasTeamContext) ? freeTeam : freePersonal
     }
     else if (tier === 'pro') preLimit = 100
     else if (tier === 'team' && teamLevel === 'basic') preLimit = 1000

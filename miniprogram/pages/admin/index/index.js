@@ -3,7 +3,8 @@ const app = getApp()
 Page({
   data: {
     isSuperAdmin: false,
-    isAdminOrSuper: false
+    isAdminOrSuper: false,
+    membershipEnabled: true
   },
   onLoad() {
     try {
@@ -16,6 +17,10 @@ Page({
     } catch (_) {
       this.setData({ isSuperAdmin: false, isAdminOrSuper: false })
     }
+    
+  },
+  onShow() {
+    
   },
   goAdminFeedbacks() { wx.navigateTo({ url: '/pages/admin/feedbacks/feedbacks' }) },
   goAdminAnnouncements() { wx.navigateTo({ url: '/pages/admin/announcements/announcements' }) },
@@ -55,18 +60,13 @@ Page({
   goAdminInvitationCodes() {
     wx.navigateTo({ url: '/pages/admin/invitation-codes/invitation-codes' })
   },
-  
-  goAdminRedeemCodes() {
-    wx.navigateTo({ url: '/pages/admin/redeem-codes/redeem-codes' })
-  },
-  
-  goAdminMembersManagement() {
+  goAdminMembershipMode() {
     const userInfo = (app.globalData && app.globalData.userInfo) || {}
     if (String(userInfo.role || '') !== 'super_admin') {
       app.showError && app.showError('仅超级管理员可进入')
       return
     }
-    wx.navigateTo({ url: '/pages/admin/members-management/members-management' })
+    wx.navigateTo({ url: '/pages/admin/membership-mode/membership-mode' })
   },
   
   goAdminResetRequests() {

@@ -15,6 +15,9 @@ class UserSchema(SQLAlchemyAutoSchema):
     effective_tier = fields.Method('get_effective_tier', dump_only=True)
     team_subscription_level = fields.Method('get_team_subscription_level', dump_only=True)
     team_level = fields.Method('get_team_subscription_level', dump_only=True)
+    membership_enabled = fields.Method('get_membership_enabled', dump_only=True)
+    free_limit_personal = fields.Method('get_free_limit_personal', dump_only=True)
+    free_limit_team = fields.Method('get_free_limit_team', dump_only=True)
 
     def get_username(self, obj):
         try:
@@ -54,6 +57,45 @@ class UserSchema(SQLAlchemyAutoSchema):
             return None
         except Exception:
             return None
+
+    def get_membership_enabled(self, obj):
+        try:
+            from models import SystemSetting
+            row = SystemSetting.query.filter_by(key='MEMBERSHIP_ENABLED').first()
+            val = str(row.value).strip().lower() if row and row.value is not None else ''
+            if val in ['1', 'true', 'yes', 'y']:
+                return True
+            if val in ['0', 'false', 'no', 'n']:
+                return False
+            return True
+        except Exception:
+            return True
+
+    def get_free_limit_personal(self, obj):
+        try:
+            from models import SystemSetting
+            row = SystemSetting.query.filter_by(key='FREE_LIMIT_PERSONAL').first()
+            if row and row.value is not None:
+                try:
+                    return max(0, int(str(row.value).strip()))
+                except Exception:
+                    return 10
+            return 10
+        except Exception:
+            return 10
+
+    def get_free_limit_team(self, obj):
+        try:
+            from models import SystemSetting
+            row = SystemSetting.query.filter_by(key='FREE_LIMIT_TEAM').first()
+            if row and row.value is not None:
+                try:
+                    return max(0, int(str(row.value).strip()))
+                except Exception:
+                    return 20
+            return 20
+        except Exception:
+            return 20
 
 class ParrotSpeciesSchema(SQLAlchemyAutoSchema):
     class Meta:

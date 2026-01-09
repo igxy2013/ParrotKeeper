@@ -1,0 +1,141 @@
+<view class="page-container">
+  <app-header title="会员模式管理" subtitle="订阅开关与会员入口" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">
+        <image class="no-access-icon" src="/images/remix/lock-fill.png" mode="aspectFit" />
+        <text>仅超级管理员可访问该页面</text>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="card fade-in">
+        <view class="section-header">
+          <view class="section-icon-wrapper bg-gradient-orange">
+            <image class="section-icon-img" src="/images/remix/vip-crown-line-white.png" mode="aspectFit" />
+          </view>
+          <text class="section-title-text">会员订阅模式</text>
+        </view>
+        <view class="toggle-row">
+          <view class="toggle-info">
+            <text class="toggle-label">开启会员订阅模式</text>
+            <text class="toggle-desc">开启后，普通用户将受到数量限制</text>
+          </view>
+          <switch color="#4CAF50" checked="{{membershipEnabled}}" bindchange="onMembershipToggleChange" />
+        </view>
+      </view>
+
+      <view class="card fade-in" style="animation-delay: 0.1s;">
+        <view class="section-header">
+          <view class="section-icon-wrapper bg-gradient-blue">
+            <image class="section-icon-img" src="/images/remix/settings-3-line-white.png" mode="aspectFit" />
+          </view>
+          <text class="section-title-text">会员相关功能</text>
+        </view>
+        <view class="menu-list">
+          <view class="menu-item touchable" bindtap="goAdminRedeemCodes">
+            <view class="menu-item-icon bg-gradient-purple">
+              <image class="menu-item-icon-img" src="/images/remix/vip-crown-line-white.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">会员兑换码</view>
+              <view class="menu-item-desc">生成会员权益兑换码</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+
+          <view class="menu-item touchable" bindtap="goAdminMembersManagement">
+            <view class="menu-item-icon bg-gradient-pink">
+              <image class="menu-item-icon-img" src="/images/remix/group-line-white.png" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">会员管理</view>
+              <view class="menu-item-desc">查看与维护会员等级与到期</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+
+          <view class="menu-item touchable" bindtap="openLimitsModal">
+            <view class="menu-item-icon bg-gradient-green">
+              <image class="menu-item-icon-img" src="/images/remix/list-check.svg" mode="aspectFit" />
+            </view>
+            <view class="menu-item-content">
+              <view class="menu-item-title">数量上限设置</view>
+              <view class="menu-item-desc">配置各版本鹦鹉数量上限</view>
+            </view>
+            <image class="arrow-icon" src="/images/remix/arrow-right-s-line.png" mode="aspectFit" />
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{showLimitsModal}}" class="modal-overlay fade-in" catchtouchmove="true" bindtap="closeLimitsModal">
+        <view class="modal-card slide-up" catchtap="stopPropagation">
+          <view class="modal-header-gradient">
+            <view class="modal-header-row">
+              <text class="modal-title">数量上限设置</text>
+              <view class="modal-close-btn" bindtap="closeLimitsModal">
+                <image class="modal-close-icon-img" src="/images/remix/close-line-white.png" mode="aspectFit" />
+              </view>
+            </view>
+          </view>
+          
+          <scroll-view scroll-y class="modal-body">
+            <view class="form-section">
+              <view class="form-group">
+                <text class="group-title">免费版限制</text>
+                <view class="form-row">
+                  <text class="label">个人模式上限</text>
+                  <view class="number-display" bindtap="editLimit" data-key="free_personal">{{limits.free_personal}}</view>
+                </view>
+                <view class="form-row">
+                  <text class="label">团队模式上限</text>
+                  <view class="number-display" bindtap="editLimit" data-key="free_team">{{limits.free_team}}</view>
+                </view>
+              </view>
+
+              <view class="form-group">
+                <text class="group-title">付费版限制</text>
+                <view class="form-row">
+                  <text class="label">Pro（个人）上限</text>
+                  <view class="number-display" bindtap="editLimit" data-key="pro_personal">{{limits.pro_personal}}</view>
+                </view>
+                <view class="form-row">
+                  <text class="label">Team 基础版上限</text>
+                  <view class="number-display" bindtap="editLimit" data-key="team_basic">{{limits.team_basic}}</view>
+                </view>
+              </view>
+              
+              <view class="form-group">
+                <text class="group-title">高级版配置</text>
+                <view class="form-row switch-row">
+                  <text class="label">Team 高级版无限制</text>
+                  <switch checked="{{advancedUnlimited}}" color="#4CAF50" bindchange="onAdvancedUnlimitedChange" />
+                </view>
+                <view class="form-row" wx:if="{{!advancedUnlimited}}">
+                  <text class="label">Team 高级版上限</text>
+                  <view class="number-display" bindtap="editLimit" data-key="team_advanced">{{limits.team_advanced}}</view>
+                </view>
+              </view>
+            </view>
+          </scroll-view>
+
+          <view class="modal-footer">
+            <button class="btn-secondary" bindtap="closeLimitsModal">取消</button>
+            <button class="btn-primary" bindtap="saveLimits" loading="{{savingLimits}}" disabled="{{savingLimits}}">保存设置</button>
+          </view>
+        </view>
+      </view>
+
+      <numeric-keyboard 
+        visible="{{keyboardVisible}}" 
+        value="{{keyboardValue}}" 
+        title="{{keyboardTitle}}" 
+        maxLength="6" 
+        maxDecimals="0" 
+        saveButtonText="保存" 
+        bind:input="onKeyboardInput" 
+        bind:save="onKeyboardSave" 
+        bind:close="onKeyboardClose"
+      />
+    </block>
+  </view>
+</view>

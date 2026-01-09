@@ -2011,6 +2011,11 @@ Page({
 
   // 添加鹦鹉
   async addParrot() {
+    if (app && typeof app.getMembershipEnabled === 'function' && !app.getMembershipEnabled()) {
+      this.setData({ showAddParrotModal: true })
+      this.loadSpeciesList()
+      return
+    }
     if (!this.data.isLogin) {
       app.showError('请先登录后使用此功能')
       return
@@ -2080,13 +2085,20 @@ Page({
     let limit = 0
     if (tier === 'free') {
       const hasTeamContext = !!(currentTeam && currentTeam.id)
-      limit = (mode === 'team' && hasTeamContext) ? 20 : 10
+      const freePersonal = typeof app.getFreeLimitPersonal === 'function' ? app.getFreeLimitPersonal() : 10
+      const freeTeam = typeof app.getFreeLimitTeam === 'function' ? app.getFreeLimitTeam() : 20
+      limit = (mode === 'team' && hasTeamContext) ? freeTeam : freePersonal
     }
     else if (tier === 'pro') limit = 100
     else if (tier === 'team' && teamLevel === 'basic') limit = 1000
     const knownTotal = Number((this.data.overview && this.data.overview.total_parrots) || 0)
 
     const promptOrOpenForm = (total) => {
+      if (app && typeof app.getMembershipEnabled === 'function' && !app.getMembershipEnabled()) {
+        this.setData({ showAddParrotModal: true })
+        this.loadSpeciesList()
+        return
+      }
       if (limit && total >= limit) {
         this.setData({ showLimitModal: true, limitCount: limit })
         return

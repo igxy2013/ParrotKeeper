@@ -8,6 +8,7 @@ Page({
     members: [],
     isTeamOwner: false,
     isTeamAdmin: false,
+    isSuperAdmin: false,
     currentRoleDisplay: '',
     editTeamName: '',
     editTeamDesc: '',
@@ -39,6 +40,7 @@ Page({
 
   async init() {
     try {
+      this.setData({ isSuperAdmin: !!(app && typeof app.isSuperAdmin === 'function' ? app.isSuperAdmin() : ((app.globalData && app.globalData.userInfo && app.globalData.userInfo.role) === 'super_admin')) })
       const cur = await app.request({ url: '/api/teams/current', method: 'GET' })
       if (cur && cur.success && cur.data) {
         const role = cur.data.user_role || cur.data.role
@@ -625,7 +627,7 @@ Page({
   , async confirmDissolveTeam() {
     const teamId = this.data.teamInfo && this.data.teamInfo.id
     if (!teamId) return wx.showToast({ title: '无团队信息', icon: 'none' })
-    if (!this.data.isTeamOwner) return wx.showToast({ title: '仅创建者可操作', icon: 'none' })
+    if (!(this.data.isTeamOwner || this.data.isSuperAdmin)) return wx.showToast({ title: '仅创建者或超级管理员可操作', icon: 'none' })
     wx.showModal({
       title: '解散团队',
       content: '解散后，团队成员将被移除且不可恢复，确认解散？',

@@ -122,7 +122,8 @@ import {
   ArrowRight,
   Download,
   InfoFilled,
-  User
+  User,
+  OfficeBuilding
 } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -203,6 +204,19 @@ const menuItems = computed(() => [
   {path: '/reports',label: '报表导出',icon: Download},
   { path: '/announcements', label: '公告中心', icon: Bell, badge: messageCount.value > 0 ? (messageCount.value > 99 ? '99+' : messageCount.value) : null, badgeColor: 'green' },
   {path: '/about',label: '关于我们',icon: InfoFilled},
+  ...(currentMode.value === 'team' ? [
+    {
+      path: '/team',
+      label: '团队协作',
+      icon: OfficeBuilding,
+      children: [
+        { path: '/team/current', label: '当前团队', icon: User },
+        { path: '/team/join', label: '加入团队', icon: Connection },
+        { path: '/team/create', label: '创建团队', icon: Edit },
+        { path: '/team/manage', label: '团队管理', icon: Setting }
+      ]
+    }
+  ] : []),
   {
     path: '/settings', 
     label: '设置', 

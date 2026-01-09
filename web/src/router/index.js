@@ -25,6 +25,10 @@ import AdminResetRequestsView from '../views/admin/AdminResetRequestsView.vue'
 import SettingsNotificationView from '../views/settings/SettingsNotificationView.vue'
 import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
 import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
+import TeamCurrentView from '../views/team/TeamCurrentView.vue'
+import TeamJoinView from '../views/team/TeamJoinView.vue'
+import TeamCreateView from '../views/team/TeamCreateView.vue'
+import TeamManageView from '../views/team/TeamManageView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -72,6 +76,26 @@ const router = createRouter({
           path: 'pairing',
           name: 'pairing',
           component: PairingView
+        },
+        {
+          path: 'team/current',
+          name: 'team-current',
+          component: TeamCurrentView
+        },
+        {
+          path: 'team/join',
+          name: 'team-join',
+          component: TeamJoinView
+        },
+        {
+          path: 'team/create',
+          name: 'team-create',
+          component: TeamCreateView
+        },
+        {
+          path: 'team/manage',
+          name: 'team-manage',
+          component: TeamManageView
         },
         {
           path: 'announcements',

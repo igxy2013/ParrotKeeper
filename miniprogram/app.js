@@ -994,6 +994,14 @@ App({
     } catch (_) { return 'free' }
   }
   ,
+  getMembershipEnabled() {
+    try {
+      const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+      const v = userInfo && typeof userInfo.membership_enabled !== 'undefined' ? !!userInfo.membership_enabled : true
+      return v
+    } catch (_) { return true }
+  }
+  ,
   getTeamLevel() {
     try {
       // 优先从当前团队接口数据读取
@@ -1006,6 +1014,20 @@ App({
       if (l2 === 'basic' || l2 === 'advanced') return l2
       return 'basic'
     } catch (_) { return 'basic' }
+  },
+  getFreeLimitPersonal() {
+    try {
+      const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+      const v = userInfo && typeof userInfo.free_limit_personal !== 'undefined' ? parseInt(String(userInfo.free_limit_personal)) : 10
+      return Number.isFinite(v) ? v : 10
+    } catch (_) { return 10 }
+  },
+  getFreeLimitTeam() {
+    try {
+      const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo') || {}
+      const v = userInfo && typeof userInfo.free_limit_team !== 'undefined' ? parseInt(String(userInfo.free_limit_team)) : 20
+      return Number.isFinite(v) ? v : 20
+    } catch (_) { return 20 }
   },
   ensureEffectivePermissions() {
     try {

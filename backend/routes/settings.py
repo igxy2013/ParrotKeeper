@@ -23,6 +23,37 @@ def get_home_widgets():
             pass
     return success_response({ 'widgets': widgets })
 
+@settings_bp.route('/api/membership/limits', methods=['GET'])
+@login_required
+def get_membership_limits_public():
+    user = request.current_user
+    try:
+        from models import SystemSetting
+        keys = ['FREE_LIMIT_PERSONAL','FREE_LIMIT_TEAM','PRO_LIMIT_PERSONAL','TEAM_LIMIT_BASIC','TEAM_LIMIT_ADVANCED']
+        data = {}
+        for k in keys:
+            row = SystemSetting.query.filter_by(key=k).first()
+            val = str(row.value).strip() if row and row.value is not None else ''
+            data[k] = val
+        def to_int_default(v, d):
+            try:
+                s = str(v).strip()
+                if s == '':
+                    return d
+                return max(0, int(s))
+            except Exception:
+                return d
+        payload = {
+            'free_personal': to_int_default(data.get('FREE_LIMIT_PERSONAL'), 10),
+            'free_team': to_int_default(data.get('FREE_LIMIT_TEAM'), 20),
+            'pro_personal': to_int_default(data.get('PRO_LIMIT_PERSONAL'), 100),
+            'team_basic': to_int_default(data.get('TEAM_LIMIT_BASIC'), 1000),
+            'team_advanced': to_int_default(data.get('TEAM_LIMIT_ADVANCED'), 0)
+        }
+        return success_response(payload)
+    except Exception as e:
+        return error_response(f'获取会员数量上限失败: {str(e)}')
+
 
 # ================= 护理教练个性化配置 ==================
 

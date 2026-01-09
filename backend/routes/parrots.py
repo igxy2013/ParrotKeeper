@@ -272,7 +272,19 @@ def create_parrot():
         # 检查订阅限制（根据模式动态上限）
         from subscription_utils import check_parrot_limit
         if not check_parrot_limit(user):
-            limit = 20 if (hasattr(user, 'user_mode') and user.user_mode == 'team') else 10
+            from models import SystemSetting
+            limit = 10
+            try:
+                if hasattr(user, 'user_mode') and user.user_mode == 'team':
+                    row = SystemSetting.query.filter_by(key='FREE_LIMIT_TEAM').first()
+                    val = str(row.value).strip() if row and row.value is not None else ''
+                    limit = int(val) if val.isdigit() else 20
+                else:
+                    row = SystemSetting.query.filter_by(key='FREE_LIMIT_PERSONAL').first()
+                    val = str(row.value).strip() if row and row.value is not None else ''
+                    limit = int(val) if val.isdigit() else 10
+            except Exception:
+                limit = 10 if (getattr(user, 'user_mode', 'personal') == 'personal') else 20
             return error_response(f'免费用户最多只能添加{limit}只鹦鹉，请升级会员解锁更多额度。', 403)
         
         if hasattr(user, 'user_mode') and user.user_mode == 'team':

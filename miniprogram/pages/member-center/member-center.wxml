@@ -126,9 +126,9 @@
 
         <view class="matrix-row">
           <text class="c-feature">鹦鹉数量限制</text>
-          <text class="c-free">个人上限10只/团队上限20只</text>
-          <text class="c-pro">100只</text>
-          <text class="c-team">基础版1000只/高级版无限制</text>
+          <text class="c-free">个人上限{{limits.free_personal}}只 / 团队上限{{limits.free_team}}只</text>
+          <text class="c-pro">{{limits.pro_personal}}只</text>
+          <text class="c-team">基础版{{limits.team_basic}}只 / 高级版 {{limits.team_advanced > 0 ? (limits.team_advanced + '只') : '无限制'}}</text>
         </view>
 
         <view class="matrix-row">

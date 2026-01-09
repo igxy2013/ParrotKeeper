@@ -4,6 +4,10 @@
       <h2>后台管理</h2>
       <div class="header-actions">
         <el-tag type="info">仅超级管理员可访问</el-tag>
+        <div class="toggle-row" v-if="isSuperAdmin">
+          <span class="toggle-label">开启会员订阅模式</span>
+          <el-switch v-model="membershipEnabled" @change="onToggleChange" />
+        </div>
       </div>
     </div>
 
@@ -103,16 +107,40 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { Setting, ChatLineSquare, Edit, ArrowRight, Notification } from '@element-plus/icons-vue'
+import api from '@/api/axios'
 
 const authStore = useAuthStore()
 const router = useRouter()
 onMounted(() => { authStore.refreshProfile && authStore.refreshProfile() })
 const isSuperAdmin = computed(() => String((authStore.user || {}).role || 'user') === 'super_admin')
+
+const membershipEnabled = ref(true)
+onMounted(async () => {
+  try {
+    const res = await api.get('/admin/membership-toggle')
+    if (res.data && res.data.success) {
+      membershipEnabled.value = !!res.data.data.enabled
+    }
+  } catch (e) {}
+})
+
+const onToggleChange = async (val) => {
+  try {
+    const res = await api.put('/admin/membership-toggle', { enabled: !!val })
+    if (res.data && res.data.success) {
+      ElMessage.success('已更新')
+    } else {
+      ElMessage.error('更新失败')
+    }
+  } catch (e) {
+    ElMessage.error('更新失败')
+  }
+}
 
 const go = (path) => { router.push(path) }
 </script>
@@ -123,6 +151,8 @@ const go = (path) => { router.push(path) }
 .menu-card { border-radius: 12px; }
 .section-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-primary); }
 .section-icon { font-size: 20px; }
+.toggle-row { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+.toggle-label { font-size: 13px; color: #606266; }
 .menu-list { display: flex; flex-direction: column; }
 .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid #f0f0f0; cursor: pointer; }
 .menu-item:first-child { border-top: none; }

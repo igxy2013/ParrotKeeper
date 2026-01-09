@@ -1,7 +1,7 @@
 from datetime import datetime
 from functools import wraps
 from flask import jsonify, g
-from models import User, Parrot
+from models import User, Parrot, SystemSetting
 
 def get_effective_subscription_tier(user: User) -> str:
     """
@@ -52,6 +52,52 @@ def check_parrot_limit(user: User) -> bool:
     - 个人会员（pro，个人模式下）：100
     - 团队会员（team，团队模式下）：根据团队订阅版本（basic 1000，advanced 不限）
     """
+    try:
+        row = SystemSetting.query.filter_by(key='MEMBERSHIP_ENABLED').first()
+        val = str(row.value).strip().lower() if row and row.value is not None else ''
+        enabled = True if val in ['1', 'true', 'yes', 'y'] else (False if val in ['0', 'false', 'no', 'n'] else True)
+        if not enabled:
+            return True
+    except Exception:
+        pass
+    personal_free_limit = 10
+    team_free_limit = 20
+    pro_limit_personal = 100
+    team_limit_basic = 1000
+    team_limit_advanced = 0
+    try:
+        p_row = SystemSetting.query.filter_by(key='FREE_LIMIT_PERSONAL').first()
+        t_row = SystemSetting.query.filter_by(key='FREE_LIMIT_TEAM').first()
+        pr_row = SystemSetting.query.filter_by(key='PRO_LIMIT_PERSONAL').first()
+        tb_row = SystemSetting.query.filter_by(key='TEAM_LIMIT_BASIC').first()
+        ta_row = SystemSetting.query.filter_by(key='TEAM_LIMIT_ADVANCED').first()
+        if p_row and p_row.value is not None:
+            try:
+                personal_free_limit = max(0, int(str(p_row.value).strip()))
+            except Exception:
+                personal_free_limit = 10
+        if t_row and t_row.value is not None:
+            try:
+                team_free_limit = max(0, int(str(t_row.value).strip()))
+            except Exception:
+                team_free_limit = 20
+        if pr_row and pr_row.value is not None:
+            try:
+                pro_limit_personal = max(0, int(str(pr_row.value).strip()))
+            except Exception:
+                pro_limit_personal = 100
+        if tb_row and tb_row.value is not None:
+            try:
+                team_limit_basic = max(0, int(str(tb_row.value).strip()))
+            except Exception:
+                team_limit_basic = 1000
+        if ta_row and ta_row.value is not None:
+            try:
+                team_limit_advanced = max(0, int(str(ta_row.value).strip()))
+            except Exception:
+                team_limit_advanced = 0
+    except Exception:
+        pass
     tier = get_effective_subscription_tier(user)
 
     try:
@@ -73,17 +119,19 @@ def check_parrot_limit(user: User) -> bool:
 
             if tier == 'team':
                 if team_level == 'advanced':
-                    return True
-                return current_count < 1000
+                    if team_limit_advanced <= 0:
+                        return True
+                    return current_count < team_limit_advanced
+                return current_count < team_limit_basic
             else:
-                return current_count < 20
+                return current_count < team_free_limit
 
         # 个人模式
         else:
             current_count = Parrot.query.filter_by(user_id=user.id, is_active=True, team_id=None).count()
             if tier == 'pro':
-                return current_count < 100
-            return current_count < 10
+                return current_count < pro_limit_personal
+            return current_count < personal_free_limit
     except Exception:
         return True
 

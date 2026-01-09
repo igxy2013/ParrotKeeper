@@ -832,3 +832,121 @@ def update_api_configs():
     except Exception as e:
         db.session.rollback()
         return error_response(f'更新API配置失败: {str(e)}')
+
+@admin_bp.route('/membership-toggle', methods=['GET'])
+@login_required
+def get_membership_toggle():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        row = SystemSetting.query.filter_by(key='MEMBERSHIP_ENABLED').first()
+        val = str(row.value).strip().lower() if row and row.value is not None else ''
+        enabled = True if val in ['1', 'true', 'yes', 'y'] else (False if val in ['0', 'false', 'no', 'n'] else True)
+        return success_response({'enabled': enabled}, '获取成功')
+    except Exception as e:
+        return error_response(f'获取会员订阅开关失败: {str(e)}')
+
+@admin_bp.route('/membership-toggle', methods=['PUT'])
+@login_required
+def update_membership_toggle():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        body = request.get_json() or {}
+        raw = body.get('enabled')
+        enabled = False
+        if isinstance(raw, bool):
+            enabled = raw
+        elif isinstance(raw, (int, float)):
+            enabled = int(raw) != 0
+        elif isinstance(raw, str):
+            enabled = raw.strip().lower() in ['1', 'true', 'yes', 'y']
+        row = SystemSetting.query.filter_by(key='MEMBERSHIP_ENABLED').first()
+        if not row:
+            row = SystemSetting(key='MEMBERSHIP_ENABLED', value=('1' if enabled else '0'))
+            db.session.add(row)
+        else:
+            row.value = ('1' if enabled else '0')
+        db.session.commit()
+        try:
+            from flask import current_app
+            current_app.config['MEMBERSHIP_ENABLED'] = row.value
+        except Exception:
+            pass
+        return success_response({'enabled': enabled}, '已更新')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新会员订阅开关失败: {str(e)}')
+
+@admin_bp.route('/membership-limits', methods=['GET'])
+@login_required
+def get_membership_limits():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        keys = ['FREE_LIMIT_PERSONAL','FREE_LIMIT_TEAM','PRO_LIMIT_PERSONAL','TEAM_LIMIT_BASIC','TEAM_LIMIT_ADVANCED']
+        data = {}
+        for k in keys:
+            row = SystemSetting.query.filter_by(key=k).first()
+            val = str(row.value).strip() if row and row.value is not None else ''
+            data[k] = val
+        def to_int_default(v, d):
+            try:
+                return max(0, int(str(v).strip())) if str(v).strip() != '' else d
+            except Exception:
+                return d
+        return success_response({
+            'free_personal': to_int_default(data.get('FREE_LIMIT_PERSONAL'), 10),
+            'free_team': to_int_default(data.get('FREE_LIMIT_TEAM'), 20),
+            'pro_personal': to_int_default(data.get('PRO_LIMIT_PERSONAL'), 100),
+            'team_basic': to_int_default(data.get('TEAM_LIMIT_BASIC'), 1000),
+            'team_advanced': to_int_default(data.get('TEAM_LIMIT_ADVANCED'), 0)
+        })
+    except Exception as e:
+        return error_response(f'获取会员数量上限失败: {str(e)}')
+
+@admin_bp.route('/membership-limits', methods=['PUT'])
+@login_required
+def update_membership_limits():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        body = request.get_json() or {}
+        mapping = {
+            'free_personal': 'FREE_LIMIT_PERSONAL',
+            'free_team': 'FREE_LIMIT_TEAM',
+            'pro_personal': 'PRO_LIMIT_PERSONAL',
+            'team_basic': 'TEAM_LIMIT_BASIC',
+            'team_advanced': 'TEAM_LIMIT_ADVANCED'
+        }
+        for field, key in mapping.items():
+            if field in body:
+                raw = body.get(field)
+                val = None
+                try:
+                    val = str(int(raw))
+                except Exception:
+                    val = str(raw or '')
+                row = SystemSetting.query.filter_by(key=key).first()
+                if not row:
+                    row = SystemSetting(key=key, value=val)
+                    db.session.add(row)
+                else:
+                    row.value = val
+        db.session.commit()
+        try:
+            from flask import current_app
+            for _, key in mapping.items():
+                row = SystemSetting.query.filter_by(key=key).first()
+                if row:
+                    current_app.config[key] = row.value
+        except Exception:
+            pass
+        return success_response({'updated': True}, '已更新')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新会员数量上限失败: {str(e)}')

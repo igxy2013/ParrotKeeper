@@ -72,10 +72,10 @@
       </view>
     </view>
 
-    <!-- 分组管理 -->
+    <!-- 权限管理 -->
     <view class="card">
       <view class="card-header">
-        <text class="card-title">分组管理</text>
+        <text class="card-title">权限管理</text>
         <view class="card-actions">
           <button class="btn btn-secondary short" bindtap="showCreateGroup" disabled="{{!(isTeamOwner || isTeamAdmin)}}">新增分组</button>
         </view>
@@ -112,7 +112,7 @@
       <view class="card-content">
         <view class="btn-row">
           <button class="btn btn-secondary wide short" bindtap="confirmLeaveTeam" disabled="{{isTeamOwner}}">离开团队</button>
-          <button class="btn btn-danger wide short" bindtap="confirmDissolveTeam" wx:if="{{isTeamOwner}}">解散团队</button>
+          <button class="btn btn-danger wide short" bindtap="confirmDissolveTeam" wx:if="{{isSuperAdmin}}">解散团队</button>
         </view>
       </view>
     </view>

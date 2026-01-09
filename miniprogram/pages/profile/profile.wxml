@@ -97,7 +97,7 @@
   <!-- 功能卡片区域 -->
   <view class="function-cards" wx:if="{{isLogin}}">
     <!-- 会员中心卡片 -->
-    <view class="function-card member-card gold-theme" bindtap="navigateToMemberCenter">
+    <view wx:if="{{membershipEnabled}}" class="function-card member-card gold-theme" bindtap="navigateToMemberCenter">
       <view class="section-title">
          <image class="section-icon-img" src="/images/remix/trophy-line-orange.png" mode="aspectFit" />
          <text>会员中心</text>

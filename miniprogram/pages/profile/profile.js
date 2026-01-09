@@ -59,6 +59,7 @@ Page({
     showNotifications: false,
     notifications: [],
     unreadCount: 0,
+    membershipEnabled: true,
     // 未读反馈数量
     unreadFeedbackCount: 0,
     // 应用版本号（从全局注入，展示真实小程序版本）
@@ -707,7 +708,8 @@ Page({
       isPro: (adjustedTier === 'pro' || adjustedTier === 'team'),
       expireDate: this._computeExpireDate(baseUser, mode, adjustedTier),
       membershipName: this.computeMembershipName(baseUser),
-      tierClass
+      tierClass,
+      membershipEnabled: !!(typeof baseUser.membership_enabled !== 'undefined' ? baseUser.membership_enabled : true)
     });
 
     // 若已登录，则尝试从后端获取最新的用户信息（包含role等字段）
@@ -732,7 +734,8 @@ Page({
             points: points,
             isPro: (eff2 === 'pro' || eff2 === 'team'),
             expireDate: this._computeExpireDate(merged, mode2, eff2),
-            membershipName: this.computeMembershipName(merged)
+            membershipName: this.computeMembershipName(merged),
+            membershipEnabled: !!(typeof merged.membership_enabled !== 'undefined' ? merged.membership_enabled : true)
           });
         }
       } catch (e) {
