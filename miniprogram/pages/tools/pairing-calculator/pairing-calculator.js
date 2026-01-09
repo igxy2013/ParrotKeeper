@@ -221,6 +221,8 @@ Page({
     
     // 调试或提示
     unsupportedHint: ''
+    ,
+    showLimitModal: false
   },
 
   async onLoad(options) {
@@ -392,9 +394,19 @@ Page({
   },
 
   startCalculation() {
+    try {
+      const membershipEnabled = (app.getMembershipEnabled && app.getMembershipEnabled())
+      const tier = String(app.getEffectiveTier && app.getEffectiveTier() || 'free').toLowerCase()
+      if (membershipEnabled && tier === 'free') {
+        this.setData({ showLimitModal: true })
+        return
+      }
+    } catch(_) {}
     this.compute()
     this.setData({ hasCalculated: true })
   },
+  onLimitCancel() { this.setData({ showLimitModal: false }) },
+  onLimitUpgrade() { this.setData({ showLimitModal: false }); try { wx.navigateTo({ url: '/pages/member-center/member-center' }) } catch(_) {} },
 
   
   compute() {

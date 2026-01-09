@@ -425,7 +425,7 @@
             <el-input
               v-model="addForm.description"
               type="textarea"
-              rows="3"
+              :rows="3"
               placeholder="例如：清洗笼底、更换饮用水等"
             />
           </el-form-item>
@@ -455,7 +455,7 @@
             <el-input
               v-model="addForm.description"
               type="textarea"
-              rows="3"
+              :rows="3"
               placeholder="记录症状、治疗方案等"
             />
           </el-form-item>
@@ -506,7 +506,7 @@
           <el-input
             v-model="addForm.notes"
             type="textarea"
-            rows="3"
+            :rows="3"
             placeholder="可记录补充说明，例如喂食偏好、健康观察等"
           />
         </el-form-item>

@@ -277,6 +277,14 @@
         </div>
       </div>
     </el-drawer>
+    <LimitModal 
+      v-model="showLimitDialog" 
+      mode="info"
+      title="会员提示"
+      message="人工孵化为会员功能，升级后可用"
+      :show-redeem="false"
+      @upgrade="goToMembership"
+    />
   </div>
 </template>
 
@@ -286,6 +294,8 @@ import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api/axios'
 import { getCache, setCache } from '@/utils/cache'
+import { useAuthStore } from '@/stores/auth'
+import LimitModal from '@/components/LimitModal.vue'
 
 // --- State ---
 const loading = ref(false)
@@ -311,6 +321,21 @@ const calendarDate = ref(new Date())
 const calendarData = ref({}) // Stores turning_dates, candling_dates, etc.
 const logs = ref([])
 const advice = ref({})
+
+// 会员限制
+const authStore = useAuthStore()
+const showLimitDialog = ref(false)
+const goToMembership = () => { showLimitDialog.value = false; window.location.hash = '#/membership' }
+
+const ensureMembershipForIncubation = async () => {
+  const u = authStore.user || {}
+  const membershipEnabled = (u.membership_enabled !== false)
+  if (!membershipEnabled) return true
+  try { await (authStore.refreshProfile && authStore.refreshProfile()) } catch(_) {}
+  const tier = String((authStore.user || {}).subscription_tier || 'free').toLowerCase()
+  if (tier === 'free') { showLimitDialog.value = true; return false }
+  return true
+}
 const adviceLoading = ref(false)
 
 // Log Form State
@@ -491,7 +516,9 @@ const fetchSpecies = async () => {
   }
 }
 
-const openAddEgg = () => {
+const openAddEgg = async () => {
+  const ok = await ensureMembershipForIncubation()
+  if (!ok) return
   editingEgg.value = null
   eggForm.label = ''
   eggForm.laid_date = ''

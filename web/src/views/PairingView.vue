@@ -145,7 +145,7 @@
         </div>
 
         <!-- Results -->
-        <div v-if="hasCalculated" class="results-section">
+      <div v-if="hasCalculated" class="results-section">
           <div class="section-title">
             <h3>计算结果</h3>
             <span class="result-count">共 {{ results.length }} 种可能</span>
@@ -213,8 +213,16 @@
           <el-button type="primary" @click="savePairing">保存配对</el-button>
         </div>
       </div>
+      <LimitModal 
+        v-model="showLimitDialog" 
+        mode="info"
+        title="会员提示"
+        message="配对计算器为会员功能，升级后可用"
+        :show-redeem="false"
+        @upgrade="goToMembership"
+      />
       
-      <el-empty v-else description="请选择支持基因计算的品种" />
+      <el-empty v-if="!plumageConfig" description="请选择支持基因计算的品种" />
       </div>
 
       <div v-else class="records-tab">
@@ -258,6 +266,8 @@ import { getCache, setCache } from '@/utils/cache'
 import { simulatePairing, simulatePairingDetailed, analyzeAllOffsprings } from '@/utils/genetics'
 import { ElMessage } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+import LimitModal from '@/components/LimitModal.vue'
 
 const loading = ref(false)
 const speciesList = ref([])
@@ -286,6 +296,9 @@ const bestMotherSuggestion = ref(null)
 const PAIRING_CACHE_TTL = 60000
 
 const hasCalculated = ref(false)
+const showLimitDialog = ref(false)
+const authStore = useAuthStore()
+const goToMembership = () => { showLimitDialog.value = false; window.location.hash = '#/membership' }
 
 onMounted(async () => {
   await fetchSpecies()
@@ -516,7 +529,14 @@ const calculate = () => {
   computeSuggestions()
 }
 
-const startCalculation = () => {
+const startCalculation = async () => {
+  const u = authStore.user || {}
+  const membershipEnabled = (u.membership_enabled !== false)
+  if (membershipEnabled) {
+    try { await (authStore.refreshProfile && authStore.refreshProfile()) } catch(_) {}
+    const tier = String((authStore.user || {}).subscription_tier || 'free').toLowerCase()
+    if (tier === 'free') { showLimitDialog.value = true; return }
+  }
   calculate()
   hasCalculated.value = true
 }

@@ -15,6 +15,8 @@ Page({
     startDate: '',
     startTime: '00:00',
     formTouched: false
+    ,
+    showLimitModal: false
   },
 
   onShow() {
@@ -56,6 +58,14 @@ Page({
   },
 
   openAddEggModal() {
+    try {
+      const membershipEnabled = (app.getMembershipEnabled && app.getMembershipEnabled())
+      const tier = String(app.getEffectiveTier && app.getEffectiveTier() || 'free').toLowerCase()
+      if (membershipEnabled && tier === 'free') {
+        this.setData({ showLimitModal: true })
+        return
+      }
+    } catch(_) {}
     const today = new Date()
     const y = today.getFullYear()
     const m = String(today.getMonth()+1).padStart(2,'0')
@@ -72,6 +82,8 @@ Page({
       this.updateStartDateTime()
     }
   },
+  onLimitCancel() { this.setData({ showLimitModal: false }) },
+  onLimitUpgrade() { this.setData({ showLimitModal: false }); try { wx.navigateTo({ url: '/pages/member-center/member-center' }) } catch(_) {} },
   closeAddEggModal() { this.setData({ showAddEgg: false, editMode: false, currentEggId: null, startDate: '', startTime: '00:00', formTouched: false }) },
   noop() {},
 

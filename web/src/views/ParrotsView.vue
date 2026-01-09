@@ -208,23 +208,12 @@
       @edit="handleEditFromDetail"
     />
 
-    <el-dialog v-model="showLimitDialog" width="460px" class="limit-dialog" :show-close="false">
-      <template #header>
-        <div class="limit-header-gradient">
-          <div class="limit-header-row">
-            <span class="limit-title">数量限制</span>
-          </div>
-        </div>
-      </template>
-      <div class="limit-body">
-        <div class="limit-tip">已达到当前版本可添加的鹦鹉数量上限</div>
-        <div class="limit-count-pill">当前上限：{{ limitCount }} 只</div>
-        <div class="limit-hint">升级会员或切换高级团队后可继续添加</div>
-      </div>
-      <template #footer>
-        <el-button class="limit-btn" @click="showLimitDialog = false">我知道了</el-button>
-      </template>
-    </el-dialog>
+    <LimitModal 
+      v-model="showLimitDialog" 
+      :limit-count="limitCount" 
+      :show-redeem="false"
+      @upgrade="goToMembershipCenter"
+    />
   </div>
 </template>
 
@@ -236,6 +225,8 @@ import { getCache, setCache } from '@/utils/cache'
 import ParrotModal from '../components/ParrotModal.vue'
 import ParrotDetailModal from '../components/ParrotDetailModal.vue'
 import { useAuthStore } from '../stores/auth'
+import LimitModal from '../components/LimitModal.vue'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
 const parrots = ref([])
@@ -258,6 +249,12 @@ const viewMode = ref('card')
 const overviewStats = ref({})
 const showLimitDialog = ref(false)
 const limitCount = ref(0)
+const router = useRouter()
+
+const goToMembershipCenter = () => {
+  showLimitDialog.value = false
+  router.push('/membership')
+}
 
 const PARROTS_CACHE_KEY = 'parrots_list_default'
 const PARROTS_CACHE_TTL = 60000

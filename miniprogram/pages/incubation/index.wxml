@@ -59,7 +59,15 @@
     </block>
   </view>
 
-  
+  <limit-modal 
+    visible="{{showLimitModal}}" 
+    mode="info" 
+    title="会员提示" 
+    message="人工孵化为会员功能，升级后可用" 
+    showRedeem="false" 
+    bind:cancel="onLimitCancel" 
+    bind:upgrade="onLimitUpgrade" 
+  />
 
   <view class="modal-overlay" wx:if="{{showAddEgg}}" bindtap="closeAddEggModal"></view>
   <view class="modal" wx:if="{{showAddEgg}}" catchtap="noop">

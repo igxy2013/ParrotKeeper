@@ -166,7 +166,16 @@
             <view class="save-pair-btn-text">清空所有</view>
           </view>
         </view>
-      </block>
-    </block>
+  </block>
+  </block>
+  <limit-modal 
+    visible="{{showLimitModal}}" 
+    mode="info" 
+    title="会员提示" 
+    message="配对计算器为会员功能，升级后可用" 
+    showRedeem="false" 
+    bind:cancel="onLimitCancel" 
+    bind:upgrade="onLimitUpgrade" 
+  />
   </view>
 </view>

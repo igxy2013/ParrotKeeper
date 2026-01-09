@@ -154,6 +154,14 @@
 
       
     </div>
+    <LimitModal 
+      v-model="showLimitDialog" 
+      mode="info"
+      title="会员提示"
+      message="报表导出为会员功能，升级后可用"
+      :show-redeem="false"
+      @upgrade="goToMembership"
+    />
   </div>
 </template>
 
@@ -162,6 +170,8 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, Printer } from '@element-plus/icons-vue'
 import api from '@/api/axios'
+import { useAuthStore } from '@/stores/auth'
+import LimitModal from '@/components/LimitModal.vue'
 
 const reportTypes = {
   parrots: { title: '鹦鹉档案', desc: '导出所有鹦鹉的基本信息、脚环号、品种等数据。' },
@@ -189,6 +199,20 @@ const recordType = ref('')
 const cleaningType = ref('')
 const maleParrotId = ref('')
 const femaleParrotId = ref('')
+
+const showLimitDialog = ref(false)
+const authStore = useAuthStore()
+const goToMembership = () => { showLimitDialog.value = false; window.location.hash = '#/membership' }
+
+const ensureMembershipForExport = async () => {
+  const u = authStore.user || {}
+  const membershipEnabled = (u.membership_enabled !== false)
+  if (!membershipEnabled) return true
+  try { await (authStore.refreshProfile && authStore.refreshProfile()) } catch(_) {}
+  const tier = String((authStore.user || {}).subscription_tier || 'free').toLowerCase()
+  if (tier === 'free') { showLimitDialog.value = true; return false }
+  return true
+}
 
 // options lists
 const speciesList = ref([])
@@ -272,6 +296,8 @@ const handleFilterChange = () => {
 }
 
 const exportExcel = async () => {
+  const ok = await ensureMembershipForExport()
+  if (!ok) return
   const type = activeTab.value
   exportLoading.value = true
   try {
@@ -329,7 +355,9 @@ const exportExcel = async () => {
   }
 }
 
-const printReport = () => {
+const printReport = async () => {
+  const ok = await ensureMembershipForExport()
+  if (!ok) return
   if (!tableData.rows.length) {
     ElMessage.warning('暂无数据可打印')
     return
