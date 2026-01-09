@@ -65,6 +65,31 @@ class Config:
     REMOVE_BG_API_KEY = os.environ.get('REMOVE_BG_API_KEY')
     REMOVE_BG_API_URL = os.environ.get('REMOVE_BG_API_URL') or 'https://api.remove.bg/v1.0/removebg'
 
+    BACKUP_ENABLED = (os.environ.get('BACKUP_ENABLED') or 'false').lower() == 'true'
+    BACKUP_REMOTE_HOST = os.environ.get('BACKUP_REMOTE_HOST') or 'aibim.xyz'
+    try:
+        BACKUP_REMOTE_PORT = int(os.environ.get('BACKUP_REMOTE_PORT') or 3306)
+    except Exception:
+        BACKUP_REMOTE_PORT = 3306
+    BACKUP_REMOTE_USER = os.environ.get('BACKUP_REMOTE_USER')
+    BACKUP_REMOTE_PASSWORD = os.environ.get('BACKUP_REMOTE_PASSWORD')
+    BACKUP_REMOTE_DB_PREFIX = os.environ.get('BACKUP_REMOTE_DB_PREFIX') or f"{DB_NAME}_backup_"
+    try:
+        BACKUP_SCHEDULE_HOUR = int(os.environ.get('BACKUP_SCHEDULE_HOUR') or 3)
+    except Exception:
+        BACKUP_SCHEDULE_HOUR = 3
+    try:
+        BACKUP_RETENTION_DAYS = int(os.environ.get('BACKUP_RETENTION_DAYS') or 7)
+    except Exception:
+        BACKUP_RETENTION_DAYS = 7
+
+    SYNC_ENABLED = (os.environ.get('SYNC_ENABLED') or 'false').lower() == 'true'
+    try:
+        SYNC_SCHEDULE_MINUTE = int(os.environ.get('SYNC_SCHEDULE_MINUTE') or 0)
+    except Exception:
+        SYNC_SCHEDULE_MINUTE = 0
+    BACKUP_REMOTE_DB_NAME = os.environ.get('BACKUP_REMOTE_DB_NAME') or DB_NAME
+
 class DevelopmentConfig(Config):
     DEBUG = True
 

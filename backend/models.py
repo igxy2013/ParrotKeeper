@@ -596,3 +596,15 @@ class ParrotTransferCode(db.Model):
     parrot = db.relationship('Parrot', backref='transfer_codes', lazy=True)
     creator = db.relationship('User', foreign_keys=[created_by_user_id], backref='created_transfer_codes', lazy=True)
     used_by = db.relationship('User', foreign_keys=[used_by_user_id], backref='used_transfer_codes', lazy=True)
+
+class BackupLog(db.Model):
+    __tablename__ = 'backup_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    op_type = db.Column(db.Enum('backup', 'sync'), nullable=False)
+    status = db.Column(db.Enum('running', 'success', 'failed'), nullable=False, default='running')
+    target_db = db.Column(db.String(255))
+    message = db.Column(db.Text)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    finished_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

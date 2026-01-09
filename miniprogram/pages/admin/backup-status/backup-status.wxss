@@ -1,0 +1,16 @@
+.no-access{background:#fff;border-radius:8px;padding:16px;color:#909399}
+.card{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}
+.section-title{font-weight:600;color:#303133;margin-bottom:8px}
+.stat-grid{display:flex;gap:12px}
+.stat-item{flex:1}
+.label{color:#909399;font-size:12px}
+.value{font-size:16px;font-weight:600}
+.desc{color:#606266;font-size:12px}
+.actions{display:flex;gap:8px;margin-top:8px}
+.form-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.text-input{border:1px solid #ebeef5;border-radius:6px;padding:6px}
+.log-list{display:flex;flex-direction:column;gap:8px}
+.log-item{border:1px solid #ebeef5;border-radius:8px;padding:8px}
+.row1{display:flex;gap:8px;color:#606266}
+.row2{color:#606266}
+.row3{display:flex;gap:8px;color:#909399;font-size:12px}

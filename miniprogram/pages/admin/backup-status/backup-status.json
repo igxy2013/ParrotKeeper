@@ -1,0 +1,7 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "备份与同步",
+  "usingComponents": {
+    "app-header": "/components/app-header/app-header"
+  }
+}

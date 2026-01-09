@@ -4,6 +4,8 @@ import json
 from team_models import TeamMember, Team
 from sqlalchemy import func
 from utils import login_required, success_response, error_response
+from backup import backup_database_to_remote, sync_database_to_remote
+from models import BackupLog, SystemSetting
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
@@ -194,6 +196,149 @@ def update_announcement(ann_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'更新公告失败: {str(e)}')
+
+@admin_bp.route('/backup/logs', methods=['GET'])
+@login_required
+def list_backup_logs():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        try:
+            limit = int(request.args.get('limit', '100'))
+        except Exception:
+            limit = 100
+        items = BackupLog.query.order_by(BackupLog.started_at.desc()).limit(limit).all()
+        data = []
+        for it in items:
+            data.append({
+                'id': it.id,
+                'op_type': it.op_type,
+                'status': it.status,
+                'target_db': it.target_db,
+                'message': it.message or '',
+                'started_at': it.started_at.isoformat() if it.started_at else None,
+                'finished_at': it.finished_at.isoformat() if it.finished_at else None
+            })
+        return success_response({'logs': data})
+    except Exception as e:
+        return error_response(f'获取备份日志失败: {str(e)}')
+
+@admin_bp.route('/backup/status', methods=['GET'])
+@login_required
+def backup_status():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        last_backup = BackupLog.query.filter_by(op_type='backup').order_by(BackupLog.started_at.desc()).first()
+        last_sync = BackupLog.query.filter_by(op_type='sync').order_by(BackupLog.started_at.desc()).first()
+        row = SystemSetting.query.filter_by(key='REMOTE_SYNC_LAST_TS').first()
+        sync_ts = row.value if row and row.value else None
+        return success_response({
+            'last_backup': {
+                'status': (last_backup.status if last_backup else None),
+                'time': (last_backup.finished_at.isoformat() if last_backup and last_backup.finished_at else None),
+                'target_db': (last_backup.target_db if last_backup else None)
+            },
+            'last_sync': {
+                'status': (last_sync.status if last_sync else None),
+                'time': (last_sync.finished_at.isoformat() if last_sync and last_sync.finished_at else None)
+            },
+            'last_sync_ts': sync_ts
+        })
+    except Exception as e:
+        return error_response(f'获取备份状态失败: {str(e)}')
+
+@admin_bp.route('/backup/run', methods=['POST'])
+@login_required
+def run_backup():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        backup_database_to_remote()
+        return success_response({}, '已触发备份')
+    except Exception as e:
+        return error_response(f'触发备份失败: {str(e)}')
+
+@admin_bp.route('/backup/sync', methods=['POST'])
+@login_required
+def run_sync():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        sync_database_to_remote()
+        return success_response({}, '已触发同步')
+    except Exception as e:
+        return error_response(f'触发同步失败: {str(e)}')
+
+@admin_bp.route('/backup/config', methods=['GET'])
+@login_required
+def get_backup_config():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        def get(k):
+            r = SystemSetting.query.filter_by(key=k).first()
+            return (r.value if r and r.value is not None else None)
+        data = {
+            'backup_enabled': bool(str(get('BACKUP_ENABLED') or '').strip().lower() in ['1','true','yes','y','on']),
+            'sync_enabled': bool(str(get('SYNC_ENABLED') or '').strip().lower() in ['1','true','yes','y','on']),
+            'remote_host': get('BACKUP_REMOTE_HOST'),
+            'remote_port': int(get('BACKUP_REMOTE_PORT') or 3306),
+            'remote_user': get('BACKUP_REMOTE_USER'),
+            'remote_db_name': get('BACKUP_REMOTE_DB_NAME') or get('DB_NAME'),
+            'remote_db_prefix': get('BACKUP_REMOTE_DB_PREFIX'),
+            'backup_schedule_hour': int(get('BACKUP_SCHEDULE_HOUR') or 3),
+            'sync_schedule_minute': int(get('SYNC_SCHEDULE_MINUTE') or 0),
+            'retention_days': int(get('BACKUP_RETENTION_DAYS') or 7)
+        }
+        return success_response(data)
+    except Exception as e:
+        return error_response(f'获取备份配置失败: {str(e)}')
+
+@admin_bp.route('/backup/config', methods=['PUT'])
+@login_required
+def update_backup_config():
+    try:
+        user = request.current_user
+        if not user or user.role != 'super_admin':
+            return error_response('无权限', 403)
+        body = request.get_json() or {}
+        pairs = {
+            'BACKUP_ENABLED': body.get('backup_enabled'),
+            'SYNC_ENABLED': body.get('sync_enabled'),
+            'BACKUP_REMOTE_HOST': body.get('remote_host'),
+            'BACKUP_REMOTE_PORT': body.get('remote_port'),
+            'BACKUP_REMOTE_USER': body.get('remote_user'),
+            'BACKUP_REMOTE_DB_NAME': body.get('remote_db_name'),
+            'BACKUP_REMOTE_DB_PREFIX': body.get('remote_db_prefix'),
+            'BACKUP_SCHEDULE_HOUR': body.get('backup_schedule_hour'),
+            'SYNC_SCHEDULE_MINUTE': body.get('sync_schedule_minute'),
+            'BACKUP_RETENTION_DAYS': body.get('retention_days')
+        }
+        def set_setting(k, v):
+            if v is None:
+                return
+            row = SystemSetting.query.filter_by(key=k).first()
+            if not row:
+                row = SystemSetting(key=k, value=str(v))
+                db.session.add(row)
+            else:
+                row.value = str(v)
+        for k, v in pairs.items():
+            set_setting(k, v)
+        pwd = body.get('remote_password')
+        if isinstance(pwd, str) and pwd.strip() != '':
+            set_setting('BACKUP_REMOTE_PASSWORD', pwd)
+        db.session.commit()
+        return success_response({}, '配置已更新')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新备份配置失败: {str(e)}')
 
 @admin_bp.route('/announcements/<int:ann_id>', methods=['DELETE'])
 @login_required

@@ -34,6 +34,8 @@ from team_mode_utils import (
     get_accessible_cleaning_record_ids_by_mode,
     get_accessible_breeding_record_ids_by_mode
 )
+from backup import backup_database_to_remote
+from backup import sync_database_to_remote
 
 def create_app(config_name=None):
     """应用工厂函数"""
@@ -562,6 +564,30 @@ def init_scheduler(app):
         # 每分钟执行一次，检测当前分钟是否有到点提醒与公告
         scheduler.add_job(push_due_reminders, 'cron', second=0)
         scheduler.add_job(publish_scheduled_announcements, 'cron', second=10)
+        def run_backup():
+            from models import SystemSetting
+            try:
+                row = SystemSetting.query.filter_by(key='BACKUP_SCHEDULE_HOUR').first()
+                h = int(str(row.value).strip()) if row and row.value is not None else 3
+            except Exception:
+                h = 3
+            now = datetime.now()
+            if now.hour == h:
+                with app.app_context():
+                    backup_database_to_remote()
+        scheduler.add_job(run_backup, 'cron', minute=0, second=20)
+        def run_sync():
+            from models import SystemSetting
+            try:
+                row = SystemSetting.query.filter_by(key='SYNC_SCHEDULE_MINUTE').first()
+                m = int(str(row.value).strip()) if row and row.value is not None else 0
+            except Exception:
+                m = 0
+            now = datetime.now()
+            if now.minute == m:
+                with app.app_context():
+                    sync_database_to_remote()
+        scheduler.add_job(run_sync, 'cron', second=40)
         scheduler.start()
         print('APScheduler 已启动')
     except Exception as e:

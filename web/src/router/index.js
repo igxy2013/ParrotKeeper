@@ -23,6 +23,7 @@ import AdminApiConfigsView from '../views/admin/AdminApiConfigsView.vue'
 import AdminInvitationCodesView from '../views/admin/AdminInvitationCodesView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
 import AdminResetRequestsView from '../views/admin/AdminResetRequestsView.vue'
+import AdminBackupView from '../views/admin/AdminBackupView.vue'
 import SettingsNotificationView from '../views/settings/SettingsNotificationView.vue'
 import SettingsCategoryView from '../views/settings/SettingsCategoryView.vue'
 import SettingsFeedTypeView from '../views/settings/SettingsFeedTypeView.vue'
@@ -143,6 +144,7 @@ const router = createRouter({
           name: 'admin',
           component: AdminView
         },
+        { path: 'admin/backup', name: 'admin-backup', component: AdminBackupView },
         { path: 'admin/feedbacks', name: 'admin-feedbacks', component: AdminFeedbacksView },
         { path: 'admin/incubation-suggestions', name: 'admin-incubation-suggestions', component: AdminIncubationSuggestionsView },
         { path: 'admin/market-prices', name: 'admin-market-prices', component: AdminMarketPricesView },

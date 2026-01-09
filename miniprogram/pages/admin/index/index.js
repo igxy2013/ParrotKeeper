@@ -86,5 +86,13 @@ Page({
       return
     }
     wx.navigateTo({ url: '/pages/admin/users-management/users-management' })
+  },
+  goAdminBackupStatus() {
+    const userInfo = (app.globalData && app.globalData.userInfo) || {}
+    if (String(userInfo.role || '') !== 'super_admin') {
+      app.showError && app.showError('仅超级管理员可进入')
+      return
+    }
+    wx.navigateTo({ url: '/pages/admin/backup-status/backup-status' })
   }
 })

@@ -1,0 +1,68 @@
+<view class="page-container">
+  <app-header title="备份与同步" subtitle="查看状态与日志" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{!isSuperAdmin}}">
+      <view class="no-access">仅超级管理员可访问该页面</view>
+    </block>
+    <block wx:else>
+      <view class="card">
+        <view class="section-title"><text>服务器配置</text></view>
+        <view class="form-row"><view class="label">启用每日备份</view><switch checked="{{form.backup_enabled}}" bindchange="onToggleBackup" /></view>
+        <view class="form-row"><view class="label">启用增量同步</view><switch checked="{{form.sync_enabled}}" bindchange="onToggleSync" /></view>
+        <view class="form-row"><view class="label">远程主机</view><input class="text-input" placeholder="aibim.xyz" value="{{form.remote_host}}" bindinput="onInputHost" /></view>
+        <view class="form-row"><view class="label">远程端口</view><input class="text-input" type="number" placeholder="3306" value="{{form.remote_port}}" bindinput="onInputPort" /></view>
+        <view class="form-row"><view class="label">远程用户</view><input class="text-input" value="{{form.remote_user}}" bindinput="onInputUser" /></view>
+        <view class="form-row"><view class="label">远程密码</view><input class="text-input" password="true" placeholder="不展示原值，请重新填写以更新" value="{{form.remote_password}}" bindinput="onInputPwd" /></view>
+        <view class="form-row"><view class="label">目标库名</view><input class="text-input" value="{{form.remote_db_name}}" bindinput="onInputDb" /></view>
+        <view class="form-row"><view class="label">备份库前缀</view><input class="text-input" value="{{form.remote_db_prefix}}" bindinput="onInputPrefix" /></view>
+        <view class="form-row"><view class="label">每日备份小时</view><input class="text-input" type="number" value="{{form.backup_schedule_hour}}" bindinput="onInputBackupHour" /></view>
+        <view class="form-row"><view class="label">同步触发分钟</view><input class="text-input" type="number" value="{{form.sync_schedule_minute}}" bindinput="onInputSyncMinute" /></view>
+        <view class="form-row"><view class="label">保留天数</view><input class="text-input" type="number" value="{{form.retention_days}}" bindinput="onInputRetention" /></view>
+        <view class="actions"><button class="btn-primary" size="mini" loading="{{saving}}" bindtap="saveConfig">保存配置</button><button class="btn-secondary" size="mini" bindtap="loadConfig">重新加载</button></view>
+      </view>
+      <view class="card">
+        <view class="section-title"><text>当前状态</text></view>
+        <view class="stat-grid">
+          <view class="stat-item">
+            <view class="label">最近备份</view>
+            <view class="value">{{status.last_backup.time || '—'}}</view>
+            <view class="desc">{{status.last_backup.status || '—'}} · {{status.last_backup.target_db || ''}}</view>
+          </view>
+          <view class="stat-item">
+            <view class="label">最近同步</view>
+            <view class="value">{{status.last_sync.time || '—'}}</view>
+            <view class="desc">{{status.last_sync.status || '—'}}</view>
+          </view>
+        </view>
+        <view class="actions">
+          <button class="btn-primary" size="mini" loading="{{runningBackup}}" bindtap="triggerBackup">立即备份</button>
+          <button class="btn-secondary" size="mini" loading="{{runningSync}}" bindtap="triggerSync">立即同步</button>
+        </view>
+      </view>
+      <view class="card">
+        <view class="section-title"><text>操作日志</text></view>
+        <block wx:if="{{loading}}"><view class="loading">加载中...</view></block>
+        <block wx:else>
+          <view class="log-list">
+            <block wx:for="{{logs}}" wx:key="id">
+              <view class="log-item">
+                <view class="row1">
+                  <text class="op">{{item.op_type}}</text>
+                  <text class="status">{{item.status}}</text>
+                  <text class="db">{{item.target_db}}</text>
+                </view>
+                <view class="row2">
+                  <text class="msg">{{item.message||''}}</text>
+                </view>
+                <view class="row3">
+                  <text class="time">{{item.started_at||''}}</text>
+                  <text class="time">{{item.finished_at||''}}</text>
+                </view>
+              </view>
+            </block>
+          </view>
+        </block>
+      </view>
+    </block>
+  </view>
+</view>
