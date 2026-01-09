@@ -96,6 +96,7 @@ Page({
           role_display: m.role === 'owner' ? '创建者' : (m.role === 'admin' ? '管理员' : '成员')
         }))
         this.setData({ members })
+        this.recomputeGroupsWithMembers()
       }
     } catch (e) {
       console.warn('加载成员(含分组)失败:', e)
@@ -109,10 +110,25 @@ Page({
       const res = await app.request({ url: `/api/teams/${teamId}/groups`, method: 'GET' })
       if (res && res.success) {
         this.setData({ groups: res.data || [] })
+        this.recomputeGroupsWithMembers()
       }
     } catch (e) {
       console.warn('加载分组失败:', e)
     }
+  },
+
+  recomputeGroupsWithMembers() {
+    const groups = this.data.groups || []
+    const members = this.data.members || []
+    const enhanced = groups.map(g => {
+      const list = members.filter(m => m.group_id && String(m.group_id) === String(g.id))
+      return {
+        ...g,
+        members_count: list.length,
+        members_preview: list.slice(0, 6)
+      }
+    })
+    this.setData({ groups: enhanced })
   },
 
   async showGroupPermissions(e) {

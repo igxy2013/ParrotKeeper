@@ -91,6 +91,12 @@
 .group-info .meta { font-size: 22rpx; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .group-actions { display: flex; gap: 12rpx; flex-shrink: 0; }
 
+.group-members-row { display:flex; align-items:center; gap: 12rpx; flex-wrap: wrap; }
+.members-chips { display:flex; flex-wrap:wrap; gap: 8rpx; }
+.member-chip { display:flex; align-items:center; gap:6rpx; background:#f3f4f6; color:#374151; border-radius:999rpx; padding:6rpx 12rpx; }
+.chip-avatar { width: 32rpx; height: 32rpx; border-radius: 50%; background: #e5e7eb; }
+.chip-name { font-size: 22rpx; }
+
 /* 对齐 parrot-modal 弹窗样式 */
 .modal-overlay {
   position: fixed;

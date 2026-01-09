@@ -87,6 +87,15 @@
               <text class="name">{{item.name}}</text>
               <text class="desc">{{item.description || '—'}}</text>
               <text class="meta">权限：{{item.permission_scope === 'team' ? '查看/编辑团队所有信息' : '查看/编辑本组所有信息'}}</text>
+              <view class="group-members-row">
+                <text class="meta">成员：{{item.members_count || 0}}</text>
+                <view class="members-chips" wx:if="{{item.members_preview && item.members_preview.length}}">
+                  <view class="member-chip" wx:for="{{item.members_preview}}" wx:key="user_id">
+                    <image class="chip-avatar" src="{{item.avatar_url || '/images/remix/user-line.png'}}" mode="aspectFill" />
+                    <text class="chip-name">{{item.nickname || '未命名'}}</text>
+                  </view>
+                </view>
+              </view>
           </view>
           <view class="group-actions">
               <button class="icon-btn icon-edit small" bindtap="showEditGroup" data-group-id="{{item.id}}" disabled="{{!(isTeamOwner || isTeamAdmin)}}">

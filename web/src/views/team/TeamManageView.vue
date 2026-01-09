@@ -72,6 +72,17 @@
                 <el-tag size="small">{{ scope.row.permission_scope === 'team' ? '团队所有信息' : '本组信息' }}</el-tag>
               </template>
             </el-table-column>
+            <el-table-column label="成员" min-width="220">
+              <template #default="scope">
+                <div class="group-members-list">
+                  <div v-for="m in getGroupMembers(scope.row.id)" :key="m.id" class="member-tag">
+                    <el-avatar :size="20" :src="m.avatar_url || '/profile.png'" />
+                    <span class="nickname">{{ m.nickname || '未命名' }}</span>
+                  </div>
+                  <span v-if="getGroupMembers(scope.row.id).length === 0" class="no-members">暂无成员</span>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column label="操作" width="220">
               <template #default="scope">
                 <el-button size="small" :disabled="!canManageGroup" @click="openEditGroup(scope.row)">编辑</el-button>
@@ -89,6 +100,16 @@
     </div>
 
     <el-dialog v-model="showEdit" title="编辑团队" width="500px">
+      <div class="avatar-edit">
+        <div class="avatar-wrapper" @click="triggerTeamAvatarUpload">
+          <img v-if="edit.avatar_url" :src="edit.avatar_url" class="avatar-img" />
+          <div v-else class="upload-area">
+            <span class="upload-text">点击上传头像</span>
+          </div>
+        </div>
+        <div class="photo-tip">点击图片更换</div>
+        <input ref="teamAvatarInput" type="file" accept="image/*" class="hidden-input" @change="handleTeamAvatarChange" />
+      </div>
       <el-form :model="edit" label-width="90px">
         <el-form-item label="团队名称"><el-input v-model="edit.name" /></el-form-item>
         <el-form-item label="团队描述"><el-input type="textarea" v-model="edit.description" /></el-form-item>
@@ -107,6 +128,16 @@
           <el-select v-model="groupForm.permission_scope" style="width:200px">
             <el-option label="查看/编辑本组所有信息" value="group" />
             <el-option label="查看/编辑团队所有信息" value="team" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="分组成员">
+          <el-select v-model="selectedGroupMemberIds" multiple filterable placeholder="选择成员加入该分组" style="width:100%">
+            <el-option v-for="m in groupMemberCandidates" :key="m.id" :label="m.nickname || ('用户'+m.id)" :value="m.id">
+              <div class="user-cell">
+                <el-avatar :size="20" :src="m.avatar_url || '/profile.png'" />
+                <span class="nickname">{{ m.nickname || '未命名' }}</span>
+              </div>
+            </el-option>
           </el-select>
         </el-form-item>
         <div class="perm-section">
@@ -145,7 +176,7 @@ const members = ref([])
 const groups = ref([])
 const memberGroupMap = ref({})
 const showEdit = ref(false)
-const edit = ref({ name: '', description: '' })
+const edit = ref({ name: '', description: '', avatar_url: '' })
 const isAdmin = computed(() => String((team.value || {}).user_role || (team.value || {}).role || '') === 'admin')
 const canManageGroup = computed(() => isOwner.value || isAdmin.value)
 
@@ -155,6 +186,14 @@ const groupDialogTitle = computed(() => groupDialogMode.value === 'create' ? '�
 const groupForm = ref({ id: null, name: '', description: '', permission_scope: 'group' })
 const permissionCatalog = ref([])
 const permissionSelections = ref({})
+const selectedGroupMemberIds = ref([])
+const originalGroupMemberIds = ref([])
+const groupMemberCandidates = computed(() => {
+  const gid = groupForm.value && groupForm.value.id
+  const list = Array.isArray(members.value) ? members.value : []
+  if (groupDialogMode.value === 'create') return list.filter(m => !m.group_id)
+  return list.filter(m => !m.group_id || String(m.group_id) === String(gid))
+})
 
 const authStore = useAuthStore()
 const isSuperAdmin = computed(() => String((authStore.user || {}).role || 'user') === 'super_admin')
@@ -178,16 +217,26 @@ const fetchCurrent = async () => {
       team.value = r.data.data
       edit.value.name = team.value.name || ''
       edit.value.description = team.value.description || ''
+      edit.value.avatar_url = team.value.avatar_url || ''
       const id = team.value.id
       if (id) {
-        const d = await api.get(`/teams/${id}`)
-        if (d.data && d.data.success) {
-          members.value = (d.data.data.members || []).map(m => ({
-            ...m,
-            role: m.role
+        const membersRes = await api.get(`/teams/${id}/members`)
+        if (membersRes.data && membersRes.data.success) {
+          members.value = (membersRes.data.data || []).map(m => ({
+            id: m.id,
+            nickname: m.nickname,
+            avatar_url: m.avatar_url,
+            role: m.role,
+            group_id: m.group_id,
+            group_name: m.group_name
           }))
           memberGroupMap.value = {}
           members.value.forEach(m => { memberGroupMap.value[m.id] = m.group_id || null })
+        }
+        const d = await api.get(`/teams/${id}`)
+        if (d.data && d.data.success) {
+          team.value = Object.assign({}, team.value || {}, d.data.data || {})
+          edit.value.avatar_url = team.value.avatar_url || edit.value.avatar_url
         }
         await fetchGroups()
         await fetchPermissionCatalog()
@@ -227,7 +276,7 @@ const confirmUpdate = async () => {
   const id = team.value && team.value.id
   if (!id || !isOwner.value) return
   try {
-    const r = await api.put(`/teams/${id}`, { name: edit.value.name, description: edit.value.description })
+    const r = await api.put(`/teams/${id}`, { name: edit.value.name, description: edit.value.description, avatar_url: edit.value.avatar_url })
     if (r.data && r.data.success) { ElMessage.success('已更新'); showEdit.value = false; fetchCurrent() } else { ElMessage.error((r.data && r.data.message) || '更新失败') }
   } catch (_) { ElMessage.error('更新失败') }
 }
@@ -277,6 +326,31 @@ const dissolveTeam = async () => {
 
 onMounted(fetchCurrent)
 
+const teamAvatarInput = ref(null)
+const triggerTeamAvatarUpload = () => { if (teamAvatarInput.value) teamAvatarInput.value.click() }
+const handleTeamAvatarChange = async (e) => {
+  const files = e.target && e.target.files
+  if (!files || !files[0]) return
+  const file = files[0]
+  const fd = new FormData()
+  fd.append('file', file)
+  fd.append('category', 'teams')
+  try {
+    const res = await api.post('/upload/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    if (res.data && res.data.success && res.data.data && res.data.data.url) {
+      edit.value.avatar_url = '/uploads/' + res.data.data.url
+      ElMessage.success('头像上传成功')
+    } else {
+      ElMessage.error((res.data && res.data.message) || '上传失败')
+    }
+  } catch (_) { ElMessage.error('上传失败') } finally { if (teamAvatarInput.value) teamAvatarInput.value.value = '' }
+}
+
+const getGroupMembers = (gid) => {
+  const list = Array.isArray(members.value) ? members.value : []
+  return list.filter(m => String(m.group_id || '') === String(gid))
+}
+
 const buildDefaultSelections = (scope) => {
   const result = {}
   const list = Array.isArray(permissionCatalog.value) ? permissionCatalog.value : []
@@ -293,6 +367,8 @@ const openCreateGroup = () => {
   showGroupDialog.value = true
   groupForm.value = { id: null, name: '', description: '', permission_scope: 'group' }
   permissionSelections.value = buildDefaultSelections('group')
+  selectedGroupMemberIds.value = []
+  originalGroupMemberIds.value = []
 }
 
 const openEditGroup = (g) => {
@@ -301,6 +377,9 @@ const openEditGroup = (g) => {
   groupForm.value = { id: g.id, name: g.name || '', description: g.description || '', permission_scope: g.permission_scope || 'group' }
   const perms = g.permissions || {}
   permissionSelections.value = Object.assign(buildDefaultSelections(groupForm.value.permission_scope), perms)
+  const selected = (Array.isArray(members.value) ? members.value : []).filter(m => m.group_id && String(m.group_id) === String(g.id))
+  selectedGroupMemberIds.value = selected.map(x => x.id)
+  originalGroupMemberIds.value = selected.map(x => x.id)
 }
 
 const saveGroup = async () => {
@@ -312,7 +391,23 @@ const saveGroup = async () => {
     let r
     if (groupDialogMode.value === 'create') r = await api.post(`/teams/${id}/groups`, payload)
     else r = await api.put(`/teams/${id}/groups/${groupForm.value.id}`, payload)
-    if (r.data && r.data.success) { ElMessage.success('已保存'); showGroupDialog.value = false; await fetchGroups() } else { ElMessage.error((r.data && r.data.message) || '保存失败') }
+    if (r.data && r.data.success) {
+      const gid = groupDialogMode.value === 'create' ? (r.data.data && r.data.data.id) : groupForm.value.id
+      const selectedIds = Array.isArray(selectedGroupMemberIds.value) ? selectedGroupMemberIds.value : []
+      for (const uid of selectedIds) {
+        try { await api.put(`/teams/${id}/members/${uid}/group`, { group_id: gid }) } catch (e) {}
+      }
+      if (groupDialogMode.value === 'edit') {
+        const toRemove = (Array.isArray(originalGroupMemberIds.value) ? originalGroupMemberIds.value : []).filter(uid => !selectedIds.includes(uid))
+        for (const uid of toRemove) {
+          try { await api.put(`/teams/${id}/members/${uid}/group`, { group_id: null }) } catch (e) {}
+        }
+      }
+      ElMessage.success('已保存')
+      showGroupDialog.value = false
+      await fetchGroups()
+      await fetchCurrent()
+    } else { ElMessage.error((r.data && r.data.message) || '保存失败') }
   } catch (_) { ElMessage.error('保存失败') }
 }
 
@@ -350,4 +445,20 @@ const deleteGroup = async (g) => {
 .perm-group { min-width:240px; }
 .perm-group-title { font-weight:500; margin-bottom:6px; }
 .perm-items { display:flex; flex-direction:column; gap:6px; }
+.group-members-cell { display:flex; align-items:center; gap:8px; color: #303133; font-weight: 500; }
+.member-list { display:flex; flex-direction:column; gap:6px; min-width:220px; }
+.member-item { display:flex; align-items:center; gap:8px; }
+.member-list .nickname { color:#333333; font-weight:500; font-size:14px; }
+.member-list, .member-item { background: transparent; }
+.group-members-list { display:flex; flex-wrap:wrap; gap:8px; }
+.member-tag { display:flex; align-items:center; gap:6px; background-color:#f0f2f5; padding:4px 8px 4px 4px; border-radius:14px; border:1px solid #dcdfe6; }
+.member-tag .nickname { font-size:12px; color:#303133; }
+.no-members { color:#909399; font-size:12px; }
+.avatar-edit { display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:8px; }
+.avatar-wrapper { width:120px; height:120px; border-radius:12px; overflow:hidden; border:2px dashed #d1d5db; background:#f3f4f6; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.avatar-img { width:100%; height:100%; object-fit:cover; }
+.upload-area { display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9ca3af; }
+.upload-text { font-size:12px; }
+.photo-tip { text-align:center; font-size:12px; color:#9ca3af; }
+.hidden-input { display:none; }
 </style>

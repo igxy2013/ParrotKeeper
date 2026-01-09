@@ -74,6 +74,13 @@ const fetchCurrent = async () => {
     const r = await api.get('/teams/current')
     if (r.data && r.data.success) {
       team.value = r.data.data
+      const id = team.value && team.value.id
+      if (id) {
+        const d = await api.get(`/teams/${id}`)
+        if (d.data && d.data.success) {
+          team.value = Object.assign({}, team.value || {}, d.data.data || {})
+        }
+      }
     } else {
       team.value = null
     }
