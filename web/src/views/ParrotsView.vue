@@ -626,7 +626,7 @@ watch([selectedSpeciesId, selectedGender, selectedStatus, selectedSort], () => {
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: bold;
   color: #303133;
 }

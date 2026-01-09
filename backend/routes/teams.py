@@ -179,6 +179,7 @@ def get_user_teams():
                     'id': team.id,
                     'name': team.name,
                     'description': team.description,
+                    'avatar_url': team.avatar_url,
                     'invite_code': team.invite_code,  # 添加邀请码字段
                     'role': member.role,
                     'member_count': TeamMember.query.filter_by(team_id=team.id, is_active=True).count(),
@@ -201,6 +202,18 @@ def create_team():
     """创建团队"""
     try:
         user = request.current_user
+        
+        # 检查是否已创建过活跃团队
+        existing_owned_team = TeamMember.query.join(Team).filter(
+            TeamMember.user_id == user.id,
+            TeamMember.role == 'owner',
+            TeamMember.is_active == True,
+            Team.is_active == True
+        ).first()
+        
+        if existing_owned_team:
+            return error_response('每位用户只能创建一个团队')
+
         data = request.get_json()
         
         if not data.get('name'):

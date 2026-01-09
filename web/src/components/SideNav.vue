@@ -193,6 +193,8 @@ const isChildActive = (item) => {
   return item.children.some(child => child.path === route.path)
 }
 
+const hasTeam = ref(false)
+
 const menuItems = computed(() => [
   { path: '/', label: '概览', icon: Odometer },
   { path: '/parrots', label: '我的鹦鹉', icon: Files }, 
@@ -211,8 +213,10 @@ const menuItems = computed(() => [
       icon: OfficeBuilding,
       children: [
         { path: '/team/current', label: '当前团队', icon: User },
-        { path: '/team/join', label: '加入团队', icon: Connection },
-        { path: '/team/create', label: '创建团队', icon: Edit },
+        ...(hasTeam.value ? [] : [
+          { path: '/team/join', label: '加入团队', icon: Connection },
+          { path: '/team/create', label: '创建团队', icon: Edit }
+        ]),
         { path: '/team/manage', label: '团队管理', icon: Setting }
       ]
     }
@@ -264,6 +268,13 @@ onMounted(async () => {
   } catch (e) {
     console.error('Failed to fetch announcements count', e)
   }
+  try {
+    const r2 = await api.get('/teams')
+    if (r2.data && r2.data.success) {
+      const list = r2.data.data || []
+      hasTeam.value = list.length > 0
+    }
+  } catch (_) {}
 })
 </script>
 
