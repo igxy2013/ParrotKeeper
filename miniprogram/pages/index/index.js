@@ -238,12 +238,14 @@ Page({
     // 无论是否登录都可以浏览首页，但只有登录用户才加载个人数据
     if (isLogin) {
       this.syncServerReminderSettings().then(()=>{}).catch(()=>{})
-      // 检查是否需要刷新数据（模式切换后）
       if (app.globalData.needRefresh) {
-        console.log('检测到needRefresh标志，刷新首页数据');
-        app.globalData.needRefresh = false; // 重置标志
+        app.globalData.needRefresh = false
+        this._forceRefresh = true
       }
-      this.loadData()
+      const p = this.loadData()
+      if (p && typeof p.finally === 'function') {
+        p.finally(() => { this._forceRefresh = false })
+      }
       try { this.prefetchHomePagesOnce() } catch (_) {}
     }
 

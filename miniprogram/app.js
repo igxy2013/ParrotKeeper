@@ -7,7 +7,7 @@ App({
     userInfo: null,
     openid: null,
     // 动态设置，默认正式环境，开发工具中自动切换为本地
-    baseUrl: 'https://api.acbim.cn', // 后端API地址（默认正式环境）
+    baseUrl: 'https://parrot.acbim.cn', // 后端API地址（默认正式环境）
     //baseUrl: 'http://192.168.0.80:5075', // 后端API地址（默认开发环境，与 .env 端口一致）
     isLogin: false,
     userMode: 'personal', // 添加用户模式，默认为个人模式
@@ -81,6 +81,8 @@ App({
     try { this.clearDataCache() } catch (_) {}
     try { cache.clear('index_overview') } catch (_) {}
     try { cache.clear('stats_overview') } catch (_) {}
+    try { cache.clear('index_myParrots') } catch (_) {}
+    try { cache.clear('parrots_list_default_raw') } catch (_) {}
 
     // 登录状态下通知后端更新用户模式（便于持久化）
     if (this.globalData.openid) {
