@@ -98,7 +98,8 @@
     {
       "root": "pages/announcements",
       "pages": [
-        "center/center"
+        "center/center",
+        "detail/detail"
       ]
     },
     {

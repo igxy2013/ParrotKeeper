@@ -1,0 +1,23 @@
+<view class="page-container">
+  <app-header title="公告详情" subtitle="查看系统公告" showBack="true"></app-header>
+  <view class="page-content">
+    <block wx:if="{{loading}}">
+      <view class="tips">加载中...</view>
+    </block>
+    <block wx:else>
+      <block wx:if="{{!announcement}}">
+        <view class="empty">公告不存在或未发布</view>
+      </block>
+      <block wx:else>
+        <view class="title">{{announcement.title}}</view>
+        <view class="meta">{{announcement.created_at_display}}</view>
+        <view class="content">{{announcement.content}}</view>
+        <view class="image-list" wx:if="{{imageList.length > 0}}">
+          <block wx:for="{{imageList}}" wx:key="*this">
+            <image class="full-image" src="{{item}}" mode="widthFix" bindtap="previewImage" data-index="{{index}}" />
+          </block>
+        </view>
+      </block>
+    </block>
+  </view>
+</view>

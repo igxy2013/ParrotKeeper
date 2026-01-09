@@ -12,46 +12,50 @@
             <div class="ann-title">{{ a.title }}</div>
             <div class="ann-meta">{{ formatTime(a.created_at) }}</div>
             <div class="ann-preview">{{ preview(a.content) }}</div>
+            <div v-if="a.images && a.images.length" class="thumbs">
+              <el-image
+                v-for="(img, idx) in a.images.slice(0,3)"
+                :key="idx"
+                :src="img"
+                :preview-src-list="a.images"
+                fit="cover"
+                class="thumb"
+                preview-teleported
+              />
+            </div>
           </el-card>
         </div>
       </div>
     </div>
-
-    <el-dialog v-model="showDetail" :title="current?.title || '公告详情'" width="600px">
-      <div v-if="current" class="detail-body">
-        <div class="detail-time">{{ formatTime(current.created_at) }}</div>
-        <div class="detail-text">{{ current.content }}</div>
-      </div>
-      <template #footer>
-        <el-button @click="showDetail=false">关闭</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import api from '@/api/axios'
 
 const route = useRoute()
+const router = useRouter()
 const loading = ref(false)
 const items = ref([])
-const showDetail = ref(false)
-const current = ref(null)
 
 const fetchList = async () => {
   loading.value = true
   try {
     const r = await api.get('/announcements', { params: { limit: 50 } })
     const list = (r.data && r.data.data && r.data.data.announcements) || []
-    items.value = list
+    // 映射图片数组，兼容 image_url 与 image_urls
+    items.value = list.map(a => {
+      const raws = Array.isArray(a.image_urls) ? a.image_urls : (a.image_url ? [a.image_url] : [])
+      const images = raws.map(u => resolveUpload(u))
+      return { ...a, images }
+    })
   } catch (_) { items.value = [] } finally { loading.value = false }
 }
 
 const openDetail = (a) => {
-  current.value = a
-  showDetail.value = true
+  router.push({ name: 'announcement-detail', params: { id: a.id } })
 
   // Mark as read in localStorage
   try {
@@ -76,6 +80,18 @@ const formatTime = (iso) => {
   try { return new Date(iso).toLocaleString('zh-CN') } catch (_) { return '' }
 }
 
+const resolveUpload = (url) => {
+  if (!url) return ''
+  const s = String(url).replace(/\\/g, '/').trim()
+  if (/^https?:\/\//.test(s)) return s
+  if (s.startsWith('/uploads/')) return s
+  if (s.includes('/uploads/')) {
+    const suffix = s.split('/uploads/')[1] || ''
+    return '/uploads/' + suffix.replace(/^images\//, '')
+  }
+  return '/uploads/' + s.replace(/^\/?uploads\/?/, '').replace(/^images\//, '')
+}
+
 onMounted(async () => {
   await fetchList()
   const id = route.query && route.query.id ? Number(route.query.id) : null
@@ -96,9 +112,8 @@ onMounted(async () => {
 .ann-title { font-weight:600; color: var(--text-primary); margin-bottom:6px; }
 .ann-meta { color:#909399; font-size:13px; margin-bottom:6px; }
 .ann-preview { color:#606266; font-size:14px; }
+.thumbs { display:flex; gap:8px; margin-top:8px; }
+.thumb { width: 80px; height: 80px; border-radius: 8px; overflow: hidden; }
 .load-more { display:flex; justify-content:center; margin-top:8px; }
 .no-more { color:#909399; text-align:center; margin-top:8px; }
-.detail-body { display:flex; flex-direction:column; gap:8px; }
-.detail-time { color:#909399; font-size:13px; }
-.detail-text { white-space:pre-wrap; }
 </style>

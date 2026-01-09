@@ -70,3 +70,12 @@
 .delete-btn { background: linear-gradient(135deg, #ef4444, #dc2626); }
 .action-btn:active { transform: scale(0.95); box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15); }
 .action-icon-img { width: 32rpx; height: 32rpx; }
+
+/* 多图上传网格 */
+.image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12rpx; }
+.image-item { position: relative; width: 100%; padding-top: 100%; border-radius: 12rpx; overflow: hidden; background: #f3f4f6; }
+.uploaded-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.remove-image { position: absolute; top: 6rpx; right: 6rpx; width: 36rpx; height: 36rpx; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24rpx; }
+.add-image { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200rpx; border: 1rpx dashed #d1d5db; border-radius: 12rpx; color: #6b7280; background: #fafafa; }
+.upload-icon { font-size: 40rpx; line-height: 1; }
+.upload-text { font-size: 24rpx; margin-top: 8rpx; }

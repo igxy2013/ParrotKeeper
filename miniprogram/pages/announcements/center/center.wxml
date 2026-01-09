@@ -21,20 +21,4 @@
       </block>
     </block>
   </view>
-
-  <!-- 公告详情弹窗 -->
-  <block wx:if="{{showDetailModal && currentAnnouncement}}">
-    <view class="modal-overlay" bindtap="closeAnnouncementDetail"></view>
-    <view class="modal-content" catchtap="stopPropagation">
-      <view class="modal-header">
-        <text class="modal-title">{{currentAnnouncement.title}}</text>
-        <view class="modal-close" bindtap="closeAnnouncementDetail"><text class="modal-close-text">×</text></view>
-      </view>
-      <view class="modal-body">
-        <view class="modal-time">{{currentAnnouncement.created_at_display}}</view>
-        <image wx:if="{{currentAnnouncement.image_url}}" src="{{currentAnnouncement.image_url}}" class="modal-image" mode="widthFix" />
-        <view class="modal-text">{{currentAnnouncement.content}}</view>
-      </view>
-    </view>
-  </block>
 </view>

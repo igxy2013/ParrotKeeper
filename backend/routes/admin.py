@@ -1,5 +1,6 @@
 from flask import Blueprint, request
 from models import db, Announcement, SystemSetting, InvitationCode, User, Parrot, PasswordResetRequest, UserAccount
+import json
 from team_models import TeamMember, Team
 from sqlalchemy import func
 from utils import login_required, success_response, error_response
@@ -19,6 +20,14 @@ def list_announcements():
         items = Announcement.query.order_by(Announcement.created_at.desc()).all()
         data = []
         for a in items:
+            imgs = []
+            try:
+                if a.image_urls:
+                    arr = json.loads(a.image_urls)
+                    if isinstance(arr, list):
+                        imgs = [str(u) for u in arr if isinstance(u, str)]
+            except Exception:
+                imgs = []
             data.append({
                 'id': a.id,
                 'title': a.title,
@@ -27,7 +36,8 @@ def list_announcements():
                 'created_at': a.created_at.isoformat() if a.created_at else None,
                 'created_by_user_id': a.created_by_user_id,
                 'scheduled_at': a.scheduled_at.isoformat() if getattr(a, 'scheduled_at', None) else None,
-                'image_url': a.image_url
+                'image_url': a.image_url,
+                'image_urls': imgs
             })
         return success_response({'announcements': data})
     except Exception as e:
@@ -48,6 +58,7 @@ def create_announcement():
         content = (body.get('content') or '').strip()
         status = (body.get('status') or 'published').strip()
         image_url = (body.get('image_url') or '').strip()
+        image_urls = body.get('image_urls')
         if not title:
             return error_response('标题不能为空')
         if not content:
@@ -67,6 +78,14 @@ def create_announcement():
                 return error_response('发布时间格式无效，应为ISO时间')
 
         ann = Announcement(title=title, content=content, status=status, created_by_user_id=user.id, scheduled_at=scheduled_at)
+        if isinstance(image_urls, list):
+            try:
+                arr = [str(u).strip() for u in image_urls if str(u).strip()]
+                ann.image_urls = json.dumps(arr, ensure_ascii=False)
+                if arr and not image_url:
+                    image_url = arr[0]
+            except Exception:
+                ann.image_urls = json.dumps([], ensure_ascii=False)
         if image_url:
             ann.image_url = image_url
         db.session.add(ann)
@@ -79,7 +98,8 @@ def create_announcement():
             'status': ann.status,
             'created_at': ann.created_at.isoformat() if ann.created_at else None,
             'scheduled_at': ann.scheduled_at.isoformat() if ann.scheduled_at else None,
-            'image_url': ann.image_url
+            'image_url': ann.image_url,
+            'image_urls': (json.loads(ann.image_urls) if ann.image_urls else [])
         }, '公告已创建')
     except Exception as e:
         db.session.rollback()
@@ -136,12 +156,31 @@ def update_announcement(ann_id):
             else:
                 ann.scheduled_at = None
 
+        if 'image_urls' in body:
+            value = body.get('image_urls')
+            if isinstance(value, list):
+                try:
+                    arr = [str(u).strip() for u in value if str(u).strip()]
+                    ann.image_urls = json.dumps(arr, ensure_ascii=False)
+                    if arr:
+                        ann.image_url = arr[0]
+                except Exception:
+                    ann.image_urls = json.dumps([], ensure_ascii=False)
+            else:
+                ann.image_urls = None
         if 'image_url' in body:
             image_url = (body.get('image_url') or '').strip()
             ann.image_url = image_url
 
         db.session.commit()
 
+        imgs = []
+        try:
+            imgs = json.loads(ann.image_urls) if ann.image_urls else []
+            if not isinstance(imgs, list):
+                imgs = []
+        except Exception:
+            imgs = []
         return success_response({
             'id': ann.id,
             'title': ann.title,
@@ -149,7 +188,8 @@ def update_announcement(ann_id):
             'status': ann.status,
             'created_at': ann.created_at.isoformat() if ann.created_at else None,
             'scheduled_at': ann.scheduled_at.isoformat() if ann.scheduled_at else None,
-            'image_url': ann.image_url
+            'image_url': ann.image_url,
+            'image_urls': imgs
         }, '公告已更新')
     except Exception as e:
         db.session.rollback()

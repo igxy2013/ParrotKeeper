@@ -16,13 +16,17 @@
         </view>
         <view class="form-item">
           <text class="form-label">配图（可选）</text>
-          <view class="image-uploader" bindtap="chooseImage">
-            <image wx:if="{{imageUrl}}" src="{{imageUrl}}" class="uploaded-image" mode="aspectFill" />
-            <view wx:else class="upload-placeholder">
+          <view class="image-grid">
+            <block wx:for="{{imageUrls}}" wx:key="*this">
+              <view class="image-item">
+                <image src="{{item}}" class="uploaded-image" mode="aspectFill" />
+                <view class="remove-image" catchtap="removeImage" data-index="{{index}}">×</view>
+              </view>
+            </block>
+            <view class="add-image" bindtap="chooseImage">
               <text class="upload-icon">+</text>
               <text class="upload-text">点击上传</text>
             </view>
-            <view wx:if="{{imageUrl}}" class="remove-image" catchtap="removeImage">×</view>
           </view>
         </view>
         <view class="form-item">

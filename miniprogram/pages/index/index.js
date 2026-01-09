@@ -2636,9 +2636,12 @@ Page({
         this.setData({ latestAnnouncement: null, showAnnouncementModal: false })
       } else {
         const latest = forModal[0]
+        const rawArr = Array.isArray(latest.image_urls) ? latest.image_urls : (latest.image_url ? [latest.image_url] : [])
+        const resolvedArr = rawArr.map(u => app.resolveUploadUrl(u))
         const resolvedLatest = {
           ...latest,
-          image_url: latest.image_url ? app.resolveUploadUrl(latest.image_url) : ''
+          image_url: latest.image_url ? app.resolveUploadUrl(latest.image_url) : '',
+          image_urls: resolvedArr
         }
         let dismissed = []
         try { dismissed = wx.getStorageSync('dismissed_announcements') || [] } catch (_) {}
@@ -2671,6 +2674,17 @@ Page({
       // 静默失败，不影响首页
       console.warn('获取公告失败', e)
     }
+  },
+
+  // 公告图片预览
+  previewAnnouncementImage(e) {
+    try {
+      const idx = Number((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.index) || 0)
+      const latest = this.data.latestAnnouncement || {}
+      const urls = latest.image_urls || []
+      if (!urls.length) return
+      wx.previewImage({ current: urls[idx] || urls[0], urls })
+    } catch (_) {}
   },
 
   // 关闭公告弹窗

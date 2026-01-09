@@ -10,6 +10,7 @@ import IncubationView from '../views/IncubationView.vue'
 import PairingView from '../views/PairingView.vue'
 import CareGuideView from '../views/CareGuideView.vue'
 import AnnouncementsCenterView from '../views/AnnouncementsCenterView.vue'
+import AnnouncementDetailView from '../views/AnnouncementDetailView.vue'
 import ReportExportView from '../views/ReportExportView.vue'
 import AboutView from '../views/AboutView.vue'
 import AdminView from '../views/AdminView.vue'
@@ -101,6 +102,11 @@ const router = createRouter({
           path: 'announcements',
           name: 'announcements-center',
           component: AnnouncementsCenterView
+        },
+        {
+          path: 'announcements/:id',
+          name: 'announcement-detail',
+          component: AnnouncementDetailView
         },
         {
           path: 'reports',

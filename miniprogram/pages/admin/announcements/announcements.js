@@ -13,7 +13,8 @@ Page({
     statusOptions: ['现在发布', '定时发布', '草稿'],
     statusValues: ['published', 'scheduled', 'draft'],
     statusIndex: 0,
-    imageUrl: '',
+    imageUrls: [],
+    rawImageUrls: [],
     // 定时发布时间（仅当选择定时发布显示并提交）
     scheduledDate: '',
     scheduledTime: '',
@@ -104,13 +105,17 @@ Page({
   onScheduledTimeChange(e) { this.setData({ scheduledTime: e.detail.value }) },
 
   chooseImage() {
+    const current = this.data.imageUrls || []
+    const max = 9
+    const remain = Math.max(0, max - current.length)
+    if (remain <= 0) { wx.showToast({ title: '最多上传9张', icon: 'none' }); return }
     wx.chooseMedia({
-      count: 1,
+      count: remain,
       mediaType: ['image'],
       sourceType: ['album', 'camera'],
       success: (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath
-        this.uploadImage(tempFilePath)
+        const files = res.tempFiles || []
+        files.forEach(f => this.uploadImage(f.tempFilePath))
       }
     })
   },
@@ -144,7 +149,9 @@ Page({
             // 这里直接 setData url，wxml 中 src 会用这个。如果 url 是相对路径，wxml image src 无法显示
             // 所以我们需要 resolve
             const resolvedUrl = app.resolveUploadUrl(url)
-            this.setData({ imageUrl: resolvedUrl, rawImageUrl: url })
+            const imgs = [...(this.data.imageUrls || []), resolvedUrl]
+            const raws = [...(this.data.rawImageUrls || []), url]
+            this.setData({ imageUrls: imgs, rawImageUrls: raws })
           } else {
             wx.showToast({ title: data.message || '上传失败', icon: 'none' })
           }
@@ -159,8 +166,14 @@ Page({
     })
   },
 
-  removeImage() {
-    this.setData({ imageUrl: '', rawImageUrl: '' })
+  removeImage(e) {
+    const idx = Number((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.index) || -1)
+    if (idx < 0) return
+    const imgs = [...(this.data.imageUrls || [])]
+    const raws = [...(this.data.rawImageUrls || [])]
+    imgs.splice(idx, 1)
+    raws.splice(idx, 1)
+    this.setData({ imageUrls: imgs, rawImageUrls: raws })
   },
 
   // 统一提交入口：创建或更新
@@ -176,7 +189,9 @@ Page({
     const title = (this.data.title || '').trim()
     const content = (this.data.content || '').trim()
     const status = this.data.statusValues[this.data.statusIndex]
-    const image_url = this.data.rawImageUrl || this.data.imageUrl
+    const arr = this.data.rawImageUrls || []
+    const image_urls = arr
+    const image_url = arr.length > 0 ? arr[0] : ''
     if (!title) { wx.showToast({ title: '标题不能为空', icon: 'none' }); return }
     if (!content) { wx.showToast({ title: '内容不能为空', icon: 'none' }); return }
     // 组合定时发布时间（若选择了定时发布）
@@ -196,11 +211,11 @@ Page({
       const res = await app.request({
         url: '/api/admin/announcements',
         method: 'POST',
-        data: { title, content, status, scheduled_at, image_url }
+        data: { title, content, status, scheduled_at, image_url, image_urls }
       })
       if (res && res.success) {
         wx.showToast({ title: '已创建', icon: 'none' })
-        this.setData({ title: '', content: '', statusIndex: 0, scheduledDate: '', scheduledTime: '', imageUrl: '', rawImageUrl: '' })
+        this.setData({ title: '', content: '', statusIndex: 0, scheduledDate: '', scheduledTime: '', imageUrls: [], rawImageUrls: [] })
         this.loadAnnouncements()
       } else {
         wx.showToast({ title: res && res.message ? res.message : '创建失败', icon: 'none' })
@@ -218,7 +233,9 @@ Page({
     const title = (this.data.title || '').trim()
     const content = (this.data.content || '').trim()
     const status = this.data.statusValues[this.data.statusIndex]
-    const image_url = this.data.rawImageUrl || this.data.imageUrl
+    const arr = this.data.rawImageUrls || []
+    const image_urls = arr
+    const image_url = arr.length > 0 ? arr[0] : ''
     if (!title) { wx.showToast({ title: '标题不能为空', icon: 'none' }); return }
     if (!content) { wx.showToast({ title: '内容不能为空', icon: 'none' }); return }
     let scheduled_at = ''
@@ -236,11 +253,11 @@ Page({
       const res = await app.request({
         url: `/api/admin/announcements/${id}`,
         method: 'PUT',
-        data: { title, content, status, scheduled_at, image_url }
+        data: { title, content, status, scheduled_at, image_url, image_urls }
       })
       if (res && res.success) {
         wx.showToast({ title: '已更新', icon: 'none' })
-        this.setData({ editingId: null, title: '', content: '', statusIndex: 0, scheduledDate: '', scheduledTime: '' })
+        this.setData({ editingId: null, title: '', content: '', statusIndex: 0, scheduledDate: '', scheduledTime: '', imageUrls: [], rawImageUrls: [] })
         this.loadAnnouncements()
       } else {
         wx.showToast({ title: res && res.message ? res.message : '更新失败', icon: 'none' })
@@ -274,14 +291,15 @@ Page({
         scheduledTime = sched.slice(11,16)
       } catch (_) {}
     }
-    const rawImageUrl = item.image_url || ''
-    const imageUrl = rawImageUrl ? app.resolveUploadUrl(rawImageUrl) : ''
-    this.setData({ editingId: id, title: item.title || '', content: item.content || '', statusIndex: idx, scheduledDate, scheduledTime, imageUrl, rawImageUrl })
+    const rawArr = Array.isArray(item.image_urls) ? item.image_urls : []
+    const raws = rawArr.map(u => String(u))
+    const imgs = raws.map(u => app.resolveUploadUrl(u))
+    this.setData({ editingId: id, title: item.title || '', content: item.content || '', statusIndex: idx, scheduledDate, scheduledTime, imageUrls: imgs, rawImageUrls: raws })
   },
 
   // 取消编辑
   cancelEdit() {
-    this.setData({ editingId: null, title: '', content: '', statusIndex: 0, scheduledDate: '', scheduledTime: '', imageUrl: '', rawImageUrl: '' })
+    this.setData({ editingId: null, title: '', content: '', statusIndex: 0, scheduledDate: '', scheduledTime: '', imageUrls: [], rawImageUrls: [] })
   },
 
   async deleteAnnouncement(e) {

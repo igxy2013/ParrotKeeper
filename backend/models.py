@@ -564,6 +564,7 @@ class Announcement(db.Model):
     scheduled_at = db.Column(db.DateTime, nullable=True)
     # 公告图片
     image_url = db.Column(db.String(255), nullable=True)
+    image_urls = db.Column(db.Text, nullable=True)
     
     # 关系
     creator = db.relationship('User', backref='announcements', lazy=True)

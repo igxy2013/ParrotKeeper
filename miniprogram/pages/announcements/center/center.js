@@ -7,8 +7,7 @@ Page({
     announcements: [],
     limit: 20,
     hasMore: true,
-    showDetailModal: false,
-    currentAnnouncement: null
+    // 详情页改为新页面，不再使用弹窗
   },
 
   onLoad(options) {
@@ -37,11 +36,13 @@ Page({
           image_url: a.image_url ? app.resolveUploadUrl(a.image_url) : ''
         }))
         this.setData({ announcements: formatted, hasMore: list.length >= limit && limit < 50 })
-        // 若存在待打开的公告ID，尝试自动打开详情
+        // 若存在待打开的公告ID，跳转到详情页
         if (this.pendingAnnouncementId) {
           const target = formatted.find(a => String(a.id) === String(this.pendingAnnouncementId))
           if (target) {
-            this.setData({ currentAnnouncement: target, showDetailModal: true })
+            try {
+              wx.navigateTo({ url: `/pages/announcements/detail/detail?id=${encodeURIComponent(target.id)}` })
+            } catch (_) {}
           }
           this.pendingAnnouncementId = null
         }
@@ -63,10 +64,7 @@ Page({
 
   openAnnouncementDetail(e) {
     const { id } = e.currentTarget.dataset
-    const item = (this.data.announcements || []).find(a => String(a.id) === String(id))
-    if (!item) return
-    this.setData({ currentAnnouncement: item, showDetailModal: true })
-  },
-  closeAnnouncementDetail() { this.setData({ showDetailModal: false, currentAnnouncement: null }) },
-  stopPropagation() {}
+    if (!id) return
+    try { wx.navigateTo({ url: `/pages/announcements/detail/detail?id=${encodeURIComponent(id)}` }) } catch (_) {}
+  }
 })
