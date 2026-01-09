@@ -562,6 +562,8 @@ class Announcement(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # 定时发布时间（可为空）
     scheduled_at = db.Column(db.DateTime, nullable=True)
+    # 公告图片
+    image_url = db.Column(db.String(255), nullable=True)
     
     # 关系
     creator = db.relationship('User', backref='announcements', lazy=True)

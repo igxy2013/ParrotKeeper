@@ -33,7 +33,8 @@ Page({
         const list = (res.data && res.data.announcements) ? res.data.announcements : []
         const formatted = list.map(a => ({
           ...a,
-          created_at_display: a.created_at ? a.created_at.replace('T',' ').slice(0,19) : ''
+          created_at_display: a.created_at ? a.created_at.replace('T',' ').slice(0,19) : '',
+          image_url: a.image_url ? app.resolveUploadUrl(a.image_url) : ''
         }))
         this.setData({ announcements: formatted, hasMore: list.length >= limit && limit < 50 })
         // 若存在待打开的公告ID，尝试自动打开详情

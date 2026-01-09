@@ -20,6 +20,7 @@
       </view>
       <view class="announcement-modal-body">
         <view class="announcement-modal-h1">{{latestAnnouncement.title}}</view>
+        <image wx:if="{{latestAnnouncement.image_url}}" src="{{latestAnnouncement.image_url}}" mode="widthFix" class="announcement-modal-image" />
         <view class="announcement-modal-content">{{latestAnnouncement.content}}</view>
       </view>
     </view>

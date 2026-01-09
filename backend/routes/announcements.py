@@ -26,7 +26,8 @@ def list_published_announcements():
                 'title': a.title,
                 'content': a.content,
                 'status': a.status,
-                'created_at': a.created_at.isoformat()
+                'created_at': a.created_at.isoformat(),
+                'image_url': a.image_url
             })
 
         payload = {'announcements': data}

@@ -10,6 +10,19 @@
     <div v-else>
       <el-table :data="items" v-loading="loading" style="width:100%">
         <el-table-column prop="title" label="标题" width="240" />
+        <el-table-column label="图片" width="100">
+          <template #default="scope">
+            <el-image 
+              v-if="scope.row.image_url" 
+              style="width: 50px; height: 50px" 
+              :src="resolveUrl(scope.row.image_url)" 
+              :preview-src-list="[resolveUrl(scope.row.image_url)]" 
+              fit="cover"
+              preview-teleported
+            />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="content" label="内容" />
         <el-table-column prop="status" label="状态" width="120" />
         <el-table-column prop="scheduled_at" label="发布时间" width="180" />
@@ -66,7 +79,7 @@ const fetchList = async () => {
   loading.value = true
   try { const r = await api.get('/admin/announcements'); if (r.data?.success) items.value = (r.data.data?.announcements)||[]; else ElMessage.error(r.data?.message||'加载失败') } catch (_) { ElMessage.error('加载失败') } finally { loading.value = false }
 }
-const openCreate = () => { editing.value=false; form.value={ id:null, title:'', content:'', status:'draft', scheduled_at:'' }; showDialog.value=true }
+const openCreate = () => { editing.value=false; form.value={ id:null, title:'', content:'', status:'draft', scheduled_at:'', image_url:'' }; showDialog.value=true }
 const openEdit = (row) => { editing.value=true; form.value={ ...row }; showDialog.value=true }
 const save = async () => {
   try {
@@ -88,4 +101,35 @@ onMounted(async () => { await (authStore.refreshProfile && authStore.refreshProf
 <style scoped>
 .admin-page { padding-bottom: 20px; }
 .no-access { background: #fff; border-radius: 8px; padding: 16px; color: #909399; }
+.avatar-uploader .el-upload {
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: var(--el-transition-duration-fast);
+}
+.avatar-uploader .el-upload:hover {
+  border-color: var(--el-color-primary);
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 100px;
+  height: 100px;
+  text-align: center;
+  line-height: 100px;
+}
+.avatar {
+  width: 100px;
+  height: 100px;
+  display: block;
+  object-fit: cover;
+}
+.remove-image {
+  margin-top: 8px;
+  color: var(--el-color-danger);
+  cursor: pointer;
+  font-size: 12px;
+}
 </style>

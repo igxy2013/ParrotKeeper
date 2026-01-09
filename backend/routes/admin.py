@@ -26,7 +26,8 @@ def list_announcements():
                 'status': a.status,
                 'created_at': a.created_at.isoformat() if a.created_at else None,
                 'created_by_user_id': a.created_by_user_id,
-                'scheduled_at': a.scheduled_at.isoformat() if getattr(a, 'scheduled_at', None) else None
+                'scheduled_at': a.scheduled_at.isoformat() if getattr(a, 'scheduled_at', None) else None,
+                'image_url': a.image_url
             })
         return success_response({'announcements': data})
     except Exception as e:
@@ -46,6 +47,7 @@ def create_announcement():
         title = (body.get('title') or '').strip()
         content = (body.get('content') or '').strip()
         status = (body.get('status') or 'published').strip()
+        image_url = (body.get('image_url') or '').strip()
         if not title:
             return error_response('标题不能为空')
         if not content:
@@ -65,6 +67,8 @@ def create_announcement():
                 return error_response('发布时间格式无效，应为ISO时间')
 
         ann = Announcement(title=title, content=content, status=status, created_by_user_id=user.id, scheduled_at=scheduled_at)
+        if image_url:
+            ann.image_url = image_url
         db.session.add(ann)
         db.session.commit()
 
@@ -74,7 +78,8 @@ def create_announcement():
             'content': ann.content,
             'status': ann.status,
             'created_at': ann.created_at.isoformat() if ann.created_at else None,
-            'scheduled_at': ann.scheduled_at.isoformat() if ann.scheduled_at else None
+            'scheduled_at': ann.scheduled_at.isoformat() if ann.scheduled_at else None,
+            'image_url': ann.image_url
         }, '公告已创建')
     except Exception as e:
         db.session.rollback()
@@ -131,6 +136,10 @@ def update_announcement(ann_id):
             else:
                 ann.scheduled_at = None
 
+        if 'image_url' in body:
+            image_url = (body.get('image_url') or '').strip()
+            ann.image_url = image_url
+
         db.session.commit()
 
         return success_response({
@@ -139,7 +148,8 @@ def update_announcement(ann_id):
             'content': ann.content,
             'status': ann.status,
             'created_at': ann.created_at.isoformat() if ann.created_at else None,
-            'scheduled_at': ann.scheduled_at.isoformat() if ann.scheduled_at else None
+            'scheduled_at': ann.scheduled_at.isoformat() if ann.scheduled_at else None,
+            'image_url': ann.image_url
         }, '公告已更新')
     except Exception as e:
         db.session.rollback()

@@ -7,6 +7,7 @@
 .ann-item { background: #fff; border-radius: 14rpx; padding: 16rpx; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.03); }
 .ann-title { font-size: 28rpx; color: #111827; font-weight: 600; }
 .ann-meta { font-size: 22rpx; color: #6b7280; margin-top: 4rpx; }
+.ann-image { width: 100%; height: 240rpx; border-radius: 8rpx; margin-top: 12rpx; }
 .ann-preview { font-size: 24rpx; color: #374151; margin-top: 8rpx; }
 
 .load-more { margin: 16rpx 0; text-align: center; color: #4f46e5; }
@@ -21,4 +22,5 @@
 .modal-close-text { font-size: 32rpx; font-weight: 600; color: #fff; line-height: 48rpx; }
 .modal-body { padding: 24rpx; }
 .modal-time { font-size: 22rpx; color: #6b7280; margin-bottom: 10rpx; }
+.modal-image { width: 100%; border-radius: 12rpx; margin-bottom: 16rpx; display: block; }
 .modal-text { font-size: 26rpx; color: #374151; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 42vh; overflow-y: auto; }

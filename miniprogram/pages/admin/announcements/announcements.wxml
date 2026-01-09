@@ -15,6 +15,17 @@
           <textarea class="form-textarea" placeholder="请输入公告内容" value="{{content}}" bindinput="onContentInput" maxlength="-1" />
         </view>
         <view class="form-item">
+          <text class="form-label">配图（可选）</text>
+          <view class="image-uploader" bindtap="chooseImage">
+            <image wx:if="{{imageUrl}}" src="{{imageUrl}}" class="uploaded-image" mode="aspectFill" />
+            <view wx:else class="upload-placeholder">
+              <text class="upload-icon">+</text>
+              <text class="upload-text">点击上传</text>
+            </view>
+            <view wx:if="{{imageUrl}}" class="remove-image" catchtap="removeImage">×</view>
+          </view>
+        </view>
+        <view class="form-item">
           <text class="form-label">发布类型</text>
           <picker mode="selector" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange">
             <view class="form-picker">{{statusOptions[statusIndex]}}</view>

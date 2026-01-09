@@ -32,6 +32,7 @@
       </view>
       <view class="modal-body">
         <view class="modal-time">{{currentAnnouncement.created_at_display}}</view>
+        <image wx:if="{{currentAnnouncement.image_url}}" src="{{currentAnnouncement.image_url}}" class="modal-image" mode="widthFix" />
         <view class="modal-text">{{currentAnnouncement.content}}</view>
       </view>
     </view>

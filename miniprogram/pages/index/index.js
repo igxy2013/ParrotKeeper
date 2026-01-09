@@ -2636,10 +2636,14 @@ Page({
         this.setData({ latestAnnouncement: null, showAnnouncementModal: false })
       } else {
         const latest = forModal[0]
+        const resolvedLatest = {
+          ...latest,
+          image_url: latest.image_url ? app.resolveUploadUrl(latest.image_url) : ''
+        }
         let dismissed = []
         try { dismissed = wx.getStorageSync('dismissed_announcements') || [] } catch (_) {}
-        const shouldShowModal = !dismissed.includes(latest.id)
-        this.setData({ latestAnnouncement: latest, showAnnouncementModal: shouldShowModal })
+        const shouldShowModal = !dismissed.includes(resolvedLatest.id)
+        this.setData({ latestAnnouncement: resolvedLatest, showAnnouncementModal: shouldShowModal })
       }
 
       const onlyToday = list.filter(isToday)
