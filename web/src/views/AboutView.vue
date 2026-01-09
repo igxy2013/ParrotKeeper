@@ -21,7 +21,7 @@
           </div>
           <div class="info-item">
             <span class="label">网页版</span>
-            <a class="value" href="https://parrot.acbim.cn" target="_blank">parrot.acbim.cn</a>
+            <a class="value" href="https://aiparrot.top" target="_blank">www.aiparrot.top</a>
           </div>
           <div class="info-item">
             <span class="label">微信号</span>

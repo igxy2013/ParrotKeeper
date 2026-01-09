@@ -1109,7 +1109,7 @@ Page({
     const app = getApp()
     // 直接使用全局版本号（已在 app.js 启动时从微信API获取）
     const version = app.globalData.appVersion || '未知'
-    const contentText = `鹦鹉管家 v${version}\n用心呵护每一只小鹦鹉\n如需帮助，请使用"客服支持"菜单联系我们。\n我们重视隐私，仅收集必要数据用于改善服务。\n\n开发者邮箱：acbim@qq.com\n网页版：parrot.acbim.cn`
+    const contentText = `鹦鹉管家 v${version}\n用心呵护每一只小鹦鹉\n如需帮助，请使用"客服支持"菜单联系我们。\n我们重视隐私，仅收集必要数据用于改善服务。\n\n开发者邮箱：acbim@qq.com\n网页版：www.aiparrot.top`
     wx.showModal({
       title: '关于我们',
       content: contentText,
