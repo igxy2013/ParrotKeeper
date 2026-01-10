@@ -1,0 +1,1650 @@
+===== 文件: backend\app.py =====
+0001: from flask import Flask, jsonify, request
+0002: from flask_cors import CORS
+0003: from config import config
+0004: from models import db
+0005: from sqlalchemy import text
+0006: from routes.auth import auth_bp
+0007: from routes.parrots import parrots_bp
+0008: from routes.records import records_bp
+0009: from routes.statistics import statistics_bp
+0010: from routes.upload import upload_bp
+0011: from routes.expenses import expenses_bp
+0012: from routes.teams import teams_bp
+0013: from routes.achievements import achievements_bp
+0014: from routes.image_processing import image_processing_bp
+0015: from routes.notifications import notifications_bp
+0016: from routes.reminders import reminders_bp
+0017: from apscheduler.schedulers.background import BackgroundScheduler
+0018: from datetime import datetime, date
+0019: from routes.care_guide import care_guide_bp
+0020: from routes.feedback import feedback_bp
+0021: from routes.settings import settings_bp
+0022: from routes.admin import admin_bp
+0023: from routes.announcements import announcements_bp
+0024: from routes.ai import ai_bp
+0025: from routes.incubation import incubation_bp
+0026: from routes.market import market_bp
+0027: from routes.categories import categories_bp
+0028: from routes.reports import reports_bp
+0029: import os
+0030: from utils import login_required, success_response, error_response
+0031: from team_mode_utils import (
+0032:     get_accessible_feeding_record_ids_by_mode,
+0033:     get_accessible_health_record_ids_by_mode,
+0034:     get_accessible_cleaning_record_ids_by_mode,
+0035:     get_accessible_breeding_record_ids_by_mode
+0036: )
+0037: from backup import backup_database_to_remote
+0038: from backup import sync_database_to_remote
+0039: 
+0040: def create_app(config_name=None):
+0041:     """应用工厂函数"""
+0042:     app = Flask(__name__)
+0043:     
+0044:     # 配置
+0045:     config_name = config_name or os.environ.get('FLASK_ENV', 'default')
+0046:     app.config.from_object(config[config_name])
+0047:     
+0048:     # 设置JSON编码，确保中文字符正确显示
+0049:     app.config['JSON_AS_ASCII'] = False
+0050:     
+0051:     # 初始化扩展
+0052:     db.init_app(app)
+0053:     CORS(app, supports_credentials=True)
+0054:     
+0055:     # 注册蓝图
+0056:     app.register_blueprint(auth_bp)
+0057:     app.register_blueprint(parrots_bp)
+0058:     app.register_blueprint(records_bp)
+0059:     app.register_blueprint(statistics_bp)
+0060:     app.register_blueprint(upload_bp)
+0061:     app.register_blueprint(expenses_bp)
+0062:     app.register_blueprint(teams_bp)
+0063:     app.register_blueprint(achievements_bp)
+0064:     app.register_blueprint(image_processing_bp)
+0065:     app.register_blueprint(notifications_bp)
+0066:     app.register_blueprint(care_guide_bp)
+0067:     app.register_blueprint(reminders_bp)
+0068:     app.register_blueprint(feedback_bp)
+0069:     app.register_blueprint(settings_bp)
+0070:     app.register_blueprint(admin_bp)
+0071:     app.register_blueprint(announcements_bp)
+0072:     app.register_blueprint(ai_bp)
+0073:     app.register_blueprint(incubation_bp)
+0074:     app.register_blueprint(market_bp)
+0075:     app.register_blueprint(categories_bp)
+0076:     app.register_blueprint(reports_bp)
+0077:     from routes.pairings import pairings_bp
+0078:     app.register_blueprint(pairings_bp)
+0079:     from routes.redemption import redemption_bp
+0080:     app.register_blueprint(redemption_bp)
+0081:     
+0082:     # 创建上传目录
+0083:     upload_folder = app.config['UPLOAD_FOLDER']
+0084:     if not os.path.exists(upload_folder):
+0085:         os.makedirs(upload_folder)
+0086:     
+0087:     # 错误处理
+0088:     @app.errorhandler(404)
+0089:     def not_found(error):
+0090:         return jsonify({'success': False, 'message': '接口不存在'}), 404
+0091:     
+0092:     @app.errorhandler(500)
+0093:     def internal_error(error):
+0094:         db.session.rollback()
+0095:         return jsonify({'success': False, 'message': '服务器内部错误'}), 500
+0096:     
+0097:     @app.errorhandler(413)
+0098:     def too_large(error):
+0099:         return jsonify({'success': False, 'message': '文件太大'}), 413
+0100: 
+0101:     # 启用跨源隔离以满足 SharedArrayBuffer 要求（Chrome M92+）
+0102:     @app.after_request
+0103:     def add_cross_origin_isolation_headers(response):
+0104:         # 页面隔离：需要同源窗口，避免与其他源共享进程
+0105:         response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+0106:         # 资源嵌入策略：仅允许带有 CORP 或 CORS 的跨源资源
+0107:         response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+0108:         return response
+0109: 
+0110:     # 健康检查
+0111:     @app.route('/api/health')
+0112:     def health_check():
+0113:         return jsonify({
+0114:             'success': True,
+0115:             'message': '服务正常',
+0116:             'version': app.config.get('APP_VERSION', 'unknown')
+0117:         })
+0118: 
+0119:     # 兼容小程序：按类型获取记录详情（无 /api 前缀）
+0120:     @app.route('/records/<string:record_type>/<int:record_id>', methods=['GET'])
+0121:     @login_required
+0122:     def get_record_by_type_compat(record_type, record_id):
+0123:         try:
+0124:             from models import FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord
+0125:             from schemas import (
+0126:                 feeding_record_schema, health_record_schema,
+0127:                 cleaning_record_schema, breeding_record_schema
+0128:             )
+0129: 
+0130:             user = request.current_user
+0131: 
+0132:             record = None
+0133:             schema = None
+0134:             accessible_ids = []
+0135: 
+0136:             if record_type == 'feeding':
+0137:                 record = FeedingRecord.query.get(record_id)
+0138:                 schema = feeding_record_schema
+0139:                 accessible_ids = get_accessible_feeding_record_ids_by_mode(user)
+0140:             elif record_type == 'health':
+0141:                 record = HealthRecord.query.get(record_id)
+0142:                 schema = health_record_schema
+0143:                 accessible_ids = get_accessible_health_record_ids_by_mode(user)
+0144:             elif record_type == 'cleaning':
+0145:                 record = CleaningRecord.query.get(record_id)
+0146:                 schema = cleaning_record_schema
+0147:                 accessible_ids = get_accessible_cleaning_record_ids_by_mode(user)
+0148:             elif record_type == 'breeding':
+0149:                 record = BreedingRecord.query.get(record_id)
+0150:                 schema = breeding_record_schema
+0151:                 accessible_ids = get_accessible_breeding_record_ids_by_mode(user)
+0152:             else:
+0153:                 return error_response('不支持的记录类型')
+0154: 
+0155:             if not record:
+0156:                 return error_response('记录不存在')
+0157: 
+0158:             if accessible_ids and (record.id not in accessible_ids):
+0159:                 return error_response('权限不足或记录不存在')
+0160: 
+0161:             data = schema.dump(record)
+0162:             # 统一前端显示字段：record_time 与 created_at
+0163:             if record_type == 'feeding':
+0164:                 data['record_time'] = record.feeding_time.isoformat() if getattr(record, 'feeding_time', None) else None
+0165:             elif record_type == 'health':
+0166:                 data['record_time'] = record.record_date.isoformat() if getattr(record, 'record_date', None) else None
+0167:             elif record_type == 'cleaning':
+0168:                 data['record_time'] = record.cleaning_time.isoformat() if getattr(record, 'cleaning_time', None) else None
+0169:             elif record_type == 'breeding':
+0170:                 # 繁殖记录以创建时间作为记录时间
+0171:                 data['record_time'] = record.created_at.isoformat() if getattr(record, 'created_at', None) else None
+0172:             # 显式返回创建时间
+0173:             data['created_at'] = record.created_at.isoformat() if getattr(record, 'created_at', None) else None
+0174:             return success_response(data)
+0175:         except Exception as e:
+0176:             return error_response(f'获取记录失败: {str(e)}')
+0177:     
+0178:     # 静态文件服务
+0179:     @app.route('/uploads/<path:filename>')
+0180:     def uploaded_file(filename):
+0181:         from flask import send_from_directory, make_response
+0182:         resp = make_response(send_from_directory(app.config['UPLOAD_FOLDER'], filename))
+0183:         # 允许其他站点在 COEP 环境中加载本服务的图片资源（如需）。
+0184:         # 如果只在同域内使用，可改为 'same-origin'。
+0185:         resp.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
+0186:         return resp
+0187:     
+0188:     # 添加调试中间件
+0189:     @app.before_request
+0190:     def log_request():
+0191:         print(f"请求: {request.method} {request.path}")
+0192: 
+0193:     # 初始化并启动定时任务（服务端订阅消息推送）
+0194:     init_scheduler(app)
+0195: 
+0196:     # 确保数据库表已创建（包含新增模型）
+0197:     try:
+0198:         init_db(app)
+0199:     except Exception as e:
+0200:         print(f'初始化数据库失败或已存在: {str(e)}')
+0201: 
+0202:     return app
+0203: 
+0204: def init_db(app):
+0205:     """初始化数据库"""
+0206:     with app.app_context():
+0207:         db.create_all()
+0208:         print("数据库表创建完成")
+0209:         try:
+0210:             db_name = app.config.get('DB_NAME') or 'parrot_breeding'
+0211:             q = text("SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=:db AND TABLE_NAME='eggs' AND COLUMN_NAME='incubator_start_date'")
+0212:             r = db.session.execute(q, { 'db': db_name }).scalar()
+0213:             if r and str(r).lower() == 'date':
+0214:                 db.session.execute(text("ALTER TABLE eggs MODIFY COLUMN incubator_start_date DATETIME NULL"))
+0215:                 db.session.commit()
+0216:         except Exception:
+0217:             try:
+0218:                 db.session.rollback()
+0219:             except Exception:
+0220:                 pass
+0221: 
+0222:         try:
+0223:             # 自动校验并扩展 cleaning_records.cleaning_type 的枚举，确保包含 'bath'
+0224:             with db.engine.connect() as connection:
+0225:                 result = connection.execute(text("SHOW CREATE TABLE cleaning_records"))
+0226:                 row = result.fetchone()
+0227:                 if row and len(row) >= 2:
+0228:                     create_statement = row[1]
+0229:                     import re
+0230:                     enum_match = re.search(r"`cleaning_type`\s+enum\(([^)]+)\)", create_statement, re.IGNORECASE)
+0231:                     if enum_match:
+0232:                         raw = enum_match.group(1)
+0233:                         # 提取枚举值列表（含引号）
+0234:                         parts = [p.strip() for p in raw.split(',') if p.strip()]
+0235:                         values = [p.strip("'\"") for v in parts for p in [v]]
+0236:                         if 'bath' not in values:
+0237:                             values.append('bath')
+0238:                             enum_sql = ','.join([f"'{v}'" for v in values])
+0239:                             alter_sql = f"ALTER TABLE cleaning_records MODIFY COLUMN cleaning_type ENUM({enum_sql}) NULL"
+0240:                             connection.execute(text(alter_sql))
+0241:                             print("已更新 cleaning_records.cleaning_type 枚举，加入 'bath'")
+0242:         except Exception as e:
+0243:             try:
+0244:                 db.session.rollback()
+0245:             except Exception:
+0246:                 pass
+0247:             print(f"更新 cleaning_type 枚举失败: {e}")
+0248: 
+0249:         try:
+0250:             # 为 market_prices 表添加 gender 字段（若不存在）
+0251:             with db.engine.connect() as connection:
+0252:                 check = connection.execute(text("SHOW COLUMNS FROM market_prices LIKE 'gender'"))
+0253:                 exists = check.fetchone()
+0254:                 if not exists:
+0255:                     connection.execute(text("ALTER TABLE market_prices ADD COLUMN gender ENUM('male','female') NULL AFTER color_name"))
+0256:                     print("已为 market_prices 添加 gender 字段")
+0257:         except Exception as e:
+0258:             try:
+0259:                 db.session.rollback()
+0260:             except Exception:
+0261:                 pass
+0262:             print(f"添加 market_prices.gender 字段失败: {e}")
+0263: 
+0264:         try:
+0265:             # 自动为反馈表添加 is_read 字段（若不存在）
+0266:             with db.engine.connect() as connection:
+0267:                 check = connection.execute(text("SHOW COLUMNS FROM feedbacks LIKE 'is_read'"))
+0268:                 exists = check.fetchone()
+0269:                 if not exists:
+0270:                     connection.execute(text("ALTER TABLE feedbacks ADD COLUMN is_read BOOLEAN DEFAULT FALSE"))
+0271:                     print("已为反馈表添加 is_read 字段")
+0272:         except Exception as e:
+0273:             try:
+0274:                 db.session.rollback()
+0275:             except Exception:
+0276:                 pass
+0277:             print(f"添加 is_read 字段失败: {e}")
+0278: 
+0279:         try:
+0280:             # 为 feed_types 表添加 unit 字段（若不存在）
+0281:             with db.engine.connect() as connection:
+0282:                 check = connection.execute(text("SHOW COLUMNS FROM feed_types LIKE 'unit'"))
+0283:                 exists = check.fetchone()
+0284:                 if not exists:
+0285:                     connection.execute(text("ALTER TABLE feed_types ADD COLUMN unit ENUM('g','ml') DEFAULT 'g'"))
+0286:                     print("已为 feed_types 添加 unit 字段")
+0287:         except Exception as e:
+0288:             try:
+0289:                 db.session.rollback()
+0290:             except Exception:
+0291:                 pass
+0292:             print(f"添加 feed_types.unit 字段失败: {e}")
+0293: 
+0294:         try:
+0295:             # 为 parrot_species 表添加 plumage_json 字段（若不存在）
+0296:             with db.engine.connect() as connection:
+0297:                 check = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'plumage_json'"))
+0298:                 exists = check.fetchone()
+0299:                 if not exists:
+0300:                     connection.execute(text("ALTER TABLE parrot_species ADD COLUMN plumage_json TEXT NULL AFTER reference_weight_g"))
+0301:                     print("已为 parrot_species 添加 plumage_json 字段")
+0302:         except Exception as e:
+0303:             try:
+0304:                 db.session.rollback()
+0305:             except Exception:
+0306:                 pass
+0307:             print(f"添加 plumage_json 字段失败: {e}")
+0308: 
+0309:         try:
+0310:             # 为 parrot_species 添加区间字段（若不存在）
+0311:             with db.engine.connect() as connection:
+0312:                 def add_column_if_missing(col_sql):
+0313:                     try:
+0314:                         connection.execute(text(col_sql))
+0315:                     except Exception:
+0316:                         pass
+0317:                 # 寿命区间
+0318:                 r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_lifespan_min'")).fetchone()
+0319:                 if not r:
+0320:                     add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN avg_lifespan_min INT NULL")
+0321:                 r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_lifespan_max'")).fetchone()
+0322:                 if not r:
+0323:                     add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN avg_lifespan_max INT NULL")
+0324:                 # 体型区间（厘米）
+0325:                 r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_size_min_cm'")).fetchone()
+0326:                 if not r:
+0327:                     add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN avg_size_min_cm DECIMAL(6,2) NULL")
+0328:                 r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_size_max_cm'")).fetchone()
+0329:                 if not r:
+0330:                     add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN avg_size_max_cm DECIMAL(6,2) NULL")
+0331:                 # 体重区间（克）
+0332:                 r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'reference_weight_min_g'")).fetchone()
+0333:                 if not r:
+0334:                     add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN reference_weight_min_g DECIMAL(6,2) NULL")
+0335:                 r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'reference_weight_max_g'")).fetchone()
+0336:                 if not r:
+0337:                     add_column_if_missing("ALTER TABLE parrot_species ADD COLUMN reference_weight_max_g DECIMAL(6,2) NULL")
+0338:                 # 移除单值字段：avg_lifespan 与 avg_size（若存在）
+0339:                 r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_lifespan'")).fetchone()
+0340:                 if r:
+0341:                     try:
+0342:                         connection.execute(text("ALTER TABLE parrot_species DROP COLUMN avg_lifespan"))
+0343:                     except Exception:
+0344:                         pass
+0345:                 r = connection.execute(text("SHOW COLUMNS FROM parrot_species LIKE 'avg_size'")).fetchone()
+0346:                 if r:
+0347:                     try:
+0348:                         connection.execute(text("ALTER TABLE parrot_species DROP COLUMN avg_size"))
+0349:                     except Exception:
+0350:                         pass
+0351:                 print("已检查并添加品种区间字段")
+0352:         except Exception as e:
+0353:             try:
+0354:                 db.session.rollback()
+0355:             except Exception:
+0356:                 pass
+0357:             print(f"添加区间字段失败: {e}")
+0358: 
+0359:         try:
+0360:             # 为 parrots 表添加出生地相关字段（若不存在）
+0361:             with db.engine.connect() as connection:
+0362:                 def add_column_if_missing(col_sql):
+0363:                     try:
+0364:                         connection.execute(text(col_sql))
+0365:                     except Exception:
+0366:                         pass
+0367:                 r = connection.execute(text("SHOW COLUMNS FROM parrots LIKE 'birth_place'")).fetchone()
+0368:                 if not r:
+0369:                     add_column_if_missing("ALTER TABLE parrots ADD COLUMN birth_place VARCHAR(255) NULL AFTER color")
+0370:                 r = connection.execute(text("SHOW COLUMNS FROM parrots LIKE 'birth_place_province'")).fetchone()
+0371:                 if not r:
+0372:                     add_column_if_missing("ALTER TABLE parrots ADD COLUMN birth_place_province VARCHAR(100) NULL AFTER birth_place")
+0373:                 r = connection.execute(text("SHOW COLUMNS FROM parrots LIKE 'birth_place_city'")).fetchone()
+0374:                 if not r:
+0375:                     add_column_if_missing("ALTER TABLE parrots ADD COLUMN birth_place_city VARCHAR(100) NULL AFTER birth_place_province")
+0376:                 r = connection.execute(text("SHOW COLUMNS FROM parrots LIKE 'birth_place_county'")).fetchone()
+0377:                 if not r:
+0378:                     add_column_if_missing("ALTER TABLE parrots ADD COLUMN birth_place_county VARCHAR(100) NULL AFTER birth_place_city")
+0379:                 print("已检查并添加 parrots 出生地相关字段")
+0380:         except Exception as e:
+0381:             try:
+0382:                 db.session.rollback()
+0383:             except Exception:
+0384:                 pass
+0385:             print(f"添加 parrots 出生地字段失败: {e}")
+0386: 
+0387: def init_scheduler(app):
+0388:     """初始化APScheduler并注册定时推送任务"""
+0389:     try:
+0390:         scheduler = BackgroundScheduler()
+0391: 
+0392:         def push_due_reminders():
+0393:             from models import Reminder, ReminderLog, User
+0394:             from routes.notifications import get_access_token
+0395:             from routes.reminders import predict_next_remind_at
+0396:             from config import Config
+0397:             import requests
+0398:             from datetime import datetime
+0399: 
+0400:             with app.app_context():
+0401:                 now = datetime.now()
+0402:                 hh = now.hour
+0403:                 mm = now.minute
+0404:                 today = date.today()
+0405: 
+0406:                 # 1) 处理按 remind_at 到点的提醒（个性化预测）
+0407:                 due_personalized = Reminder.query.filter(
+0408:                     Reminder.is_active == True,
+0409:                     Reminder.remind_at != None,
+0410:                     Reminder.remind_at <= now
+0411:                 ).all()
+0412: 
+0413:                 access_token = get_access_token()
+0414:                 if not access_token:
+0415:                     print('定时任务：无法获取access_token，跳过本轮推送')
+0416:                     return
+0417: 
+0418:                 api_url = f'https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token={access_token}'
+0419: 
+0420:                 # 先推送个性化 remind_at 到点提醒
+0421:                 for r in due_personalized:
+0422:                     try:
+0423:                         # 去重：当天是否已推送
+0424:                         exists = ReminderLog.query.filter_by(reminder_id=r.id, sent_date=today).first()
+0425:                         if exists:
+0426:                             continue
+0427: 
+0428:                         user = User.query.get(r.user_id)
+0429:                         if not user or not user.openid:
+0430:                             continue
+0431: 
+0432:                         # 根据类型选择模板ID
+0433:                         if r.reminder_type == 'feeding':
+0434:                             template_id = getattr(Config, 'WECHAT_TEMPLATE_ID_FEEDING', None)
+0435:                             reminder_type_cn = '喂食提醒'
+0436:                         elif r.reminder_type == 'cleaning':
+0437:                             template_id = getattr(Config, 'WECHAT_TEMPLATE_ID_CLEANING', None)
+0438:                             reminder_type_cn = '清洁提醒'
+0439:                         else:
+0440:                             template_id = None
+0441:                             reminder_type_cn = '系统提醒'
+0442: 
+0443:                         if not template_id:
+0444:                             continue
+0445: 
+0446:                         template_data = {
+0447:                             'thing1': { 'value': r.title or '您有一条提醒' },
+0448:                             'time2': { 'value': now.strftime('%Y-%m-%d %H:%M') },
+0449:                             'thing3': { 'value': user.nickname or '鹦鹉管家' },
+0450:                             'thing4': { 'value': reminder_type_cn }
+0451:                         }
+0452: 
+0453:                         payload = {
+0454:                             'touser': user.openid,
+0455:                             'template_id': template_id,
+0456:                             'page': 'pages/index/index',
+0457:                             'data': template_data
+0458:                         }
+0459: 
+0460:                         resp = requests.post(api_url, json=payload)
+0461:                         result = resp.json()
+0462:                         if result.get('errcode') == 0:
+0463:                             # 记录日志，避免当天重复
+0464:                             log = ReminderLog(reminder_id=r.id, sent_date=today)
+0465:                             db.session.add(log)
+0466: 
+0467:                             # 动态生成下一次 remind_at（除 once 外）
+0468:                             if r.frequency == 'once':
+0469:                                 r.remind_at = None
+0470:                             else:
+0471:                                 try:
+0472:                                     next_time = predict_next_remind_at(r.user_id, r.team_id, r.parrot_id, r.reminder_type)
+0473:                                     r.remind_at = next_time
+0474:                                 except Exception as e:
+0475:                                     # 若预测异常，清空，避免重复触发
+0476:                                     r.remind_at = None
+0477:                             db.session.commit()
+0478:                             print(f"个性化推送成功: user={user.id}, type={r.reminder_type}")
+0479:                         else:
+0480:                             print(f"个性化推送失败: {result}")
+0481:                     except Exception as e:
+0482:                         print(f"个性化推送异常: {str(e)}")
+0483: 
+0484:                 # 2) 处理每日固定时间提醒
+0485:                 reminders = Reminder.query.filter_by(is_active=True, frequency='daily').all()
+0486:                 for r in reminders:
+0487:                     try:
+0488:                         if not r.reminder_time:
+0489:                             continue
+0490:                         if r.reminder_time.hour != hh or r.reminder_time.minute != mm:
+0491:                             continue
+0492: 
+0493:                         # 去重：当天是否已推送
+0494:                         exists = ReminderLog.query.filter_by(reminder_id=r.id, sent_date=today).first()
+0495:                         if exists:
+0496:                             continue
+0497: 
+0498:                         user = User.query.get(r.user_id)
+0499:                         if not user or not user.openid:
+0500:                             continue
+0501: 
+0502:                         # 根据类型选择模板ID
+0503:                         if r.reminder_type == 'feeding':
+0504:                             template_id = getattr(Config, 'WECHAT_TEMPLATE_ID_FEEDING', None)
+0505:                             reminder_type_cn = '喂食提醒'
+0506:                         elif r.reminder_type == 'cleaning':
+0507:                             template_id = getattr(Config, 'WECHAT_TEMPLATE_ID_CLEANING', None)
+0508:                             reminder_type_cn = '清洁提醒'
+0509:                         else:
+0510:                             template_id = None
+0511:                             reminder_type_cn = '系统提醒'
+0512: 
+0513:                         if not template_id:
+0514:                             # 未配置模板则跳过服务端订阅推送，可考虑仅记录日志
+0515:                             continue
+0516: 
+0517:                         # 构造模板数据（关键词字段需与模板匹配）
+0518:                         template_data = {
+0519:                             'thing1': { 'value': r.title or '您有一条提醒' },
+0520:                             'time2': { 'value': now.strftime('%Y-%m-%d %H:%M') },
+0521:                             'thing3': { 'value': user.nickname or '鹦鹉管家' },
+0522:                             'thing4': { 'value': reminder_type_cn }
+0523:                         }
+0524: 
+0525:                         payload = {
+0526:                             'touser': user.openid,
+0527:                             'template_id': template_id,
+0528:                             'page': 'pages/index/index',
+0529:                             'data': template_data
+0530:                         }
+0531: 
+0532:                         resp = requests.post(api_url, json=payload)
+0533:                         result = resp.json()
+0534:                         if result.get('errcode') == 0:
+0535:                             # 记录日志，避免当天重复
+0536:                             log = ReminderLog(reminder_id=r.id, sent_date=today)
+0537:                             db.session.add(log)
+0538:                             db.session.commit()
+0539:                             print(f"定时推送成功: user={user.id}, type={r.reminder_type}")
+0540:                         else:
+0541:                             print(f"定时推送失败: {result}")
+0542:                     except Exception as e:
+0543:                         print(f"定时推送异常: {str(e)}")
+0544: 
+0545:         # 定时发布系统公告任务：每分钟检查一次
+0546:         def publish_scheduled_announcements():
+0547:             from models import Announcement
+0548:             from datetime import datetime
+0549:             with app.app_context():
+0550:                 now = datetime.now()
+0551:                 try:
+0552:                     due = Announcement.query.filter_by(status='scheduled').all()
+0553:                     count = 0
+0554:                     for a in due:
+0555:                         if a.scheduled_at and a.scheduled_at <= now:
+0556:                             a.status = 'published'
+0557:                             count += 1
+0558:                     if count > 0:
+0559:                         db.session.commit()
+0560:                 except Exception as e:
+0561:                     db.session.rollback()
+0562:                     print(f'发布定时公告失败: {e}')
+0563: 
+0564:         # 每分钟执行一次，检测当前分钟是否有到点提醒与公告
+0565:         scheduler.add_job(push_due_reminders, 'cron', second=0)
+0566:         scheduler.add_job(publish_scheduled_announcements, 'cron', second=10)
+0567:         def run_backup():
+0568:             from models import SystemSetting
+0569:             try:
+0570:                 row = SystemSetting.query.filter_by(key='BACKUP_SCHEDULE_HOUR').first()
+0571:                 h = int(str(row.value).strip()) if row and row.value is not None else 3
+0572:             except Exception:
+0573:                 h = 3
+0574:             now = datetime.now()
+0575:             if now.hour == h:
+0576:                 with app.app_context():
+0577:                     backup_database_to_remote()
+0578:         scheduler.add_job(run_backup, 'cron', minute=0, second=20)
+0579:         def run_sync():
+0580:             from models import SystemSetting
+0581:             try:
+0582:                 row = SystemSetting.query.filter_by(key='SYNC_SCHEDULE_MINUTE').first()
+0583:                 m = int(str(row.value).strip()) if row and row.value is not None else 0
+0584:             except Exception:
+0585:                 m = 0
+0586:             now = datetime.now()
+0587:             if now.minute == m:
+0588:                 with app.app_context():
+0589:                     sync_database_to_remote()
+0590:         scheduler.add_job(run_sync, 'cron', second=40)
+0591:         scheduler.start()
+0592:         print('APScheduler 已启动')
+0593:     except Exception as e:
+0594:         print(f'初始化APScheduler失败: {str(e)}')
+0595: 
+0596: if __name__ == '__main__':
+0597:     app = create_app()
+0598:     
+0599:     # 初始化数据库
+0600:     init_db(app)
+0601:     
+0602:     # 调试：打印所有路由
+0603:     print("注册的路由:")
+0604:     for rule in app.url_map.iter_rules():
+0605:         print(f"  {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
+0606:     
+0607:     # 仅在开发环境下启动 Flask 内置开发服务器
+0608:     env = os.environ.get('FLASK_ENV', 'production')
+0609:     if env == 'development':
+0610:         print("启动开发服务器...")
+0611:         host = app.config.get('HOST', '0.0.0.0')
+0612:         try:
+0613:             port = int(app.config.get('PORT', 5075))
+0614:         except Exception:
+0615:             port = 5075
+0616:         print(f"服务器地址: http://{host}:{port}")
+0617:         app.run(host=host, port=port, debug=True)
+0618:     else:
+0619:         print("当前为生产环境：请使用 Waitress/Gunicorn 等 WSGI 服务器启动。")
+===== 文件: backend\backup.py =====
+0001: import os
+0002: from datetime import datetime, timedelta
+0003: from sqlalchemy import text, inspect
+0004: from config import Config
+0005: from models import db, SystemSetting, BackupLog
+0006: import pymysql
+0007: 
+0008: def _get_setting_str(key, default=None):
+0009:     try:
+0010:         row = SystemSetting.query.filter_by(key=key).first()
+0011:         val = (row.value if row and row.value is not None else None)
+0012:         if val is None:
+0013:             return default
+0014:         return str(val)
+0015:     except Exception:
+0016:         return default
+0017: 
+0018: def _get_setting_int(key, default=0):
+0019:     try:
+0020:         s = _get_setting_str(key, None)
+0021:         if s is None or str(s).strip() == '':
+0022:             return default
+0023:         return int(str(s).strip())
+0024:     except Exception:
+0025:         return default
+0026: 
+0027: def _get_setting_bool(key, default=False):
+0028:     try:
+0029:         s = _get_setting_str(key, None)
+0030:         if s is None:
+0031:             return default
+0032:         v = str(s).strip().lower()
+0033:         if v in ['1','true','yes','y','on']:
+0034:             return True
+0035:         if v in ['0','false','no','n','off']:
+0036:             return False
+0037:         return default
+0038:     except Exception:
+0039:         return default
+0040: 
+0041: def _get_remote_conn():
+0042:     host = _get_setting_str('BACKUP_REMOTE_HOST', getattr(Config, 'BACKUP_REMOTE_HOST', None))
+0043:     port = _get_setting_int('BACKUP_REMOTE_PORT', getattr(Config, 'BACKUP_REMOTE_PORT', 3306))
+0044:     user = _get_setting_str('BACKUP_REMOTE_USER', getattr(Config, 'BACKUP_REMOTE_USER', None))
+0045:     password = _get_setting_str('BACKUP_REMOTE_PASSWORD', getattr(Config, 'BACKUP_REMOTE_PASSWORD', None))
+0046:     if not host or not user or password is None:
+0047:         return None
+0048:     try:
+0049:         conn = pymysql.connect(host=host, port=port, user=user, password=password, charset='utf8mb4', autocommit=True)
+0050:         return conn
+0051:     except Exception:
+0052:         return None
+0053: 
+0054: def _ensure_remote_db(conn, db_name):
+0055:     cur = conn.cursor()
+0056:     cur.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci")
+0057:     cur.execute(f"USE `{db_name}`")
+0058:     cur.close()
+0059: 
+0060: def _list_tables():
+0061:     inspector = inspect(db.engine)
+0062:     return inspector.get_table_names()
+0063: 
+0064: def _show_create_table(table_name):
+0065:     r = db.session.execute(text(f"SHOW CREATE TABLE `{table_name}`")).fetchone()
+0066:     return r[1] if r and len(r) > 1 else None
+0067: 
+0068: def _fetch_rows(table_name):
+0069:     with db.engine.connect() as conn:
+0070:         rows = conn.execute(text(f"SELECT * FROM `{table_name}`")).fetchall()
+0071:         cols = conn.execute(text(f"SHOW COLUMNS FROM `{table_name}`")).fetchall()
+0072:         col_names = [c[0] for c in cols]
+0073:         return col_names, rows
+0074: 
+0075: def _truncate_remote_table(conn, table_name):
+0076:     cur = conn.cursor()
+0077:     cur.execute(f"DROP TABLE IF EXISTS `{table_name}`")
+0078:     cur.close()
+0079: 
+0080: def _create_remote_table(conn, create_sql):
+0081:     cur = conn.cursor()
+0082:     cur.execute(create_sql)
+0083:     cur.close()
+0084: 
+0085: def _insert_rows(conn, table_name, col_names, rows):
+0086:     if not rows:
+0087:         return
+0088:     placeholders = ",".join(["%s"] * len(col_names))
+0089:     cols = ",".join([f"`{c}`" for c in col_names])
+0090:     sql = f"INSERT INTO `{table_name}` ({cols}) VALUES ({placeholders})"
+0091:     cur = conn.cursor()
+0092:     cur.executemany(sql, [tuple(r) for r in rows])
+0093:     cur.close()
+0094: 
+0095: def _prune_old_backups(conn, prefix, keep_days):
+0096:     try:
+0097:         cur = conn.cursor()
+0098:         cur.execute("SHOW DATABASES")
+0099:         all_dbs = [row[0] for row in cur.fetchall()]
+0100:         cur.close()
+0101:         to_drop = []
+0102:         for name in all_dbs:
+0103:             if name.startswith(prefix):
+0104:                 try:
+0105:                     date_str = name[len(prefix):]
+0106:                     dt = datetime.strptime(date_str, "%Y%m%d")
+0107:                     if datetime.utcnow() - dt > timedelta(days=keep_days):
+0108:                         to_drop.append(name)
+0109:                 except Exception:
+0110:                     pass
+0111:         for db_name in to_drop:
+0112:             c = conn.cursor()
+0113:             c.execute(f"DROP DATABASE `{db_name}`")
+0114:             c.close()
+0115:     except Exception:
+0116:         pass
+0117: 
+0118: def backup_database_to_remote():
+0119:     enabled = _get_setting_bool('BACKUP_ENABLED', getattr(Config, 'BACKUP_ENABLED', False))
+0120:     if not enabled:
+0121:         print("数据库备份未启用")
+0122:         return
+0123:     remote = _get_remote_conn()
+0124:     if not remote:
+0125:         print("远程数据库连接失败")
+0126:         return
+0127:     src_db = _get_setting_str('DB_NAME', getattr(Config, 'DB_NAME', 'parrot_breeding'))
+0128:     prefix = _get_setting_str('BACKUP_REMOTE_DB_PREFIX', getattr(Config, 'BACKUP_REMOTE_DB_PREFIX', f"{src_db}_backup_"))
+0129:     today = datetime.utcnow().strftime("%Y%m%d")
+0130:     target_db = f"{prefix}{today}"
+0131:     keep_days = _get_setting_int('BACKUP_RETENTION_DAYS', getattr(Config, 'BACKUP_RETENTION_DAYS', 7))
+0132:     log = BackupLog(op_type='backup', status='running', target_db=target_db)
+0133:     try:
+0134:         db.session.add(log)
+0135:         db.session.commit()
+0136:     except Exception:
+0137:         try:
+0138:             db.session.rollback()
+0139:         except Exception:
+0140:             pass
+0141:     try:
+0142:         _ensure_remote_db(remote, target_db)
+0143:         tables = _list_tables()
+0144:         cur = remote.cursor()
+0145:         cur.execute("SET FOREIGN_KEY_CHECKS=0")
+0146:         cur.close()
+0147:         for t in tables:
+0148:             create_sql = _show_create_table(t)
+0149:             if not create_sql:
+0150:                 continue
+0151:             _truncate_remote_table(remote, t)
+0152:             _create_remote_table(remote, create_sql)
+0153:             cols, rows = _fetch_rows(t)
+0154:             _insert_rows(remote, t, cols, rows)
+0155:         cur = remote.cursor()
+0156:         cur.execute("SET FOREIGN_KEY_CHECKS=1")
+0157:         cur.close()
+0158:         _prune_old_backups(remote, prefix, keep_days)
+0159:         print(f"数据库已备份到 {target_db}")
+0160:         try:
+0161:             log.status = 'success'
+0162:             log.finished_at = datetime.utcnow()
+0163:             log.message = f"备份完成: {target_db}"
+0164:             db.session.commit()
+0165:         except Exception:
+0166:             try:
+0167:                 db.session.rollback()
+0168:             except Exception:
+0169:                 pass
+0170:     except Exception as e:
+0171:         print(f"数据库备份失败: {str(e)}")
+0172:         try:
+0173:             log.status = 'failed'
+0174:             log.finished_at = datetime.utcnow()
+0175:             log.message = str(e)
+0176:             db.session.commit()
+0177:         except Exception:
+0178:             try:
+0179:                 db.session.rollback()
+0180:             except Exception:
+0181:                 pass
+0182:     finally:
+0183:         try:
+0184:             remote.close()
+0185:         except Exception:
+0186:             pass
+0187: 
+0188: def _table_has_column(table_name, col):
+0189:     cols = db.session.execute(text(f"SHOW COLUMNS FROM `{table_name}`")).fetchall()
+0190:     return any(str(r[0]) == col for r in cols)
+0191: 
+0192: def _ensure_remote_table_exists(conn, table_name, create_sql):
+0193:     c = conn.cursor()
+0194:     c.execute("SHOW TABLES")
+0195:     existing = [row[0] for row in c.fetchall()]
+0196:     if table_name not in existing:
+0197:         c.execute(create_sql)
+0198:     c.close()
+0199: 
+0200: def _select_changed_rows(table_name, last_ts):
+0201:     ts_col = None
+0202:     if _table_has_column(table_name, 'updated_at'):
+0203:         ts_col = 'updated_at'
+0204:     elif _table_has_column(table_name, 'created_at'):
+0205:         ts_col = 'created_at'
+0206:     cols = db.session.execute(text(f"SHOW COLUMNS FROM `{table_name}`")).fetchall()
+0207:     col_names = [c[0] for c in cols]
+0208:     if ts_col and last_ts:
+0209:         q = text(f"SELECT * FROM `{table_name}` WHERE `{ts_col}` >= :last_ts")
+0210:         rows = db.session.execute(q, { 'last_ts': last_ts }).fetchall()
+0211:     else:
+0212:         rows = db.session.execute(text(f"SELECT * FROM `{table_name}`")).fetchall()
+0213:     return col_names, rows
+0214: 
+0215: def _upsert_rows(conn, table_name, col_names, rows):
+0216:     if not rows:
+0217:         return
+0218:     cols = ",".join([f"`{c}`" for c in col_names])
+0219:     placeholders = ",".join(["%s"] * len(col_names))
+0220:     updates = ",".join([f"`{c}`=VALUES(`{c}`)" for c in col_names])
+0221:     sql = f"INSERT INTO `{table_name}` ({cols}) VALUES ({placeholders}) ON DUPLICATE KEY UPDATE {updates}"
+0222:     cur = conn.cursor()
+0223:     cur.executemany(sql, [tuple(r) for r in rows])
+0224:     cur.close()
+0225: 
+0226: def sync_database_to_remote():
+0227:     enabled = _get_setting_bool('SYNC_ENABLED', getattr(Config, 'SYNC_ENABLED', False))
+0228:     if not enabled:
+0229:         return
+0230:     remote = _get_remote_conn()
+0231:     if not remote:
+0232:         return
+0233:     src_db = _get_setting_str('DB_NAME', getattr(Config, 'DB_NAME', 'parrot_breeding'))
+0234:     target_db = _get_setting_str('BACKUP_REMOTE_DB_NAME', getattr(Config, 'BACKUP_REMOTE_DB_NAME', src_db))
+0235:     log = BackupLog(op_type='sync', status='running', target_db=target_db)
+0236:     try:
+0237:         db.session.add(log)
+0238:         db.session.commit()
+0239:     except Exception:
+0240:         try:
+0241:             db.session.rollback()
+0242:         except Exception:
+0243:             pass
+0244:     try:
+0245:         _ensure_remote_db(remote, target_db)
+0246:         tables = _list_tables()
+0247:         c = remote.cursor()
+0248:         c.execute("SET FOREIGN_KEY_CHECKS=0")
+0249:         c.execute(f"USE `{target_db}`")
+0250:         c.close()
+0251:         last_row = SystemSetting.query.filter_by(key='REMOTE_SYNC_LAST_TS').first()
+0252:         last_ts = None
+0253:         if last_row and last_row.value:
+0254:             try:
+0255:                 last_ts = datetime.fromisoformat(str(last_row.value))
+0256:             except Exception:
+0257:                 last_ts = None
+0258:         for t in tables:
+0259:             create_sql = _show_create_table(t)
+0260:             if not create_sql:
+0261:                 continue
+0262:             _ensure_remote_table_exists(remote, t, create_sql)
+0263:             col_names, rows = _select_changed_rows(t, last_ts)
+0264:             _upsert_rows(remote, t, col_names, rows)
+0265:         now = datetime.utcnow().isoformat()
+0266:         if not last_row:
+0267:             last_row = SystemSetting(key='REMOTE_SYNC_LAST_TS', value=now)
+0268:             db.session.add(last_row)
+0269:         else:
+0270:             last_row.value = now
+0271:         db.session.commit()
+0272:         try:
+0273:             log.status = 'success'
+0274:             log.finished_at = datetime.utcnow()
+0275:             log.message = "增量同步完成"
+0276:             db.session.commit()
+0277:         except Exception:
+0278:             try:
+0279:                 db.session.rollback()
+0280:             except Exception:
+0281:                 pass
+0282:     except Exception:
+0283:         try:
+0284:             db.session.rollback()
+0285:         except Exception:
+0286:             pass
+0287:         try:
+0288:             log.status = 'failed'
+0289:             log.finished_at = datetime.utcnow()
+0290:             log.message = '同步失败'
+0291:             db.session.commit()
+0292:         except Exception:
+0293:             try:
+0294:                 db.session.rollback()
+0295:             except Exception:
+0296:                 pass
+0297:     finally:
+0298:         try:
+0299:             cur = remote.cursor()
+0300:             cur.execute("SET FOREIGN_KEY_CHECKS=1")
+0301:             cur.close()
+0302:             remote.close()
+0303:         except Exception:
+0304:             pass
+0305: 
+===== 文件: backend\config.py =====
+0001: import os
+0002: from dotenv import load_dotenv
+0003: 
+0004: load_dotenv()
+0005: 
+0006: class Config:
+0007:     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
+0008:     
+0009:     # 数据库配置
+0010:     DB_HOST = os.environ.get('DB_HOST') or 'localhost'
+0011:     DB_PORT = os.environ.get('DB_PORT') or '3306'
+0012:     DB_USER = os.environ.get('DB_USER') or 'root'
+0013:     DB_PASSWORD = os.environ.get('DB_PASSWORD') or ''
+0014:     DB_NAME = os.environ.get('DB_NAME') or 'parrot_breeding'
+0015:     
+0016:     SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
+0017:     SQLALCHEMY_TRACK_MODIFICATIONS = False
+0018:     
+0019:     # 微信小程序配置
+0020:     WECHAT_APP_ID = os.environ.get('WECHAT_APP_ID')
+0021:     WECHAT_APP_SECRET = os.environ.get('WECHAT_APP_SECRET')
+0022:     # 订阅消息模板ID（服务端定时推送使用）
+0023:     WECHAT_TEMPLATE_ID_FEEDING = os.environ.get('WECHAT_TEMPLATE_ID_FEEDING')
+0024:     WECHAT_TEMPLATE_ID_CLEANING = os.environ.get('WECHAT_TEMPLATE_ID_CLEANING')
+0025:     WECHAT_TEMPLATE_ID_FEEDBACK = os.environ.get('WECHAT_TEMPLATE_ID_FEEDBACK')
+0026:     
+0027:     # 文件上传配置
+0028:     # 统一将用户上传的图片存储到指定目录（通过环境变量配置）
+0029:     # 注意：Windows UNC 路径需要使用原始字符串以保留反斜杠
+0030:     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads', 'images')
+0031:     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH') or 16 * 1024 * 1024)  # 16MB
+0032:     
+0033:     # 允许的文件扩展名
+0034:     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+0035: 
+0036:     # 应用版本（用于对外展示，通过环境变量注入）
+0037:     APP_VERSION = os.environ.get('APP_VERSION') or '1.0.0'
+0038:     
+0039:     # 基础URL配置（用于生成图片等资源的完整可访问地址）
+0040:     BASE_URL = os.environ.get('BASE_URL') or 'https://bimai.xyz'
+0041: 
+0042:     REDIS_URL = os.environ.get('REDIS_URL')
+0043:     REDIS_HOST = os.environ.get('REDIS_HOST') or '127.0.0.1'
+0044:     try:
+0045:         REDIS_PORT = int(os.environ.get('REDIS_PORT') or 6379)
+0046:     except Exception:
+0047:         REDIS_PORT = 6379
+0048:     try:
+0049:         REDIS_DB = int(os.environ.get('REDIS_DB') or 0)
+0050:     except Exception:
+0051:         REDIS_DB = 0
+0052: 
+0053:     # 服务端网络配置（从 .env 读取）
+0054:     HOST = os.environ.get('HOST') or '0.0.0.0'
+0055:     try:
+0056:         PORT = int(os.environ.get('PORT') or os.environ.get('BACKEND_PORT') or 5075)
+0057:     except Exception:
+0058:         PORT = 5075
+0059: 
+0060:     # 护理指南配置（后端可配置内容）
+0061:     CARE_GUIDE_CONFIG_PATH = os.environ.get('CARE_GUIDE_CONFIG_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'care_guide_config.json')
+0062:     CARE_GUIDE_ADMIN_KEY = os.environ.get('CARE_GUIDE_ADMIN_KEY')  # 可选：用于更新接口的简单鉴权
+0063: 
+0064:     # remove.bg 配置
+0065:     REMOVE_BG_API_KEY = os.environ.get('REMOVE_BG_API_KEY')
+0066:     REMOVE_BG_API_URL = os.environ.get('REMOVE_BG_API_URL') or 'https://api.remove.bg/v1.0/removebg'
+0067: 
+0068:     BACKUP_ENABLED = (os.environ.get('BACKUP_ENABLED') or 'false').lower() == 'true'
+0069:     BACKUP_REMOTE_HOST = os.environ.get('BACKUP_REMOTE_HOST') or 'aibim.xyz'
+0070:     try:
+0071:         BACKUP_REMOTE_PORT = int(os.environ.get('BACKUP_REMOTE_PORT') or 3306)
+0072:     except Exception:
+0073:         BACKUP_REMOTE_PORT = 3306
+0074:     BACKUP_REMOTE_USER = os.environ.get('BACKUP_REMOTE_USER')
+0075:     BACKUP_REMOTE_PASSWORD = os.environ.get('BACKUP_REMOTE_PASSWORD')
+0076:     BACKUP_REMOTE_DB_PREFIX = os.environ.get('BACKUP_REMOTE_DB_PREFIX') or f"{DB_NAME}_backup_"
+0077:     try:
+0078:         BACKUP_SCHEDULE_HOUR = int(os.environ.get('BACKUP_SCHEDULE_HOUR') or 3)
+0079:     except Exception:
+0080:         BACKUP_SCHEDULE_HOUR = 3
+0081:     try:
+0082:         BACKUP_RETENTION_DAYS = int(os.environ.get('BACKUP_RETENTION_DAYS') or 7)
+0083:     except Exception:
+0084:         BACKUP_RETENTION_DAYS = 7
+0085: 
+0086:     SYNC_ENABLED = (os.environ.get('SYNC_ENABLED') or 'false').lower() == 'true'
+0087:     try:
+0088:         SYNC_SCHEDULE_MINUTE = int(os.environ.get('SYNC_SCHEDULE_MINUTE') or 0)
+0089:     except Exception:
+0090:         SYNC_SCHEDULE_MINUTE = 0
+0091:     BACKUP_REMOTE_DB_NAME = os.environ.get('BACKUP_REMOTE_DB_NAME') or DB_NAME
+0092: 
+0093: class DevelopmentConfig(Config):
+0094:     DEBUG = True
+0095: 
+0096: class ProductionConfig(Config):
+0097:     DEBUG = False
+0098:     # 数据库连接池优化（提升并发与稳定性，仅生产环境启用）
+0099:     SQLALCHEMY_ENGINE_OPTIONS = {
+0100:         "pool_size": 20,
+0101:         "max_overflow": 20,
+0102:         "pool_recycle": 1800,
+0103:         "pool_pre_ping": True,
+0104:         "pool_timeout": 30,
+0105:     }
+0106: 
+0107: config = {
+0108:     'development': DevelopmentConfig,
+0109:     'production': ProductionConfig,
+0110:     'default': DevelopmentConfig
+0111: }
+===== 文件: backend\legacy_scripts\add_announcements_images_migration.py =====
+0001: import sys, os
+0002: sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+0003: from models import db
+0004: from sqlalchemy import text
+0005: from app import create_app
+0006: 
+0007: def upgrade():
+0008:     app = create_app()
+0009:     with app.app_context():
+0010:         try:
+0011:             db.session.execute(text('ALTER TABLE announcements ADD COLUMN image_urls TEXT'))
+0012:             db.session.commit()
+0013:             print('迁移完成：已添加 announcements.image_urls 字段')
+0014:         except Exception as e:
+0015:             db.session.rollback()
+0016:             print(f'迁移警告或失败：{e}')
+0017: 
+0018: def downgrade():
+0019:     app = create_app()
+0020:     with app.app_context():
+0021:         try:
+0022:             print('不支持自动回滚删除列。若需回滚请手动处理。')
+0023:         except Exception as e:
+0024:             print(f'回滚失败：{e}')
+0025: 
+0026: if __name__ == '__main__':
+0027:     upgrade()
+===== 文件: backend\legacy_scripts\add_creator_field_migration.py =====
+0001: #!/usr/bin/env python3
+0002: """
+0003: 数据库迁移脚本：为记录表添加创建者字段
+0004: """
+0005: 
+0006: import sqlite3
+0007: import os
+0008: from datetime import datetime
+0009: 
+0010: def migrate_database():
+0011:     """执行数据库迁移"""
+0012:     db_path = 'parrot_keeper.db'
+0013:     
+0014:     if not os.path.exists(db_path):
+0015:         print("数据库文件不存在，跳过迁移")
+0016:         return
+0017:     
+0018:     conn = sqlite3.connect(db_path)
+0019:     cursor = conn.cursor()
+0020:     
+0021:     try:
+0022:         print("开始数据库迁移...")
+0023:         
+0024:         # 检查并添加 feeding_records 表的 created_by_user_id 字段
+0025:         cursor.execute("PRAGMA table_info(feeding_records)")
+0026:         columns = [column[1] for column in cursor.fetchall()]
+0027:         
+0028:         if 'created_by_user_id' not in columns:
+0029:             print("为 feeding_records 表添加 created_by_user_id 字段...")
+0030:             cursor.execute("""
+0031:                 ALTER TABLE feeding_records 
+0032:                 ADD COLUMN created_by_user_id INTEGER 
+0033:                 REFERENCES users(id)
+0034:             """)
+0035:             
+0036:             # 为现有记录设置创建者（通过鹦鹉的拥有者）
+0037:             cursor.execute("""
+0038:                 UPDATE feeding_records 
+0039:                 SET created_by_user_id = (
+0040:                     SELECT user_id FROM parrots 
+0041:                     WHERE parrots.id = feeding_records.parrot_id
+0042:                 )
+0043:                 WHERE created_by_user_id IS NULL
+0044:             """)
+0045:         
+0046:         # 检查并添加 health_records 表的 created_by_user_id 字段
+0047:         cursor.execute("PRAGMA table_info(health_records)")
+0048:         columns = [column[1] for column in cursor.fetchall()]
+0049:         
+0050:         if 'created_by_user_id' not in columns:
+0051:             print("为 health_records 表添加 created_by_user_id 字段...")
+0052:             cursor.execute("""
+0053:                 ALTER TABLE health_records 
+0054:                 ADD COLUMN created_by_user_id INTEGER 
+0055:                 REFERENCES users(id)
+0056:             """)
+0057:             
+0058:             # 为现有记录设置创建者
+0059:             cursor.execute("""
+0060:                 UPDATE health_records 
+0061:                 SET created_by_user_id = (
+0062:                     SELECT user_id FROM parrots 
+0063:                     WHERE parrots.id = health_records.parrot_id
+0064:                 )
+0065:                 WHERE created_by_user_id IS NULL
+0066:             """)
+0067:         
+0068:         # 检查并添加 cleaning_records 表的 created_by_user_id 字段
+0069:         cursor.execute("PRAGMA table_info(cleaning_records)")
+0070:         columns = [column[1] for column in cursor.fetchall()]
+0071:         
+0072:         if 'created_by_user_id' not in columns:
+0073:             print("为 cleaning_records 表添加 created_by_user_id 字段...")
+0074:             cursor.execute("""
+0075:                 ALTER TABLE cleaning_records 
+0076:                 ADD COLUMN created_by_user_id INTEGER 
+0077:                 REFERENCES users(id)
+0078:             """)
+0079:             
+0080:             # 为现有记录设置创建者
+0081:             cursor.execute("""
+0082:                 UPDATE cleaning_records 
+0083:                 SET created_by_user_id = (
+0084:                     SELECT user_id FROM parrots 
+0085:                     WHERE parrots.id = cleaning_records.parrot_id
+0086:                 )
+0087:                 WHERE created_by_user_id IS NULL
+0088:             """)
+0089:         
+0090:         # 检查并添加 breeding_records 表的 created_by_user_id 字段
+0091:         cursor.execute("PRAGMA table_info(breeding_records)")
+0092:         columns = [column[1] for column in cursor.fetchall()]
+0093:         
+0094:         if 'created_by_user_id' not in columns:
+0095:             print("为 breeding_records 表添加 created_by_user_id 字段...")
+0096:             cursor.execute("""
+0097:                 ALTER TABLE breeding_records 
+0098:                 ADD COLUMN created_by_user_id INTEGER 
+0099:                 REFERENCES users(id)
+0100:             """)
+0101:             
+0102:             # 为现有记录设置创建者
+0103:             cursor.execute("""
+0104:                 UPDATE breeding_records 
+0105:                 SET created_by_user_id = (
+0106:                     SELECT user_id FROM parrots 
+0107:                     WHERE parrots.id = breeding_records.male_parrot_id
+0108:                 )
+0109:                 WHERE created_by_user_id IS NULL
+0110:             """)
+0111:         
+0112:         conn.commit()
+0113:         print("数据库迁移完成！")
+0114:         
+0115:     except Exception as e:
+0116:         conn.rollback()
+0117:         print(f"迁移失败: {e}")
+0118:         raise
+0119:     finally:
+0120:         conn.close()
+0121: 
+0122: if __name__ == '__main__':
+0123:     migrate_database()
+===== 文件: backend\legacy_scripts\add_health_record_notes_migration.py =====
+0001: from models import db
+0002: from app import create_app
+0003: from sqlalchemy import text
+0004: 
+0005: """
+0006: 向 health_records 表新增 notes 字段（TEXT，用于存储备注）。
+0007: """
+0008: 
+0009: def upgrade():
+0010:     app = create_app()
+0011:     with app.app_context():
+0012:         try:
+0013:             db.session.execute(text('ALTER TABLE health_records ADD COLUMN notes TEXT'))
+0014:             db.session.commit()
+0015:             print('迁移完成：已添加 health_records.notes 字段')
+0016:         except Exception as e:
+0017:             db.session.rollback()
+0018:             print(f'迁移警告或失败：{e}')
+0019: 
+0020: if __name__ == '__main__':
+0021:     upgrade()
+0022: 
+0023: 
+0024: 
+0025: 
+0026: 
+0027: 
+0028: 
+===== 文件: backend\legacy_scripts\add_health_record_photos_migration.py =====
+0001: from models import db
+0002: from sqlalchemy import text
+0003: from app import create_app
+0004: 
+0005: """
+0006: 向 health_records 表新增 image_urls 字段（TEXT，用于存储JSON数组的记录照片URL）。
+0007: 运行方式：在已激活的虚拟环境中执行此脚本，或合并到你的统一迁移流程。
+0008: """
+0009: 
+0010: def upgrade():
+0011:     app = create_app()
+0012:     with app.app_context():
+0013:         try:
+0014:             db.session.execute(text('ALTER TABLE health_records ADD COLUMN image_urls TEXT'))
+0015:             db.session.commit()
+0016:             print('迁移完成：已添加 health_records.image_urls 字段')
+0017:         except Exception as e:
+0018:             db.session.rollback()
+0019:             # 若字段已存在（如 Duplicate column）则忽略
+0020:             print(f'迁移警告或失败：{e}')
+0021: 
+0022: def downgrade():
+0023:     app = create_app()
+0024:     with app.app_context():
+0025:         try:
+0026:             # SQLite/MySQL 回滚删除列需更复杂操作，保留占位
+0027:             print('不支持自动回滚删除列。若需回滚请手动处理。')
+0028:         except Exception as e:
+0029:             print(f'回滚失败：{e}')
+0030: 
+0031: if __name__ == '__main__':
+0032:     upgrade()
+0033: 
+0034: 
+===== 文件: backend\legacy_scripts\add_health_status_migration.py =====
+0001: #!/usr/bin/env python3
+0002: # -*- coding: utf-8 -*-
+0003: """
+0004: 数据库迁移脚本：为 health_records 表添加 health_status 字段
+0005: """
+0006: 
+0007: import pymysql
+0008: from config import Config
+0009: 
+0010: def add_health_status_column():
+0011:     """为 health_records 表添加 health_status 字段"""
+0012:     
+0013:     # 连接数据库
+0014:     connection = pymysql.connect(
+0015:         host=Config.DB_HOST,
+0016:         port=int(Config.DB_PORT),
+0017:         user=Config.DB_USER,
+0018:         password=Config.DB_PASSWORD,
+0019:         database=Config.DB_NAME,
+0020:         charset='utf8mb4'
+0021:     )
+0022:     
+0023:     try:
+0024:         with connection.cursor() as cursor:
+0025:             # 检查字段是否已存在
+0026:             cursor.execute("""
+0027:                 SELECT COLUMN_NAME 
+0028:                 FROM INFORMATION_SCHEMA.COLUMNS 
+0029:                 WHERE TABLE_SCHEMA = %s 
+0030:                 AND TABLE_NAME = 'health_records' 
+0031:                 AND COLUMN_NAME = 'health_status'
+0032:             """, (Config.DB_NAME,))
+0033:             
+0034:             if cursor.fetchone():
+0035:                 print("health_status 字段已存在，跳过迁移")
+0036:                 return
+0037:             
+0038:             # 添加 health_status 字段
+0039:             print("正在添加 health_status 字段...")
+0040:             cursor.execute("""
+0041:                 ALTER TABLE health_records 
+0042:                 ADD COLUMN health_status ENUM('healthy', 'sick', 'recovering', 'observation') 
+0043:                 DEFAULT 'healthy' 
+0044:                 AFTER record_type
+0045:             """)
+0046:             
+0047:             # 提交更改
+0048:             connection.commit()
+0049:             print("✅ health_status 字段添加成功")
+0050:             
+0051:             # 验证字段是否添加成功
+0052:             cursor.execute("""
+0053:                 SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT 
+0054:                 FROM INFORMATION_SCHEMA.COLUMNS 
+0055:                 WHERE TABLE_SCHEMA = %s 
+0056:                 AND TABLE_NAME = 'health_records' 
+0057:                 AND COLUMN_NAME = 'health_status'
+0058:             """, (Config.DB_NAME,))
+0059:             
+0060:             result = cursor.fetchone()
+0061:             if result:
+0062:                 print(f"✅ 验证成功: {result}")
+0063:             else:
+0064:                 print("❌ 验证失败: 字段未找到")
+0065:                 
+0066:     except Exception as e:
+0067:         print(f"❌ 迁移失败: {e}")
+0068:         connection.rollback()
+0069:         raise
+0070:     finally:
+0071:         connection.close()
+0072: 
+0073: if __name__ == "__main__":
+0074:     print("开始执行 health_status 字段迁移...")
+0075:     add_health_status_column()
+0076:     print("迁移完成！")
+===== 文件: backend\legacy_scripts\add_milk_powder.py =====
+0001: #!/usr/bin/env python3
+0002: # -*- coding: utf-8 -*-
+0003: 
+0004: import mysql.connector
+0005: from config import Config
+0006: 
+0007: def add_milk_powder_feed_type():
+0008:     try:
+0009:         # 连接数据库
+0010:         connection = mysql.connector.connect(
+0011:             host=Config.DB_HOST,
+0012:             user=Config.DB_USER,
+0013:             password=Config.DB_PASSWORD,
+0014:             database=Config.DB_NAME,
+0015:             charset='utf8mb4'
+0016:         )
+0017:         
+0018:         cursor = connection.cursor()
+0019:         
+0020:         # 检查是否已存在奶粉类型
+0021:         cursor.execute("SELECT COUNT(*) FROM feed_types WHERE type = 'milk_powder'")
+0022:         count = cursor.fetchone()[0]
+0023:         
+0024:         if count > 0:
+0025:             print(f"数据库中已存在 {count} 条奶粉类型记录")
+0026:         else:
+0027:             # 添加奶粉类型记录
+0028:             insert_query = """
+0029:             INSERT INTO feed_types (name, brand, type) 
+0030:             VALUES ('幼鸟奶粉', '营养鸟', 'milk_powder')
+0031:             """
+0032:             cursor.execute(insert_query)
+0033:             connection.commit()
+0034:             print("成功添加奶粉类型记录")
+0035:         
+0036:         # 查询所有饲料类型以确认
+0037:         cursor.execute("SELECT id, name, brand, type FROM feed_types ORDER BY id")
+0038:         feed_types = cursor.fetchall()
+0039:         
+0040:         print("\n当前数据库中的所有饲料类型记录：")
+0041:         print("-" * 60)
+0042:         print(f"{'ID':<5} {'名称':<20} {'品牌':<15} {'类型':<15}")
+0043:         print("-" * 60)
+0044:         
+0045:         for feed_type in feed_types:
+0046:             print(f"{feed_type[0]:<5} {feed_type[1]:<20} {feed_type[2] or 'N/A':<15} {feed_type[3]:<15}")
+0047:         
+0048:         print(f"\n总共 {len(feed_types)} 条饲料类型记录")
+0049:         
+0050:         # 检查奶粉类型数量
+0051:         milk_powder_count = sum(1 for ft in feed_types if ft[3] == 'milk_powder')
+0052:         print(f"其中奶粉类型记录数量: {milk_powder_count}")
+0053:         
+0054:         cursor.close()
+0055:         connection.close()
+0056:         
+0057:     except Exception as e:
+0058:         print(f"操作数据库时出错: {e}")
+0059: 
+0060: if __name__ == "__main__":
+0061:     add_milk_powder_feed_type()
+===== 文件: backend\legacy_scripts\add_redemption_codes_table.py =====
+0001: #!/usr/bin/env python3
+0002: """
+0003: 添加兑换码表
+0004: """
+0005: 
+0006: import pymysql
+0007: import os
+0008: import sys
+0009: from dotenv import load_dotenv
+0010: 
+0011: # 加载环境变量
+0012: # 尝试加载 backend 目录下的 .env 文件
+0013: env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+0014: if not os.path.exists(env_path):
+0015:     # 如果不存在，尝试加载项目根目录下的 .env
+0016:     env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env')
+0017: 
+0018: load_dotenv(env_path)
+0019: 
+0020: # 数据库配置 - 从环境变量读取
+0021: DB_CONFIG = {
+0022:     'host': os.environ.get('DB_HOST') or 'localhost',
+0023:     'port': int(os.environ.get('DB_PORT') or '3306'),
+0024:     'user': os.environ.get('DB_USER') or 'root',
+0025:     'password': os.environ.get('DB_PASSWORD') or '',
+0026:     'database': os.environ.get('DB_NAME') or 'parrot_breeding',
+0027:     'charset': 'utf8mb4'
+0028: }
+0029: 
+0030: def migrate():
+0031:     """执行数据库迁移"""
+0032:     try:
+0033:         # 连接MySQL服务器
+0034:         print(f"正在连接MySQL服务器 {DB_CONFIG['host']}:{DB_CONFIG['port']}...")
+0035:         conn = pymysql.connect(
+0036:             host=DB_CONFIG['host'],
+0037:             port=DB_CONFIG['port'],
+0038:             user=DB_CONFIG['user'],
+0039:             password=DB_CONFIG['password'],
+0040:             database=DB_CONFIG['database'],
+0041:             charset=DB_CONFIG['charset']
+0042:         )
+0043:         cursor = conn.cursor()
+0044:         
+0045:         # 创建 redemption_codes 表
+0046:         print("正在创建 redemption_codes 表...")
+0047:         try:
+0048:             create_table_sql = """
+0049:             CREATE TABLE IF NOT EXISTS redemption_codes (
+0050:                 id INT PRIMARY KEY AUTO_INCREMENT,
+0051:                 code VARCHAR(32) NOT NULL UNIQUE COMMENT '兑换码',
+0052:                 tier ENUM('pro', 'team') DEFAULT 'pro' NOT NULL,
+0053:                 duration_days INT NOT NULL COMMENT '有效天数',
+0054:                 status ENUM('active', 'used', 'expired') DEFAULT 'active',
+0055:                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+0056:                 used_at DATETIME DEFAULT NULL,
+0057:                 used_by_user_id INT COMMENT '使用者ID',
+0058:                 created_by_user_id INT COMMENT '创建者ID',
+0059:                 FOREIGN KEY (used_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+0060:                 FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+0061:             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+0062:             """
+0063:             cursor.execute(create_table_sql)
+0064:             print("成功创建 redemption_codes 表")
+0065:         except Exception as e:
+0066:             print(f"创建 redemption_codes 表时出错: {e}")
+0067: 
+0068:         conn.commit()
+0069:         print("数据库迁移完成！")
+0070: 
+0071:     except Exception as e:
+0072:         print(f"数据库连接或迁移失败: {e}")
+0073:     finally:
+0074:         if 'conn' in locals() and conn.open:
+0075:             conn.close()
+0076: 
+0077: if __name__ == "__main__":
+0078:     migrate()
+===== 文件: backend\legacy_scripts\add_remind_at_column.py =====
+0001: from sqlalchemy.sql import text
+0002: from app import create_app
+0003: from models import db
+0004: 
+0005: 
+0006: def main():
+0007:     app = create_app()
+0008:     with app.app_context():
+0009:         try:
+0010:             # 检查 reminders 表是否存在 remind_at 列
+0011:             result = db.session.execute(text(
+0012:                 """
+0013:                 SELECT COLUMN_NAME 
+0014:                 FROM INFORMATION_SCHEMA.COLUMNS 
+0015:                 WHERE TABLE_SCHEMA = DATABASE() 
+0016:                   AND TABLE_NAME = 'reminders' 
+0017:                   AND COLUMN_NAME = 'remind_at'
+0018:                 """
+0019:             )).fetchone()
+0020: 
+0021:             if result:
+0022:                 print("reminders.remind_at 已存在，无需变更")
+0023:                 return
+0024: 
+0025:             # 添加 remind_at 列（兼容旧数据，允许为 NULL）
+0026:             db.session.execute(text("ALTER TABLE reminders ADD COLUMN remind_at DATETIME NULL"))
+0027:             db.session.commit()
+0028:             print("已为 reminders 表添加 remind_at 列")
+0029:         except Exception as e:
+0030:             db.session.rollback()
+0031:             print(f"添加 remind_at 列失败: {str(e)}")
+0032: 
+0033: 
+0034: if __name__ == '__main__':
+0035:     main()
+0036: 
+===== 文件: backend\legacy_scripts\add_subscription_tables.py =====
+0001: #!/usr/bin/env python3
+0002: """
+0003: 添加会员订阅相关表和字段
+0004: 1. users 表添加会员状态字段
+0005: 2. 创建 subscription_orders 表
+0006: """
+0007: 
+0008: import pymysql
+0009: import os
+0010: import sys
+0011: from dotenv import load_dotenv
+0012: 
+0013: # 加载环境变量
+0014: # 尝试加载 backend 目录下的 .env 文件
+0015: env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+0016: if not os.path.exists(env_path):
+0017:     # 如果不存在，尝试加载项目根目录下的 .env
+0018:     env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env')
+0019: 
+0020: load_dotenv(env_path)
+0021: 
+0022: # 数据库配置 - 从环境变量读取
+0023: DB_CONFIG = {
+0024:     'host': os.environ.get('DB_HOST') or 'localhost',
+0025:     'port': int(os.environ.get('DB_PORT') or '3306'),
+0026:     'user': os.environ.get('DB_USER') or 'root',
+0027:     'password': os.environ.get('DB_PASSWORD') or '',
+0028:     'database': os.environ.get('DB_NAME') or 'parrot_breeding',
+0029:     'charset': 'utf8mb4'
+0030: }
+0031: 
+0032: def migrate():
+0033:     """执行数据库迁移"""
+0034:     try:
+0035:         # 连接MySQL服务器
+0036:         print(f"正在连接MySQL服务器 {DB_CONFIG['host']}:{DB_CONFIG['port']}...")
+0037:         conn = pymysql.connect(
+0038:             host=DB_CONFIG['host'],
+0039:             port=DB_CONFIG['port'],
+0040:             user=DB_CONFIG['user'],
+0041:             password=DB_CONFIG['password'],
+0042:             database=DB_CONFIG['database'],
+0043:             charset=DB_CONFIG['charset']
+0044:         )
+0045:         cursor = conn.cursor()
+0046:         
+0047:         # 1. 为 users 表添加会员相关字段
+0048:         print("正在为 users 表添加会员相关字段...")
+0049:         
+0050:         # subscription_tier
+0051:         try:
+0052:             cursor.execute("ALTER TABLE users ADD COLUMN subscription_tier ENUM('free', 'pro', 'team') DEFAULT 'free' NOT NULL")
+0053:             print("成功添加 subscription_tier 字段")
+0054:         except Exception as e:
+0055:             if "Duplicate column name" in str(e):
+0056:                 print("subscription_tier 字段已存在")
+0057:             else:
+0058:                 print(f"添加 subscription_tier 字段时出错: {e}")
+0059:                 
+0060:         # subscription_expire_at
+0061:         try:
+0062:             cursor.execute("ALTER TABLE users ADD COLUMN subscription_expire_at DATETIME DEFAULT NULL")
+0063:             print("成功添加 subscription_expire_at 字段")
+0064:         except Exception as e:
+0065:             if "Duplicate column name" in str(e):
+0066:                 print("subscription_expire_at 字段已存在")
+0067:             else:
+0068:                 print(f"添加 subscription_expire_at 字段时出错: {e}")
+0069:                 
+0070:         # is_auto_renew
+0071:         try:
+0072:             cursor.execute("ALTER TABLE users ADD COLUMN is_auto_renew BOOLEAN DEFAULT FALSE")
+0073:             print("成功添加 is_auto_renew 字段")
+0074:         except Exception as e:
+0075:             if "Duplicate column name" in str(e):
+0076:                 print("is_auto_renew 字段已存在")
+0077:             else:
+0078:                 print(f"添加 is_auto_renew 字段时出错: {e}")
+0079: 
+0080:         # 2. 创建 subscription_orders 表
+0081:         print("正在创建 subscription_orders 表...")
+0082:         try:
+0083:             create_table_sql = """
+0084:             CREATE TABLE IF NOT EXISTS subscription_orders (
+0085:                 id INT PRIMARY KEY AUTO_INCREMENT,
+0086:                 user_id INT NOT NULL,
+0087:                 order_no VARCHAR(64) NOT NULL UNIQUE COMMENT '内部订单号',
+0088:                 transaction_id VARCHAR(64) COMMENT '第三方支付流水号',
+0089:                 plan_id VARCHAR(32) NOT NULL COMMENT '套餐ID: pro_monthly, pro_yearly 等',
+0090:                 amount DECIMAL(10, 2) NOT NULL COMMENT '支付金额',
+0091:                 status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
+0092:                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+0093:                 paid_at DATETIME DEFAULT NULL,
+0094:                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+0095:             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+0096:             """
+0097:             cursor.execute(create_table_sql)
+0098:             print("成功创建 subscription_orders 表")
+0099:         except Exception as e:
+0100:             print(f"创建 subscription_orders 表时出错: {e}")
+0101: 
+0102:         conn.commit()
+0103:         print("数据库迁移完成！")
+0104: 
+0105:     except Exception as e:
+0106:         print(f"数据库连接或迁移失败: {e}")
+0107:     finally:
+0108:         if 'conn' in locals() and conn.open:
+0109:             conn.close()
+0110: 
+0111: if __name__ == "__main__":
+0112:     migrate()
+===== 文件: backend\legacy_scripts\add_supplement.py =====
+0001: import mysql.connector
+0002: from config import Config
+0003: 
+0004: def main():
+0005:     try:
+0006:         connection = mysql.connector.connect(
+0007:             host=Config.DB_HOST,
+0008:             user=Config.DB_USER,
+0009:             password=Config.DB_PASSWORD,
+0010:             database=Config.DB_NAME,
+0011:             charset='utf8mb4'
+0012:         )
+0013:         cursor = connection.cursor()
+0014:         # 检查是否存在名为“保健品”的保健品类型记录
+0015:         cursor.execute(
+0016:             "SELECT COUNT(*) FROM feed_types WHERE type = %s AND name = %s",
+0017:             ('supplement', '保健品')
+0018:         )
+0019:         count = cursor.fetchone()[0]
+0020:         if count == 0:
+0021:             cursor.execute(
+0022:                 "INSERT INTO feed_types (name, brand, type) VALUES (%s, %s, %s)",
+0023:                 ('保健品', '通用', 'supplement')
+0024:             )
+0025:             connection.commit()
+0026:             print('已插入保健品类型记录：name=保健品, brand=通用, type=supplement')
+0027:         else:

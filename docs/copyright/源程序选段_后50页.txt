@@ -1,0 +1,2500 @@
+0010:     <el-card class="section-card" shadow="never">
+0011:       <div class="tabs">
+0012:         <el-radio-group v-model="activeTab" @change="handleTabChange">
+0013:           <el-radio-button value="expense">支出类别</el-radio-button>
+0014:           <el-radio-button value="income">收入类别</el-radio-button>
+0015:         </el-radio-group>
+0016:       </div>
+0017: 
+0018:       <el-table :data="categories" v-loading="loading" style="width: 100%; margin-top: 16px;">
+0019:         <el-table-column prop="name" label="名称" />
+0020:         <el-table-column prop="type" label="类型" width="120">
+0021:           <template #default="scope">
+0022:             <el-tag size="small" :type="scope.row.type === 'expense' ? 'danger' : 'success'">
+0023:               {{ scope.row.type === 'expense' ? '支出' : '收入' }}
+0024:             </el-tag>
+0025:           </template>
+0026:         </el-table-column>
+0027:         <el-table-column prop="is_custom" label="系统内置" width="120">
+0028:           <template #default="scope">
+0029:             <el-tag size="small" :type="scope.row.is_custom ? 'info' : 'success'">
+0030:               {{ scope.row.is_custom ? '自定义' : '系统' }}
+0031:             </el-tag>
+0032:           </template>
+0033:         </el-table-column>
+0034:         <el-table-column label="操作" width="120">
+0035:           <template #default="scope">
+0036:             <el-button
+0037:               v-if="scope.row.is_custom"
+0038:               link
+0039:               type="danger"
+0040:               size="small"
+0041:               @click="handleDelete(scope.row)"
+0042:             >删除</el-button>
+0043:           </template>
+0044:         </el-table-column>
+0045:       </el-table>
+0046:     </el-card>
+0047: 
+0048:     <el-dialog v-model="showDialog" title="新增类别" width="400px">
+0049:       <el-form label-width="80px">
+0050:         <el-form-item label="名称">
+0051:           <el-input v-model="newName" placeholder="请输入类别名称" />
+0052:         </el-form-item>
+0053:       </el-form>
+0054:       <template #footer>
+0055:         <el-button @click="showDialog = false">取消</el-button>
+0056:         <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+0057:       </template>
+0058:     </el-dialog>
+0059:   </div>
+0060: </template>
+0061: 
+0062: <script setup>
+0063: import { ref, onMounted } from 'vue'
+0064: import { ElMessage, ElMessageBox } from 'element-plus'
+0065: import api from '@/api/axios'
+0066: 
+0067: const activeTab = ref('expense')
+0068: const categories = ref([])
+0069: const loading = ref(false)
+0070: const showDialog = ref(false)
+0071: const newName = ref('')
+0072: const saving = ref(false)
+0073: 
+0074: const translateSystemCategory = (name) => {
+0075:   const map = {
+0076:     food: '餐饮',
+0077:     medical: '医疗',
+0078:     toys: '玩具',
+0079:     cage: '笼舍',
+0080:     baby_bird: '雏鸟',
+0081:     breeding_bird: '种鸟',
+0082:     other: '其他',
+0083:     breeding_sale: '繁殖出售',
+0084:     bird_sale: '鸟类出售',
+0085:     service: '服务',
+0086:     competition: '比赛',
+0087:     supplies: '用品'
+0088:   }
+0089:   return map[name] || name
+0090: }
+0091: 
+0092: const fetchCategories = async () => {
+0093:   loading.value = true
+0094:   try {
+0095:     const res = await api.get('/categories/transactions', {
+0096:       params: { type: activeTab.value }
+0097:     })
+0098:     const data = (res.data && res.data.data) || res.data || []
+0099:     const list = Array.isArray(data) ? data : []
+0100:     categories.value = list.map(item => {
+0101:       const next = { ...item }
+0102:       if (!next.is_custom && typeof next.name === 'string') {
+0103:         next.name = translateSystemCategory(next.name)
+0104:       }
+0105:       return next
+0106:     })
+0107:   } catch (_) {
+0108:     categories.value = []
+0109:   } finally {
+0110:     loading.value = false
+0111:   }
+0112: }
+0113: 
+0114: const handleTabChange = () => {
+0115:   fetchCategories()
+0116: }
+0117: 
+0118: const openAdd = () => {
+0119:   newName.value = ''
+0120:   showDialog.value = true
+0121: }
+0122: 
+0123: const save = async () => {
+0124:   if (!newName.value.trim()) {
+0125:     ElMessage.warning('请输入名称')
+0126:     return
+0127:   }
+0128:   saving.value = true
+0129:   try {
+0130:     const res = await api.post('/categories/transactions', {
+0131:       name: newName.value,
+0132:       type: activeTab.value
+0133:     })
+0134:     const ok = res.data && res.data.success
+0135:     if (ok) {
+0136:       ElMessage.success('添加成功')
+0137:       showDialog.value = false
+0138:       fetchCategories()
+0139:     } else {
+0140:       ElMessage.error((res.data && res.data.message) || '添加失败')
+0141:     }
+0142:   } catch (_) {
+0143:     ElMessage.error('添加失败')
+0144:   } finally {
+0145:     saving.value = false
+0146:   }
+0147: }
+0148: 
+0149: const handleDelete = async (row) => {
+0150:   try {
+0151:     await ElMessageBox.confirm('确定要删除该类别吗？', '提示', {
+0152:       type: 'warning'
+0153:     })
+0154:   } catch (_) {
+0155:     return
+0156:   }
+0157:   try {
+0158:     const res = await api.delete(`/categories/transactions/${row.id}`)
+0159:     const ok = res.data && res.data.success
+0160:     if (ok) {
+0161:       ElMessage.success('删除成功')
+0162:       fetchCategories()
+0163:     } else {
+0164:       ElMessage.error((res.data && res.data.message) || '删除失败')
+0165:     }
+0166:   } catch (_) {
+0167:     ElMessage.error('删除失败')
+0168:   }
+0169: }
+0170: 
+0171: onMounted(() => {
+0172:   fetchCategories()
+0173: })
+0174: </script>
+0175: 
+0176: <style scoped>
+0177: .settings-page {}
+0178: .section-card {
+0179:   margin-bottom: 16px;
+0180: }
+0181: .tabs {
+0182:   margin-bottom: 8px;
+0183: }
+0184: </style>
+===== 文件: web\src\views\settings\SettingsFeedTypeView.vue =====
+0001: <template>
+0002:   <div class="settings-page page-container">
+0003:     <div class="page-header">
+0004:       <h2>食物类型</h2>
+0005:       <div class="header-actions">
+0006:         <el-button type="primary" @click="openAdd">新增食物类型</el-button>
+0007:       </div>
+0008:     </div>
+0009: 
+0010:     <el-card class="section-card" shadow="never">
+0011:       <el-table :data="items" v-loading="loading" style="width: 100%">
+0012:         <el-table-column prop="name" label="名称" />
+0013:         <el-table-column prop="typeLabel" label="类型" width="120" />
+0014:         <el-table-column prop="unit" label="计量单位" width="120" />
+0015:         <el-table-column label="操作" width="160">
+0016:           <template #default="scope">
+0017:             <el-button link type="success" size="small" @click="openEdit(scope.row)">编辑</el-button>
+0018:             <el-button link type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+0019:           </template>
+0020:         </el-table-column>
+0021:       </el-table>
+0022:     </el-card>
+0023: 
+0024:     <el-dialog v-model="showDialog" :title="isEditing ? '编辑食物类型' : '新增食物类型'" width="480px">
+0025:       <el-form label-width="100px">
+0026:         <el-form-item label="名称">
+0027:           <el-input v-model="form.name" placeholder="请输入名称" />
+0028:         </el-form-item>
+0029:         <el-form-item label="类型">
+0030:           <el-select v-model="form.type" placeholder="请选择类型" @change="handleTypeChange">
+0031:             <el-option
+0032:               v-for="opt in typeOptions"
+0033:               :key="opt.value"
+0034:               :label="opt.label"
+0035:               :value="opt.value"
+0036:             />
+0037:           </el-select>
+0038:         </el-form-item>
+0039:         <el-form-item label="计量单位">
+0040:           <el-radio-group v-model="form.unit">
+0041:             <el-radio-button value="g">克(g)</el-radio-button>
+0042:             <el-radio-button value="ml">毫升(ml)</el-radio-button>
+0043:           </el-radio-group>
+0044:         </el-form-item>
+0045:       </el-form>
+0046:       <template #footer>
+0047:         <el-button @click="showDialog = false">取消</el-button>
+0048:         <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+0049:       </template>
+0050:     </el-dialog>
+0051:   </div>
+0052: </template>
+0053: 
+0054: <script setup>
+0055: import { ref, onMounted } from 'vue'
+0056: import { ElMessage, ElMessageBox } from 'element-plus'
+0057: import api from '@/api/axios'
+0058: 
+0059: const items = ref([])
+0060: const loading = ref(false)
+0061: const showDialog = ref(false)
+0062: const isEditing = ref(false)
+0063: const editingId = ref(null)
+0064: const saving = ref(false)
+0065: 
+0066: const typeOptions = [
+0067:   { value: 'seed', label: '种子' },
+0068:   { value: 'pellet', label: '颗粒' },
+0069:   { value: 'fruit', label: '水果' },
+0070:   { value: 'vegetable', label: '蔬菜' },
+0071:   { value: 'nut', label: '坚果' },
+0072:   { value: 'supplement', label: '保健品' },
+0073:   { value: 'milk_powder', label: '奶粉' }
+0074: ]
+0075: 
+0076: const form = ref({
+0077:   name: '',
+0078:   type: '',
+0079:   unit: 'g'
+0080: })
+0081: 
+0082: const decorateList = (list) => {
+0083:   return (list || []).map(item => {
+0084:     const t = item.type || ''
+0085:     const opt = typeOptions.find(o => o.value === t)
+0086:     return {
+0087:       ...item,
+0088:       typeLabel: opt ? opt.label : t
+0089:     }
+0090:   })
+0091: }
+0092: 
+0093: const fetchList = async () => {
+0094:   loading.value = true
+0095:   try {
+0096:     const res = await api.get('/categories/feed-types')
+0097:     const data = (res.data && res.data.data) || res.data || []
+0098:     items.value = decorateList(Array.isArray(data) ? data : [])
+0099:   } catch (_) {
+0100:     items.value = []
+0101:   } finally {
+0102:     loading.value = false
+0103:   }
+0104: }
+0105: 
+0106: const resetForm = () => {
+0107:   form.value = {
+0108:     name: '',
+0109:     type: '',
+0110:     unit: 'g'
+0111:   }
+0112: }
+0113: 
+0114: const openAdd = () => {
+0115:   isEditing.value = false
+0116:   editingId.value = null
+0117:   resetForm()
+0118:   showDialog.value = true
+0119: }
+0120: 
+0121: const openEdit = (row) => {
+0122:   isEditing.value = true
+0123:   editingId.value = row.id
+0124:   form.value = {
+0125:     name: row.name || '',
+0126:     type: row.type || '',
+0127:     unit: row.unit === 'ml' ? 'ml' : 'g'
+0128:   }
+0129:   showDialog.value = true
+0130: }
+0131: 
+0132: const handleTypeChange = (val) => {
+0133:   if (val === 'milk_powder' || val === 'supplement') {
+0134:     form.value.unit = 'ml'
+0135:   }
+0136: }
+0137: 
+0138: const save = async () => {
+0139:   if (!form.value.name.trim()) {
+0140:     ElMessage.warning('请输入名称')
+0141:     return
+0142:   }
+0143:   saving.value = true
+0144:   const payload = {
+0145:     name: form.value.name,
+0146:     type: form.value.type,
+0147:     unit: form.value.unit || 'g'
+0148:   }
+0149:   try {
+0150:     if (isEditing.value && editingId.value) {
+0151:       const res = await api.put(`/categories/feed-types/${editingId.value}`, payload)
+0152:       const ok = res.data && res.data.success
+0153:       if (ok) {
+0154:         ElMessage.success('更新成功')
+0155:         showDialog.value = false
+0156:         fetchList()
+0157:       } else {
+0158:         ElMessage.error((res.data && res.data.message) || '更新失败')
+0159:       }
+0160:     } else {
+0161:       const res = await api.post('/categories/feed-types', payload)
+0162:       const ok = res.data && res.data.success
+0163:       if (ok) {
+0164:         ElMessage.success('添加成功')
+0165:         showDialog.value = false
+0166:         fetchList()
+0167:       } else {
+0168:         ElMessage.error((res.data && res.data.message) || '添加失败')
+0169:       }
+0170:     }
+0171:   } catch (_) {
+0172:     ElMessage.error('保存失败')
+0173:   } finally {
+0174:     saving.value = false
+0175:   }
+0176: }
+0177: 
+0178: const handleDelete = async (row) => {
+0179:   try {
+0180:     await ElMessageBox.confirm('确定要删除该食物类型吗？', '提示', {
+0181:       type: 'warning'
+0182:     })
+0183:   } catch (_) {
+0184:     return
+0185:   }
+0186:   try {
+0187:     const res = await api.delete(`/categories/feed-types/${row.id}`)
+0188:     const ok = res.data && res.data.success
+0189:     if (ok) {
+0190:       ElMessage.success('删除成功')
+0191:       fetchList()
+0192:     } else {
+0193:       ElMessage.error((res.data && res.data.message) || '删除失败')
+0194:     }
+0195:   } catch (_) {
+0196:     ElMessage.error('删除失败')
+0197:   }
+0198: }
+0199: 
+0200: onMounted(() => {
+0201:   fetchList()
+0202: })
+0203: </script>
+0204: 
+0205: <style scoped>
+0206: .settings-page {}
+0207: .section-card {
+0208:   margin-bottom: 16px;
+0209: }
+0210: </style>
+===== 文件: web\src\views\settings\SettingsNotificationView.vue =====
+0001: <template>
+0002:   <div class="settings-page page-container">
+0003:     <div class="page-header">
+0004:       <h2>通知设置</h2>
+0005:       <div class="header-actions">
+0006:         <el-button type="primary" :loading="saving" @click="save">保存设置</el-button>
+0007:       </div>
+0008:     </div>
+0009: 
+0010:     <el-card class="section-card" shadow="never">
+0011:       <div class="section-title">基础通知</div>
+0012:       <el-form label-width="140px">
+0013:         <el-form-item label="开启通知">
+0014:           <el-switch v-model="form.enabled" />
+0015:         </el-form-item>
+0016:         <el-form-item label="喂食提醒">
+0017:           <el-switch v-model="form.feedingReminder" />
+0018:         </el-form-item>
+0019:         <el-form-item label="清洁提醒">
+0020:           <el-switch v-model="form.cleaningReminder" />
+0021:         </el-form-item>
+0022:         <el-form-item label="健康提醒">
+0023:           <el-switch v-model="form.healthReminder" />
+0024:         </el-form-item>
+0025:         <el-form-item label="用药提醒">
+0026:           <el-switch v-model="form.medicationReminder" />
+0027:         </el-form-item>
+0028:         <el-form-item label="繁育提醒">
+0029:           <el-switch v-model="form.breedingReminder" />
+0030:         </el-form-item>
+0031:       </el-form>
+0032:     </el-card>
+0033: 
+0034:     <el-card class="section-card" shadow="never">
+0035:       <div class="section-title">提醒时间</div>
+0036:       <el-form label-width="140px">
+0037:         <el-form-item label="喂食提醒时间">
+0038:           <el-time-picker
+0039:             v-model="form.feedingReminderTime"
+0040:             placeholder="选择时间"
+0041:             format="HH:mm"
+0042:             value-format="HH:mm"
+0043:           />
+0044:         </el-form-item>
+0045:         <el-form-item label="清洁提醒时间">
+0046:           <el-time-picker
+0047:             v-model="form.cleaningReminderTime"
+0048:             placeholder="选择时间"
+0049:             format="HH:mm"
+0050:             value-format="HH:mm"
+0051:           />
+0052:         </el-form-item>
+0053:       </el-form>
+0054:     </el-card>
+0055: 
+0056:     <el-card class="section-card" shadow="never">
+0057:       <div class="section-title">健康提醒类型</div>
+0058:       <div class="health-types">
+0059:         <el-checkbox v-model="form.healthAlertPreferences.chick_care">雏鸟护理</el-checkbox>
+0060:         <el-checkbox v-model="form.healthAlertPreferences.incubation_advice">孵化建议</el-checkbox>
+0061:         <el-checkbox v-model="form.healthAlertPreferences.feeding_gap">喂食间隔异常</el-checkbox>
+0062:         <el-checkbox v-model="form.healthAlertPreferences.feeding_frequency_low">喂食频率偏低</el-checkbox>
+0063:         <el-checkbox v-model="form.healthAlertPreferences.weight_decline">体重下降</el-checkbox>
+0064:         <el-checkbox v-model="form.healthAlertPreferences.care_general_topic">通用健康提示</el-checkbox>
+0065:       </div>
+0066:     </el-card>
+0067:   </div>
+0068: </template>
+0069: 
+0070: <script setup>
+0071: import { ref, onMounted } from 'vue'
+0072: import { ElMessage } from 'element-plus'
+0073: import api from '@/api/axios'
+0074: 
+0075: const loading = ref(false)
+0076: const saving = ref(false)
+0077: 
+0078: const form = ref({
+0079:   enabled: false,
+0080:   feedingReminder: true,
+0081:   healthReminder: true,
+0082:   cleaningReminder: true,
+0083:   medicationReminder: true,
+0084:   breedingReminder: true,
+0085:   feedingReminderTime: '08:00',
+0086:   cleaningReminderTime: '18:00',
+0087:   medicationReminderTime: '09:00',
+0088:   healthAlertPreferences: {
+0089:     chick_care: false,
+0090:     incubation_advice: false,
+0091:     feeding_gap: false,
+0092:     feeding_frequency_low: false,
+0093:     weight_decline: false,
+0094:     care_general_topic: false
+0095:   }
+0096: })
+0097: 
+0098: const fetchSettings = async () => {
+0099:   loading.value = true
+0100:   try {
+0101:     const res = await api.get('/reminders/settings')
+0102:     const data = (res.data && res.data.data) || res.data || {}
+0103:     const next = { ...form.value }
+0104:     if (typeof data.enabled !== 'undefined') next.enabled = !!data.enabled
+0105:     if (typeof data.feedingReminder !== 'undefined') next.feedingReminder = !!data.feedingReminder
+0106:     if (typeof data.healthReminder !== 'undefined') next.healthReminder = !!data.healthReminder
+0107:     if (typeof data.cleaningReminder !== 'undefined') next.cleaningReminder = !!data.cleaningReminder
+0108:     if (typeof data.medicationReminder !== 'undefined') next.medicationReminder = !!data.medicationReminder
+0109:     if (typeof data.breedingReminder !== 'undefined') next.breedingReminder = !!data.breedingReminder
+0110:     if (data.feedingReminderTime) next.feedingReminderTime = data.feedingReminderTime
+0111:     if (data.cleaningReminderTime) next.cleaningReminderTime = data.cleaningReminderTime
+0112:     if (data.medicationReminderTime) next.medicationReminderTime = data.medicationReminderTime
+0113:     if (data.healthAlertPreferences && typeof data.healthAlertPreferences === 'object') {
+0114:       next.healthAlertPreferences = {
+0115:         ...next.healthAlertPreferences,
+0116:         ...data.healthAlertPreferences
+0117:       }
+0118:     }
+0119:     form.value = next
+0120:   } catch (_) {
+0121:   } finally {
+0122:     loading.value = false
+0123:   }
+0124: }
+0125: 
+0126: const save = async () => {
+0127:   saving.value = true
+0128:   try {
+0129:     const payload = { ...form.value }
+0130:     try {
+0131:       const res = await api.put('/reminders/settings', payload)
+0132:       const ok = (res.data && res.data.success) || res.status === 200
+0133:       if (ok) ElMessage.success('已保存通知设置')
+0134:       else ElMessage.error((res.data && res.data.message) || '保存失败')
+0135:     } catch (e) {
+0136:       ElMessage.error('保存失败')
+0137:     }
+0138:   } finally {
+0139:     saving.value = false
+0140:   }
+0141: }
+0142: 
+0143: onMounted(() => {
+0144:   fetchSettings()
+0145: })
+0146: </script>
+0147: 
+0148: <style scoped>
+0149: .settings-page {}
+0150: .section-card {
+0151:   margin-bottom: 16px;
+0152: }
+0153: .section-title {
+0154:   font-weight: 600;
+0155:   margin-bottom: 12px;
+0156: }
+0157: .health-types {
+0158:   display: flex;
+0159:   flex-wrap: wrap;
+0160:   gap: 8px 24px;
+0161: }
+0162: </style>
+0163: 
+===== 文件: web\src\views\team\TeamCreateView.vue =====
+0001: <template>
+0002:   <div class="page-container">
+0003:     <div class="create-card-wrapper">
+0004:       <el-card class="create-card" shadow="hover">
+0005:         <div class="card-header">
+0006:           <div class="icon-bg">
+0007:             <el-icon :size="32" color="#67C23A"><Plus /></el-icon>
+0008:           </div>
+0009:           <h2>创建新团队</h2>
+0010:           <p class="subtitle">创建一个新的团队空间，开始协作管理</p>
+0011:         </div>
+0012: 
+0013:         <div class="form-section">
+0014:           <el-form :model="form" label-position="top" class="form">
+0015:             <el-form-item label="团队名称">
+0016:               <el-input 
+0017:                 v-model="form.name" 
+0018:                 maxlength="20" 
+0019:                 show-word-limit 
+0020:                 placeholder="给你的团队起个名字" 
+0021:                 size="large"
+0022:               >
+0023:                 <template #prefix>
+0024:                   <el-icon><Flag /></el-icon>
+0025:                 </template>
+0026:               </el-input>
+0027:             </el-form-item>
+0028:             
+0029:             <el-form-item label="团队描述">
+0030:               <el-input 
+0031:                 v-model="form.description" 
+0032:                 type="textarea" 
+0033:                 :rows="4"
+0034:                 maxlength="100" 
+0035:                 show-word-limit 
+0036:                 placeholder="简单介绍一下这个团队（可选）" 
+0037:                 resize="none"
+0038:               />
+0039:             </el-form-item>
+0040: 
+0041:             <div class="actions">
+0042:               <el-button 
+0043:                 type="primary" 
+0044:                 size="large" 
+0045:                 class="submit-btn" 
+0046:                 :disabled="submitting || !valid" 
+0047:                 :loading="submitting"
+0048:                 @click="submit"
+0049:               >
+0050:                 {{ submitting ? '创建中...' : '立即创建' }}
+0051:               </el-button>
+0052:             </div>
+0053:           </el-form>
+0054:         </div>
+0055:       </el-card>
+0056: 
+0057:       <div class="tips-section">
+0058:         <p><el-icon><InfoFilled /></el-icon> 创建团队后，您将自动成为该团队的管理员</p>
+0059:       </div>
+0060:     </div>
+0061:   </div>
+0062: </template>
+0063: 
+0064: <script setup>
+0065: import { ref, computed, onMounted } from 'vue'
+0066: import { ElMessage } from 'element-plus'
+0067: import { useRouter } from 'vue-router'
+0068: import { Plus, Flag, InfoFilled } from '@element-plus/icons-vue'
+0069: import api from '@/api/axios'
+0070: 
+0071: const router = useRouter()
+0072: const form = ref({ name: '', description: '' })
+0073: const submitting = ref(false)
+0074: const valid = computed(() => String(form.value.name || '').trim().length > 0)
+0075: 
+0076: onMounted(async () => {
+0077:   try {
+0078:     const r = await api.get('/teams')
+0079:     if (r.data && r.data.success) {
+0080:       const teams = r.data.data || []
+0081:       const hasTeam = teams.length > 0
+0082:       if (hasTeam) {
+0083:         ElMessage.warning('您已在团队中，无法创建团队')
+0084:         router.replace('/team/current')
+0085:       }
+0086:     }
+0087:   } catch (_) {}
+0088: })
+0089: 
+0090: const submit = async () => {
+0091:   if (!valid.value || submitting.value) return
+0092:   submitting.value = true
+0093:   try {
+0094:     const r = await api.post('/teams', { name: form.value.name.trim(), description: String(form.value.description || '') })
+0095:     if (r.data && r.data.success) {
+0096:       ElMessage.success('团队创建成功')
+0097:       router.push('/team/manage')
+0098:     } else {
+0099:       ElMessage.error((r.data && r.data.message) || '创建失败')
+0100:     }
+0101:   } catch (_) { ElMessage.error('网络错误，请重试') } finally { submitting.value = false }
+0102: }
+0103: </script>
+0104: 
+0105: <style scoped>
+0106: .page-container {
+0107:   min-height: calc(100vh - 120px);
+0108:   display: flex;
+0109:   flex-direction: column;
+0110:   justify-content: center;
+0111:   align-items: center;
+0112:   padding: 20px;
+0113: }
+0114: 
+0115: .create-card-wrapper {
+0116:   width: 100%;
+0117:   max-width: 520px;
+0118: }
+0119: 
+0120: .create-card {
+0121:   border-radius: 16px;
+0122:   overflow: hidden;
+0123:   margin-bottom: 24px;
+0124: }
+0125: 
+0126: .card-header {
+0127:   text-align: center;
+0128:   padding: 24px 0 16px;
+0129: }
+0130: 
+0131: .icon-bg {
+0132:   width: 64px;
+0133:   height: 64px;
+0134:   background: #f0f9eb;
+0135:   border-radius: 50%;
+0136:   display: flex;
+0137:   align-items: center;
+0138:   justify-content: center;
+0139:   margin: 0 auto 16px;
+0140: }
+0141: 
+0142: .card-header h2 {
+0143:   font-size: 24px;
+0144:   color: #1a1a1a;
+0145:   margin: 0 0 8px;
+0146: }
+0147: 
+0148: .subtitle {
+0149:   color: #ffffff;
+0150:   font-size: 14px;
+0151:   margin: 0;
+0152: }
+0153: 
+0154: .form-section {
+0155:   padding: 0 20px 20px;
+0156: }
+0157: 
+0158: .form :deep(.el-form-item__label) {
+0159:   font-weight: 500;
+0160:   color: #1a1a1a;
+0161: }
+0162: 
+0163: .submit-btn {
+0164:   width: 100%;
+0165:   border-radius: 8px;
+0166:   font-size: 16px;
+0167:   padding: 20px 0;
+0168:   margin-top: 12px;
+0169: }
+0170: 
+0171: .tips-section {
+0172:   text-align: center;
+0173:   color: #909399;
+0174:   font-size: 13px;
+0175: }
+0176: 
+0177: .tips-section p {
+0178:   display: flex;
+0179:   align-items: center;
+0180:   justify-content: center;
+0181:   gap: 6px;
+0182:   margin: 0;
+0183: }
+0184: </style>
+===== 文件: web\src\views\team\TeamCurrentView.vue =====
+0001: <template>
+0002:   <div class="page-container">
+0003:     <div class="page-header">
+0004:       <h2>我的团队</h2>
+0005:       <div class="header-actions" v-if="teams.length > 0">
+0006:         <el-button type="primary" @click="goCreate">创建新团队</el-button>
+0007:         <el-button plain @click="goJoin">加入团队</el-button>
+0008:       </div>
+0009:     </div>
+0010:     
+0011:     <div class="content-wrapper" v-loading="loading">
+0012:       <!-- 当前选中的团队详情 -->
+0013:       <div v-if="team" class="current-team-section">
+0014:         <el-card class="team-hero-card" shadow="hover">
+0015:           <div class="hero-content">
+0016:             <div class="team-avatar-wrapper">
+0017:               <el-avatar :size="100" :src="team.avatar_url || '/group-line-gray.png'" shape="square" class="team-avatar" />
+0018:             </div>
+0019:             <div class="team-info-main">
+0020:               <div class="team-header-row">
+0021:                 <h1 class="team-title">{{ team.name || '未命名团队' }}</h1>
+0022:                 <el-tag :type="roleTagType" effect="dark" class="role-tag">{{ roleLabel }}</el-tag>
+0023:               </div>
+0024:               <p class="team-desc">{{ team.description || '暂无描述' }}</p>
+0025:               
+0026:               <div class="team-stats">
+0027:                 <div class="stat-item">
+0028:                   <span class="stat-value">{{ (team.members || []).length }}</span>
+0029:                   <span class="stat-label">成员</span>
+0030:                 </div>
+0031:                 <el-divider direction="vertical" />
+0032:                 <div class="stat-item">
+0033:                   <span class="stat-value">{{ team.invite_code || '—' }}</span>
+0034:                   <span class="stat-label">邀请码</span>
+0035:                 </div>
+0036:               </div>
+0037:               
+0038:               <div class="team-actions">
+0039:                 <el-button type="primary" size="large" @click="goManage">管理团队</el-button>
+0040:               </div>
+0041:             </div>
+0042:           </div>
+0043:         </el-card>
+0044:       </div>
+0045: 
+0046:       <!-- 如果没有当前团队，显示引导 -->
+0047:       <div v-else-if="teams.length === 0" class="empty-state">
+0048:         <el-empty description="您还没有加入任何团队">
+0049:           <div class="empty-actions">
+0050:             <el-button type="primary" size="large" @click="goCreate">创建团队</el-button>
+0051:             <el-button size="large" @click="goJoin">加入团队</el-button>
+0052:           </div>
+0053:         </el-empty>
+0054:       </div>
+0055: 
+0056:       <!-- 已加入的其他团队列表 -->
+0057:       <div class="other-teams-section" v-if="ownedTeams.length > 0">
+0058:         <div class="section-header">
+0059:           <h3>我创建的团队 ({{ ownedTeams.length }})</h3>
+0060:         </div>
+0061:         
+0062:         <el-row :gutter="20">
+0063:           <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="t in ownedTeams" :key="t.id">
+0064:             <el-card 
+0065:               class="team-grid-card" 
+0066:               :class="{ 'is-active': team && team.id === t.id }" 
+0067:               shadow="hover"
+0068:               @click="switchTo(t.id)"
+0069:             >
+0070:               <div class="card-body">
+0071:                 <div class="card-top">
+0072:                   <el-avatar :size="48" :src="t.avatar_url || '/group-line-gray.png'" shape="square" />
+0073:                   <div class="card-status" v-if="team && team.id === t.id">
+0074:                     <el-icon color="#67C23A"><Check /></el-icon> 当前
+0075:                   </div>
+0076:                 </div>
+0077:                 <div class="card-info">
+0078:                   <div class="card-name text-ellipsis">{{ t.name }}</div>
+0079:                   <div class="card-meta">
+0080:                     <span>ID: {{ t.id }}</span>
+0081:                     <span>{{ t.member_count }} 成员</span>
+0082:                   </div>
+0083:                 </div>
+0084:                 <div class="card-hover-action">
+0085:                   <el-button type="primary" link v-if="team && team.id !== t.id">切换至此团队</el-button>
+0086:                 </div>
+0087:               </div>
+0088:             </el-card>
+0089:           </el-col>
+0090:         </el-row>
+0091:       </div>
+0092:     </div>
+0093:   </div>
+0094: </template>
+0095: 
+0096: <script setup>
+0097: import { ref, computed, onMounted } from 'vue'
+0098: import { useRouter } from 'vue-router'
+0099: import { Check } from '@element-plus/icons-vue'
+0100: import { ElMessageBox } from 'element-plus'
+0101: import api from '@/api/axios'
+0102: 
+0103: const router = useRouter()
+0104: const loading = ref(false)
+0105: const team = ref(null)
+0106: const teams = ref([])
+0107: 
+0108: const ownedTeams = computed(() => {
+0109:   return teams.value.filter(t => t.role === 'owner')
+0110: })
+0111: 
+0112: const hasOwnedTeam = computed(() => {
+0113:   return teams.value.some(t => t.role === 'owner')
+0114: })
+0115: 
+0116: const hasAnyTeam = computed(() => teams.value.length > 0)
+0117: 
+0118: const roleLabel = computed(() => {
+0119:   const r = String((team.value || {}).user_role || (team.value || {}).role || '')
+0120:   if (r === 'owner') return '创建者'
+0121:   if (r === 'admin') return '管理员'
+0122:   if (r) return '成员'
+0123:   return '未加入'
+0124: })
+0125: 
+0126: const roleTagType = computed(() => {
+0127:   const r = String((team.value || {}).user_role || (team.value || {}).role || '')
+0128:   if (r === 'owner') return 'warning'
+0129:   if (r === 'admin') return 'success'
+0130:   return 'info'
+0131: })
+0132: 
+0133: const fetchCurrent = async () => {
+0134:   loading.value = true
+0135:   try {
+0136:     const r = await api.get('/teams/current')
+0137:     if (r.data && r.data.success) {
+0138:       team.value = r.data.data
+0139:       const id = team.value && team.value.id
+0140:       if (id) {
+0141:         const d = await api.get(`/teams/${id}`)
+0142:         if (d.data && d.data.success) {
+0143:           team.value = Object.assign({}, team.value || {}, d.data.data || {})
+0144:         }
+0145:       }
+0146:     } else {
+0147:       team.value = null
+0148:     }
+0149:   } catch (_) { team.value = null } finally { loading.value = false }
+0150: }
+0151: 
+0152: const fetchTeams = async () => {
+0153:   try {
+0154:     const r = await api.get('/teams')
+0155:     if (r.data && r.data.success) {
+0156:       teams.value = r.data.data || []
+0157:       // 如果没有当前团队且只有一个团队，自动切换
+0158:       if (!team.value && teams.value.length === 1) {
+0159:         await switchTo(teams.value[0].id)
+0160:       }
+0161:     } else { teams.value = [] }
+0162:   } catch (_) { teams.value = [] }
+0163: }
+0164: 
+0165: const goManage = () => router.push('/team/manage')
+0166: const goCreate = async () => {
+0167:   if (hasAnyTeam.value) {
+0168:     try {
+0169:       await ElMessageBox.confirm(
+0170:         '您当前已加入团队，如需创建新团队，请先退出当前团队。是否前往管理页退出？',
+0171:         '已加入团队',
+0172:         { confirmButtonText: '前往管理', cancelButtonText: '取消', type: 'warning' }
+0173:       )
+0174:       router.push('/team/manage')
+0175:     } catch (_) {}
+0176:     return
+0177:   }
+0178:   router.push('/team/create')
+0179: }
+0180: 
+0181: const goJoin = async () => {
+0182:   if (hasAnyTeam.value) {
+0183:     try {
+0184:       await ElMessageBox.confirm(
+0185:         '您当前已加入团队，如需加入其他团队，请先退出当前团队。是否前往管理页退出？',
+0186:         '已加入团队',
+0187:         { confirmButtonText: '前往管理', cancelButtonText: '取消', type: 'warning' }
+0188:       )
+0189:       router.push('/team/manage')
+0190:     } catch (_) {}
+0191:     return
+0192:   }
+0193:   router.push('/team/join')
+0194: }
+0195: 
+0196: const switchTo = async (id) => {
+0197:   if (team.value && team.value.id === id) return
+0198:   try {
+0199:     loading.value = true
+0200:     const r = await api.post(`/teams/${id}/switch`)
+0201:     if (r.data && r.data.success) {
+0202:       await fetchCurrent()
+0203:     }
+0204:   } catch (_) {} finally { loading.value = false }
+0205: }
+0206: 
+0207: onMounted(async () => { await fetchCurrent(); await fetchTeams() })
+0208: </script>
+0209: 
+0210: <style scoped>
+0211: .page-container {
+0212:   padding: 0 20px 40px;
+0213:   max-width: 1200px;
+0214:   margin: 0 auto;
+0215: }
+0216: 
+0217: .page-header {
+0218:   display: flex;
+0219:   justify-content: space-between;
+0220:   align-items: center;
+0221:   margin-bottom: 24px;
+0222: }
+0223: 
+0224: .header-actions {
+0225:   display: flex;
+0226:   gap: 12px;
+0227: }
+0228: 
+0229: .content-wrapper {
+0230:   display: flex;
+0231:   flex-direction: column;
+0232:   gap: 32px;
+0233: }
+0234: 
+0235: /* 顶部当前团队卡片 */
+0236: .team-hero-card {
+0237:   border: none;
+0238:   background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+0239:   border-radius: 16px;
+0240:   overflow: hidden;
+0241: }
+0242: 
+0243: .hero-content {
+0244:   display: flex;
+0245:   gap: 32px;
+0246:   padding: 16px;
+0247: }
+0248: 
+0249: .team-avatar {
+0250:   border-radius: 16px;
+0251:   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+0252: }
+0253: 
+0254: .team-info-main {
+0255:   flex: 1;
+0256:   display: flex;
+0257:   flex-direction: column;
+0258:   justify-content: center;
+0259: }
+0260: 
+0261: .team-header-row {
+0262:   display: flex;
+0263:   align-items: center;
+0264:   gap: 12px;
+0265:   margin-bottom: 8px;
+0266: }
+0267: 
+0268: .team-title {
+0269:   font-size: 24px;
+0270:   font-weight: 700;
+0271:   color: #1a1a1a;
+0272:   margin: 0;
+0273: }
+0274: 
+0275: .team-desc {
+0276:   color: #606266;
+0277:   font-size: 14px;
+0278:   margin: 0 0 24px 0;
+0279:   max-width: 600px;
+0280:   line-height: 1.5;
+0281: }
+0282: 
+0283: .team-stats {
+0284:   display: flex;
+0285:   align-items: center;
+0286:   gap: 24px;
+0287:   margin-bottom: 24px;
+0288: }
+0289: 
+0290: .stat-item {
+0291:   display: flex;
+0292:   flex-direction: column;
+0293:   align-items: flex-start;
+0294: }
+0295: 
+0296: .stat-value {
+0297:   font-size: 20px;
+0298:   font-weight: 600;
+0299:   color: #1a1a1a;
+0300: }
+0301: 
+0302: .stat-label {
+0303:   font-size: 12px;
+0304:   color: #909399;
+0305: }
+0306: 
+0307: /* 列表部分 */
+0308: .section-header h3 {
+0309:   font-size: 18px;
+0310:   color: #1a1a1a;
+0311:   margin-bottom: 16px;
+0312:   font-weight: 600;
+0313: }
+0314: 
+0315: .team-grid-card {
+0316:   border-radius: 12px;
+0317:   border: 1px solid #ebeef5;
+0318:   transition: all 0.3s ease;
+0319:   cursor: pointer;
+0320:   margin-bottom: 20px;
+0321:   position: relative;
+0322:   overflow: hidden;
+0323: }
+0324: 
+0325: .team-grid-card:hover {
+0326:   transform: translateY(-4px);
+0327:   box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+0328:   border-color: var(--el-color-primary-light-5);
+0329: }
+0330: 
+0331: .team-grid-card.is-active {
+0332:   border-color: var(--el-color-primary);
+0333:   background-color: var(--el-color-primary-light-9);
+0334: }
+0335: 
+0336: .card-body {
+0337:   padding: 16px;
+0338: }
+0339: 
+0340: .card-top {
+0341:   display: flex;
+0342:   justify-content: space-between;
+0343:   align-items: flex-start;
+0344:   margin-bottom: 16px;
+0345: }
+0346: 
+0347: .card-status {
+0348:   display: flex;
+0349:   align-items: center;
+0350:   gap: 4px;
+0351:   font-size: 12px;
+0352:   color: #67C23A;
+0353:   font-weight: 600;
+0354:   background: #f0f9eb;
+0355:   padding: 2px 8px;
+0356:   border-radius: 10px;
+0357: }
+0358: 
+0359: .card-name {
+0360:   font-size: 16px;
+0361:   font-weight: 600;
+0362:   color: #1a1a1a;
+0363:   margin-bottom: 8px;
+0364: }
+0365: 
+0366: .card-meta {
+0367:   display: flex;
+0368:   justify-content: space-between;
+0369:   font-size: 12px;
+0370:   color: #909399;
+0371: }
+0372: 
+0373: .text-ellipsis {
+0374:   white-space: nowrap;
+0375:   overflow: hidden;
+0376:   text-overflow: ellipsis;
+0377: }
+0378: 
+0379: .empty-actions {
+0380:   display: flex;
+0381:   gap: 16px;
+0382:   justify-content: center;
+0383:   margin-top: 24px;
+0384: }
+0385: 
+0386: @media (max-width: 768px) {
+0387:   .hero-content {
+0388:     flex-direction: column;
+0389:     align-items: center;
+0390:     text-align: center;
+0391:     gap: 16px;
+0392:   }
+0393:   
+0394:   .team-header-row {
+0395:     justify-content: center;
+0396:   }
+0397:   
+0398:   .team-stats {
+0399:     justify-content: center;
+0400:   }
+0401:   
+0402:   .team-actions {
+0403:     display: flex;
+0404:     justify-content: center;
+0405:   }
+0406: }
+0407: </style>
+===== 文件: web\src\views\team\TeamJoinView.vue =====
+0001: <template>
+0002:   <div class="page-container">
+0003:     <div class="join-card-wrapper">
+0004:       <el-card class="join-card" shadow="hover">
+0005:         <div class="card-header">
+0006:           <div class="icon-bg">
+0007:             <el-icon :size="32" color="#409EFF"><UserFilled /></el-icon>
+0008:           </div>
+0009:           <h2>加入团队</h2>
+0010:           <p class="subtitle">请输入8位团队邀请码加入现有团队</p>
+0011:         </div>
+0012:         
+0013:         <div class="form-section">
+0014:           <div class="input-wrapper">
+0015:             <el-input 
+0016:               v-model="inviteCode" 
+0017:               placeholder="请输入邀请码" 
+0018:               maxlength="8" 
+0019:               @input="onInput"
+0020:               class="code-input"
+0021:               size="large"
+0022:             >
+0023:               <template #prefix>
+0024:                 <el-icon><Key /></el-icon>
+0025:               </template>
+0026:             </el-input>
+0027:           </div>
+0028:           
+0029:           <div class="actions">
+0030:             <el-button 
+0031:               type="primary" 
+0032:               size="large" 
+0033:               class="submit-btn" 
+0034:               :disabled="inviteCode.length !== 8 || joining" 
+0035:               :loading="joining"
+0036:               @click="join"
+0037:             >
+0038:               {{ joining ? '加入中...' : '立即加入' }}
+0039:             </el-button>
+0040:           </div>
+0041:         </div>
+0042: 
+0043:         <div class="divider">
+0044:           <span>如何获取邀请码？</span>
+0045:         </div>
+0046: 
+0047:         <div class="help-section">
+0048:           <div class="help-item">
+0049:             <el-icon class="help-icon"><ChatDotRound /></el-icon>
+0050:             <div class="help-text">
+0051:               <h4>联系管理员</h4>
+0052:               <p>直接联系团队创建者或管理员获取</p>
+0053:             </div>
+0054:           </div>
+0055:           <div class="help-item">
+0056:             <el-icon class="help-icon"><Setting /></el-icon>
+0057:             <div class="help-text">
+0058:               <h4>查看设置</h4>
+0059:               <p>管理员可在“团队管理”页面查看邀请码</p>
+0060:             </div>
+0061:           </div>
+0062:         </div>
+0063:       </el-card>
+0064:     </div>
+0065:   </div>
+0066: </template>
+0067: 
+0068: <script setup>
+0069: import { ref, onMounted } from 'vue'
+0070: import { ElMessage } from 'element-plus'
+0071: import { UserFilled, Key, ChatDotRound, Setting } from '@element-plus/icons-vue'
+0072: import { useRouter } from 'vue-router'
+0073: import api from '@/api/axios'
+0074: 
+0075: const router = useRouter()
+0076: const inviteCode = ref('')
+0077: const joining = ref(false)
+0078: 
+0079: const onInput = (v) => { inviteCode.value = String(v || '').toUpperCase() }
+0080: 
+0081: const join = async () => {
+0082:   if (joining.value) return
+0083:   if (inviteCode.value.length !== 8) { ElMessage.warning('请输入8位邀请码'); return }
+0084:   joining.value = true
+0085:   try {
+0086:     const r = await api.post('/teams/join', { invite_code: inviteCode.value })
+0087:     if (r.data && r.data.success) {
+0088:       ElMessage.success('加入团队成功')
+0089:       router.push('/team/manage')
+0090:     } else {
+0091:       ElMessage.error((r.data && r.data.message) || '加入失败')
+0092:     }
+0093:   } catch (e) {
+0094:     ElMessage.error('网络错误，请重试')
+0095:   } finally { joining.value = false }
+0096: }
+0097: 
+0098: onMounted(async () => {
+0099:   try {
+0100:     const r = await api.get('/teams')
+0101:     if (r.data && r.data.success) {
+0102:       const teams = r.data.data || []
+0103:       if (teams.length > 0) {
+0104:         ElMessage.warning('您已在团队中，无法加入新团队')
+0105:         router.replace('/team/current')
+0106:       }
+0107:     }
+0108:   } catch (_) {}
+0109: })
+0110: </script>
+0111: 
+0112: <style scoped>
+0113: .page-container {
+0114:   min-height: calc(100vh - 120px);
+0115:   display: flex;
+0116:   justify-content: center;
+0117:   align-items: center;
+0118:   padding: 20px;
+0119: }
+0120: 
+0121: .join-card-wrapper {
+0122:   width: 100%;
+0123:   max-width: 480px;
+0124: }
+0125: 
+0126: .join-card {
+0127:   border-radius: 16px;
+0128:   overflow: hidden;
+0129: }
+0130: 
+0131: .card-header {
+0132:   text-align: center;
+0133:   padding: 24px 0 16px;
+0134: }
+0135: 
+0136: .icon-bg {
+0137:   width: 64px;
+0138:   height: 64px;
+0139:   background: #ecf5ff;
+0140:   border-radius: 50%;
+0141:   display: flex;
+0142:   align-items: center;
+0143:   justify-content: center;
+0144:   margin: 0 auto 16px;
+0145: }
+0146: 
+0147: .card-header h2 {
+0148:   font-size: 24px;
+0149:   color: #1a1a1a;
+0150:   margin: 0 0 8px;
+0151: }
+0152: 
+0153: .subtitle {
+0154:   color: #909399;
+0155:   font-size: 14px;
+0156:   margin: 0;
+0157: }
+0158: 
+0159: .form-section {
+0160:   padding: 0 20px;
+0161:   margin-bottom: 24px;
+0162: }
+0163: 
+0164: .input-wrapper {
+0165:   margin-bottom: 20px;
+0166: }
+0167: 
+0168: .code-input :deep(.el-input__wrapper) {
+0169:   padding: 4px 12px;
+0170:   border-radius: 8px;
+0171: }
+0172: 
+0173: .code-input :deep(.el-input__inner) {
+0174:   font-size: 18px;
+0175:   letter-spacing: 2px;
+0176:   text-align: center;
+0177:   font-weight: 600;
+0178: }
+0179: 
+0180: .submit-btn {
+0181:   width: 100%;
+0182:   border-radius: 8px;
+0183:   font-size: 16px;
+0184:   padding: 20px 0;
+0185: }
+0186: 
+0187: .divider {
+0188:   position: relative;
+0189:   text-align: center;
+0190:   margin: 0 20px 24px;
+0191: }
+0192: 
+0193: .divider::before {
+0194:   content: '';
+0195:   position: absolute;
+0196:   left: 0;
+0197:   top: 50%;
+0198:   width: 100%;
+0199:   height: 1px;
+0200:   background: #ebeef5;
+0201:   z-index: 0;
+0202: }
+0203: 
+0204: .divider span {
+0205:   position: relative;
+0206:   background: #fff;
+0207:   padding: 0 12px;
+0208:   color: #909399;
+0209:   font-size: 12px;
+0210:   z-index: 1;
+0211: }
+0212: 
+0213: .help-section {
+0214:   background: #f8f9fa;
+0215:   margin: 0 -20px -20px;
+0216:   padding: 20px 30px;
+0217:   display: flex;
+0218:   flex-direction: column;
+0219:   gap: 16px;
+0220: }
+0221: 
+0222: .help-item {
+0223:   display: flex;
+0224:   align-items: flex-start;
+0225:   gap: 12px;
+0226: }
+0227: 
+0228: .help-icon {
+0229:   margin-top: 2px;
+0230:   color: #909399;
+0231: }
+0232: 
+0233: .help-text h4 {
+0234:   margin: 0 0 4px;
+0235:   font-size: 14px;
+0236:   color: #1a1a1a;
+0237: }
+0238: 
+0239: .help-text p {
+0240:   margin: 0;
+0241:   font-size: 12px;
+0242:   color: #606266;
+0243: }
+0244: </style>
+===== 文件: web\src\views\team\TeamManageView.vue =====
+0001: <template>
+0002:   <div class="page-container">
+0003:     <div class="page-header">
+0004:       <h2>团队管理</h2>
+0005:     </div>
+0006:     
+0007:     <div class="content-wrapper" v-loading="loading">
+0008:       <div v-if="!team" class="empty-state">
+0009:         <el-empty description="暂无团队信息">
+0010:           <el-button type="primary" @click="$router.push('/team/current')">返回我的团队</el-button>
+0011:         </el-empty>
+0012:       </div>
+0013:       
+0014:       <div v-else class="manage-container">
+0015:         <!-- 团队概览卡片 -->
+0016:         <el-card class="team-overview-card" shadow="never">
+0017:           <div class="overview-content">
+0018:             <div class="avatar-section">
+0019:               <el-avatar :size="80" :src="team.avatar_url || '/group-line-gray.png'" shape="square" />
+0020:             </div>
+0021:             <div class="info-section">
+0022:               <div class="info-header">
+0023:                 <h1 class="team-name">{{ team.name || '未命名团队' }}</h1>
+0024:                 <el-tag :type="roleTagType" effect="dark" size="small">{{ roleLabel }}</el-tag>
+0025:               </div>
+0026:               <p class="team-desc">{{ team.description || '暂无描述' }}</p>
+0027:               <div class="meta-row">
+0028:                 <div class="meta-item">
+0029:                   <el-icon><User /></el-icon>
+0030:                   <span>{{ members.length }} 成员</span>
+0031:                 </div>
+0032:                 <div class="meta-item invite-code-wrapper" @click="copyInvite">
+0033:                   <span class="label">邀请码:</span>
+0034:                   <span class="code">{{ team.invite_code || '—' }}</span>
+0035:                   <el-icon class="copy-icon"><CopyDocument /></el-icon>
+0036:                 </div>
+0037:               </div>
+0038:             </div>
+0039:             <div class="action-section">
+0040:               <el-button type="primary" :icon="Edit" @click="showEdit=true" :disabled="!isOwner">编辑资料</el-button>
+0041:             </div>
+0042:           </div>
+0043:         </el-card>
+0044: 
+0045:         <!-- 管理功能 Tabs -->
+0046:         <el-card class="management-tabs-card" shadow="never">
+0047:           <el-tabs v-model="activeTab" class="custom-tabs">
+0048:             <!-- 成员管理 Tab -->
+0049:             <el-tab-pane label="成员管理" name="members">
+0050:               <div class="tab-pane-content">
+0051:                 <div class="pane-header">
+0052:                   <div class="pane-title">团队成员 ({{ members.length }})</div>
+0053:                   <div class="pane-actions">
+0054:                     <!-- 预留搜索框位置 -->
+0055:                   </div>
+0056:                 </div>
+0057:                 
+0058:                 <el-table :data="members" style="width:100%" class="custom-table">
+0059:                   <el-table-column label="成员信息" min-width="200">
+0060:                     <template #default="scope">
+0061:                       <div class="user-cell">
+0062:                         <el-avatar :size="36" :src="scope.row.avatar_url || '/profile.png'" />
+0063:                         <div class="user-info">
+0064:                           <div class="nickname">{{ scope.row.nickname || '未命名用户' }}</div>
+0065:                           <div class="user-id">ID: {{ scope.row.id }}</div>
+0066:                         </div>
+0067:                       </div>
+0068:                     </template>
+0069:                   </el-table-column>
+0070:                   
+0071:                   <el-table-column label="所属分组" min-width="180">
+0072:                     <template #default="scope">
+0073:                       <el-select 
+0074:                         v-model="memberGroupMap[scope.row.id]" 
+0075:                         placeholder="选择分组" 
+0076:                         size="default" 
+0077:                         :disabled="!canManageGroup" 
+0078:                         @change="val=>assignMemberGroup(scope.row, val)"
+0079:                         class="group-select"
+0080:                       >
+0081:                         <el-option label="未分组" value="" />
+0082:                         <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id" />
+0083:                       </el-select>
+0084:                     </template>
+0085:                   </el-table-column>
+0086:                   
+0087:                   <el-table-column label="角色" width="120">
+0088:                     <template #default="scope">
+0089:                       <el-tag :type="getRoleTagType(scope.row.role)" size="small" effect="plain">
+0090:                         {{ roleDisplay(scope.row.role) }}
+0091:                       </el-tag>
+0092:                     </template>
+0093:                   </el-table-column>
+0094:                   
+0095:                   <el-table-column label="操作" width="120" align="right">
+0096:                     <template #default="scope">
+0097:                       <el-button 
+0098:                         size="small" 
+0099:                         type="danger" 
+0100:                         plain
+0101:                         :disabled="!isOwner || scope.row.role==='owner'" 
+0102:                         @click="removeMember(scope.row)"
+0103:                       >移除</el-button>
+0104:                     </template>
+0105:                   </el-table-column>
+0106:                 </el-table>
+0107:               </div>
+0108:             </el-tab-pane>
+0109: 
+0110:             <!-- 分组权限 Tab -->
+0111:             <el-tab-pane label="分组与权限" name="groups">
+0112:               <div class="tab-pane-content">
+0113:                 <div class="pane-header">
+0114:                   <div class="pane-title">分组列表</div>
+0115:                   <div class="pane-actions">
+0116:                     <el-button type="primary" :icon="Plus" :disabled="!canManageGroup" @click="openCreateGroup">新建分组</el-button>
+0117:                   </div>
+0118:                 </div>
+0119: 
+0120:                 <div v-if="groups.length === 0" class="empty-groups">
+0121:                   <el-empty description="暂无分组，创建分组以管理成员权限" :image-size="100" />
+0122:                 </div>
+0123:                 
+0124:                 <div v-else class="groups-grid">
+0125:                   <el-card v-for="g in groups" :key="g.id" class="group-card" shadow="hover">
+0126:                     <div class="group-card-header">
+0127:                       <div class="group-name">{{ g.name }}</div>
+0128:                       <el-tag size="small" :type="g.permission_scope === 'team' ? 'warning' : 'info'">
+0129:                         {{ g.permission_scope === 'team' ? '全队权限' : '组内权限' }}
+0130:                       </el-tag>
+0131:                     </div>
+0132:                     <div class="group-desc">{{ g.description || '暂无描述' }}</div>
+0133:                     
+0134:                     <div class="group-members-preview">
+0135:                       <div class="preview-label">成员 ({{ getGroupMembers(g.id).length }})</div>
+0136:                       <div class="member-list">
+0137:                         <template v-if="getGroupMembers(g.id).length > 0">
+0138:                           <div class="member-item" v-for="m in getGroupMembers(g.id)" :key="m.id">
+0139:                             <el-avatar :size="20" :src="m.avatar_url || '/profile.png'" />
+0140:                             <span class="member-name">{{ m.nickname || ('用户'+m.id) }}</span>
+0141:                           </div>
+0142:                         </template>
+0143:                         <span v-else class="no-members-text">暂无</span>
+0144:                       </div>
+0145:                     </div>
+0146: 
+0147:                     <div class="group-card-actions">
+0148:                       <el-button size="small" type="primary" :disabled="!canManageGroup" @click="openEditGroup(g)">编辑设置</el-button>
+0149:                       <el-button size="small" type="danger" :disabled="!canManageGroup" @click="deleteGroup(g)">删除</el-button>
+0150:                     </div>
+0151:                   </el-card>
+0152:                 </div>
+0153:               </div>
+0154:             </el-tab-pane>
+0155: 
+0156:             <!-- 高级设置 Tab -->
+0157:             <el-tab-pane label="设置" name="settings">
+0158:               <div class="tab-pane-content settings-pane">
+0159:                 <div class="settings-section">
+0160:                   <h3>危险区域</h3>
+0161:                   <div class="danger-zone">
+0162:                     <div class="danger-item">
+0163:                       <div class="danger-info">
+0164:                         <h4>离开团队</h4>
+0165:                         <p>放弃团队成员身份，将无法访问团队内容</p>
+0166:                       </div>
+0167:                       <el-button type="warning" plain :disabled="isOwner" @click="leaveTeam">离开团队</el-button>
+0168:                     </div>
+0169:                     <el-divider />
+0170:                     <div class="danger-item">
+0171:                       <div class="danger-info">
+0172:                         <h4>解散团队</h4>
+0173:                         <p>永久删除团队及其所有数据，此操作不可恢复</p>
+0174:                       </div>
+0175:                       <el-button type="danger" plain :disabled="!isOwner && !isSuperAdmin" @click="dissolveTeam">解散团队</el-button>
+0176:                     </div>
+0177:                   </div>
+0178:                 </div>
+0179:               </div>
+0180:             </el-tab-pane>
+0181:           </el-tabs>
+0182:         </el-card>
+0183:       </div>
+0184:     </div>
+0185: 
+0186:     <!-- 编辑团队弹窗 -->
+0187:     <el-dialog v-model="showEdit" title="编辑团队资料" width="500px" align-center destroy-on-close>
+0188:       <div class="edit-dialog-content">
+0189:         <div class="avatar-edit">
+0190:           <div class="avatar-wrapper" @click="triggerTeamAvatarUpload">
+0191:             <el-avatar :size="80" :src="edit.avatar_url || '/group-line-gray.png'" shape="square" />
+0192:             <div class="avatar-overlay">
+0193:               <el-icon><Camera /></el-icon>
+0194:             </div>
+0195:           </div>
+0196:           <div class="photo-tip">点击更换头像</div>
+0197:           <input ref="teamAvatarInput" type="file" accept="image/*" class="hidden-input" @change="handleTeamAvatarChange" />
+0198:         </div>
+0199:         <el-form :model="edit" label-position="top">
+0200:           <el-form-item label="团队名称">
+0201:             <el-input v-model="edit.name" maxlength="20" show-word-limit />
+0202:           </el-form-item>
+0203:           <el-form-item label="团队描述">
+0204:             <el-input type="textarea" v-model="edit.description" :rows="3" maxlength="100" show-word-limit />
+0205:           </el-form-item>
+0206:         </el-form>
+0207:       </div>
+0208:       <template #footer>
+0209:         <el-button @click="showEdit=false">取消</el-button>
+0210:         <el-button type="primary" @click="confirmUpdate">保存更改</el-button>
+0211:       </template>
+0212:     </el-dialog>
+0213: 
+0214:     <!-- 分组编辑/新建弹窗 -->
+0215:     <el-dialog v-model="showGroupDialog" :title="groupDialogTitle" width="680px" align-center top="5vh">
+0216:       <div class="group-dialog-body">
+0217:         <el-form :model="groupForm" label-position="top">
+0218:           <el-row :gutter="20">
+0219:             <el-col :span="16">
+0220:               <el-form-item label="分组名称">
+0221:                 <el-input v-model="groupForm.name" placeholder="例如：保育员、财务" />
+0222:               </el-form-item>
+0223:             </el-col>
+0224:             <el-col :span="8">
+0225:               <el-form-item label="权限范围">
+0226:                 <el-select v-model="groupForm.permission_scope" style="width:100%">
+0227:                   <el-option label="本组信息" value="group" />
+0228:                   <el-option label="团队所有信息" value="team" />
+0229:                 </el-select>
+0230:               </el-form-item>
+0231:             </el-col>
+0232:           </el-row>
+0233:           
+0234:           <el-form-item label="分组描述">
+0235:             <el-input v-model="groupForm.description" placeholder="简要描述该分组的职责" />
+0236:           </el-form-item>
+0237: 
+0238:           <el-form-item label="添加成员">
+0239:             <el-select 
+0240:               v-model="selectedGroupMemberIds" 
+0241:               multiple 
+0242:               filterable 
+0243:               placeholder="搜索并选择成员加入" 
+0244:               style="width:100%"
+0245:               collapse-tags
+0246:               collapse-tags-tooltip
+0247:             >
+0248:               <el-option v-for="m in groupMemberCandidates" :key="m.id" :label="m.nickname || ('用户'+m.id)" :value="m.id">
+0249:                 <div class="user-select-item">
+0250:                   <el-avatar :size="20" :src="m.avatar_url || '/profile.png'" />
+0251:                   <span class="nickname">{{ m.nickname || '未命名' }}</span>
+0252:                 </div>
+0253:               </el-option>
+0254:             </el-select>
+0255:           </el-form-item>
+0256:           
+0257:           <div class="perm-section">
+0258:             <div class="perm-section-header">
+0259:               <span class="perm-title">权限配置</span>
+0260:               <span class="perm-tip">勾选该分组拥有的操作权限</span>
+0261:             </div>
+0262:             <div class="perm-grid">
+0263:               <div v-for="cat in permissionCatalog" :key="cat.key" class="perm-category-card">
+0264:                 <div class="cat-header">{{ cat.label }}</div>
+0265:                 <div class="cat-items">
+0266:                   <el-checkbox 
+0267:                     v-for="ch in cat.children" 
+0268:                     :key="ch.key"
+0269:                     v-model="permissionSelections[ch.key]"
+0270:                     :label="ch.label"
+0271:                     class="perm-checkbox"
+0272:                   />
+0273:                 </div>
+0274:               </div>
+0275:             </div>
+0276:           </div>
+0277:         </el-form>
+0278:       </div>
+0279:       <template #footer>
+0280:         <el-button @click="showGroupDialog=false">取消</el-button>
+0281:         <el-button type="primary" :disabled="!canManageGroup || !groupForm.name.trim()" @click="saveGroup">保存设置</el-button>
+0282:       </template>
+0283:     </el-dialog>
+0284:   </div>
+0285: </template>
+0286: 
+0287: <script setup>
+0288: import { ref, computed, onMounted } from 'vue'
+0289: import { ElMessage, ElMessageBox } from 'element-plus'
+0290: import { Edit, User, CopyDocument, Plus, Camera } from '@element-plus/icons-vue'
+0291: import api from '@/api/axios'
+0292: import { useAuthStore } from '@/stores/auth'
+0293: 
+0294: const activeTab = ref('members')
+0295: const loading = ref(false)
+0296: const team = ref(null)
+0297: const members = ref([])
+0298: const groups = ref([])
+0299: const memberGroupMap = ref({})
+0300: const showEdit = ref(false)
+0301: const edit = ref({ name: '', description: '', avatar_url: '' })
+0302: const isAdmin = computed(() => String((team.value || {}).user_role || (team.value || {}).role || '') === 'admin')
+0303: 
+0304: const showGroupDialog = ref(false)
+0305: const groupDialogMode = ref('create')
+0306: const groupDialogTitle = computed(() => groupDialogMode.value === 'create' ? '新建分组' : '编辑分组')
+0307: const groupForm = ref({ id: null, name: '', description: '', permission_scope: 'group' })
+0308: const permissionCatalog = ref([])
+0309: const permissionSelections = ref({})
+0310: const selectedGroupMemberIds = ref([])
+0311: const originalGroupMemberIds = ref([])
+0312: const groupMemberCandidates = computed(() => {
+0313:   const gid = groupForm.value && groupForm.value.id
+0314:   const list = Array.isArray(members.value) ? members.value : []
+0315:   if (groupDialogMode.value === 'create') return list.filter(m => !m.group_id)
+0316:   return list.filter(m => !m.group_id || String(m.group_id) === String(gid))
+0317: })
+0318: 
+0319: const authStore = useAuthStore()
+0320: const isSuperAdmin = computed(() => String((authStore.user || {}).role || 'user') === 'super_admin')
+0321: 
+0322: const roleLabel = computed(() => {
+0323:   const r = String((team.value || {}).user_role || (team.value || {}).role || '')
+0324:   if (r === 'owner') return '创建者'
+0325:   if (r === 'admin') return '管理员'
+0326:   if (r) return '成员'
+0327:   return '未加入'
+0328: })
+0329: 
+0330: const roleTagType = computed(() => {
+0331:   const r = String((team.value || {}).user_role || (team.value || {}).role || '')
+0332:   if (r === 'owner') return 'warning'
+0333:   if (r === 'admin') return 'success'
+0334:   return 'info'
+0335: })
+0336: 
+0337: const isOwner = computed(() => String((team.value || {}).user_role || (team.value || {}).role || '') === 'owner')
+0338: const canManageGroup = computed(() => isOwner.value || isAdmin.value)
+0339: 
+0340: const roleDisplay = (r) => r === 'owner' ? '创建者' : (r === 'admin' ? '管理员' : '成员')
+0341: const getRoleTagType = (r) => r === 'owner' ? 'warning' : (r === 'admin' ? 'success' : 'info')
+0342: 
+0343: const fetchCurrent = async () => {
+0344:   loading.value = true
+0345:   try {
+0346:     const r = await api.get('/teams/current')
+0347:     if (r.data && r.data.success) {
+0348:       team.value = r.data.data
+0349:       edit.value.name = team.value.name || ''
+0350:       edit.value.description = team.value.description || ''
+0351:       edit.value.avatar_url = team.value.avatar_url || ''
+0352:       const id = team.value.id
+0353:       if (id) {
+0354:         const membersRes = await api.get(`/teams/${id}/members`)
+0355:         if (membersRes.data && membersRes.data.success) {
+0356:           members.value = (membersRes.data.data || []).map(m => ({
+0357:             id: m.id,
+0358:             nickname: m.nickname,
+0359:             avatar_url: m.avatar_url,
+0360:             role: m.role,
+0361:             group_id: m.group_id,
+0362:             group_name: m.group_name
+0363:           }))
+0364:           memberGroupMap.value = {}
+0365:           members.value.forEach(m => { memberGroupMap.value[m.id] = m.group_id || '' })
+0366:         }
+0367:         const d = await api.get(`/teams/${id}`)
+0368:         if (d.data && d.data.success) {
+0369:           team.value = Object.assign({}, team.value || {}, d.data.data || {})
+0370:           edit.value.avatar_url = team.value.avatar_url || edit.value.avatar_url
+0371:         }
+0372:         await fetchGroups()
+0373:         await fetchPermissionCatalog()
+0374:       }
+0375:     } else { team.value = null }
+0376:   } catch (_) { team.value = null } finally { loading.value = false }
+0377: }
+0378: 
+0379: const fetchGroups = async () => {
+0380:   try {
+0381:     const id = team.value && team.value.id
+0382:     if (!id) return
+0383:     const r = await api.get(`/teams/${id}/groups`)
+0384:     if (r.data && r.data.success) { groups.value = r.data.data || [] } else { groups.value = [] }
+0385:   } catch (_) { groups.value = [] }
+0386: }
+0387: 
+0388: const fetchPermissionCatalog = async () => {
+0389:   try {
+0390:     const id = team.value && team.value.id
+0391:     if (!id) return
+0392:     const r = await api.get(`/teams/${id}/permissions/catalog`)
+0393:     if (r.data && r.data.success) { permissionCatalog.value = r.data.data || [] }
+0394:   } catch (_) { permissionCatalog.value = [] }
+0395: }
+0396: 
+0397: const copyInvite = async () => {
+0398:   const code = team.value && team.value.invite_code
+0399:   if (!code) return
+0400:   try {
+0401:     await navigator.clipboard.writeText(String(code))
+0402:     ElMessage.success('邀请码已复制')
+0403:   } catch (_) { ElMessage.success('邀请码已复制') }
+0404: }
+0405: 
+0406: const confirmUpdate = async () => {
+0407:   const id = team.value && team.value.id
+0408:   if (!id || !isOwner.value) return
+0409:   try {
+0410:     const r = await api.put(`/teams/${id}`, { name: edit.value.name, description: edit.value.description, avatar_url: edit.value.avatar_url })
+0411:     if (r.data && r.data.success) { ElMessage.success('已更新'); showEdit.value = false; fetchCurrent() } else { ElMessage.error((r.data && r.data.message) || '更新失败') }
+0412:   } catch (_) { ElMessage.error('更新失败') }
+0413: }
+0414: 
+0415: 
+0416: const removeMember = async (row) => {
+0417:   if (!isOwner.value || row.role === 'owner') return
+0418:   const ok = await ElMessageBox.confirm('确认移除此成员？', '移除成员', { type: 'warning' }).catch(() => false)
+0419:   if (!ok) return
+0420:   try {
+0421:     const id = team.value && team.value.id
+0422:     const r = await api.delete(`/teams/${id}/members/${row.id}`)
+0423:     if (r.data && r.data.success) { ElMessage.success('已移除'); fetchCurrent() } else { ElMessage.error((r.data && r.data.message) || '操作失败') }
+0424:   } catch (_) { ElMessage.error('操作失败') }
+0425: }
+0426: 
+0427: const assignMemberGroup = async (row, gid) => {
+0428:   if (!canManageGroup.value) return
+0429:   try {
+0430:     const id = team.value && team.value.id
+0431:     const payload = { group_id: gid === '' ? null : gid }
+0432:     const r = await api.put(`/teams/${id}/members/${row.id}/group`, payload)
+0433:     if (r.data && r.data.success) { ElMessage.success('分组已更新'); await fetchCurrent() } else { ElMessage.error((r.data && r.data.message) || '更新失败') }
+0434:   } catch (_) { ElMessage.error('更新失败') }
+0435: }
+0436: 
+0437: const leaveTeam = async () => {
+0438:   if (isOwner.value) { ElMessage.warning('创建者无法离开团队，请先解散或转让') ; return }
+0439:   const ok = await ElMessageBox.confirm('确认离开当前团队？', '离开团队', { type: 'warning' }).catch(() => false)
+0440:   if (!ok) return
+0441:   try {
+0442:     const id = team.value && team.value.id
+0443:     const r = await api.post(`/teams/${id}/leave`)
+0444:     if (r.data && r.data.success) { 
+0445:       ElMessage.success('已离开团队')
+0446:       window.location.reload()
+0447:     } else { ElMessage.error((r.data && r.data.message) || '操作失败') }
+0448:   } catch (_) { ElMessage.error('操作失败') }
+0449: }
+0450: 
+0451: const dissolveTeam = async () => {
+0452:   if (!(isOwner.value || isSuperAdmin.value)) return
+0453:   const ok = await ElMessageBox.confirm('解散后不可恢复，确认解散？', '解散团队', { type: 'error' }).catch(() => false)
+0454:   if (!ok) return
+0455:   try {
+0456:     const id = team.value && team.value.id
+0457:     const r = await api.delete(`/teams/${id}`)
+0458:     if (r.data && r.data.success) { 
+0459:       ElMessage.success('已解散团队')
+0460:       window.location.reload()
+0461:     } else { ElMessage.error((r.data && r.data.message) || '操作失败') }
+0462:   } catch (_) { ElMessage.error('操作失败') }
+0463: }
+0464: 
+0465: onMounted(fetchCurrent)
+0466: 
+0467: const teamAvatarInput = ref(null)
+0468: const triggerTeamAvatarUpload = () => { if (teamAvatarInput.value) teamAvatarInput.value.click() }
+0469: const handleTeamAvatarChange = async (e) => {
+0470:   const files = e.target && e.target.files
+0471:   if (!files || !files[0]) return
+0472:   const file = files[0]
+0473:   const fd = new FormData()
+0474:   fd.append('file', file)
+0475:   fd.append('category', 'teams')
+0476:   try {
+0477:     const res = await api.post('/upload/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+0478:     if (res.data && res.data.success && res.data.data && res.data.data.url) {
+0479:       edit.value.avatar_url = '/uploads/' + res.data.data.url
+0480:       ElMessage.success('头像上传成功')
+0481:     } else {
+0482:       ElMessage.error((res.data && res.data.message) || '上传失败')
+0483:     }
+0484:   } catch (_) { ElMessage.error('上传失败') } finally { if (teamAvatarInput.value) teamAvatarInput.value.value = '' }
+0485: }
+0486: 
+0487: const getGroupMembers = (gid) => {
+0488:   const list = Array.isArray(members.value) ? members.value : []
+0489:   return list.filter(m => String(m.group_id || '') === String(gid))
+0490: }
+0491: 
+0492: const buildDefaultSelections = (scope) => {
+0493:   const result = {}
+0494:   const list = Array.isArray(permissionCatalog.value) ? permissionCatalog.value : []
+0495:   list.forEach(group => {
+0496:     const isTeam = String(group.key) === 'team'
+0497:     const children = group.children || []
+0498:     children.forEach(ch => { result[ch.key] = scope === 'team' ? false : (!isTeam) })
+0499:   })
+0500:   return result
+0501: }
+0502: 
+0503: const openCreateGroup = () => {
+0504:   groupDialogMode.value = 'create'
+0505:   showGroupDialog.value = true
+0506:   groupForm.value = { id: null, name: '', description: '', permission_scope: 'group' }
+0507:   permissionSelections.value = buildDefaultSelections('group')
+0508:   selectedGroupMemberIds.value = []
+0509:   originalGroupMemberIds.value = []
+0510: }
+0511: 
+0512: const openEditGroup = (g) => {
+0513:   groupDialogMode.value = 'edit'
+0514:   showGroupDialog.value = true
+0515:   groupForm.value = { id: g.id, name: g.name || '', description: g.description || '', permission_scope: g.permission_scope || 'group' }
+0516:   const perms = g.permissions || {}
+0517:   permissionSelections.value = Object.assign(buildDefaultSelections(groupForm.value.permission_scope), perms)
+0518:   const selected = (Array.isArray(members.value) ? members.value : []).filter(m => m.group_id && String(m.group_id) === String(g.id))
+0519:   selectedGroupMemberIds.value = selected.map(x => x.id)
+0520:   originalGroupMemberIds.value = selected.map(x => x.id)
+0521: }
+0522: 
+0523: const saveGroup = async () => {
+0524:   if (!canManageGroup.value) return
+0525:   const id = team.value && team.value.id
+0526:   if (!id) return
+0527:   const payload = { name: groupForm.value.name, description: groupForm.value.description, permission_scope: groupForm.value.permission_scope, permissions: permissionSelections.value }
+0528:   try {
+0529:     let r
+0530:     if (groupDialogMode.value === 'create') r = await api.post(`/teams/${id}/groups`, payload)
+0531:     else r = await api.put(`/teams/${id}/groups/${groupForm.value.id}`, payload)
+0532:     if (r.data && r.data.success) {
+0533:       const gid = groupDialogMode.value === 'create' ? (r.data.data && r.data.data.id) : groupForm.value.id
+0534:       const selectedIds = Array.isArray(selectedGroupMemberIds.value) ? selectedGroupMemberIds.value : []
+0535:       for (const uid of selectedIds) {
+0536:         try { await api.put(`/teams/${id}/members/${uid}/group`, { group_id: gid }) } catch (e) {}
+0537:       }
+0538:       if (groupDialogMode.value === 'edit') {
+0539:         const toRemove = (Array.isArray(originalGroupMemberIds.value) ? originalGroupMemberIds.value : []).filter(uid => !selectedIds.includes(uid))
+0540:         for (const uid of toRemove) {
+0541:           try { await api.put(`/teams/${id}/members/${uid}/group`, { group_id: null }) } catch (e) {}
+0542:         }
+0543:       }
+0544:       ElMessage.success('已保存')
+0545:       showGroupDialog.value = false
+0546:       await fetchGroups()
+0547:       await fetchCurrent()
+0548:     } else { ElMessage.error((r.data && r.data.message) || '保存失败') }
+0549:   } catch (_) { ElMessage.error('保存失败') }
+0550: }
+0551: 
+0552: const deleteGroup = async (g) => {
+0553:   if (!canManageGroup.value) return
+0554:   const ok = await ElMessageBox.confirm('确认删除该分组？', '删除分组', { type: 'warning' }).catch(() => false)
+0555:   if (!ok) return
+0556:   try {
+0557:     const id = team.value && team.value.id
+0558:     const r = await api.delete(`/teams/${id}/groups/${g.id}`)
+0559:     if (r.data && r.data.success) { ElMessage.success('已删除'); await fetchGroups(); await fetchCurrent() } else { ElMessage.error((r.data && r.data.message) || '删除失败') }
+0560:   } catch (_) { ElMessage.error('删除失败') }
+0561: }
+0562: </script>
+0563: 
+0564: <style scoped>
+0565: .page-container {
+0566:   padding: 0 20px 40px;
+0567:   max-width: 1200px;
+0568:   margin: 0 auto;
+0569: }
+0570: 
+0571: .page-header {
+0572:   margin-bottom: 24px;
+0573: }
+0574: 
+0575: .manage-container {
+0576:   display: flex;
+0577:   flex-direction: column;
+0578:   gap: 24px;
+0579: }
+0580: 
+0581: /* 团队概览 */
+0582: .team-overview-card {
+0583:   border: none;
+0584:   background: #fff;
+0585:   border-radius: 12px;
+0586: }
+0587: 
+0588: .overview-content {
+0589:   display: flex;
+0590:   gap: 24px;
+0591:   align-items: flex-start;
+0592: }
+0593: 
+0594: .action-section {
+0595:   align-self: flex-start;
+0596: }
+0597: 
+0598: .avatar-section {
+0599:   flex-shrink: 0;
+0600: }
+0601: 
+0602: .info-section {
+0603:   flex: 1;
+0604: }
+0605: 
+0606: .info-header {
+0607:   display: flex;
+0608:   align-items: center;
+0609:   gap: 12px;
+0610:   margin-bottom: 8px;
+0611: }
+0612: 
+0613: .team-name {
+0614:   margin: 0;
+0615:   font-size: 20px;
+0616:   font-weight: 600;
+0617:   color: #1a1a1a;
+0618: }
+0619: 
+0620: .team-desc {
+0621:   color: #606266;
+0622:   font-size: 14px;
+0623:   margin: 0 0 16px;
+0624:   max-width: 600px;
+0625: }
+0626: 
+0627: .meta-row {
+0628:   display: flex;
+0629:   gap: 24px;
+0630:   font-size: 13px;
+0631:   color: #909399;
+0632: }
+0633: 
+0634: .meta-item {
+0635:   display: flex;
+0636:   align-items: center;
+0637:   gap: 6px;
+0638: }
+0639: 
+0640: .invite-code-wrapper {
+0641:   cursor: pointer;
+0642:   padding: 2px 8px;
+0643:   background: #f4f4f5;
+0644:   border-radius: 4px;
+0645:   transition: all 0.2s;
+0646: }
+0647: 
+0648: .invite-code-wrapper:hover {
+0649:   background: #ecf5ff;
+0650:   color: var(--el-color-primary);
+0651: }
+0652: 
+0653: .invite-code-wrapper .code {
+0654:   font-family: monospace;
+0655:   font-weight: 600;
+0656: }
+0657: 
+0658: /* Tabs */
+0659: .management-tabs-card {
+0660:   border: none;
+0661:   border-radius: 12px;
+0662:   min-height: 500px;
+0663: }
+0664: 
+0665: .custom-tabs :deep(.el-tabs__header) {
+0666:   margin-bottom: 0;
+0667: }
+0668: 
+0669: .custom-tabs :deep(.el-tabs__nav-wrap::after) {
+0670:   height: 1px;
+0671:   background-color: #ebeef5;
+0672: }
+0673: 
+0674: .tab-pane-content {
+0675:   padding: 24px 0;
+0676: }
+0677: 
+0678: .pane-header {
+0679:   display: flex;
+0680:   justify-content: space-between;
+0681:   align-items: center;
+0682:   margin-bottom: 20px;
+0683: }
+0684: 
+0685: .pane-title {
+0686:   font-size: 16px;
+0687:   font-weight: 600;
+0688:   color: #1a1a1a;
+0689: }
+0690: 
+0691: /* 表格 */
+0692: .custom-table {
+0693:   --el-table-header-bg-color: #f8f9fa;
+0694:   border-radius: 8px;
+0695:   overflow: hidden;
+0696: }
+0697: 
+0698: .user-cell {
+0699:   display: flex;
+0700:   align-items: center;
+0701:   gap: 12px;
+0702: }
+0703: 
+0704: .user-info {
+0705:   display: flex;
+0706:   flex-direction: column;
+0707:   min-width: 0;
+0708: }
+0709: 
+0710: .nickname {
+0711:   font-weight: 500;
+0712:   color: #1a1a1a;
+0713:   white-space: nowrap;
+0714:   overflow: hidden;
+0715:   text-overflow: ellipsis;
+0716: }
+0717: 
+0718: .user-id {
+0719:   font-size: 12px;
+0720:   color: #909399;
+0721: }
+0722: 
+0723: /* 分组网格 */
+0724: .groups-grid {
+0725:   display: grid;
+0726:   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+0727:   gap: 20px;
+0728: }
+0729: 
+0730: .group-card {
+0731:   border-radius: 8px;
+0732:   border: 1px solid #ebeef5;
+0733: }
+0734: 
+0735: .group-card-header {
+0736:   display: flex;
+0737:   justify-content: space-between;
+0738:   align-items: flex-start;
+0739:   margin-bottom: 8px;
+0740: }
+0741: 
+0742: .group-name {
+0743:   font-weight: 600;
+0744:   font-size: 16px;
+0745:   color: #1a1a1a;
+0746: }
+0747: 
+0748: .group-desc {
+0749:   font-size: 13px;
+0750:   color: #606266;
+0751:   margin-bottom: 16px;
+0752:   height: 40px;
+0753:   display: -webkit-box;
+0754:   -webkit-line-clamp: 2;
+0755:   -webkit-box-orient: vertical;
+0756:   overflow: hidden;
+0757: }
+0758: 
+0759: .group-members-preview {
+0760:   margin-bottom: 16px;
+0761: }
+0762: 
+0763: .preview-label {
+0764:   font-size: 12px;
+0765:   color: #909399;
+0766:   margin-bottom: 8px;
+0767: }
+0768: 
+0769: .avatar-stack {
+0770:   display: flex;
+0771:   align-items: center;
+0772: }
+0773: 
+0774: .stack-avatar {
+0775:   border: 2px solid #fff;
+0776:   margin-right: -8px;
+0777: }
+0778: 
+0779: .more-count {
+0780:   margin-left: 12px;
+0781:   font-size: 12px;
+0782:   color: #909399;
+0783: }
+0784: 
+0785: .no-members-text {
+0786:   font-size: 12px;
+0787:   color: #c0c4cc;
+0788: }
+0789: 
+0790: .member-list {
+0791:   display: flex;
+0792:   flex-wrap: wrap;
+0793:   gap: 8px;
+0794:   margin-top: 8px;
+0795: }
+0796: 
+0797: .member-item {
+0798:   display: flex;
+0799:   align-items: center;
+0800:   gap: 6px;
+0801:   background: #f4f4f5;
+0802:   color: #606266;
+0803:   font-size: 12px;
+0804:   padding: 2px 8px;
+0805:   border-radius: 12px;
+0806: }
+0807: 
+0808: .member-name {
+0809:   white-space: nowrap;
+0810:   max-width: 160px;
+0811:   overflow: hidden;
+0812:   text-overflow: ellipsis;
+0813: }
+0814: 
+0815: .group-card-actions {
+0816:   border-top: 1px solid #ebeef5;
+0817:   margin: 0 -20px -20px;
+0818:   padding: 12px 20px;
+0819:   display: flex;
+0820:   justify-content: flex-end;
+0821:   gap: 8px;
+0822:   background: #fafafa;
+0823: }
+0824: 
+0825: /* 设置 */
+0826: .settings-section {
+0827:   max-width: 800px;
+0828: }
+0829: 
+0830: .settings-section h3 {
+0831:   margin-bottom: 16px;
+0832:   color: #1a1a1a;
+0833: }
+0834: 
+0835: .danger-zone {
+0836:   border: 1px solid #fde2e2;
+0837:   border-radius: 8px;
+0838:   background: #fef0f0;
+0839:   padding: 24px;
+0840: }
+0841: 
+0842: .danger-item {
+0843:   display: flex;
+0844:   justify-content: space-between;
+0845:   align-items: center;
+0846: }
+0847: 
+0848: .danger-info h4 {
+0849:   margin: 0 0 4px;
+0850:   color: #f56c6c;
+0851: }
+0852: 
+0853: .danger-info p {
+0854:   margin: 0;
+0855:   font-size: 13px;
+0856:   color: #909399;
+0857: }
+0858: 
+0859: /* 弹窗 */
+0860: .avatar-edit {
+0861:   display: flex;
+0862:   flex-direction: column;
+0863:   align-items: center;
+0864:   gap: 12px;
+0865:   margin-bottom: 24px;
+0866: }
+0867: 
+0868: .avatar-wrapper {
+0869:   position: relative;
+0870:   cursor: pointer;
+0871:   border-radius: 4px;
+0872:   overflow: hidden;
+0873: }
+0874: 
+0875: .avatar-overlay {
+0876:   position: absolute;
+0877:   top: 0;
+0878:   left: 0;
+0879:   width: 100%;
+0880:   height: 100%;
+0881:   background: rgba(0,0,0,0.5);
+0882:   display: flex;
+0883:   align-items: center;
+0884:   justify-content: center;
+0885:   opacity: 0;
+0886:   transition: opacity 0.2s;
+0887:   color: #fff;
+0888:   font-size: 24px;
+0889: }
+0890: 
+0891: .avatar-wrapper:hover .avatar-overlay {
+0892:   opacity: 1;
+0893: }
+0894: 
+0895: .photo-tip {
+0896:   font-size: 12px;
+0897:   color: #909399;
+0898: }
+0899: 
+0900: .hidden-input {
+0901:   display: none;
+0902: }
+0903: 
+0904: .user-select-item {
+0905:   display: flex;
+0906:   align-items: center;
+0907:   gap: 8px;
+0908: }
+0909: 
+0910: /* 权限卡片 */
+0911: .perm-section {
+0912:   background: #f8f9fa;
+0913:   border-radius: 8px;
+0914:   padding: 16px;
+0915: }
+0916: 
+0917: .perm-section-header {
+0918:   margin-bottom: 12px;
+0919:   display: flex;
+0920:   align-items: baseline;
+0921:   gap: 8px;
+0922: }
+0923: 
+0924: .perm-title {
+0925:   font-weight: 600;
+0926:   color: #1a1a1a;
+0927: }
+0928: 
+0929: .perm-tip {
+0930:   font-size: 12px;
+0931:   color: #909399;
+0932: }
+0933: 
+0934: .perm-grid {
+0935:   display: grid;
+0936:   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+0937:   gap: 12px;
+0938: }
+0939: 
+0940: .perm-category-card {
+0941:   background: #fff;
+0942:   border-radius: 4px;
+0943:   border: 1px solid #ebeef5;
+0944:   padding: 12px;
+0945: }
+0946: 
+0947: .cat-header {
+0948:   font-size: 13px;
+0949:   font-weight: 600;
+0950:   color: #606266;
+0951:   margin-bottom: 8px;
+0952:   padding-bottom: 4px;
+0953:   border-bottom: 1px solid #f0f2f5;
+0954: }
+0955: 
+0956: .cat-items {
+0957:   display: flex;
+0958:   flex-direction: column;
+0959:   gap: 4px;
+0960: }
+0961: 
+0962: .perm-checkbox {
+0963:   margin-right: 0;
+0964:   height: 24px;
+0965: }
+0966: 
+0967: .perm-checkbox :deep(.el-checkbox__label) {
+0968:   font-size: 13px;
+0969: }
+0970: </style>
+===== 文件: web\vite.config.js =====
+0001: import { defineConfig } from 'vite'
+0002: import vue from '@vitejs/plugin-vue'
+0003: import path from 'path'
+0004: 
+0005: export default defineConfig({
+0006:   plugins: [vue()],
+0007:   resolve: {
+0008:     alias: {
+0009:       '@': path.resolve(__dirname, './src')
+0010:     }
+0011:   },
+0012:   build: {
+0013:     rollupOptions: {
+0014:       input: {
+0015:         index: path.resolve(__dirname, 'index.html'),
+0016:         app: path.resolve(__dirname, 'app.html')
+0017:       }
+0018:     }
+0019:   },
+0020:   server: {
+0021:     host: '0.0.0.0',
+0022:     port: 5173,
+0023:     allowedHosts: ['acbim.fun', 'aibim.xyz','acbim.cn','parrot.acbim.cn','bimai.xyz'],
+0024:     proxy: {
+0025:       '/api': {
+0026:         target: 'http://localhost:5075',
+0027:         changeOrigin: true
+0028:       },
+0029:       '/uploads': {
+0030:         target: 'http://localhost:5075',
+0031:         changeOrigin: true
+0032:       }
+0033:     }
+0034:   }
+0035: })
+===== 文件: 鹦鹉管家会员体系.md =====
+0001: 为了帮助鹦鹉管家项目实现商业价值，我为您规划了一套 会员订阅体系（Membership Subscription System） 。该方案旨在在不破坏免费用户核心体验的前提下，为重度用户（如繁育者、多只鹦鹉持有者）提供高价值的增值服务。
+0002: 
+0003: 以下是详细的规划方案：
+0004: 
+0005: ### 一、 产品与商业设计 (Product & Business Design)
+0006: 我们将用户分为三个层级： 免费版 (Free) 、 高级会员 (Pro) 和 团队/繁育版 (Team/Breeder) 。
+0007:  1. 权益对比表
+0008: 功能权益 免费版 (Free) 高级会员 (Pro) 团队/繁育版 (Team) 鹦鹉数量限制 上限 5 只 无限制 无限制 数据记录 基础记录 (喂食/清洁/健康) 基础记录 + 高清照片原图存储 所有 Pro 功能 统计分析 基础月报 高级趋势图 (体重/食量/开销趋势) 多维度繁育报表 数据导出 不支持 导出 Excel/PDF 报表 批量导出备份 AI 智能助手 每日限 3 次 (语音/文本识别) 无限次使用 + 更精准模型 无限次 市场洞察 仅查看当前参考价 查看历史价格趋势图 市场行情深度分析 团队协作 仅限单人 单人 支持多成员协作管理 (员工/家人) 广告 可能有少量广告 纯净无广告 纯净无广告
+0009:  2. 定价策略建议 (仅供参考)
+0010: - 月卡 (Monthly) : ¥9.9 /月 (低门槛尝试)
+0011: - 年卡 (Yearly) : ¥99 /年 (约为月卡的 8.3 折，主推款)
+0012: - 终身会员 (Lifetime) : ¥299 (一次性买断，适合初期回笼资金)
+0013: ### 二、 技术架构规划 (Technical Architecture)
+0014: 为了支持上述业务，我们需要在数据库和后端逻辑上进行扩展。
+0015:  1. 数据库设计 (Schema Changes)
+0016: 我们需要修改 users 表并新增 subscriptions 和 payment_orders 表。
+0017: 
+0018: A. 修改 User 模型 在 models.py 的 User 表中增加会员状态字段：
+0019: 
+0020: ```
+0021: class User(db.Model):
+0022:     # ... 现有字段 ...
+0023:     
+0024:     # 会员相关字段
+0025:     subscription_tier = db.Column
+0026:     (db.Enum('free', 'pro', 
+0027:     'team'), default='free') # 当前
+0028:     等级
+0029:     subscription_expire_at = db.
+0030:     Column(db.DateTime, 
+0031:     nullable=True) # 过期时间
+0032:     is_auto_renew = db.Column(db.
+0033:     Boolean, default=False) # 是否自
+0034:     动续费
+0035: ```
+0036: B. 新增 SubscriptionOrder 模型 (用于记录支付订单)
+0037: 
+0038: ```
+0039: class SubscriptionOrder(db.Model):
+0040:     __tablename__ = 
+0041:     'subscription_orders'
+0042:     
+0043:     id = db.Column(db.Integer, 
+0044:     primary_key=True)
+0045:     user_id = db.Column(db.Integer, 
+0046:     db.ForeignKey('users.id'), 
+0047:     nullable=False)
+0048:     order_no = db.Column(db.String
+0049:     (64), unique=True, 
+0050:     nullable=False) # 内部订单号
+0051:     transaction_id = db.Column(db.
+0052:     String(64), nullable=True) # 微
+0053:     信支付流水号
+0054:     plan_id = db.Column(db.String
+0055:     (32), nullable=False) # 例如: 
+0056:     'pro_monthly', 'pro_yearly'
+0057:     amount = db.Column(db.Numeric
+0058:     (10, 2), nullable=False) # 支付
+0059:     金额
+0060:     status = db.Column(db.Enum
+0061:     ('pending', 'paid', 'failed', 
+0062:     'refunded'), default='pending')
+0063:     created_at = db.Column(db.
+0064:     DateTime, default=datetime.
+0065:     utcnow)
+0066:     paid_at = db.Column(db.
+0067:     DateTime, nullable=True)
+0068: ``` 2. API 接口规划
+0069: 我们需要在 backend/routes/ 下新建 subscription.py 模块：
+0070: 
+0071: 方法 路径 描述 GET /api/subscription/plans 获取订阅套餐列表 (价格、描述) GET /api/subscription/status 获取当前用户订阅状态及过期时间 POST /api/subscription/create_order 创建支付订单 (对接微信支付统一下单) POST /api/subscription/wechat_callback 接收微信支付异步通知，更新订单状态和用户权益
+0072:  3. 权限控制逻辑 (Gatekeeper Logic)
+0073: 我们需要一个装饰器或检查函数，在关键操作前检查权限。例如在 parrots.py 中：
+0074: 
+0075: ```
+0076: # 伪代码示例
+0077: def check_parrot_limit(user):
+0078:     if user.subscription_tier == 
+0079:     'free':
+0080:         count = Parrot.query.
+0081:         filter_by(user_id=user.id).
+0082:         count()
+0083:         if count >= 5:
+0084:             raise PermissionError("
+0085:             免费版最多添加5只鹦鹉，请升
+0086:             级会员解锁无限数量")
+0087: ```
+0088: ### 三、 实施步骤 (Implementation Roadmap)
+0089: 建议分三个阶段实施：
+0090: 
+0091: 阶段一：基础架构与权益限制 (Infrastructure & Gating)
+0092: 
+0093: 1. 数据库迁移 ：添加会员相关字段。
+0094: 2. 后端逻辑 ：在添加鹦鹉、查看高级图表等接口加入“权限检查”逻辑。
+0095: 3. Mock 支付 ：先不接真实支付，开发一个“兑换码”或“管理员后台开通”功能，用于内部测试和种子用户赠送。
+0096: 阶段二：支付接入 (Payment Integration)
+0097: 
+0098: 1. 微信支付对接 ：注册微信支付商户号，后端实现统一下单和回调接口。
+0099: 2. 订单系统 ：实现订单创建、状态流转。
+0100: 阶段三：前端展示与引导 (UI & Upsell)
+0101: 
+0102: 1. 会员中心页 ：展示当前身份、过期时间、续费按钮。
+0103: 2. 权益墙 (Paywall) ：当用户点击“添加第6只鹦鹉”或“导出报表”时，弹出精美的会员介绍弹窗。
+0104: 3. UI 标识 ：在头像旁增加 PRO 金色标识，增加尊贵感。
