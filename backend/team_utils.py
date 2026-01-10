@@ -91,10 +91,17 @@ def can_access_parrot(user, parrot_id, permission='view'):
     if parrot.user_id == user.id:
         return True, parrot
     
-    # 2. 团队模式逻辑：如果鹦鹉属于用户当前团队，允许访问
+    # 2. 团队模式逻辑：如果鹦鹉属于用户当前团队，按权限判定
     if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
         if parrot.team_id == user.current_team_id:
-            return True, parrot
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if member and member.role in ['owner', 'admin']:
+                return True, parrot
+            from team_utils import compute_effective_permissions
+            perms = compute_effective_permissions(user.current_team_id, user.id)
+            if perms.get('parrot.view') or perms.get('all'):
+                return True, parrot
+            return False, None
 
     # 3. 检查是否通过团队共享访问（兼容旧逻辑）
     if user.current_team_id:

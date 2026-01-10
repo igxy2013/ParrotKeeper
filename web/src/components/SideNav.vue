@@ -139,7 +139,7 @@ const authStore = useAuthStore()
 
 const currentMode = ref(localStorage.getItem('user_mode') || 'personal')
 const messageCount = ref(0)
-const membershipEnabled = ref(true)
+const membershipEnabled = ref(false)
 const expandedMenus = ref([]) // Default empty
 
 const calculateMessageCount = (announcements) => {
@@ -282,8 +282,8 @@ onMounted(async () => {
     }
   } catch (_) {}
   try {
-    const t = await api.get('/admin/membership-toggle')
-    if (t.data && t.data.success) membershipEnabled.value = !!t.data.data.enabled
+    const t = await api.get('/membership/toggle')
+    if (t.data && t.data.success) membershipEnabled.value = !!(t.data.data && t.data.data.enabled)
   } catch (_) {}
 })
 </script>

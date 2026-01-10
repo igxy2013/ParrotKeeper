@@ -103,7 +103,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 
-const membershipEnabled = ref(true)
+const membershipEnabled = ref(false)
 const limits = ref({ free_personal: 10, free_team: 20, pro_personal: 100, team_basic: 1000, team_advanced: 0 })
 const redeemCode = ref('')
 const redeeming = ref(false)
@@ -199,8 +199,8 @@ const computeAdjustedTier = (rawTier, userInfo, currentTeam) => {
 
 const load = async () => {
   try {
-    const t = await api.get('/admin/membership-toggle')
-    if (t.data?.success) membershipEnabled.value = !!t.data.data.enabled
+    const t = await api.get('/membership/toggle')
+    if (t.data?.success) membershipEnabled.value = !!(t.data.data && t.data.data.enabled)
   } catch (_) {}
   try {
     const r = await api.get('/membership/limits')

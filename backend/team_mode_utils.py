@@ -4,6 +4,7 @@
 """
 from models import db, User, Parrot, Expense, Income, FeedingRecord, HealthRecord, CleaningRecord, BreedingRecord
 from team_models import Team, TeamMember, TeamGroup
+from team_utils import compute_effective_permissions
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import aliased
 
@@ -73,10 +74,15 @@ def get_accessible_parrot_ids_by_mode(user):
                 Parrot.is_active == True
             )
             member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
-            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
-                grp = TeamGroup.query.filter_by(id=member.group_id, team_id=user.current_team_id, is_active=True).first()
-                if not grp or getattr(grp, 'permission_scope', 'group') != 'team':
-                    base_q = base_q.filter(Parrot.group_id == member.group_id)
+            # 非管理员需要具备查看权限
+            if member and member.role not in ['owner', 'admin']:
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('parrot.view') or perms.get('all')):
+                    return []
+                if getattr(member, 'group_id', None):
+                    grp = TeamGroup.query.filter_by(id=member.group_id, team_id=user.current_team_id, is_active=True).first()
+                    if not grp or getattr(grp, 'permission_scope', 'group') != 'team':
+                        base_q = base_q.filter(Parrot.group_id == member.group_id)
             parrot_ids = base_q.all()
             return [pid[0] for pid in parrot_ids]
         else:
@@ -97,10 +103,15 @@ def get_accessible_expense_ids_by_mode(user):
         if user.current_team_id:
             q = db.session.query(Expense.id).filter(Expense.team_id == user.current_team_id)
             member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
-            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
-                grp = TeamGroup.query.filter_by(id=member.group_id, team_id=user.current_team_id, is_active=True).first()
-                if not grp or getattr(grp, 'permission_scope', 'group') != 'team':
-                    q = q.filter(Expense.group_id == member.group_id)
+            # 非管理员需要具备查看权限
+            if member and member.role not in ['owner', 'admin']:
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('finance.view') or perms.get('all')):
+                    return []
+                if getattr(member, 'group_id', None):
+                    grp = TeamGroup.query.filter_by(id=member.group_id, team_id=user.current_team_id, is_active=True).first()
+                    if not grp or getattr(grp, 'permission_scope', 'group') != 'team':
+                        q = q.filter(Expense.group_id == member.group_id)
             expense_ids = q.all()
         else:
             # 如果没有当前团队，返回空列表
@@ -126,10 +137,15 @@ def get_accessible_income_ids_by_mode(user):
         if user.current_team_id:
             q = db.session.query(Income.id).filter(Income.team_id == user.current_team_id)
             member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
-            if member and member.role not in ['owner', 'admin'] and getattr(member, 'group_id', None):
-                grp = TeamGroup.query.filter_by(id=member.group_id, team_id=user.current_team_id, is_active=True).first()
-                if not grp or getattr(grp, 'permission_scope', 'group') != 'team':
-                    q = q.filter(Income.group_id == member.group_id)
+            # 非管理员需要具备查看权限
+            if member and member.role not in ['owner', 'admin']:
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('finance.view') or perms.get('all')):
+                    return []
+                if getattr(member, 'group_id', None):
+                    grp = TeamGroup.query.filter_by(id=member.group_id, team_id=user.current_team_id, is_active=True).first()
+                    if not grp or getattr(grp, 'permission_scope', 'group') != 'team':
+                        q = q.filter(Income.group_id == member.group_id)
             income_ids = q.all()
         else:
             # 如果没有当前团队，返回空列表

@@ -214,11 +214,19 @@
       :show-redeem="false"
       @upgrade="goToMembershipCenter"
     />
+    <LimitModal 
+      v-model="showPermissionModal"
+      mode="info"
+      title="无权限提示"
+      message="您没有新增鹦鹉的权限"
+      :show-redeem="false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { Plus, Male, Female, ArrowRight, Search, Grid, Tickets, User, FirstAidKit, TrendCharts } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import { getCache, setCache } from '@/utils/cache'
@@ -250,14 +258,15 @@ const overviewStats = ref({})
 const showLimitDialog = ref(false)
 const limitCount = ref(0)
 const router = useRouter()
+const showPermissionModal = ref(false)
 
 const goToMembershipCenter = () => {
   showLimitDialog.value = false
   router.push('/membership')
 }
 
-const PARROTS_CACHE_KEY = 'parrots_list_default'
 const PARROTS_CACHE_TTL = 60000
+const getParrotsCacheKey = () => `parrots_list_default|${localStorage.getItem('user_mode') || 'personal'}`
 
 // Initialize viewMode from localStorage or user_mode
 const initViewMode = () => {
@@ -288,6 +297,7 @@ watch(() => authStore.user?.user_mode, (newMode) => {
    } else {
      viewMode.value = 'card'
    }
+   handleParrotsChanged()
 })
 
 const sortOptions = [
@@ -324,7 +334,7 @@ const fetchParrots = async (withLoading = true) => {
         !selectedStatus.value &&
         selectedSort.value === 'created_desc'
       if (isDefaultQuery) {
-        setCache(PARROTS_CACHE_KEY, {
+        setCache(getParrotsCacheKey(), {
           parrots: parrots.value,
           total: total.value,
           pageSize: pageSize.value
@@ -332,7 +342,14 @@ const fetchParrots = async (withLoading = true) => {
       }
     }
   } catch (e) {
-    console.error(e)
+    const msg = e && e.response && e.response.data && e.response.data.message
+      ? e.response.data.message
+      : (e.message || '加载失败')
+    if (e && e.response && e.response.status === 403) {
+      ElMessage.error(msg || '您没有查看鹦鹉的权限')
+    } else {
+      console.error(e)
+    }
   } finally {
     if (withLoading) loading.value = false
   }
@@ -395,6 +412,30 @@ const handleAdd = async () => {
     limitCount.value = limit
     showLimitDialog.value = true
     return
+  }
+
+  if (mode === 'team') {
+    try {
+      const uid = (authStore.user || {}).id
+      const tc = await api.get('/teams/current')
+      const tid = tc.data && tc.data.success ? (tc.data.data || {}).id : null
+      if (tid && uid) {
+        const r = await api.get(`/teams/${tid}/members/${uid}/effective-permissions`)
+        const perms = (r.data && r.data.success) ? (r.data.data || {}) : {}
+        if (!(perms['parrot.create'] || perms['all'])) {
+          showPermissionModal.value = true
+          return
+        }
+      }
+    } catch (e) {
+      const msg = e && e.response && e.response.data && e.response.data.message
+        ? e.response.data.message
+        : (e.message || '权限校验失败')
+      if (e && e.response && e.response.status === 403) {
+        showPermissionModal.value = true
+        return
+      }
+    }
   }
 
   showModal.value = true
@@ -611,7 +652,7 @@ const onAvatarError = (e, parrot) => {
 
 const preloadFromCache = () => {
   try {
-    const cached = getCache(PARROTS_CACHE_KEY, PARROTS_CACHE_TTL)
+    const cached = getCache(getParrotsCacheKey(), PARROTS_CACHE_TTL)
     if (!cached || !Array.isArray(cached.parrots)) return false
     parrots.value = cached.parrots
     total.value = cached.total || cached.parrots.length

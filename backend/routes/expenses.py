@@ -22,6 +22,20 @@ def get_transactions():
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
         
+        # 团队模式下权限校验（非管理员需具备查看权限）
+        if hasattr(user, 'user_mode') and user.user_mode == 'team':
+            if not user.current_team_id:
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('finance.view') or perms.get('all')):
+                    return error_response('您没有查看收支的权限', 403)
+
         # 1. 获取所有符合条件的记录（内存合并）
         all_records = []
         
@@ -208,6 +222,19 @@ def get_expenses_trend():
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
         period = request.args.get('period', 'day') # day, month, year
+        # 团队模式下权限校验（非管理员需具备查看权限）
+        if hasattr(user, 'user_mode') and user.user_mode == 'team':
+            if not user.current_team_id:
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('finance.view') or perms.get('all')):
+                    return error_response('您没有查看收支的权限', 403)
 
         # 1. 获取可访问的记录ID
         accessible_expense_ids = get_accessible_expense_ids_by_mode(user)
@@ -380,12 +407,12 @@ def create_expense():
         user = request.current_user
         print(f"[DEBUG] 创建支出记录 - 用户ID: {user.id}, 用户模式: {getattr(user, 'user_mode', 'personal')}")
         
-        # 在团队模式下，只有管理员才能添加支出记录
+        # 在团队模式下，权限校验
         if hasattr(user, 'user_mode') and user.user_mode == 'team':
             if not user.current_team_id:
                 return error_response('请先选择团队', 400)
             
-            # 检查用户是否是团队管理员
+            # 检查用户是否是团队成员
             from team_models import TeamMember
             member = TeamMember.query.filter_by(
                 team_id=user.current_team_id, 
@@ -393,8 +420,13 @@ def create_expense():
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin', 'member']:
-                return error_response('只有团队成员才能添加支出记录', 403)
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('finance.create') or perms.get('all')):
+                    return error_response('您没有新增收支的权限', 403)
         
         data = request.get_json()
         print(f"[DEBUG] 接收到的数据: {data}")
@@ -681,6 +713,20 @@ def get_expenses_summary():
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
 
+        # 团队模式下权限校验（非管理员需具备查看权限）
+        if hasattr(user, 'user_mode') and user.user_mode == 'team':
+            if not user.current_team_id:
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('finance.view') or perms.get('all')):
+                    return error_response('您没有查看收支的权限', 403)
+
         # 可访问ID集合（按模式）
         accessible_expense_ids = get_accessible_expense_ids_by_mode(user)
         accessible_income_ids = get_accessible_income_ids_by_mode(user)
@@ -752,12 +798,12 @@ def create_income():
         user = request.current_user
         print(f"[DEBUG] 创建收入记录 - 用户ID: {user.id}, 用户模式: {getattr(user, 'user_mode', 'personal')}")
         
-        # 在团队模式下，只有管理员才能添加收入记录
+        # 在团队模式下，权限校验
         if hasattr(user, 'user_mode') and user.user_mode == 'team':
             if not user.current_team_id:
                 return error_response('请先选择团队', 400)
             
-            # 检查用户是否是团队管理员
+            # 检查用户是否是团队成员
             from team_models import TeamMember
             member = TeamMember.query.filter_by(
                 team_id=user.current_team_id, 
@@ -765,8 +811,13 @@ def create_income():
                 is_active=True
             ).first()
             
-            if not member or member.role not in ['owner', 'admin', 'member']:
-                return error_response('只有团队成员才能添加收入记录', 403)
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('finance.create') or perms.get('all')):
+                    return error_response('您没有新增收支的权限', 403)
         
         data = request.get_json()
         print(f"[DEBUG] 接收到的数据: {data}")

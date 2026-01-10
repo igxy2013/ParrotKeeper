@@ -187,6 +187,18 @@ def get_parrots():
         
         print(f"[DEBUG] 用户 {user.id} 请求鹦鹉列表，页码: {page}, 每页: {per_page}, 模式: {getattr(user, 'user_mode', 'personal')}")
         
+        # 团队模式下的权限校验（非管理员需具备查看权限）
+        if hasattr(user, 'user_mode') and user.user_mode == 'team' and user.current_team_id:
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if member.role not in ['owner', 'admin']:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                if not (perms.get('parrot.view') or perms.get('all')):
+                    return error_response('您没有查看鹦鹉的权限', 403)
+
         # 使用团队模式过滤逻辑获取可访问的鹦鹉ID
         accessible_parrot_ids = get_accessible_parrot_ids_by_mode(user)
         

@@ -250,6 +250,13 @@
       :record="editingRecord"
       @success="onModalSuccess"
     />
+    <LimitModal 
+      v-model="showPermissionModal"
+      mode="info"
+      title="无权限提示"
+      message="您没有新增收支的权限"
+      :show-redeem="false"
+    />
   </div>
 </template>
 
@@ -265,9 +272,12 @@ import VChart from 'vue-echarts'
 import api from '@/api/axios'
 import ExpenseModal from '../components/ExpenseModal.vue'
 import { getCache, setCache } from '@/utils/cache'
+import { useAuthStore } from '@/stores/auth'
+import LimitModal from '../components/LimitModal.vue'
 
 use([BarChart, LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
+const authStore = useAuthStore()
 const loading = ref(false)
 const records = ref([])
 const filteredRecords = ref([])
@@ -329,6 +339,7 @@ const trendPickerDate = ref('')
 const trendCurrentDateObj = ref(null)
 const selectedStartDate = ref('')
 const selectedEndDate = ref('')
+const showPermissionModal = ref(false)
 
 const formatDate = (date) => {
   const y = date.getFullYear()
@@ -607,20 +618,33 @@ const loadExpenses = async () => {
       total.value = cached.total || cached.items.length || 0
       applyFilters()
     } else {
-      const res = await api.get('/expenses/transactions', { params })
-      if (res.data && res.data.success) {
-        const data = res.data.data || {}
-        const items = Array.isArray(data.items) ? data.items : []
-        records.value = items
-        total.value = data.total || items.length || 0
-        setCache(listKey, { items, total: total.value })
-        applyFilters()
-      } else {
-        ElMessage.error(res.data?.message || '加载记录失败')
+      try {
+        const res = await api.get('/expenses/transactions', { params })
+        if (res.data && res.data.success) {
+          const data = res.data.data || {}
+          const items = Array.isArray(data.items) ? data.items : []
+          records.value = items
+          total.value = data.total || items.length || 0
+          setCache(listKey, { items, total: total.value })
+          applyFilters()
+        } else {
+          const msg = (res.data && res.data.message) || '加载记录失败'
+          ElMessage.error(msg)
+        }
+      } catch (e) {
+        const msg = e && e.response && e.response.data && e.response.data.message
+          ? e.response.data.message
+          : (e.message || '加载记录失败')
+        if (e && e.response && e.response.status === 403) {
+          ElMessage.error(msg || '您没有查看收支的权限')
+        } else {
+          ElMessage.error(msg)
+        }
       }
     }
   } catch (e) {
-    ElMessage.error('加载记录失败')
+    const msg = e && e.message ? e.message : '加载记录失败'
+    ElMessage.error(msg)
   } finally {
     loading.value = false
   }
@@ -640,10 +664,22 @@ const loadTrend = async () => {
     if (cached && Array.isArray(cached)) {
       raw = cached
     } else {
-      const res = await api.get('/expenses/trend', { params })
-      const payload = res.data || {}
-      raw = Array.isArray(payload.data) ? payload.data : []
-      setCache(trendKey, raw)
+      try {
+        const res = await api.get('/expenses/trend', { params })
+        const payload = res.data || {}
+        raw = Array.isArray(payload.data) ? payload.data : []
+        setCache(trendKey, raw)
+      } catch (e) {
+        const msg = e && e.response && e.response.data && e.response.data.message
+          ? e.response.data.message
+          : (e.message || '加载趋势失败')
+        if (e && e.response && e.response.status === 403) {
+          ElMessage.error(msg || '您没有查看收支的权限')
+        } else {
+          ElMessage.error(msg)
+        }
+        raw = []
+      }
     }
 
     let data = raw
@@ -812,7 +848,8 @@ const loadTrend = async () => {
     }
   } catch (error) {
     trendData.value = []
-    console.error('Fetch trend error:', error)
+    const msg = error && error.message ? error.message : '加载趋势失败'
+    ElMessage.error(msg)
   }
 }
 
@@ -835,17 +872,28 @@ const loadStats = async () => {
       stats.value.totalIncome = cached.totalIncome || 0
       stats.value.netIncome = cached.netIncome || 0
     } else {
-      const res = await api.get('/expenses/summary', { params })
-      if (res.data && res.data.success) {
-        const data = res.data.data || {}
-        stats.value.totalExpense = data.totalExpense || 0
-        stats.value.totalIncome = data.totalIncome || 0
-        stats.value.netIncome = data.netIncome || 0
-        setCache(statsKey, {
-          totalExpense: stats.value.totalExpense,
-          totalIncome: stats.value.totalIncome,
-          netIncome: stats.value.netIncome
-        })
+      try {
+        const res = await api.get('/expenses/summary', { params })
+        if (res.data && res.data.success) {
+          const data = res.data.data || {}
+          stats.value.totalExpense = data.totalExpense || 0
+          stats.value.totalIncome = data.totalIncome || 0
+          stats.value.netIncome = data.netIncome || 0
+          setCache(statsKey, {
+            totalExpense: stats.value.totalExpense,
+            totalIncome: stats.value.totalIncome,
+            netIncome: stats.value.netIncome
+          })
+        }
+      } catch (e) {
+        const msg = e && e.response && e.response.data && e.response.data.message
+          ? e.response.data.message
+          : (e.message || '加载统计数据失败')
+        if (e && e.response && e.response.status === 403) {
+          ElMessage.error(msg || '您没有查看收支的权限')
+        } else {
+          ElMessage.error(msg)
+        }
       }
     }
   } catch (e) {
@@ -935,8 +983,33 @@ const refresh = () => {
   loadTrend()
 }
 
-const openDialog = () => {
+const openDialog = async () => {
   editingRecord.value = null
+  const mode = localStorage.getItem('user_mode') || 'personal'
+  if (mode === 'team') {
+    try { await (authStore.refreshProfile && authStore.refreshProfile()) } catch(_) {}
+    const uid = (authStore.user || {}).id
+    try {
+      const tc = await api.get('/teams/current')
+      const tid = tc.data && tc.data.success ? (tc.data.data || {}).id : null
+      if (tid && uid) {
+        const r = await api.get(`/teams/${tid}/members/${uid}/effective-permissions`)
+        const perms = (r.data && r.data.success) ? (r.data.data || {}) : {}
+        if (!(perms['finance.create'] || perms['all'])) {
+          showPermissionModal.value = true
+          return
+        }
+      }
+    } catch (e) {
+      const msg = e && e.response && e.response.data && e.response.data.message
+        ? e.response.data.message
+        : (e.message || '权限校验失败')
+      if (e && e.response && e.response.status === 403) {
+        showPermissionModal.value = true
+        return
+      }
+    }
+  }
   dialogVisible.value = true
 }
 

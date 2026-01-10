@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import api from '@/api/axios'
 import LoginView from '../views/LoginView.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import DashboardView from '../views/DashboardView.vue'
@@ -61,7 +62,17 @@ const router = createRouter({
         {
           path: 'membership',
           name: 'membership-center',
-          component: MembershipCenterView
+          component: MembershipCenterView,
+          beforeEnter: async (to, from, next) => {
+            try {
+              const r = await api.get('/membership/toggle')
+              const enabled = !!(r.data && r.data.success && r.data.data && r.data.data.enabled)
+              if (!enabled) next({ name: 'dashboard' })
+              else next()
+            } catch (_) {
+              next({ name: 'dashboard' })
+            }
+          }
         },
         {
           path: 'parrots/:id',

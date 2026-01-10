@@ -54,6 +54,18 @@ def get_membership_limits_public():
     except Exception as e:
         return error_response(f'获取会员数量上限失败: {str(e)}')
 
+@settings_bp.route('/api/membership/toggle', methods=['GET'])
+@login_required
+def get_membership_toggle_public():
+    try:
+        from models import SystemSetting
+        row = SystemSetting.query.filter_by(key='MEMBERSHIP_ENABLED').first()
+        val = str(row.value).strip().lower() if row and row.value is not None else ''
+        enabled = True if val in ['1', 'true', 'yes', 'y'] else (False if val in ['0', 'false', 'no', 'n'] else True)
+        return success_response({'enabled': enabled})
+    except Exception as e:
+        return error_response(f'获取会员订阅开关失败: {str(e)}')
+
 
 # ================= 护理教练个性化配置 ==================
 
