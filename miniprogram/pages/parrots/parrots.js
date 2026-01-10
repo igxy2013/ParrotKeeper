@@ -918,12 +918,6 @@ Page({
   async addParrot() {
     const isLogin = !!(app && app.globalData && app.globalData.isLogin)
     if (!isLogin) { app.showError && app.showError('请先登录'); return }
-    if (!app.getMembershipEnabled()) {
-      const emptyForm = { id: '', name: '', type: '', weight: '', gender: '', gender_display: '', color: '', birth_date: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' }
-      this.setData({ showParrotModal: true, parrotFormMode: 'add', parrotFormTitle: '添加新鹦鹉', currentParrotForm: emptyForm })
-      this.loadSpeciesListForModal()
-      return
-    }
     const userMode = (app && app.globalData && app.globalData.userMode) || 'personal'
     try { if (userMode === 'team' && app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
     
@@ -931,6 +925,13 @@ Page({
     const hasCreatePerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.create') : true
     if (userMode === 'team' && !hasCreatePerm) {
       this.setData({ showPermissionModal: true, permissionMessage: '您没有新增鹦鹉的权限，请联系管理员分配权限' })
+      return
+    }
+
+    if (!app.getMembershipEnabled()) {
+      const emptyForm = { id: '', name: '', type: '', weight: '', gender: '', gender_display: '', color: '', birth_date: '', notes: '', parrot_number: '', ring_number: '', acquisition_date: '', photo_url: '' }
+      this.setData({ showParrotModal: true, parrotFormMode: 'add', parrotFormTitle: '添加新鹦鹉', currentParrotForm: emptyForm })
+      this.loadSpeciesListForModal()
       return
     }
     // 同步最新资料，避免取消会员后仍使用旧tier

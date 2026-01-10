@@ -76,7 +76,7 @@ Component({
       }
     }
     ,
-  onTapAdd() {
+  async onTapAdd() {
       // 未登录时先提示登录
       if (!app.globalData.isLogin) {
         if (app && typeof app.showError === 'function') {
@@ -90,7 +90,7 @@ Component({
 
       const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
       if (mode === 'team') {
-        try { if (app && typeof app.ensureEffectivePermissions === 'function') app.ensureEffectivePermissions() } catch(_){ }
+        try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
         const hasOp = !!(app && typeof app.hasOperationPermission === 'function' && app.hasOperationPermission())
         if (!hasOp) { wx.showToast({ title: '无操作权限，请联系管理员分配权限', icon: 'none', duration: 3000 }); return }
       }

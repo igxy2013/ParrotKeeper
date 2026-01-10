@@ -238,18 +238,34 @@ Page({
     // 拉取公告并注入通知与弹窗
     this.fetchPublishedAnnouncementsAndInject()
     this.checkMembershipExpiryAndPrompt()
-    // 无论是否登录都可以浏览首页，但只有登录用户才加载个人数据
     if (isLogin) {
       this.syncServerReminderSettings().then(()=>{}).catch(()=>{})
-      if (app.globalData.needRefresh) {
-        app.globalData.needRefresh = false
-        this._forceRefresh = true
-      }
-      const p = this.loadData()
-      if (p && typeof p.finally === 'function') {
-        p.finally(() => { this._forceRefresh = false })
-      }
-      try { this.prefetchHomePagesOnce() } catch (_) {}
+      const ensure = (app && typeof app.ensureEffectivePermissions === 'function') ? app.ensureEffectivePermissions() : Promise.resolve()
+      ensure.then(() => {
+        const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+        if (mode === 'team') {
+          const canViewStats = app && typeof app.hasPermission === 'function' ? app.hasPermission('stats.view') : true
+          if (!canViewStats) {
+            try {
+              const base = ['feeding_today','monthly_income','monthly_expense','weight_trend']
+              const setHidden = Array.from(new Set([...(this.data.hiddenWidgets || []), ...base]))
+              this.setData({ hiddenWidgets: setHidden })
+              this.saveHiddenWidgets(setHidden)
+              this.updateHiddenWidgetsMap()
+              this.setData({ availableWidgetsToAdd: this.getAvailableWidgetsToAdd() })
+            } catch(_) {}
+          }
+        }
+        if (app.globalData.needRefresh) {
+          app.globalData.needRefresh = false
+          this._forceRefresh = true
+        }
+        const p = this.loadData()
+        if (p && typeof p.finally === 'function') {
+          p.finally(() => { this._forceRefresh = false })
+        }
+        try { this.prefetchHomePagesOnce() } catch (_) {}
+      })
     }
 
     this.checkAndShowGestureGuide()
@@ -467,23 +483,7 @@ Page({
   // 加载概览数据
   async loadOverview() {
     try {
-      const force = !!this._forceRefresh
-      const cached = force ? null : cache.get('index_overview')
-      if (cached) {
-        const overviewStatusText = this.getHealthStatusText(cached)
-        this.setData({
-          overview: {
-            total_parrots: cached.total_parrots || 0,
-            today_records: { feeding: (cached.today_records && cached.today_records.feeding) || 0 },
-            monthly_income: cached.monthly_income || 0,
-            monthly_expense: cached.monthly_expense || 0,
-            ...cached
-          },
-          overview_status_text: overviewStatusText
-        })
-        return
-      }
-      const res = await app.request({ url: '/api/statistics/overview', method: 'GET' })
+      const res = await app.request({ url: '/api/statistics/overview', method: 'GET', cache: { force: true } })
       if (res.success) {
         const overview = res.data
         const overviewStatusText = this.getHealthStatusText(overview)
@@ -497,10 +497,31 @@ Page({
           },
           overview_status_text: overviewStatusText
         })
-        cache.set('index_overview', overview, 180000)
+      } else {
+        const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+        if (mode === 'team') {
+          const canViewStats = app && typeof app.hasPermission === 'function' ? app.hasPermission('stats.view') : true
+          if (!canViewStats) {
+            this.setData({
+              overview: { total_parrots: 0, today_records: { feeding: 0 }, monthly_income: 0, monthly_expense: 0 },
+              overview_status_text: ''
+            })
+            return
+          }
+        }
       }
     } catch (error) {
       console.error('加载概览数据失败:', error)
+      const mode = (app && app.globalData && app.globalData.userMode) || 'personal'
+      if (mode === 'team') {
+        const canViewStats = app && typeof app.hasPermission === 'function' ? app.hasPermission('stats.view') : true
+        if (!canViewStats) {
+          this.setData({
+            overview: { total_parrots: 0, today_records: { feeding: 0 }, monthly_income: 0, monthly_expense: 0 },
+            overview_status_text: ''
+          })
+        }
+      }
     }
   },
 
@@ -2066,13 +2087,21 @@ Page({
 
   // 添加鹦鹉
   async addParrot() {
+    if (!this.data.isLogin) {
+      app.showError('请先登录后使用此功能')
+      return
+    }
+
+    const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
+    if (mode === 'team') {
+      try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
+      const hasCreatePerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.create') : true
+      if (!hasCreatePerm) { this.setData({ showPermissionModal: true, permissionMessage: '您没有新增鹦鹉的权限，请联系管理员分配权限' }); return }
+    }
+
     if (app && typeof app.getMembershipEnabled === 'function' && !app.getMembershipEnabled()) {
       this.setData({ showAddParrotModal: true })
       this.loadSpeciesList()
-      return
-    }
-    if (!this.data.isLogin) {
-      app.showError('请先登录后使用此功能')
       return
     }
 
@@ -2089,16 +2118,7 @@ Page({
 
     let tier = app.getEffectiveTier()
     const teamLevel = app.getTeamLevel()
-    const mode = app.globalData.userMode || wx.getStorageSync('userMode') || 'personal'
     let currentTeam = (app && app.globalData && app.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
-    if (mode === 'team') {
-      try { if (app && typeof app.ensureEffectivePermissions === 'function') await app.ensureEffectivePermissions() } catch(_){ }
-      const hasCreatePerm = app && typeof app.hasPermission === 'function' ? app.hasPermission('parrot.create') : true
-      if (!hasCreatePerm) {
-        this.setData({ showPermissionModal: true, permissionMessage: '您没有新增鹦鹉的权限，请联系管理员分配权限' })
-        return
-      }
-    }
     // 确保团队信息加载，避免误判为免费
     if (mode === 'team' && (!currentTeam || !currentTeam.id)) {
       try {

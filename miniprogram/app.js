@@ -1038,10 +1038,10 @@ App({
       const user = this.globalData.userInfo || wx.getStorageSync('userInfo') || {}
       const uid = user && user.id
       if (!uid) return Promise.resolve(null)
-      return this.request({ url: '/api/teams/current', method: 'GET' }).then(res => {
+      return this.request({ url: '/api/teams/current', method: 'GET', cache: { force: true } }).then(res => {
         const tid = res && res.success && res.data && res.data.id
         if (!tid) return null
-        return this.request({ url: `/api/teams/${tid}/members/${uid}/effective-permissions`, method: 'GET' }).then(r => {
+        return this.request({ url: `/api/teams/${tid}/members/${uid}/effective-permissions`, method: 'GET', cache: { force: true } }).then(r => {
           if (r && r.success && r.data && typeof r.data === 'object') {
             this.globalData.effectivePermissions = r.data
             try { wx.removeStorageSync('effectivePermissions') } catch (_) {}
