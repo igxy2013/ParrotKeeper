@@ -187,7 +187,7 @@
       </el-select>
       <el-input
         v-model="searchQuery"
-        placeholder="搜索鹦鹉名称、鹦鹉编号、脚环号或备注"
+        placeholder="搜索鹦鹉名称、饲养人、脚环号或备注"
         class="search-input"
         @input="handleSearch"
       />
@@ -215,9 +215,9 @@
           <el-table-column prop="notes" label="备注" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
-              <el-button link type="info" @click="openDetail(scope.row, 'feeding')">详情</el-button>
-              <el-button link type="success" @click="openEditDialog(scope.row, 'feeding')">编辑</el-button>
-              <el-button link type="danger" @click="handleDelete(scope.row, 'feeding')">删除</el-button>
+              <el-button link type="info" @click.stop="openDetail(scope.row, 'feeding')">详情</el-button>
+              <el-button link type="success" @click.stop="openEditDialog(scope.row, 'feeding')">编辑</el-button>
+              <el-button link type="danger" @click.stop="handleDelete(scope.row, 'feeding')">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -244,9 +244,9 @@
           <el-table-column prop="description" label="描述" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
-              <el-button link type="info" @click="openDetail(scope.row, 'health')">详情</el-button>
-              <el-button link type="success" @click="openEditDialog(scope.row, 'health')">编辑</el-button>
-              <el-button link type="danger" @click="handleDelete(scope.row, 'health')">删除</el-button>
+              <el-button link type="info" @click.stop="openDetail(scope.row, 'health')">详情</el-button>
+              <el-button link type="success" @click.stop="openEditDialog(scope.row, 'health')">编辑</el-button>
+              <el-button link type="danger" @click.stop="handleDelete(scope.row, 'health')">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -268,9 +268,9 @@
           <el-table-column prop="description" label="描述" />
           <el-table-column label="操作" width="160">
             <template #default="scope">
-              <el-button link type="info" @click="openDetail(scope.row, 'cleaning')">详情</el-button>
-              <el-button link type="success" @click="openEditDialog(scope.row, 'cleaning')">编辑</el-button>
-              <el-button link type="danger" @click="handleDelete(scope.row, 'cleaning')">删除</el-button>
+              <el-button link type="info" @click.stop="openDetail(scope.row, 'cleaning')">详情</el-button>
+              <el-button link type="success" @click.stop="openEditDialog(scope.row, 'cleaning')">编辑</el-button>
+              <el-button link type="danger" @click.stop="handleDelete(scope.row, 'cleaning')">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -296,8 +296,8 @@
           <el-table-column label="操作" width="160">
             <template #default="scope">
               <el-button link type="info" @click="openDetail(scope.row, 'breeding')">详情</el-button>
-              <el-button link type="success" @click="openEditDialog(scope.row, 'breeding')">编辑</el-button>
-              <el-button link type="danger" @click="handleDelete(scope.row, 'breeding')">删除</el-button>
+              <el-button link type="success" @click.stop="openEditDialog(scope.row, 'breeding')">编辑</el-button>
+              <el-button link type="danger" @click.stop="handleDelete(scope.row, 'breeding')">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -930,6 +930,7 @@ const openAddDialog = async () => {
   editingRecordId.value = null
   addFormType.value = activeTab.value || 'feeding'
   resetAddForm()
+  await loadParrots(true)
   if (addFormType.value === 'feeding' && feedTypes.value.length === 0) {
     await loadFeedTypes()
   }
@@ -1055,13 +1056,19 @@ const applyClientFilter = () => {
           const notes = String(r.notes || '').toLowerCase()
           const feedTypeName = String(r.feed_type_name || (r.feed_type && (r.feed_type.name || '')) || '').toLowerCase()
           const parrotName = String(r.parrot_name || (r.parrot && (r.parrot.name || '')) || '').toLowerCase()
-          const parrotNumber = String(r.parrot_number || (r.parrot && (r.parrot.parrot_number || '')) || '').toLowerCase()
           const ringNumber = String(r.ring_number || (r.parrot && (r.parrot.ring_number || '')) || '').toLowerCase()
+          const recorderName = String(
+            r.created_by_nickname ||
+            (r.created_by && (r.created_by.nickname || r.created_by.username || r.created_by.name)) ||
+            r.created_by_username ||
+            r.created_by_name ||
+            ''
+          ).toLowerCase()
           return (
             notes.includes(q) ||
             feedTypeName.includes(q) ||
             parrotName.includes(q) ||
-            parrotNumber.includes(q) ||
+            recorderName.includes(q) ||
             ringNumber.includes(q)
           )
         })
@@ -1072,12 +1079,18 @@ const applyClientFilter = () => {
       ? list.filter(r => {
           const description = String(r.description || '').toLowerCase()
           const parrotName = String(r.parrot_name || (r.parrot && (r.parrot.name || '')) || '').toLowerCase()
-          const parrotNumber = String(r.parrot_number || (r.parrot && (r.parrot.parrot_number || '')) || '').toLowerCase()
           const ringNumber = String(r.ring_number || (r.parrot && (r.parrot.ring_number || '')) || '').toLowerCase()
+          const recorderName = String(
+            r.created_by_nickname ||
+            (r.created_by && (r.created_by.nickname || r.created_by.username || r.created_by.name)) ||
+            r.created_by_username ||
+            r.created_by_name ||
+            ''
+          ).toLowerCase()
           return (
             description.includes(q) ||
             parrotName.includes(q) ||
-            parrotNumber.includes(q) ||
+            recorderName.includes(q) ||
             ringNumber.includes(q)
           )
         })
@@ -1089,13 +1102,19 @@ const applyClientFilter = () => {
           const description = String(r.description || '').toLowerCase()
           const cleaningTypeText = String(r.cleaning_type_text || r.cleaning_type || '').toLowerCase()
           const parrotName = String(r.parrot_name || (r.parrot && (r.parrot.name || '')) || '').toLowerCase()
-          const parrotNumber = String(r.parrot_number || (r.parrot && (r.parrot.parrot_number || '')) || '').toLowerCase()
           const ringNumber = String(r.ring_number || (r.parrot && (r.parrot.ring_number || '')) || '').toLowerCase()
+          const recorderName = String(
+            r.created_by_nickname ||
+            (r.created_by && (r.created_by.nickname || r.created_by.username || r.created_by.name)) ||
+            r.created_by_username ||
+            r.created_by_name ||
+            ''
+          ).toLowerCase()
           return (
             description.includes(q) ||
             cleaningTypeText.includes(q) ||
             parrotName.includes(q) ||
-            parrotNumber.includes(q) ||
+            recorderName.includes(q) ||
             ringNumber.includes(q)
           )
         })
@@ -1107,7 +1126,14 @@ const applyClientFilter = () => {
           const notes = String(r.notes || '').toLowerCase()
           const maleName = String(r.male_parrot_name || (r.male_parrot && (r.male_parrot.name || '')) || '').toLowerCase()
           const femaleName = String(r.female_parrot_name || (r.female_parrot && (r.female_parrot.name || '')) || '').toLowerCase()
-          return notes.includes(q) || maleName.includes(q) || femaleName.includes(q)
+          const recorderName = String(
+            r.created_by_nickname ||
+            (r.created_by && (r.created_by.nickname || r.created_by.username || r.created_by.name)) ||
+            r.created_by_username ||
+            r.created_by_name ||
+            ''
+          ).toLowerCase()
+          return notes.includes(q) || maleName.includes(q) || femaleName.includes(q) || recorderName.includes(q)
         })
       : list
   }
@@ -1198,6 +1224,7 @@ const handleDelete = async (row, type) => {
     const res = await api.delete(url)
     if (res.data && res.data.success) {
       ElMessage.success('删除成功')
+      detailDialogVisible.value = false
       Object.keys(recordsCache).forEach(k => { delete recordsCache[k] })
       refresh()
     } else {
@@ -1521,17 +1548,20 @@ watch(activeTab, () => {
   fetchRecords()
 })
 
-const loadParrots = async () => {
+const loadParrots = async (force = false) => {
   try {
-    const cacheKey = 'parrots_cache'
+    const mode = localStorage.getItem('user_mode') || 'personal'
+    const cacheKey = `parrots_selector_cache|${mode}`
     const now = Date.now()
-    try {
-      const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null')
-      if (cached && Array.isArray(cached.items) && now - cached.timestamp < 3600000) {
-        parrots.value = cached.items
-        return
-      }
-    } catch (_) {}
+    if (!force) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null')
+        if (cached && Array.isArray(cached.items) && now - cached.timestamp < 3600000) {
+          parrots.value = cached.items
+          return
+        }
+      } catch (_) {}
+    }
 
     const r = await api.get('/parrots')
     if (r.data && r.data.success) {

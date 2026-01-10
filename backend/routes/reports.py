@@ -5,6 +5,7 @@ from models import (
     db, Parrot, Expense, Income, FeedingRecord, HealthRecord, 
     CleaningRecord, BreedingRecord, FeedType, ParrotSpecies
 )
+from team_models import TeamGroup
 from utils import login_required, error_response
 from sqlalchemy import or_
 from team_mode_utils import (
@@ -88,15 +89,18 @@ def _get_parrots_data(user, filters=None):
 
     parrots = query.order_by(Parrot.created_at.desc()).all()
 
-    header = ['名称', '品种', '性别', '脚环号', '出生日期', '入住日期', '羽色', '体重(g)', '健康状态', '备注']
+    header = ['名称', '品种', '性别', '脚环号', '年龄', '羽色', '体重(g)', '健康状态', '饲养人', '分组', '备注']
     
-    # Index: 0:Name, 1:Species, 2:Gender, 3:Ring, 4:Birth, 5:Acquisition, 6:Color, 7:Weight, 8:Health, 9:Notes
+    # Index: 0:Name, 1:Species, 2:Gender, 3:Ring, 4:Age, 5:Color, 6:Weight, 7:Health, 8:Owner, 9:Group, 10:Notes
     col_widths = {
         1: 256 * 20,
         2: 256 * 8,
         3: 256 * 20,
-        4: 256 * 15,
-        5: 256 * 15
+        4: 256 * 12,
+        5: 256 * 15,
+        6: 256 * 12,
+        8: 256 * 18,
+        9: 256 * 14
     }
 
     rows = []
@@ -104,17 +108,65 @@ def _get_parrots_data(user, filters=None):
         species_name = p.species.name if p.species else ''
         gender_map = {'male': '公', 'female': '母', 'unknown': '未知'}
         health_map = {'healthy': '健康', 'sick': '生病', 'recovering': '恢复中', 'observation': '观察中'}
-        
+        owner_name = ''
+        try:
+            owner_name = (p.owner.nickname or p.owner.username) if getattr(p, 'owner', None) else ''
+        except Exception:
+            owner_name = ''
+        group_name = ''
+        try:
+            if p.team_id and p.group_id:
+                grp = TeamGroup.query.filter_by(id=p.group_id, team_id=p.team_id, is_active=True).first()
+                group_name = getattr(grp, 'name', '') if grp else ''
+        except Exception:
+            group_name = ''
+
+        # Compute age string from birth_date
+        age_text = ''
+        try:
+            from datetime import date
+            import calendar
+            if p.birth_date:
+                today = date.today()
+                b = p.birth_date
+                if b > today:
+                    age_text = '未出生'
+                else:
+                    years = today.year - b.year
+                    months = today.month - b.month
+                    days = today.day - b.day
+                    if days < 0:
+                        months -= 1
+                        prev_year = today.year if today.month > 1 else today.year - 1
+                        prev_month = today.month - 1 if today.month > 1 else 12
+                        days += calendar.monthrange(prev_year, prev_month)[1]
+                    if months < 0:
+                        years -= 1
+                        months += 12
+                    parts = []
+                    if years > 0:
+                        parts.append(f"{years}岁")
+                    if months > 0:
+                        parts.append(f"{months}个月")
+                    if days > 0:
+                        parts.append(f"{days}天")
+                    age_text = ''.join(parts) if parts else '0天'
+            else:
+                age_text = ''
+        except Exception:
+            age_text = ''
+
         rows.append([
             p.name,
             species_name,
             gender_map.get(p.gender, p.gender),
             p.ring_number or '',
-            p.birth_date,
-            p.acquisition_date,
+            age_text,
             p.color or '',
             p.weight or '',
             health_map.get(p.health_status, p.health_status),
+            owner_name,
+            group_name,
             p.notes or ''
         ])
     return header, rows, col_widths
