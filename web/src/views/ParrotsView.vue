@@ -215,11 +215,12 @@
       @upgrade="goToMembershipCenter"
     />
     <LimitModal 
-      v-model="showPermissionModal"
+      v-model="showPermissionModal" 
       mode="info"
-      title="无权限提示"
+      title="权限不足"
       message="您没有新增鹦鹉的权限"
       :show-redeem="false"
+      :show-upgrade="false"
     />
   </div>
 </template>
@@ -278,13 +279,7 @@ const initViewMode = () => {
   }
 }
 
-onMounted(() => {
-  initViewMode()
-  fetchParrots()
-  // ... other onMounted logic if any
-  fetchOverview()
-  loadTeamGroups()
-})
+// Removed duplicate onMounted; unified below with cache preload
 
 // Watch for user mode changes via storage event or other mechanism if needed
 // But since SideNav reloads the page on switchMode, initViewMode is sufficient on load.
@@ -342,12 +337,7 @@ const fetchParrots = async (withLoading = true) => {
       }
     }
   } catch (e) {
-    const msg = e && e.response && e.response.data && e.response.data.message
-      ? e.response.data.message
-      : (e.message || '加载失败')
-    if (e && e.response && e.response.status === 403) {
-      ElMessage.error(msg || '您没有查看鹦鹉的权限')
-    } else {
+    if (!(e && e.response && e.response.status === 403)) {
       console.error(e)
     }
   } finally {
@@ -674,6 +664,8 @@ onMounted(() => {
     fetchParrots(false)
   }
   loadSpecies()
+  fetchOverview()
+  loadTeamGroups()
 })
 
 const loadSpecies = async () => {

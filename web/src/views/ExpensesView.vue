@@ -629,14 +629,19 @@ const loadExpenses = async () => {
           applyFilters()
         } else {
           const msg = (res.data && res.data.message) || '加载记录失败'
-          ElMessage.error(msg)
+          const code = res.data && (res.data.code || res.data.status || res.data.status_code)
+          if (code === 403 || /权限|无权|未授权|forbidden/i.test(String(msg))) {
+            // 统一由全局权限弹窗处理
+          } else {
+            ElMessage.error(msg)
+          }
         }
       } catch (e) {
         const msg = e && e.response && e.response.data && e.response.data.message
           ? e.response.data.message
           : (e.message || '加载记录失败')
         if (e && e.response && e.response.status === 403) {
-          ElMessage.error(msg || '您没有查看收支的权限')
+          // 统一由全局权限弹窗处理
         } else {
           ElMessage.error(msg)
         }
@@ -674,7 +679,7 @@ const loadTrend = async () => {
           ? e.response.data.message
           : (e.message || '加载趋势失败')
         if (e && e.response && e.response.status === 403) {
-          ElMessage.error(msg || '您没有查看收支的权限')
+          // 统一由全局权限弹窗处理
         } else {
           ElMessage.error(msg)
         }
@@ -890,7 +895,7 @@ const loadStats = async () => {
           ? e.response.data.message
           : (e.message || '加载统计数据失败')
         if (e && e.response && e.response.status === 403) {
-          ElMessage.error(msg || '您没有查看收支的权限')
+          // 统一由全局权限弹窗处理
         } else {
           ElMessage.error(msg)
         }

@@ -725,9 +725,10 @@ const normalizeToDateTimeString = (value) => {
 }
 
 const buildRecordsCacheKey = () => {
+  const mode = localStorage.getItem('user_mode') || 'personal'
   const range = Array.isArray(dateRange.value) ? dateRange.value.join(',') : ''
   const parrot = selectedParrotId.value || ''
-  return `records_list|${activeTab.value}|${currentPage.value}|${pageSize.value}|${parrot}|${range}`
+  return `records_list|${mode}|${activeTab.value}|${currentPage.value}|${pageSize.value}|${parrot}|${range}`
 }
 
 const fetchRecords = async () => {
@@ -766,7 +767,8 @@ const fetchRecords = async () => {
     if (activeTab.value === 'breeding') {
       if (selectedParrotId.value) params.male_parrot_id = selectedParrotId.value
     }
-    const persisted = getCache(cacheKey, RECORDS_CACHE_TTL)
+    const forceNetwork = (localStorage.getItem('user_mode') || 'personal') === 'team'
+    const persisted = !forceNetwork ? getCache(cacheKey, RECORDS_CACHE_TTL) : null
     if (persisted && typeof persisted === 'object') {
       const d = persisted
       recordsCache[cacheKey] = { data: d, timestamp: now }
@@ -800,7 +802,9 @@ const fetchRecords = async () => {
       }
     }
   } catch (e) {
-    console.error(e)
+    if (!(e && e.response && e.response.status === 403)) {
+      console.error(e)
+    }
   } finally {
     loading.value = false
   }
