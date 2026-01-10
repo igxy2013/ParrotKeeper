@@ -72,10 +72,10 @@
       </view>
     </view>
 
-    <!-- 权限管理 -->
+    <!-- 分组与权限 -->
     <view class="card">
       <view class="card-header">
-        <text class="card-title">权限管理</text>
+        <text class="card-title">分组与权限</text>
         <view class="card-actions">
           <button class="btn btn-secondary short" bindtap="showCreateGroup" disabled="{{!(isTeamOwner || isTeamAdmin)}}">新增分组</button>
         </view>
