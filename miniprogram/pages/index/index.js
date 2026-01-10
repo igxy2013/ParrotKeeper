@@ -37,6 +37,8 @@ Page({
     // 公告弹窗
     showAnnouncementModal: false,
     latestAnnouncement: null,
+    showMembershipExpiryModal: false,
+    membershipExpiryMessage: '',
     // 新增：首页卡片自定义
     homeWidgets: ['parrots','feeding_today','monthly_income','monthly_expense','weight_trend'],
     // 隐藏的卡片列表与映射
@@ -235,6 +237,7 @@ Page({
     } catch (_) {}
     // 拉取公告并注入通知与弹窗
     this.fetchPublishedAnnouncementsAndInject()
+    this.checkMembershipExpiryAndPrompt()
     // 无论是否登录都可以浏览首页，但只有登录用户才加载个人数据
     if (isLogin) {
       this.syncServerReminderSettings().then(()=>{}).catch(()=>{})
@@ -779,6 +782,42 @@ Page({
     } catch (_) {
       return u || ''
     }
+  },
+
+  checkMembershipExpiryAndPrompt() {
+    try {
+      const appInst = getApp()
+      const isLogin = !!(appInst && appInst.globalData && appInst.globalData.isLogin)
+      if (!isLogin) { this.setData({ showMembershipExpiryModal: false, membershipExpiryMessage: '' }); return }
+      if (appInst && appInst.getMembershipEnabled && !appInst.getMembershipEnabled()) { this.setData({ showMembershipExpiryModal: false, membershipExpiryMessage: '' }); return }
+      const mode = (appInst && appInst.globalData && appInst.globalData.userMode) || wx.getStorageSync('userMode') || 'personal'
+      const tier = String(appInst && appInst.getEffectiveTier ? appInst.getEffectiveTier() : 'free')
+      let expStr = ''
+      if (tier === 'team' && mode === 'team') {
+        const cur = (appInst.globalData && appInst.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+        expStr = cur.subscription_expire_at || cur.expire_at || ''
+      } else if (tier === 'pro' && mode === 'personal') {
+        const userInfo = (appInst && appInst.globalData && appInst.globalData.userInfo) || wx.getStorageSync('userInfo') || {}
+        expStr = userInfo.subscription_expire_at || ''
+      }
+      if (!expStr) { this.setData({ showMembershipExpiryModal: false, membershipExpiryMessage: '' }); return }
+      const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+      const nowTs = Date.now()
+      const days = Math.floor((ts - nowTs) / (24 * 60 * 60 * 1000))
+      if (isFinite(ts) && ts > nowTs && days >= 0 && days <= 3) {
+        const dateStr = String(expStr).substring(0, 10)
+        const msg = `您的会员将于 ${dateStr} 到期（剩余${days}天），请及时续费。`
+        this.setData({ showMembershipExpiryModal: true, membershipExpiryMessage: msg })
+      } else {
+        this.setData({ showMembershipExpiryModal: false, membershipExpiryMessage: '' })
+      }
+    } catch (_) { this.setData({ showMembershipExpiryModal: false, membershipExpiryMessage: '' }) }
+  },
+
+  closeMembershipExpiryModal() { this.setData({ showMembershipExpiryModal: false }) },
+  confirmMembershipExpiryModal() {
+    this.setData({ showMembershipExpiryModal: false })
+    try { wx.navigateTo({ url: '/pages/member-center/member-center' }) } catch (_) {}
   },
   async loadMyParrots() {
     try {

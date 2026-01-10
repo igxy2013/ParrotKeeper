@@ -21,9 +21,8 @@ class NotificationManager {
       cleaningReminder: true,
       medicationReminder: true,
       breedingReminder: true,
-      // 是否在用户添加记录时发送订阅消息（默认关闭）
+      membershipExpiryReminder: true,
       sendSubscriptionOnAdd: false,
-      // 每日提醒时间（本地展示用）
       feedingReminderTime: '08:00',
       cleaningReminderTime: '18:00',
       medicationReminderTime: '09:00'
@@ -432,7 +431,6 @@ class NotificationManager {
           app.request({ url: '/api/statistics/overview', method: 'GET' })
             .then(res => {
               if (res && res.success && res.data && res.data.health_status && (res.data.health_status.sick > 0)) {
-                // 先写入状态，降低并发下的重复添加概率
                 const s2 = wx.getStorageSync(STATE_KEY) || state
                 s2.medication = true
                 wx.setStorageSync(STATE_KEY, s2)
@@ -446,6 +444,35 @@ class NotificationManager {
               }
             })
             .catch(() => {})
+        } catch (_) {}
+      }
+
+      if (settings.membershipExpiryReminder) {
+        try {
+          const appInst = getApp()
+          if (appInst && appInst.getMembershipEnabled && !appInst.getMembershipEnabled()) {
+          } else {
+            const mode = (appInst && appInst.globalData && appInst.globalData.userMode) || wx.getStorageSync('userMode') || 'personal'
+            const tier = String(appInst && appInst.getEffectiveTier ? appInst.getEffectiveTier() : 'free')
+            let expStr = ''
+            if (tier === 'team' && mode === 'team') {
+              const cur = (appInst.globalData && appInst.globalData.currentTeam) || wx.getStorageSync('currentTeam') || {}
+              expStr = cur.subscription_expire_at || cur.expire_at || ''
+            } else if (tier === 'pro' && mode === 'personal') {
+              const userInfo = (appInst && appInst.globalData && appInst.globalData.userInfo) || wx.getStorageSync('userInfo') || {}
+              expStr = userInfo.subscription_expire_at || ''
+            }
+            if (expStr) {
+              const ts = new Date(String(expStr).replace(' ', 'T')).getTime()
+              const nowTs = Date.now()
+              const days = Math.floor((ts - nowTs) / (24 * 60 * 60 * 1000))
+              if (isFinite(ts) && ts > nowTs && days >= 0 && days <= 3) {
+                const dateStr = String(expStr).substring(0, 10)
+                const msg = `您的会员将于 ${dateStr} 到期（剩余${days}天），请及时续费。`
+                this.addLocalNotification('system', '会员到期提醒', msg, '', '')
+              }
+            }
+          }
         } catch (_) {}
       }
 

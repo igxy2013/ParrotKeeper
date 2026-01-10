@@ -27,6 +27,9 @@
         </view>
         <view class="limit-actions">
           <button class="action-btn primary-btn" bindtap="onCancel"><text>{{cancelText || '我知道了'}}</text></button>
+          <block wx:if="{{confirmText}}">
+            <button class="action-btn upgrade-btn" bindtap="onConfirm"><text>{{confirmText}}</text></button>
+          </block>
         </view>
       </block>
     </view>

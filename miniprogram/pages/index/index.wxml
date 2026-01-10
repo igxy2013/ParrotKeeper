@@ -356,6 +356,18 @@
   bind:cancel="closePermissionModal"
 />
 
+<!-- 会员到期提醒弹窗 -->
+<limit-modal 
+  visible="{{showMembershipExpiryModal}}"
+  mode="info"
+  title="会员到期提醒"
+  message="{{membershipExpiryMessage}}"
+  cancelText="稍后再说"
+  confirmText="前往会员中心"
+  bind:cancel="closeMembershipExpiryModal"
+  bind:confirm="confirmMembershipExpiryModal"
+/>
+
     <!-- 登录提示 -->
     <view class="login-prompt-card" wx:if="{{!isLogin}}">
       <view class="login-content">
