@@ -261,23 +261,11 @@ Page({
       // 转换数据类型
       formData.amount = parseFloat(formData.amount)
 
-      const response = await new Promise((resolve, reject) => {
-        wx.request({
-          url: `${app.globalData.baseUrl}/api/expenses/${this.data.expenseId}`,
-          method: 'PUT',
-          data: formData,
-          header: {
-            'X-OpenID': app.globalData.openid,
-            'Content-Type': 'application/json'
-          },
-          success: resolve,
-          fail: reject
-        })
-      })
+      const response = await app.request({ url: `/api/expenses/${this.data.expenseId}`, method: 'PUT', data: formData })
 
       console.log('更新支出API响应:', response)
       
-      if (response && response.data && response.data.success) {
+      if (response && response.success) {
         wx.showToast({
           title: '更新成功',
           icon: 'success'
@@ -292,7 +280,7 @@ Page({
       } else {
         console.error('更新支出API返回错误:', response)
         wx.showToast({
-          title: response?.data?.message || '更新失败',
+          title: response?.message || '更新失败',
           icon: 'none'
         })
       }
@@ -323,27 +311,16 @@ Page({
   // 执行删除
   async deleteExpense() {
     try {
-      const response = await new Promise((resolve, reject) => {
-        wx.request({
-          url: `${app.globalData.baseUrl}/api/expenses/${this.data.expenseId}`,
-          method: 'DELETE',
-          header: {
-            'X-OpenID': app.globalData.openid
-          },
-          success: resolve,
-          fail: reject
-        })
-      })
+      const response = await app.request({ url: `/api/expenses/${this.data.expenseId}`, method: 'DELETE' })
 
       console.log('删除支出API响应:', response)
       
-      if (response && response.data && response.data.success) {
+      if (response && response.success) {
         wx.showToast({
           title: '删除成功',
           icon: 'success'
         })
 
-        // 设置刷新标识，确保返回支出管理页面时会刷新数据
         app.globalData.needRefresh = true
 
         setTimeout(() => {
@@ -352,7 +329,7 @@ Page({
       } else {
         console.error('删除支出API返回错误:', response)
         wx.showToast({
-          title: response?.data?.message || '删除失败',
+          title: response?.message || '删除失败',
           icon: 'none'
         })
       }

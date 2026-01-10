@@ -535,9 +535,27 @@ def update_expense(expense_id):
         
         if not expense:
             return error_response('支出记录不存在', 404)
-            
-        # 检查权限
-        if expense.user_id != user.id:
+        
+        allowed = False
+        if getattr(user, 'user_mode', 'personal') == 'team':
+            if not getattr(user, 'current_team_id', None):
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if getattr(expense, 'team_id', None) != user.current_team_id:
+                return error_response('记录不属于当前团队', 403)
+            if member.role in ['owner', 'admin']:
+                allowed = True
+            else:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                allowed = bool(perms.get('finance.edit') or perms.get('all'))
+        else:
+            allowed = (expense.user_id == user.id)
+        
+        if not allowed:
             return error_response('无权限修改此记录', 403)
         
         data = request.get_json()
@@ -593,6 +611,79 @@ def update_expense(expense_id):
         db.session.rollback()
         return error_response(f'更新支出记录失败: {str(e)}')
 
+@expenses_bp.route('/incomes/<int:income_id>', methods=['PUT'])
+@login_required
+def update_income(income_id):
+    """更新收入记录"""
+    try:
+        user = request.current_user
+        income = Income.query.get(income_id)
+        if not income:
+            return error_response('收入记录不存在', 404)
+        allowed = False
+        if getattr(user, 'user_mode', 'personal') == 'team':
+            if not getattr(user, 'current_team_id', None):
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            if getattr(income, 'team_id', None) != user.current_team_id:
+                return error_response('记录不属于当前团队', 403)
+            if member.role in ['owner', 'admin']:
+                allowed = True
+            else:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                allowed = bool(perms.get('finance.edit') or perms.get('all'))
+        else:
+            allowed = (income.user_id == user.id)
+        if not allowed:
+            return error_response('无权限修改此记录', 403)
+        data = request.get_json()
+        if 'category' in data:
+            allowed_categories = ['breeding_sale', 'bird_sale', 'service', 'competition', 'other']
+            if data['category'] not in allowed_categories:
+                return error_response(f'不支持的收入类别: {data["category"]}')
+            income.category = data['category']
+        if 'amount' in data:
+            try:
+                amount = float(data['amount'])
+                if amount <= 0:
+                    return error_response('金额必须大于0')
+                income.amount = amount
+            except (ValueError, TypeError):
+                return error_response('金额格式不正确')
+        if 'description' in data:
+            income.description = data['description']
+        if 'income_date' in data:
+            try:
+                income_date = datetime.strptime(data['income_date'], '%Y-%m-%d').date()
+                income.income_date = income_date
+            except ValueError:
+                return error_response('日期格式不正确')
+        if 'parrot_id' in data:
+            if data['parrot_id']:
+                parrot = Parrot.query.filter_by(id=data['parrot_id'], user_id=user.id, is_active=True).first()
+                if not parrot:
+                    return error_response('鹦鹉不存在')
+                income.parrot_id = data['parrot_id']
+            else:
+                income.parrot_id = None
+        db.session.commit()
+        return success_response({
+            'id': income.id,
+            'category': income.category,
+            'amount': float(income.amount),
+            'description': income.description,
+            'income_date': income.income_date.strftime('%Y-%m-%d'),
+            'created_at': income.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'parrot_name': income.parrot.name if income.parrot else None
+        }, '收入记录更新成功')
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新收入记录失败: {str(e)}')
+
 @expenses_bp.route('/<int:expense_id>', methods=['DELETE'])
 @login_required
 def delete_expense(expense_id):
@@ -603,9 +694,30 @@ def delete_expense(expense_id):
         
         if not expense:
             return error_response('支出记录不存在', 404)
-            
-        # 检查权限
-        if expense.user_id != user.id:
+        
+        # 检查权限（个人模式仅允许本人；团队模式允许具备团队删除权限的成员）
+        allowed = False
+        if getattr(user, 'user_mode', 'personal') == 'team':
+            if not getattr(user, 'current_team_id', None):
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            # 记录必须属于同一团队
+            if getattr(expense, 'team_id', None) != user.current_team_id:
+                return error_response('记录不属于当前团队', 403)
+            # 团队拥有者/管理员或具备 finance.delete/all 权限的成员可删除
+            if member.role in ['owner', 'admin']:
+                allowed = True
+            else:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                allowed = bool(perms.get('finance.delete') or perms.get('all'))
+        else:
+            allowed = (expense.user_id == user.id)
+
+        if not allowed:
             return error_response('无权限删除此记录', 403)
         
         db.session.delete(expense)
@@ -916,73 +1028,6 @@ def create_income():
         db.session.rollback()
         return error_response(f'创建收入记录失败: {str(e)}')
 
-@expenses_bp.route('/incomes/<int:income_id>', methods=['PUT'])
-@login_required
-def update_income(income_id):
-    """更新收入记录"""
-    try:
-        user = request.current_user
-        income = Income.query.get(income_id)
-        
-        if not income:
-            return error_response('收入记录不存在', 404)
-            
-        # 检查权限
-        if income.user_id != user.id:
-            return error_response('无权限修改此记录', 403)
-        
-        data = request.get_json()
-        
-        # 更新字段
-        if 'category' in data:
-            allowed_categories = ['breeding_sale', 'bird_sale', 'service', 'competition', 'other']
-            if data['category'] not in allowed_categories:
-                return error_response(f'不支持的收入类别: {data["category"]}')
-            income.category = data['category']
-            
-        if 'amount' in data:
-            try:
-                amount = float(data['amount'])
-                if amount <= 0:
-                    return error_response('金额必须大于0')
-                income.amount = amount
-            except (ValueError, TypeError):
-                return error_response('金额格式不正确')
-                
-        if 'description' in data:
-            income.description = data['description']
-            
-        if 'income_date' in data:
-            try:
-                income_date = datetime.strptime(data['income_date'], '%Y-%m-%d').date()
-                income.income_date = income_date
-            except ValueError:
-                return error_response('日期格式不正确')
-                
-        if 'parrot_id' in data:
-            if data['parrot_id']:
-                parrot = Parrot.query.filter_by(id=data['parrot_id'], user_id=user.id, is_active=True).first()
-                if not parrot:
-                    return error_response('鹦鹉不存在')
-                income.parrot_id = data['parrot_id']
-            else:
-                income.parrot_id = None
-        
-        db.session.commit()
-        
-        return success_response({
-            'id': income.id,
-            'category': income.category,
-            'amount': float(income.amount),
-            'description': income.description,
-            'income_date': income.income_date.strftime('%Y-%m-%d'),
-            'created_at': income.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'parrot_name': income.parrot.name if income.parrot else None
-        }, '收入记录更新成功')
-        
-    except Exception as e:
-        db.session.rollback()
-        return error_response(f'更新收入记录失败: {str(e)}')
 
 @expenses_bp.route('/incomes/<int:income_id>', methods=['DELETE'])
 @login_required
@@ -994,9 +1039,30 @@ def delete_income(income_id):
         
         if not income:
             return error_response('收入记录不存在', 404)
-            
-        # 检查权限
-        if income.user_id != user.id:
+        
+        # 检查权限（个人模式仅允许本人；团队模式允许具备团队删除权限的成员）
+        allowed = False
+        if getattr(user, 'user_mode', 'personal') == 'team':
+            if not getattr(user, 'current_team_id', None):
+                return error_response('请先选择团队', 400)
+            from team_models import TeamMember
+            member = TeamMember.query.filter_by(team_id=user.current_team_id, user_id=user.id, is_active=True).first()
+            if not member:
+                return error_response('您不是该团队成员', 403)
+            # 记录必须属于同一团队
+            if getattr(income, 'team_id', None) != user.current_team_id:
+                return error_response('记录不属于当前团队', 403)
+            # 团队拥有者/管理员或具备 finance.delete/all 权限的成员可删除
+            if member.role in ['owner', 'admin']:
+                allowed = True
+            else:
+                from team_utils import compute_effective_permissions
+                perms = compute_effective_permissions(user.current_team_id, user.id)
+                allowed = bool(perms.get('finance.delete') or perms.get('all'))
+        else:
+            allowed = (income.user_id == user.id)
+        
+        if not allowed:
             return error_response('无权限删除此记录', 403)
         
         db.session.delete(income)

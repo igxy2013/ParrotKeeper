@@ -111,13 +111,9 @@ Page({
   },
 
   onShow() {
-    // 检查是否需要刷新数据
-    if (app.globalData.needRefresh) {
-      app.globalData.needRefresh = false
-      this.loadExpenses()
-      this.loadStats()
-      this.loadTrendData()
-    }
+    this.loadExpenses()
+    this.loadStats()
+    this.loadTrendData()
   },
 
   // 下拉刷新
@@ -418,7 +414,8 @@ Page({
       const res = await app.request({
         url: '/api/expenses/transactions',
         method: 'GET',
-        data: apiParams
+        data: apiParams,
+        cache: false
       })
       
       if (res.success && res.data) {
@@ -471,7 +468,8 @@ Page({
       const res = await app.request({
         url: '/api/expenses/summary',
         method: 'GET',
-        data: params
+        data: params,
+        cache: false
       })
       
       if (res.success && res.data) {
@@ -502,7 +500,8 @@ Page({
       const res = await app.request({
         url: '/api/expenses/trend',
         method: 'GET',
-        data: params
+        data: params,
+        cache: false
       })
 
       if (res.success) {
@@ -1041,20 +1040,26 @@ showEditRecord: false
       console.log('删除记录响应:', response);
       
       if (response.statusCode === 200 && response.data.success) {
+        const removeId = record.id;
+        const newRecords = (this.data.records || []).filter(r => r.id !== removeId);
+        const newFilteredRecords = (this.data.filteredRecords || []).filter(r => r.id !== removeId);
+        this.setData({
+          records: newRecords,
+          filteredRecords: newFilteredRecords,
+          displayTotalCount: newFilteredRecords.length,
+          totalCount: Math.max(0, (this.data.totalCount || 0) - 1)
+        });
         wx.showToast({
           title: '删除成功',
           icon: 'success'
         });
-        
-        // 重置页码并重新加载数据
         this.setData({
           page: 1,
-          records: [],
           hasMore: true
         });
         await this.loadExpenses();
         await this.loadStats();
-        
+        await this.loadTrendData();
       } else {
         throw new Error(response.data.message || '删除失败');
       }

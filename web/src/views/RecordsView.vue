@@ -606,6 +606,14 @@
         <el-button @click="detailDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+    <LimitModal 
+      v-model="showPermissionModal" 
+      mode="info" 
+      title="权限不足" 
+      message="您没有管理饲养记录的权限" 
+      :show-redeem="false" 
+      :show-upgrade="false" 
+    />
   </div>
 </template>
 
@@ -616,8 +624,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Dish, FirstAidKit, Brush, Calendar, Timer, User, List } from '@element-plus/icons-vue'
 import api from '../api/axios'
 import { getCache, setCache } from '@/utils/cache'
+import { useAuthStore } from '@/stores/auth'
+import LimitModal from '@/components/LimitModal.vue'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const activeTab = ref('feeding')
 const loading = ref(false)
 const feedingRecords = ref([])
@@ -637,6 +648,7 @@ const addFormType = ref('feeding')
 const addFormDateTime = ref('')
 const editingRecordId = ref(null)
 const recordsCache = reactive({})
+const showPermissionModal = ref(false)
 const cacheTTL = 30000
 const RECORDS_CACHE_TTL = 60000
 const addForm = reactive({
@@ -898,6 +910,23 @@ const getFeedTypeUnit = (id) => {
 }
 
 const openAddDialog = async () => {
+  try { await (authStore.refreshProfile && authStore.refreshProfile()) } catch(_) {}
+  const mode = localStorage.getItem('user_mode') || 'personal'
+  if (mode === 'team') {
+    try {
+      const uid = (authStore.user || {}).id
+      const tc = await api.get('/teams/current')
+      const tid = tc.data && tc.data.success ? (tc.data.data || {}).id : null
+      if (tid && uid) {
+        const r = await api.get(`/teams/${tid}/members/${uid}/effective-permissions`)
+        const perms = (r.data && r.data.success) ? (r.data.data || {}) : {}
+        const canCreate = !!(perms['all'] || perms['records.create'] || perms['record.create'])
+        if (!canCreate) { showPermissionModal.value = true; return }
+      }
+    } catch (e) {
+      if (e && e.response && e.response.status === 403) { showPermissionModal.value = true; return }
+    }
+  }
   editingRecordId.value = null
   addFormType.value = activeTab.value || 'feeding'
   resetAddForm()
@@ -1523,7 +1552,22 @@ const loadParrots = async () => {
   } catch (_) {}
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try { await (authStore.refreshProfile && authStore.refreshProfile()) } catch(_) {}
+  const mode = localStorage.getItem('user_mode') || 'personal'
+  if (mode === 'team') {
+    try {
+      const uid = (authStore.user || {}).id
+      const tc = await api.get('/teams/current')
+      const tid = tc.data && tc.data.success ? (tc.data.data || {}).id : null
+      if (tid && uid) {
+        const r = await api.get(`/teams/${tid}/members/${uid}/effective-permissions`)
+        const perms = (r.data && r.data.success) ? (r.data.data || {}) : {}
+        const hasAny = !!(perms['all'] || Object.keys(perms || {}).some(k => /^records?\./.test(k) && perms[k]))
+        if (!hasAny) { showPermissionModal.value = true }
+      }
+    } catch (_) {}
+  }
   loadParrots()
   if (route.query.tab && route.query.tab !== activeTab.value) {
     activeTab.value = route.query.tab

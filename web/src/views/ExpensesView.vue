@@ -254,14 +254,14 @@
       v-model="showPermissionModal"
       mode="info"
       title="无权限提示"
-      message="您没有新增收支的权限"
+      message="您没有收支相关操作的权限"
       :show-redeem="false"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Wallet, TrendCharts, Money, Coin, Tickets } from '@element-plus/icons-vue'
 import { use } from 'echarts/core'
@@ -333,7 +333,7 @@ const expensePieCanvas = ref(null)
 const analysisType = ref('支出')
 const pieColors = ['#f97373', '#fb923c', '#facc15', '#22c55e', '#2dd4bf', '#fb7185', '#fbbf24', '#4ade80', '#34d399', '#38bdf8', '#a855f7']
 
-const EXPENSES_CACHE_TTL = 60000
+const EXPENSES_CACHE_TTL = 8000
 
 const trendPickerDate = ref('')
 const trendCurrentDateObj = ref(null)
@@ -578,7 +578,7 @@ const getSelectedCategoryValue = () => {
   return expenseValue || incomeValue || ''
 }
 
-const loadExpenses = async () => {
+const loadExpenses = async (forceRefresh = false) => {
   if (loading.value) return
   loading.value = true
   try {
@@ -612,7 +612,8 @@ const loadExpenses = async () => {
     }
 
     const listKey = buildListCacheKey()
-    const cached = getCache(listKey, EXPENSES_CACHE_TTL)
+    const mode = localStorage.getItem('user_mode') || 'personal'
+    const cached = (forceRefresh || mode === 'team') ? null : getCache(listKey, EXPENSES_CACHE_TTL)
     if (cached && Array.isArray(cached.items)) {
       records.value = cached.items
       total.value = cached.total || cached.items.length || 0
@@ -655,7 +656,7 @@ const loadExpenses = async () => {
   }
 }
 
-const loadTrend = async () => {
+const loadTrend = async (forceRefresh = false) => {
   try {
     const dateParams = getDateRange()
     const periodType = ['本年', '全部'].includes(selectedPeriod.value) ? 'month' : 'day'
@@ -665,7 +666,8 @@ const loadTrend = async () => {
     }
     const trendKey = buildTrendCacheKey(dateParams)
     let raw = []
-    const cached = getCache(trendKey, EXPENSES_CACHE_TTL)
+    const mode = localStorage.getItem('user_mode') || 'personal'
+    const cached = (forceRefresh || mode === 'team') ? null : getCache(trendKey, EXPENSES_CACHE_TTL)
     if (cached && Array.isArray(cached)) {
       raw = cached
     } else {
@@ -858,7 +860,7 @@ const loadTrend = async () => {
   }
 }
 
-const loadStats = async () => {
+const loadStats = async (forceRefresh = false) => {
   try {
     const dateParams = getDateRange()
     const selectedType = recordType.value
@@ -871,7 +873,8 @@ const loadStats = async () => {
       params.category = categoryValue
     }
     const statsKey = buildStatsCacheKey()
-    const cached = getCache(statsKey, EXPENSES_CACHE_TTL)
+    const mode = localStorage.getItem('user_mode') || 'personal'
+    const cached = (forceRefresh || mode === 'team') ? null : getCache(statsKey, EXPENSES_CACHE_TTL)
     if (cached && typeof cached === 'object') {
       stats.value.totalExpense = cached.totalExpense || 0
       stats.value.totalIncome = cached.totalIncome || 0
@@ -1018,16 +1021,16 @@ const openDialog = async () => {
   dialogVisible.value = true
 }
 
-const openEdit = (row) => {
+const openEdit = async (row) => {
   editingRecord.value = row
   dialogVisible.value = true
 }
 
 const onModalSuccess = () => {
-	loadExpenses()
-	loadStats()
-	loadTrend()
-	loadExpenseAnalysis()
+	loadExpenses(true)
+	loadStats(true)
+	loadTrend(true)
+	loadExpenseAnalysis(true)
 }
 
 const remove = async (row) => {
@@ -1041,20 +1044,33 @@ const remove = async (row) => {
 
   try {
     const actualId = String(row.id).replace(/^(expense_|income_)/, '')
-		const isIncome = row.type === '收入'
-		const url = isIncome ? `/expenses/incomes/${actualId}` : `/expenses/${actualId}`
-		const res = await api.delete(url)
+    const isIncome = row.type === '收入'
+    const url = isIncome ? `/expenses/incomes/${actualId}` : `/expenses/${actualId}`
+    const res = await api.delete(url)
 		if (res.data && res.data.success) {
-			ElMessage.success('删除成功')
-			loadExpenses()
-			loadStats()
-			loadTrend()
-			loadExpenseAnalysis()
+        ElMessage.success('删除成功')
+			loadExpenses(true)
+			loadStats(true)
+			loadTrend(true)
+			loadExpenseAnalysis(true)
 		} else {
-      ElMessage.error(res.data?.message || '删除失败')
+      const msg = res.data?.message || '删除失败'
+      const code = res.data && (res.data.code || res.data.status || res.data.status_code)
+      if (code === 403 || /权限|未授权|forbidden/i.test(String(msg))) {
+        // 统一由全局权限弹窗处理
+      } else {
+        ElMessage.error(msg)
+      }
     }
   } catch (e) {
-    ElMessage.error('删除失败')
+    const msg = e && e.response && e.response.data && e.response.data.message
+      ? e.response.data.message
+      : (e.message || '删除失败')
+    if (e && e.response && e.response.status === 403) {
+      // 统一由全局权限弹窗处理
+    } else {
+      ElMessage.error(msg)
+    }
   }
 }
 
@@ -1073,12 +1089,13 @@ const formatAmount = (val) => {
   return num.toFixed(2)
 }
 
-const loadExpenseAnalysis = async () => {
+const loadExpenseAnalysis = async (forceRefresh = false) => {
   analysisLoading.value = true
   try {
     const isIncome = analysisType.value === '收入'
     const key = buildAnalysisCacheKey()
-    const cached = getCache(key, EXPENSES_CACHE_TTL)
+    const mode = localStorage.getItem('user_mode') || 'personal'
+    const cached = (forceRefresh || mode === 'team') ? null : getCache(key, EXPENSES_CACHE_TTL)
     if (cached && Array.isArray(cached)) {
       const total = cached.reduce((sum, it) => sum + (Number(it.amount || it.total_amount) || 0), 0)
       const mapped = cached.map((it, idx) => ({
@@ -1331,6 +1348,14 @@ onMounted(() => {
   const now = new Date()
   trendCurrentDateObj.value = now.getTime()
   trendPickerDate.value = formatDate(now)
+  const vis = () => { if (document.visibilityState === 'visible') { loadExpenses(true); loadStats(true); loadTrend(true); loadExpenseAnalysis(true) } }
+  window.addEventListener('visibilitychange', vis)
+  ;(window)._pk_vis_cb = vis
+})
+
+onUnmounted(() => {
+  const cb = (window)._pk_vis_cb
+  if (cb) window.removeEventListener('visibilitychange', cb)
 })
 </script>
 

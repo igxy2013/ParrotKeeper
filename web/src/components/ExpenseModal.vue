@@ -244,7 +244,17 @@ const handleSubmit = async () => {
       }
     }
   } catch (e) {
-    ElMessage.error('保存失败')
+    try {
+      const status = e && e.response && e.response.status
+      const msg = e && e.response && e.response.data && (e.response.data.message || '')
+      if (status === 403 || /权限|未授权|forbidden/i.test(String(msg))) {
+        // 统一由全局权限弹窗处理，不再弹错误提示
+      } else {
+        ElMessage.error('保存失败')
+      }
+    } catch (_) {
+      ElMessage.error('保存失败')
+    }
   } finally {
     saving.value = false
   }

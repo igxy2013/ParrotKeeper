@@ -666,7 +666,17 @@ const handleSubmit = async () => {
     emit('success')
   } catch (error) {
     console.error(error)
-    ElMessage.error(isEdit.value ? '修改失败' : '添加失败')
+    try {
+      const status = error && error.response && error.response.status
+      const msg = error && error.response && error.response.data && (error.response.data.message || '')
+      if (status === 403 || /权限|未授权|forbidden/i.test(String(msg))) {
+        // 统一由全局权限弹窗处理，不再弹错误提示
+      } else {
+        ElMessage.error(isEdit.value ? '修改失败' : '添加失败')
+      }
+    } catch (_) {
+      ElMessage.error(isEdit.value ? '修改失败' : '添加失败')
+    }
   } finally {
     loading.value = false
   }
